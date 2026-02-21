@@ -27,7 +27,7 @@
 
 - [ ] **Phase 11: Foundation — Shell and Navigation** - New responsive layout shell with bottom nav, top nav, mobile header, and safe area handling
 - [x] **Phase 11.1: Auth, Authorization, and Marketing Landing Page** - Clerk roles (coach/client), admin coach detection fix, marketing site with checkout, client subscription journey (INSERTED) (completed 2026-02-21)
-- [ ] **Phase 12: Design Tokens and Core Primitives** - Extended theme tokens, animation keyframes, and reusable UI primitives
+- [x] **Phase 12: Design Tokens and Core Primitives** - Extended theme tokens, animation keyframes, and reusable UI primitives (completed 2026-02-21)
 - [ ] **Phase 13: Page-Level Renovation** - Renovate all dashboard pages, auth pages, and empty states using new shell and primitives
 - [ ] **Phase 14: Check-in Wizard and Onboarding** - Multi-step swipeable check-in form and guided onboarding assessment
 - [ ] **Phase 15: RTL Audit and Polish** - Full RTL verification, accessibility audit, and PWA standalone testing
@@ -150,7 +150,7 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 11. Foundation — Shell and Navigation | v1.1 | 0/4 | Not started | - |
 | 11.1. Auth, Authorization, and Marketing Landing Page | 7/7 | Complete    | 2026-02-21 | - |
-| 12. Design Tokens and Core Primitives | 2/3 | In Progress|  | - |
+| 12. Design Tokens and Core Primitives | 3/3 | Complete   | 2026-02-21 | - |
 | 13. Page-Level Renovation | v1.1 | 0/7 | Not started | - |
 | 14. Check-in Wizard and Onboarding | v1.1 | 0/3 | Not started | - |
 | 15. RTL Audit and Polish | v1.1 | 0/3 | Not started | - |

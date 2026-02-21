@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-02-17)
 Milestone: v1.1 Mobile UI Renovation
 Status: In progress — Phase 12 executing
 Phase: Phase 12 — Design Tokens and Core Primitives
-Plan: 02 complete (animation system — @theme-integrated keyframes, fill-mode: both, wildcard reduced-motion)
+Plan: 03 complete (UI primitives polish — WidgetCard semantic tokens, PageHeader subtitle, 4 skeleton variants, EmptyState color variants, modern loading skeleton)
 Progress: [#########...........] 9/20 plans (45%)
 Started: 2026-02-17
 
@@ -86,6 +86,10 @@ Total: 5 phases, 20 plans, 65 requirements
 - [12-02] animation-fill-mode: both included in --animate-* token shorthand value — prevents stagger flash when animationDelay is set via inline style
 - [12-02] Wildcard reduced-motion (*, ::before, ::after with 0.01ms) replaces per-class listing — future animations automatically covered
 - [12-02] animate-slide-in renamed to animate-slide-in-bottom — aligns with --animate-slide-in-bottom token; no component files used the old name
+- [12-03] hover:shadow-lifted is unconditional on WidgetCard — all cards get hover shadow lift (not just clickable ones) for consistent affordance
+- [12-03] active:scale standardized at 0.97 codebase-wide — bottom-nav FAB (was scale-95) and tickets link (was 0.99) corrected
+- [12-03] EmptyState icon container changed from rounded-full h-14 w-14 to rounded-2xl h-16 w-16 — matches WidgetCard icon shape language
+- [12-03] Skeleton variants use bg-card not bg-white — token-based for dark mode readiness
 
 ### Roadmap Evolution
 
@@ -101,8 +105,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 12-design-tokens-primitives/12-02-PLAN.md
-Resume file: .planning/phases/12-design-tokens-primitives/12-02-SUMMARY.md
+Stopped at: Completed 12-design-tokens-primitives/12-03-PLAN.md
+Resume file: .planning/phases/12-design-tokens-primitives/12-03-SUMMARY.md
 
 ---
 *State initialized: 2026-02-12*
