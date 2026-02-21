@@ -98,16 +98,16 @@ Plans:
   3. The ticket conversation view uses chat bubbles (client right/blue, coach left/gray)
   4. All six empty states show contextual SVG illustrations, friendly messages, and CTA buttons
   5. Auth pages (login/signup) have a modern clean layout optimized for mobile
-**Plans**: TBD
+**Plans**: 7 plans
 
 Plans:
-- [ ] 13-01: Home screen renovation (greeting, widgets, plan card, coach banner, countdown)
-- [ ] 13-02: Meal plan page (day selector, collapsible cards, nutrition summary, swap indicator)
-- [ ] 13-03: Workout plan page (day selector, exercise cards, muscle tags, collapsible details, summary)
-- [ ] 13-04: Tickets renovation (chat bubbles, ticket list cards)
-- [ ] 13-05: Tracking, progress, settings, and FAQ pages
-- [ ] 13-06: Empty states (all 6 screens) and auth pages (login/signup)
-- [ ] 13-07: Desktop responsive layout (max-width constraint, card grids)
+- [ ] 13-01-PLAN.md — Home screen renovation (rotating greeting, carousel/grid, stats widgets, coach banner, countdown)
+- [ ] 13-02-PLAN.md — Meal plan page (Day 1-14 selector, accordion cards, nutrition summary, swap indicator)
+- [ ] 13-03-PLAN.md — Workout plan page (shared DaySelector, exercise mini-cards, muscle tags, collapsible details)
+- [ ] 13-04-PLAN.md — Tickets renovation (WhatsApp-style chat bubbles, colored status badges, date separators)
+- [ ] 13-05-PLAN.md — Tracking, progress, settings, and FAQ page polish
+- [ ] 13-06-PLAN.md — Empty states (all 6 screens with CTAs) and auth pages (login/accept-invite)
+- [ ] 13-07-PLAN.md — Desktop responsive layout (max-width constraints, card grids, visual verification)
 
 ### Phase 14: Check-in Wizard and Onboarding
 **Goal**: The check-in flow feels like a guided wizard with swipe navigation, and onboarding walks new users through assessment one question at a time
