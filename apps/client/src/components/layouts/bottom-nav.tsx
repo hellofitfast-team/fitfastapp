@@ -87,7 +87,7 @@ export function BottomNav({ onMoreClick }: BottomNavProps) {
           <Link href="/check-in" className="relative -mt-7 flex flex-col items-center">
             <div
               className={cn(
-                "flex h-14 w-14 items-center justify-center rounded-full shadow-[0_4px_20px_rgba(65,105,225,0.4)] text-white transition-transform active:scale-95",
+                "flex h-14 w-14 items-center justify-center rounded-full shadow-[0_4px_20px_rgba(65,105,225,0.4)] text-white transition-all active:scale-[0.97]",
                 isCheckInActive ? "bg-primary-dark" : "bg-primary"
               )}
             >

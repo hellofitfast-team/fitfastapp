@@ -6,23 +6,23 @@ import { cn } from "./cn";
 
 const FEATURE_ICON_STYLES = {
   primary: {
-    bg: "bg-[#4169E1]",
+    bg: "bg-primary",
     shadow: "shadow-[0_4px_16px_rgba(65,105,225,0.15)]",
   },
   nutrition: {
-    bg: "bg-[#10B981]",
+    bg: "bg-nutrition",
     shadow: "shadow-[0_4px_16px_rgba(16,185,129,0.15)]",
   },
   fitness: {
-    bg: "bg-[#F97316]",
+    bg: "bg-fitness",
     shadow: "shadow-[0_4px_16px_rgba(249,115,22,0.15)]",
   },
   streak: {
-    bg: "bg-[#F59E0B]",
+    bg: "bg-streak",
     shadow: "shadow-[0_4px_16px_rgba(245,158,11,0.15)]",
   },
   routine: {
-    bg: "bg-[#8B5CF6]",
+    bg: "bg-routine",
     shadow: "shadow-[0_4px_16px_rgba(139,92,246,0.15)]",
   },
 } as const;
@@ -59,8 +59,9 @@ export function WidgetCard({
     <Comp
       onClick={onClick}
       className={cn(
-        "rounded-xl border border-border bg-card p-4 text-start shadow-card transition-all",
-        onClick && "cursor-pointer hover:shadow-lifted active:scale-[0.98]",
+        "rounded-xl border border-border bg-card p-4 text-start shadow-card transition-all duration-200",
+        "hover:shadow-lifted",
+        onClick && "cursor-pointer active:scale-[0.97]",
         className
       )}
     >

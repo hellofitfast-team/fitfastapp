@@ -235,7 +235,7 @@ export default function TicketsPage() {
               <Link
                 key={ticket._id}
                 href={`/tickets/${ticket._id}`}
-                className="block rounded-xl border border-border bg-card p-4 hover:bg-neutral-50 transition-colors active:scale-[0.99]"
+                className="block rounded-xl border border-border bg-card p-4 hover:bg-neutral-50 transition-all active:scale-[0.97]"
               >
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
