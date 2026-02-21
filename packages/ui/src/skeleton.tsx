@@ -70,3 +70,91 @@ export function SkeletonCard({
     </div>
   );
 }
+
+/** Home page widget grid skeleton — matches WidgetCard shape */
+export function SkeletonWidgetCard({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div
+      role="status"
+      aria-label="Loading"
+      className={cn("rounded-xl border border-border bg-card p-4", className)}
+      {...props}
+    >
+      <div className="flex items-start justify-between">
+        <div className="flex-1 space-y-2">
+          <div className="h-3 w-20 animate-pulse rounded bg-neutral-200" />
+          <div className="h-7 w-14 animate-pulse rounded-md bg-neutral-200" />
+          <div className="h-3 w-24 animate-pulse rounded bg-neutral-200" />
+        </div>
+        <div className="ms-3 h-11 w-11 shrink-0 animate-pulse rounded-xl bg-neutral-200" />
+      </div>
+    </div>
+  );
+}
+
+/** Collapsed meal card skeleton — matches meal plan card shape */
+export function SkeletonMealCard({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div
+      role="status"
+      aria-label="Loading"
+      className={cn("rounded-xl border border-border bg-card p-4", className)}
+      {...props}
+    >
+      <div className="flex items-center gap-3">
+        <div className="h-10 w-10 shrink-0 animate-pulse rounded-lg bg-neutral-200" />
+        <div className="flex-1 space-y-2">
+          <div className="h-4 w-32 animate-pulse rounded bg-neutral-200" />
+          <div className="h-3 w-20 animate-pulse rounded bg-neutral-200" />
+        </div>
+        <div className="h-4 w-12 shrink-0 animate-pulse rounded bg-neutral-200" />
+      </div>
+    </div>
+  );
+}
+
+/** Exercise card skeleton — matches workout plan card shape */
+export function SkeletonWorkoutCard({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div
+      role="status"
+      aria-label="Loading"
+      className={cn("rounded-xl border border-border bg-card space-y-3 p-4", className)}
+      {...props}
+    >
+      <div className="flex items-center gap-3">
+        <div className="h-9 w-9 shrink-0 animate-pulse rounded-lg bg-neutral-200" />
+        <div className="flex-1 space-y-1.5">
+          <div className="h-4 w-36 animate-pulse rounded bg-neutral-200" />
+          <div className="h-3 w-24 animate-pulse rounded bg-neutral-200" />
+        </div>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="h-10 animate-pulse rounded-lg bg-neutral-200" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Ticket list item skeleton — matches ticket card shape */
+export function SkeletonTicketItem({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div
+      role="status"
+      aria-label="Loading"
+      className={cn("rounded-xl border border-border bg-card p-4", className)}
+      {...props}
+    >
+      <div className="flex items-center gap-3">
+        <div className="h-10 w-10 shrink-0 animate-pulse rounded-lg bg-neutral-200" />
+        <div className="flex-1 space-y-2">
+          <div className="h-4 w-48 animate-pulse rounded bg-neutral-200" />
+          <div className="h-3 w-32 animate-pulse rounded bg-neutral-200" />
+        </div>
+        <div className="h-4 w-4 shrink-0 animate-pulse rounded bg-neutral-200" />
+      </div>
+    </div>
+  );
+}
