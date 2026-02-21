@@ -10,10 +10,10 @@ See: .planning/PROJECT.md (updated 2026-02-17)
 ## Current Position
 
 Milestone: v1.1 Mobile UI Renovation
-Status: In progress — Phase 11.1 executing
-Phase: Phase 11.1 — Auth, Authorization, and Marketing Landing Page
-Plan: 01–07 complete (backend infra + marketing scaffold + landing page + admin RBAC + checkout flow + signup detail + plans/payment-methods manager + E2E verification checkpoint)
-Progress: [#######.............] 7/20 plans (35%)
+Status: In progress — Phase 12 executing
+Phase: Phase 12 — Design Tokens and Core Primitives
+Plan: 01 complete (design token update — near-white bg, refined borders, spacing scale, typography reference)
+Progress: [########............] 8/20 plans (40%)
 Started: 2026-02-17
 
 ## Previous Milestone
@@ -79,6 +79,9 @@ Total: 5 phases, 20 plans, 65 requirements
 - [11.1-06] Reject action uses inline textarea expansion in signups-table (no modal) — faster UX
 - [11.1-06] PlansManager uses local state + single Save button — avoids partial saves on every keystroke
 - [11.1-06] Max 4 plans enforced in UI only (business rule, not backend constraint)
+- [12-01] Background token changed from cream #FFFEF5 to near-white #FAFAFA — already in neutral scale, reads as white but slightly warmer
+- [12-01] Typography scale documented as CSS comment (not custom properties) — Tailwind built-in utilities handle sizing; comment serves as Phase 13 guide
+- [12-01] Only difference between three globals.css files is client's Clerk @layer declaration — all token values are identical
 
 ### Roadmap Evolution
 
@@ -94,8 +97,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Phase 12 context gathered
-Resume file: .planning/phases/12-design-tokens-primitives/12-CONTEXT.md
+Stopped at: Completed 12-design-tokens-primitives/12-01-PLAN.md
+Resume file: .planning/phases/12-design-tokens-primitives/12-01-SUMMARY.md
 
 ---
 *State initialized: 2026-02-12*
