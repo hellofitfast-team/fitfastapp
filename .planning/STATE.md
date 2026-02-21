@@ -94,8 +94,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Phase 11.1 complete — all 7 plans executed + E2E verification passed
-Resume file: None
+Stopped at: Phase 12 context gathered
+Resume file: .planning/phases/12-design-tokens-primitives/12-CONTEXT.md
 
 ---
 *State initialized: 2026-02-12*
