@@ -12,8 +12,8 @@ See: .planning/PROJECT.md (updated 2026-02-17)
 Milestone: v1.1 Mobile UI Renovation
 Status: In progress — Phase 12 executing
 Phase: Phase 12 — Design Tokens and Core Primitives
-Plan: 01 complete (design token update — near-white bg, refined borders, spacing scale, typography reference)
-Progress: [########............] 8/20 plans (40%)
+Plan: 02 complete (animation system — @theme-integrated keyframes, fill-mode: both, wildcard reduced-motion)
+Progress: [#########...........] 9/20 plans (45%)
 Started: 2026-02-17
 
 ## Previous Milestone
@@ -82,6 +82,10 @@ Total: 5 phases, 20 plans, 65 requirements
 - [12-01] Background token changed from cream #FFFEF5 to near-white #FAFAFA — already in neutral scale, reads as white but slightly warmer
 - [12-01] Typography scale documented as CSS comment (not custom properties) — Tailwind built-in utilities handle sizing; comment serves as Phase 13 guide
 - [12-01] Only difference between three globals.css files is client's Clerk @layer declaration — all token values are identical
+- [12-02] Entrance @keyframes placed inside @theme block — Tailwind v4 requires this for auto-generated animate-* utilities
+- [12-02] animation-fill-mode: both included in --animate-* token shorthand value — prevents stagger flash when animationDelay is set via inline style
+- [12-02] Wildcard reduced-motion (*, ::before, ::after with 0.01ms) replaces per-class listing — future animations automatically covered
+- [12-02] animate-slide-in renamed to animate-slide-in-bottom — aligns with --animate-slide-in-bottom token; no component files used the old name
 
 ### Roadmap Evolution
 
@@ -97,8 +101,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 12-design-tokens-primitives/12-01-PLAN.md
-Resume file: .planning/phases/12-design-tokens-primitives/12-01-SUMMARY.md
+Stopped at: Completed 12-design-tokens-primitives/12-02-PLAN.md
+Resume file: .planning/phases/12-design-tokens-primitives/12-02-SUMMARY.md
 
 ---
 *State initialized: 2026-02-12*
