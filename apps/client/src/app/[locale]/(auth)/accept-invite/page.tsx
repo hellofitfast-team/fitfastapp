@@ -83,7 +83,7 @@ export default function AcceptInvitePage() {
   // Invalid link — no token present
   if (!token) {
     return (
-      <div className="rounded-xl border border-border bg-card shadow-lg overflow-hidden">
+      <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden animate-fade-in">
         <div className="p-6 text-center border-b border-border">
           <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 mb-3">
             <span className="text-xl font-bold text-primary">FF</span>
@@ -109,7 +109,7 @@ export default function AcceptInvitePage() {
   }
 
   return (
-    <div className="rounded-xl border border-border bg-card shadow-lg overflow-hidden">
+    <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden animate-fade-in">
       {/* Header */}
       <div className="p-6 text-center border-b border-border">
         <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 mb-3">

@@ -23,27 +23,35 @@
     "min": "min"
   },
   "emptyStates": {
+    "noPlan": {
+      "title": "Your plan is on the way!",
+      "description": "Your coach is preparing your personalized plan. Check back soon!",
+      "action": "Let's get started!"
+    },
     "noMealPlan": {
       "title": "No Meal Plan Yet",
-      "description": "Your AI-powered meal plan will appear here after your first check-in. Complete a check-in to get started!"
+      "description": "Your AI-powered meal plan will appear here after your first check-in. Complete a check-in to get started!",
+      "action": "Time to check in!"
     },
     "noWorkoutPlan": {
       "title": "No Workout Plan Yet",
-      "description": "Your personalized workout plan will appear here after your first check-in. Complete a check-in to get started!"
+      "description": "Your personalized workout plan will appear here after your first check-in. Complete a check-in to get started!",
+      "action": "Let's get started!"
     },
     "noTickets": {
       "title": "No Support Tickets",
       "description": "Having an issue with your plan? Submit a ticket and your coach will respond within 24 hours.",
-      "action": "Create a Ticket"
+      "action": "Your coach is here to help"
     },
     "noCheckIns": {
       "title": "No Check-Ins Yet",
       "description": "Track your progress by submitting regular check-ins. Your coach uses this data to optimize your plans.",
-      "action": "Submit Check-In"
+      "action": "Complete your first check-in!"
     },
     "noPhotos": {
       "title": "No Progress Photos",
-      "description": "Upload photos during your check-ins to track your visual progress over time."
+      "description": "Upload photos during your check-ins to track your visual progress over time.",
+      "action": "Complete a check-in"
     },
     "noFaqs": {
       "title": "No Results Found",
@@ -51,7 +59,8 @@
     },
     "noTrackingData": {
       "title": "Nothing to Track Today",
-      "description": "You need an active meal or workout plan to start tracking. Complete a check-in to generate your plans."
+      "description": "You need an active meal or workout plan to start tracking. Complete a check-in to generate your plans.",
+      "action": "Time to check in!"
     }
   },
   "auth": {
@@ -91,7 +100,8 @@
     "createAccount": "Create Account",
     "invalidInviteLink": "Invalid invitation link. Please contact your coach.",
     "inviteExpired": "This invitation link is invalid or has expired. Please contact your coach.",
-    "passwordsMustMatch": "Passwords don't match"
+    "passwordsMustMatch": "Passwords don't match",
+    "brandTagline": "Your AI-Powered Fitness Coach"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -117,7 +127,29 @@
     "completedToday": "completed today",
     "viewPlan": "View Plan",
     "startWorkout": "Start Workout",
-    "logMeal": "Log Meal"
+    "logMeal": "Log Meal",
+    "motivational": {
+      "0": "Keep pushing, {name}!",
+      "1": "You're on a roll, {name}!",
+      "2": "Stay consistent, {name}!",
+      "3": "Every rep counts, {name}!",
+      "4": "You've got this, {name}!",
+      "5": "Strong effort, {name}!",
+      "6": "One day at a time, {name}!"
+    },
+    "coachMessageBanner": "Your coach responded to your ticket",
+    "viewTicket": "View",
+    "planDay": "Day {current} of {total}",
+    "planProgress": "Plan Progress",
+    "todaysStats": "Today's Stats",
+    "todaysMeals": "Today's Meals",
+    "todaysWorkout": "Today's Workout",
+    "noMealsToday": "No meals for today",
+    "restDayOrNoWorkout": "Rest day or no workout today",
+    "totalCalories": "Total Calories",
+    "mealCount": "{count} meals",
+    "exerciseCount": "{count} exercises",
+    "estDuration": "Est. {duration}"
   },
   "meals": {
     "title": "Meal Plan",
@@ -338,7 +370,12 @@
     "clientReply": "Client Reply",
     "ticketClosed": "This ticket has been closed",
     "ticketNotFound": "Ticket not found",
-    "fetchError": "Failed to load ticket"
+    "fetchError": "Failed to load ticket",
+    "chat": {
+      "today": "Today",
+      "yesterday": "Yesterday"
+    },
+    "lastMessage": "Last message"
   },
   "faq": {
     "title": "Frequently Asked Questions",

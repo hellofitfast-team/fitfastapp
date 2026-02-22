@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { LocaleSwitcher } from "@/components/auth/LocaleSwitcher";
-import Image from "next/image";
+import { Dumbbell } from "lucide-react";
 
 export default async function AuthLayout({
   children,
@@ -8,30 +8,34 @@ export default async function AuthLayout({
   children: React.ReactNode;
 }) {
   const tBrand = await getTranslations("brand");
+  const tAuth = await getTranslations("auth");
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground selection:bg-primary selection:text-primary-foreground">
-      {/* Header */}
-      <header className="border-b border-border bg-card">
-        <div className="max-w-7xl mx-auto flex h-14 items-center justify-between px-4">
-          <div className="flex items-center gap-3">
-            <Image
-              src="/icons/icon-512x512.png"
-              alt="FitFast"
-              width={32}
-              height={32}
-              className="h-8 w-8"
-            />
-            <h1 className="text-lg font-bold tracking-tight">
+      {/* Brand Header with Gradient */}
+      <div className="bg-gradient-to-b from-primary/5 to-background">
+        <header className="max-w-7xl mx-auto flex h-14 items-center justify-between px-4">
+          <div className="flex items-center gap-2">
+            <Dumbbell className="h-5 w-5 text-primary" />
+            <span className="text-sm font-bold tracking-tight text-primary">
               {tBrand("name")}
-            </h1>
+            </span>
           </div>
           <LocaleSwitcher />
+        </header>
+
+        {/* Brand Section */}
+        <div className="flex flex-col items-center gap-2 pt-8 pb-10">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 mb-2">
+            <Dumbbell className="h-8 w-8 text-primary" />
+          </div>
+          <h1 className="text-2xl font-bold text-primary">FitFast</h1>
+          <p className="text-sm text-muted-foreground">{tAuth("brandTagline")}</p>
         </div>
-      </header>
+      </div>
 
       {/* Main Content */}
-      <main className="flex flex-1 items-center justify-center px-4 py-12">
+      <main className="flex flex-1 justify-center px-4 pb-12 -mt-4">
         <div className="w-full max-w-md">{children}</div>
       </main>
 
