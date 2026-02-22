@@ -93,7 +93,7 @@ Plans:
 **Depends on**: Phase 12
 **Requirements**: HOME-01, HOME-02, HOME-03, HOME-04, HOME-05, MEAL-01, MEAL-02, MEAL-03, MEAL-04, WORK-01, WORK-02, WORK-03, WORK-04, WORK-05, TRACK-01, TRACK-02, TICKET-01, TICKET-02, SET-01, SET-02, FAQ-01, EMPTY-01, EMPTY-02, EMPTY-03, EMPTY-04, EMPTY-05, EMPTY-06, AUTH-01, AUTH-02, DESK-02, DESK-03
 **Success Criteria** (what must be TRUE):
-  1. The home screen shows a time-of-day greeting, today's plan card, quick stats widgets, coach message banner, and plan cycle countdown
+  1. The home screen shows a rotating motivational greeting with the user's name, today's plan card, quick stats widgets, coach message banner, and plan cycle countdown
   2. Meal and workout plan pages have a horizontal day selector (1-14) and collapsible cards that expand to show full details
   3. The ticket conversation view uses chat bubbles (client right/blue, coach left/gray)
   4. All six empty states show contextual icons, friendly messages, and CTA buttons
