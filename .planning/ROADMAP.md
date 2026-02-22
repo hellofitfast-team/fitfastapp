@@ -135,12 +135,12 @@ Plans:
   3. Every renovated page looks correct in Arabic at both 390px and 1440px viewports
   4. All interactive elements have minimum 44px touch targets
   5. No functionality regressions — every feature that worked in v1.0 still works identically
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 15-01: Logical property audit and RTL swipe/scroll fixes
-- [ ] 15-02: Arabic visual verification at 390px and 1440px
-- [ ] 15-03: Touch target audit, functionality regression check, and PWA standalone test
+- [ ] 15-01-PLAN.md — Logical property audit and RTL swipe/scroll fixes
+- [ ] 15-02-PLAN.md — Touch target audit and Arabic visual verification
+- [ ] 15-03-PLAN.md — PWA standalone audit, safe areas, and functionality regression check
 
 ## Progress
 
@@ -157,4 +157,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-02-12*
-*Last updated: 2026-02-17 — v1.1 phases added*
+*Last updated: 2026-02-22 — Phase 15 plans created*
