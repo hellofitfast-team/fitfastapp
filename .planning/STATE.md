@@ -5,15 +5,15 @@
 See: .planning/PROJECT.md (updated 2026-02-17)
 
 **Core value:** Every user flow works reliably, looks polished, and feels consistent in both languages
-**Current focus:** v1.1 Mobile UI Renovation — roadmap complete, ready for phase planning
+**Current focus:** v1.1 Mobile UI Renovation — Phase 11 complete, Phase 12 done, ready for Phase 13
 
 ## Current Position
 
 Milestone: v1.1 Mobile UI Renovation
-Status: In progress — Phase 12 executing
-Phase: Phase 12 — Design Tokens and Core Primitives
-Plan: 03 complete (UI primitives polish — WidgetCard semantic tokens, PageHeader subtitle, 4 skeleton variants, EmptyState color variants, modern loading skeleton)
-Progress: [#########...........] 9/20 plans (45%)
+Status: In progress — Phase 11 complete
+Phase: Phase 11 — Foundation: Shell and Navigation
+Plan: 02 complete (v1 cleanup + requirements audit)
+Progress: [############........] 12/20 plans (60%)
 Started: 2026-02-17
 
 ## Previous Milestone
@@ -25,11 +25,12 @@ v1.0 Polish & Rebrand — SHIPPED 2026-02-16
 
 | Phase | Name | Plans | Status |
 |-------|------|-------|--------|
-| 11 | Foundation — Shell and Navigation | 4 | Not started |
-| 12 | Design Tokens and Core Primitives | 3 | Not started |
-| 13 | Page-Level Renovation | 7 | Not started |
-| 14 | Check-in Wizard and Onboarding | 3 | Not started |
-| 15 | RTL Audit and Polish | 3 | Not started |
+| 11 | Foundation — Shell and Navigation | 2/2 | Complete |
+| 11.1 | Auth, Authorization, and Marketing Landing Page | 7/7 | Complete |
+| 12 | Design Tokens and Core Primitives | 3/3 | Complete |
+| 13 | Page-Level Renovation | 0/7 | Not started |
+| 14 | Check-in Wizard and Onboarding | 0/3 | Not started |
+| 15 | RTL Audit and Polish | 0/3 | Not started |
 
 Total: 5 phases, 20 plans, 65 requirements
 
@@ -90,12 +91,15 @@ Total: 5 phases, 20 plans, 65 requirements
 - [12-03] active:scale standardized at 0.97 codebase-wide — bottom-nav FAB (was scale-95) and tickets link (was 0.99) corrected
 - [12-03] EmptyState icon container changed from rounded-full h-14 w-14 to rounded-2xl h-16 w-16 — matches WidgetCard icon shape language
 - [12-03] Skeleton variants use bg-card not bg-white — token-based for dark mode readiness
+- [11-01] Badge data via single Convex query for efficiency — one reactive query per page load
+- [11-01] Unread tickets = status "coach_responded" for current user
+- [11-02] Renamed dashboard-shell-v2.tsx to dashboard-shell.tsx — no v1 to distinguish from
 
 ### Roadmap Evolution
 
 - Phase 11.1 inserted after Phase 11: Auth, Authorization, and Marketing Landing Page (URGENT)
   - Expanded scope: includes 3rd monorepo app (`apps/marketing/`) with checkout flow, pricing plans, royal blue theme
-  - Full circle: marketing site → checkout → payment screenshot → coach approval → client credentials → initial assessment
+  - Full circle: marketing site -> checkout -> payment screenshot -> coach approval -> client credentials -> initial assessment
   - Skills to use during planning/execution: /brainstorming, /frontend-design, marketing-skills
 
 ### Blockers/Concerns
@@ -104,10 +108,10 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-21
-Stopped at: Completed 12-design-tokens-primitives/12-03-PLAN.md
-Resume file: .planning/phases/12-design-tokens-primitives/12-03-SUMMARY.md
+Last session: 2026-02-22
+Stopped at: Completed Phase 11 (11-01 + 11-02) — badge indicators, pill nav, v1 cleanup
+Resume file: .planning/phases/11-foundation-shell-navigation/11-02-SUMMARY.md
 
 ---
 *State initialized: 2026-02-12*
-*Last updated: 2026-02-21 — Phase 11.1 complete: E2E verification found 8 bugs (auth race, i18n, routing), all fixed and committed*
+*Last updated: 2026-02-22 — Phase 11 complete: 2 plans, 4 commits, badge indicators + pill nav + v1 cleanup*

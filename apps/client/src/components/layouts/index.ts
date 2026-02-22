@@ -1,3 +1,5 @@
-export { Header } from "./header";
-export { Sidebar } from "./sidebar";
-export { DashboardShell } from "./dashboard-shell-v2";
+export { DashboardShell } from "./dashboard-shell";
+export { MobileHeader } from "./mobile-header";
+export { DesktopTopNav } from "./desktop-top-nav";
+export { BottomNav } from "./bottom-nav";
+export { MoreMenu } from "./more-menu";

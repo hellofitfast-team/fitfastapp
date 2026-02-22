@@ -25,9 +25,9 @@
 
 ### v1.1 Mobile UI Renovation
 
-- [ ] **Phase 11: Foundation — Shell and Navigation** - New responsive layout shell with bottom nav, top nav, mobile header, and safe area handling
+- [x] **Phase 11: Foundation — Shell and Navigation** - New responsive layout shell with bottom nav, top nav, mobile header, and safe area handling (completed 2026-02-22)
 - [x] **Phase 11.1: Auth, Authorization, and Marketing Landing Page** - Clerk roles (coach/client), admin coach detection fix, marketing site with checkout, client subscription journey (INSERTED) (completed 2026-02-21)
-- [x] **Phase 12: Design Tokens and Core Primitives** - Extended theme tokens, animation keyframes, and reusable UI primitives (completed 2026-02-21)
+- [ ] **Phase 12: Design Tokens and Core Primitives** - Extended theme tokens, animation keyframes, and reusable UI primitives
 - [ ] **Phase 13: Page-Level Renovation** - Renovate all dashboard pages, auth pages, and empty states using new shell and primitives
 - [ ] **Phase 14: Check-in Wizard and Onboarding** - Multi-step swipeable check-in form and guided onboarding assessment
 - [ ] **Phase 15: RTL Audit and Polish** - Full RTL verification, accessibility audit, and PWA standalone testing
@@ -47,8 +47,8 @@
 **Plans**: 2 plans
 
 Plans:
-- [ ] 11-01-PLAN.md — Badge indicators on nav items + bottom nav pill shape refinement
-- [ ] 11-02-PLAN.md — Cleanup deprecated v1 layout files + requirements verification
+- [x] 11-01-PLAN.md — Badge indicators on nav items + bottom nav pill shape refinement
+- [x] 11-02-PLAN.md — Cleanup deprecated v1 layout files + requirements verification
 
 ### Phase 11.1: Auth, Authorization, and Marketing Landing Page (INSERTED)
 
@@ -91,22 +91,21 @@ Plans:
 **Depends on**: Phase 12
 **Requirements**: HOME-01, HOME-02, HOME-03, HOME-04, HOME-05, MEAL-01, MEAL-02, MEAL-03, MEAL-04, WORK-01, WORK-02, WORK-03, WORK-04, WORK-05, TRACK-01, TRACK-02, TICKET-01, TICKET-02, SET-01, SET-02, FAQ-01, EMPTY-01, EMPTY-02, EMPTY-03, EMPTY-04, EMPTY-05, EMPTY-06, AUTH-01, AUTH-02, DESK-02, DESK-03
 **Success Criteria** (what must be TRUE):
-  1. The home screen shows a rotating motivational greeting with the user's name, today's plan card, quick stats widgets, coach message banner, and plan cycle countdown
+  1. The home screen shows a time-of-day greeting, today's plan card, quick stats widgets, coach message banner, and plan cycle countdown
   2. Meal and workout plan pages have a horizontal day selector (1-14) and collapsible cards that expand to show full details
   3. The ticket conversation view uses chat bubbles (client right/blue, coach left/gray)
-  4. All six empty states show contextual icons, friendly messages, and CTA buttons
+  4. All six empty states show contextual SVG illustrations, friendly messages, and CTA buttons
   5. Auth pages (login/signup) have a modern clean layout optimized for mobile
-**Plans**: 8 plans
+**Plans**: TBD
 
 Plans:
-- [ ] 13-01-PLAN.md — Home screen renovation (rotating greeting, carousel/grid, stats widgets, coach banner, countdown)
-- [ ] 13-02-PLAN.md — Meal plan page (Day 1-14 selector, accordion cards, nutrition summary, swap indicator)
-- [ ] 13-03-PLAN.md — Workout plan page (shared DaySelector, exercise mini-cards, muscle tags, collapsible details)
-- [ ] 13-04-PLAN.md — Tickets renovation (WhatsApp-style chat bubbles, colored status badges, date separators)
-- [ ] 13-05-PLAN.md — Tracking and progress page polish
-- [ ] 13-06-PLAN.md — All i18n keys, empty states (all 6 screens with CTAs), and auth pages (login/accept-invite)
-- [ ] 13-08-PLAN.md — Settings and FAQ page polish
-- [ ] 13-07-PLAN.md — Desktop responsive layout (max-width constraints, card grids, visual verification)
+- [ ] 13-01: Home screen renovation (greeting, widgets, plan card, coach banner, countdown)
+- [ ] 13-02: Meal plan page (day selector, collapsible cards, nutrition summary, swap indicator)
+- [ ] 13-03: Workout plan page (day selector, exercise cards, muscle tags, collapsible details, summary)
+- [ ] 13-04: Tickets renovation (chat bubbles, ticket list cards)
+- [ ] 13-05: Tracking, progress, settings, and FAQ pages
+- [ ] 13-06: Empty states (all 6 screens) and auth pages (login/signup)
+- [ ] 13-07: Desktop responsive layout (max-width constraint, card grids)
 
 ### Phase 14: Check-in Wizard and Onboarding
 **Goal**: The check-in flow feels like a guided wizard with swipe navigation, and onboarding walks new users through assessment one question at a time
@@ -117,12 +116,12 @@ Plans:
   2. Users can swipe left/right between check-in steps on mobile
   3. The review screen shows a full summary of all entered data before submission
   4. The onboarding assessment shows one question per screen with large inputs and smooth back/next transitions
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 14-01: Check-in step wizard with progress bar and swipe navigation
-- [ ] 14-02: Check-in review summary and smart defaults
-- [ ] 14-03: Onboarding guided wizard renovation
+- [ ] 14-01-PLAN.md — Segmented progress bar and swipe navigation for check-in wizard
+- [ ] 14-02-PLAN.md — Enhanced review summary and smart weight defaults
+- [ ] 14-03-PLAN.md — Onboarding assessment guided wizard conversion
 
 ### Phase 15: RTL Audit and Polish
 **Goal**: Every renovated component works flawlessly in Arabic/RTL and the app passes accessibility and PWA quality gates
@@ -134,12 +133,12 @@ Plans:
   3. Every renovated page looks correct in Arabic at both 390px and 1440px viewports
   4. All interactive elements have minimum 44px touch targets
   5. No functionality regressions — every feature that worked in v1.0 still works identically
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 15-01: Logical property audit and RTL swipe/scroll fixes
-- [ ] 15-02: Arabic visual verification at 390px and 1440px
-- [ ] 15-03: Touch target audit, functionality regression check, and PWA standalone test
+- [ ] 15-01-PLAN.md — Logical property audit, RTL scroll/swipe fixes, loading skeleton rewrite
+- [ ] 15-02-PLAN.md — Touch target audit (44px minimum on all interactive elements)
+- [ ] 15-03-PLAN.md — Full regression check, Arabic visual verification, PWA standalone test
 
 ## Progress
 
@@ -147,13 +146,13 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 11. Foundation — Shell and Navigation | v1.1 | 0/2 | Not started | - |
+| 11. Foundation — Shell and Navigation | v1.1 | 2/2 | Complete | 2026-02-22 |
 | 11.1. Auth, Authorization, and Marketing Landing Page | 7/7 | Complete    | 2026-02-21 | - |
-| 12. Design Tokens and Core Primitives | 3/3 | Complete    | 2026-02-21 | - |
+| 12. Design Tokens and Core Primitives | v1.1 | 0/3 | Not started | - |
 | 13. Page-Level Renovation | v1.1 | 0/7 | Not started | - |
 | 14. Check-in Wizard and Onboarding | v1.1 | 0/3 | Not started | - |
 | 15. RTL Audit and Polish | v1.1 | 0/3 | Not started | - |
 
 ---
 *Roadmap created: 2026-02-12*
-*Last updated: 2026-02-17 — v1.1 phases added*
+*Last updated: 2026-02-22 — Phase 15 plans created*
