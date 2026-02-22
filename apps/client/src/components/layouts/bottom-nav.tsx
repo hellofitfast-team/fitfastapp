@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { cn } from "@fitfast/ui/cn";
 import { useKeyboardVisible } from "@/hooks/useKeyboardVisible";
+import { useNavBadges } from "@/hooks/useNavBadges";
 
 interface NavItemConfig {
   href: string;
@@ -23,7 +24,7 @@ interface NavItemConfig {
 const NAV_ITEMS: NavItemConfig[] = [
   { href: "/", icon: Home, labelKey: "nav.dashboard" },
   { href: "/meal-plan", icon: UtensilsCrossed, labelKey: "nav.mealPlan" },
-  // Check-In is the FAB — not in this array
+  // Check-In is the FAB -- not in this array
   { href: "/workout-plan", icon: Dumbbell, labelKey: "nav.workoutPlan" },
 ];
 
@@ -35,6 +36,7 @@ export function BottomNav({ onMoreClick }: BottomNavProps) {
   const t = useTranslations();
   const pathname = usePathname();
   const keyboardVisible = useKeyboardVisible();
+  const { checkInDue, unreadTicketCount } = useNavBadges();
 
   const pathWithoutLocale = pathname.replace(/^\/(en|ar)/, "") || "/";
   const isCheckInActive =
@@ -45,7 +47,7 @@ export function BottomNav({ onMoreClick }: BottomNavProps) {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-[var(--z-bottom-nav)] border-t border-border bg-card/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)] lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-[var(--z-bottom-nav)] mx-3 mb-[max(0.5rem,env(safe-area-inset-bottom))] rounded-2xl bg-card/95 shadow-lg backdrop-blur-md lg:hidden"
     >
       <div className="flex items-end h-[var(--height-bottom-nav)] relative">
         {/* Left two items */}
@@ -82,16 +84,19 @@ export function BottomNav({ onMoreClick }: BottomNavProps) {
           );
         })}
 
-        {/* Center FAB — Check-In */}
+        {/* Center FAB -- Check-In */}
         <div className="flex flex-1 items-center justify-center">
           <Link href="/check-in" className="relative -mt-7 flex flex-col items-center">
             <div
               className={cn(
-                "flex h-14 w-14 items-center justify-center rounded-full shadow-[0_4px_20px_rgba(65,105,225,0.4)] text-white transition-transform active:scale-95",
+                "relative flex h-14 w-14 items-center justify-center rounded-full shadow-[0_4px_20px_rgba(65,105,225,0.4)] text-white transition-transform active:scale-[0.97]",
                 isCheckInActive ? "bg-primary-dark" : "bg-primary"
               )}
             >
               <ClipboardCheck className="h-6 w-6" />
+              {checkInDue && (
+                <span className="absolute top-0 end-0 h-3 w-3 rounded-full bg-error-500 border-2 border-card" />
+              )}
             </div>
             <span
               className={cn(
@@ -141,12 +146,17 @@ export function BottomNav({ onMoreClick }: BottomNavProps) {
         {/* More button */}
         <button
           onClick={onMoreClick}
-          className="flex flex-1 flex-col items-center justify-center pb-2 pt-2 text-neutral-400 hover:text-foreground transition-colors min-h-[44px]"
+          className="relative flex flex-1 flex-col items-center justify-center pb-2 pt-2 text-neutral-400 hover:text-foreground transition-colors min-h-[44px]"
         >
           <MoreHorizontal className="h-5 w-5" strokeWidth={2} />
           <span className="text-[10px] mt-1 font-semibold">
             {t("nav.more")}
           </span>
+          {unreadTicketCount > 0 && (
+            <span className="absolute -top-1 end-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-error-500 text-[10px] font-bold text-white px-1">
+              {unreadTicketCount > 9 ? "9+" : unreadTicketCount}
+            </span>
+          )}
         </button>
       </div>
     </nav>

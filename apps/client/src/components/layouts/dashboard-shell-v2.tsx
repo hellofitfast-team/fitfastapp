@@ -33,7 +33,7 @@ export function DashboardShell({ children, userName }: DashboardShellProps) {
       <MobileHeader userName={userName} />
 
       {/* Main content area */}
-      <main className="relative z-10 flex-1 overflow-y-auto overflow-x-hidden pb-[calc(var(--height-bottom-nav)+env(safe-area-inset-bottom))] lg:pb-0">
+      <main className="relative z-10 flex-1 overflow-y-auto overflow-x-hidden pb-[calc(var(--height-bottom-nav)+max(0.5rem,env(safe-area-inset-bottom))+0.75rem)] lg:pb-0">
         {children}
       </main>
 

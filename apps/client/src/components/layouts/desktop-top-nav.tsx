@@ -29,6 +29,7 @@ import {
 import { cn } from "@fitfast/ui/cn";
 import { useClerk } from "@clerk/nextjs";
 import Image from "next/image";
+import { useNavBadges } from "@/hooks/useNavBadges";
 
 interface NavItemConfig {
   href: string;
@@ -53,11 +54,13 @@ function NavLink({
   icon: Icon,
   label,
   isActive,
+  badge,
 }: {
   href: string;
   icon: LucideIcon;
   label: string;
   isActive: boolean;
+  badge?: "dot" | number;
 }) {
   return (
     <Link
@@ -69,7 +72,17 @@ function NavLink({
           : "text-muted-foreground hover:bg-neutral-100 hover:text-foreground"
       )}
     >
-      <Icon className="h-4 w-4 shrink-0" />
+      <span className="relative">
+        <Icon className="h-4 w-4 shrink-0" />
+        {badge === "dot" && (
+          <span className="absolute -top-0.5 -end-0.5 h-2 w-2 rounded-full bg-error-500" />
+        )}
+        {typeof badge === "number" && badge > 0 && (
+          <span className="absolute -top-1 -end-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-error-500 text-[10px] font-bold text-white px-0.5">
+            {badge > 9 ? "9+" : badge}
+          </span>
+        )}
+      </span>
       <span className="hidden xl:inline">{label}</span>
     </Link>
   );
@@ -86,6 +99,7 @@ export function DesktopTopNav({ userName }: DesktopTopNavProps) {
   const params = useParams();
   const currentLocale = params.locale as string;
   const { signOut } = useClerk();
+  const { checkInDue, unreadTicketCount } = useNavBadges();
 
   const pathWithoutLocale = pathname.replace(/^\/(en|ar)/, "") || "/";
 
@@ -97,6 +111,12 @@ export function DesktopTopNav({ userName }: DesktopTopNavProps) {
   const handleLogout = async () => {
     await signOut();
     router.replace("/login");
+  };
+
+  const getBadgeForItem = (href: string): "dot" | number | undefined => {
+    if (href === "/check-in" && checkInDue) return "dot";
+    if (href === "/tickets" && unreadTicketCount > 0) return unreadTicketCount;
+    return undefined;
   };
 
   return (
@@ -126,6 +146,7 @@ export function DesktopTopNav({ userName }: DesktopTopNavProps) {
               icon={item.icon}
               label={t(item.labelKey)}
               isActive={isActive}
+              badge={getBadgeForItem(item.href)}
             />
           );
         })}
