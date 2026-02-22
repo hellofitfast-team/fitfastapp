@@ -44,13 +44,11 @@
   3. The mobile header shows page title and action icons without a hamburger menu
   4. Tapping "More" opens a bottom sheet with links to Tracking, Progress, Tickets, and FAQ
   5. The bottom nav hides when the virtual keyboard is open and respects iOS safe areas (notch/home indicator)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 11-01: Responsive dashboard shell and mobile header
-- [ ] 11-02: Bottom navigation bar with active states and badges
-- [ ] 11-03: Desktop top navbar
-- [ ] 11-04: Bottom sheet "More" menu, keyboard hiding, and safe area handling
+- [ ] 11-01-PLAN.md — Badge indicators on nav items + bottom nav pill shape refinement
+- [ ] 11-02-PLAN.md — Cleanup deprecated v1 layout files + requirements verification
 
 ### Phase 11.1: Auth, Authorization, and Marketing Landing Page (INSERTED)
 
@@ -149,7 +147,7 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 11. Foundation — Shell and Navigation | v1.1 | 0/4 | Not started | - |
+| 11. Foundation — Shell and Navigation | v1.1 | 0/2 | Not started | - |
 | 11.1. Auth, Authorization, and Marketing Landing Page | 7/7 | Complete    | 2026-02-21 | - |
 | 12. Design Tokens and Core Primitives | 3/3 | Complete    | 2026-02-21 | - |
 | 13. Page-Level Renovation | v1.1 | 0/7 | Not started | - |
