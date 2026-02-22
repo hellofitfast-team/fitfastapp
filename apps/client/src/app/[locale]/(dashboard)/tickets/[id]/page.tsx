@@ -116,7 +116,7 @@ export default function TicketDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="px-4 py-6 space-y-4 max-w-3xl mx-auto">
+      <div className="px-4 py-6 space-y-4 max-w-3xl mx-auto lg:px-6">
         <Skeleton className="h-10 w-32 rounded-lg" />
         <Skeleton className="h-20 w-full rounded-xl" />
         <Skeleton className="h-32 w-full rounded-xl" />
@@ -126,7 +126,7 @@ export default function TicketDetailPage() {
 
   if (!ticket) {
     return (
-      <div className="px-4 py-6 space-y-6 max-w-3xl mx-auto">
+      <div className="px-4 py-6 space-y-6 max-w-3xl mx-auto lg:px-6">
         <Link
           href="/tickets"
           className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"

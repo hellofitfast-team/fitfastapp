@@ -86,7 +86,7 @@ export default function MealPlanPage() {
   // Show streaming banner while AI generates
   if (mealPlan && isStreaming && streamedText) {
     return (
-      <div className="px-4 py-6 space-y-5 max-w-3xl mx-auto">
+      <div className="px-4 py-6 space-y-5 max-w-3xl mx-auto lg:px-6">
         <div>
           <h1 className="text-2xl font-bold">{t("title")}</h1>
           <p className="text-sm text-muted-foreground mt-0.5">{t("generating")}</p>
@@ -108,7 +108,7 @@ export default function MealPlanPage() {
 
   if (error || !mealPlan) {
     return (
-      <div className="px-4 py-6 space-y-6 max-w-3xl mx-auto">
+      <div className="px-4 py-6 space-y-6 max-w-3xl mx-auto lg:px-6">
         <div>
           <h1 className="text-2xl font-bold">{t("title")}</h1>
           <p className="text-sm text-muted-foreground mt-1">{t("getStarted")}</p>
