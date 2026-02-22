@@ -25,7 +25,7 @@
 
 ### v1.1 Mobile UI Renovation
 
-- [ ] **Phase 11: Foundation — Shell and Navigation** - New responsive layout shell with bottom nav, top nav, mobile header, and safe area handling
+- [x] **Phase 11: Foundation — Shell and Navigation** - New responsive layout shell with bottom nav, top nav, mobile header, and safe area handling (completed 2026-02-22)
 - [x] **Phase 11.1: Auth, Authorization, and Marketing Landing Page** - Clerk roles (coach/client), admin coach detection fix, marketing site with checkout, client subscription journey (INSERTED) (completed 2026-02-21)
 - [ ] **Phase 12: Design Tokens and Core Primitives** - Extended theme tokens, animation keyframes, and reusable UI primitives
 - [ ] **Phase 13: Page-Level Renovation** - Renovate all dashboard pages, auth pages, and empty states using new shell and primitives
@@ -44,13 +44,11 @@
   3. The mobile header shows page title and action icons without a hamburger menu
   4. Tapping "More" opens a bottom sheet with links to Tracking, Progress, Tickets, and FAQ
   5. The bottom nav hides when the virtual keyboard is open and respects iOS safe areas (notch/home indicator)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 11-01: Responsive dashboard shell and mobile header
-- [ ] 11-02: Bottom navigation bar with active states and badges
-- [ ] 11-03: Desktop top navbar
-- [ ] 11-04: Bottom sheet "More" menu, keyboard hiding, and safe area handling
+- [x] 11-01-PLAN.md — Badge indicators on nav items + bottom nav pill shape refinement
+- [x] 11-02-PLAN.md — Cleanup deprecated v1 layout files + requirements verification
 
 ### Phase 11.1: Auth, Authorization, and Marketing Landing Page (INSERTED)
 
@@ -118,12 +116,12 @@ Plans:
   2. Users can swipe left/right between check-in steps on mobile
   3. The review screen shows a full summary of all entered data before submission
   4. The onboarding assessment shows one question per screen with large inputs and smooth back/next transitions
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 14-01: Check-in step wizard with progress bar and swipe navigation
-- [ ] 14-02: Check-in review summary and smart defaults
-- [ ] 14-03: Onboarding guided wizard renovation
+- [ ] 14-01-PLAN.md — Segmented progress bar and swipe navigation for check-in wizard
+- [ ] 14-02-PLAN.md — Enhanced review summary and smart weight defaults
+- [ ] 14-03-PLAN.md — Onboarding assessment guided wizard conversion
 
 ### Phase 15: RTL Audit and Polish
 **Goal**: Every renovated component works flawlessly in Arabic/RTL and the app passes accessibility and PWA quality gates
@@ -135,12 +133,12 @@ Plans:
   3. Every renovated page looks correct in Arabic at both 390px and 1440px viewports
   4. All interactive elements have minimum 44px touch targets
   5. No functionality regressions — every feature that worked in v1.0 still works identically
-**Plans:** 3 plans
+**Plans**: TBD
 
 Plans:
-- [ ] 15-01-PLAN.md — Logical property audit and RTL swipe/scroll fixes
-- [ ] 15-02-PLAN.md — Touch target audit and Arabic visual verification
-- [ ] 15-03-PLAN.md — PWA standalone audit, safe areas, and functionality regression check
+- [ ] 15-01: Logical property audit and RTL swipe/scroll fixes
+- [ ] 15-02: Arabic visual verification at 390px and 1440px
+- [ ] 15-03: Touch target audit, functionality regression check, and PWA standalone test
 
 ## Progress
 
@@ -148,7 +146,7 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 11. Foundation — Shell and Navigation | v1.1 | 0/4 | Not started | - |
+| 11. Foundation — Shell and Navigation | v1.1 | 2/2 | Complete | 2026-02-22 |
 | 11.1. Auth, Authorization, and Marketing Landing Page | 7/7 | Complete    | 2026-02-21 | - |
 | 12. Design Tokens and Core Primitives | v1.1 | 0/3 | Not started | - |
 | 13. Page-Level Renovation | v1.1 | 0/7 | Not started | - |
@@ -157,4 +155,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-02-12*
-*Last updated: 2026-02-22 — Phase 15 plans created*
+*Last updated: 2026-02-22 — Phase 14 plans created*
