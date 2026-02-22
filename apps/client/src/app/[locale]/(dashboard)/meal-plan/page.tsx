@@ -5,35 +5,56 @@ import { useCurrentMealPlan } from "@/hooks/use-meal-plans";
 import { useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/hooks/use-auth";
-import { UtensilsCrossed, Calendar, TrendingUp, RefreshCw, Clock, Flame, Loader2, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { UtensilsCrossed, Calendar, TrendingUp, RefreshCw, Clock, Flame, Loader2, ChevronDown, Sparkles } from "lucide-react";
+import { useState, useMemo } from "react";
 import { cn } from "@fitfast/ui/cn";
 import { usePlanStream } from "@/hooks/use-plan-stream";
+import { EmptyState } from "@fitfast/ui/empty-state";
+import { DaySelector } from "./_components/day-selector";
 import type { GeneratedMealPlan } from "@/lib/ai/meal-plan-generator";
 
 export default function MealPlanPage() {
   const t = useTranslations("meals");
   const tCommon = useTranslations("common");
-  const tDays = useTranslations("days");
+  const tEmpty = useTranslations("emptyStates");
   const locale = useLocale();
   const { profile } = useAuth();
   const { mealPlan, isLoading, error } = useCurrentMealPlan();
-  const [selectedDay, setSelectedDay] = useState("monday");
+  const [selectedDay, setSelectedDay] = useState(0);
   const [generatingPlan, setGeneratingPlan] = useState(false);
   const [expandedMeal, setExpandedMeal] = useState<number | null>(0);
 
   const generateMealPlan = useAction(api.ai.generateMealPlan);
 
-  // Streaming support — show live AI text while plan generates
+  // Streaming support
   const streamId = mealPlan?.streamId;
   const { streamedText, isStreaming } = usePlanStream(
-    // Only stream if plan exists but has no parsed data yet
     mealPlan && (!mealPlan.planData || (mealPlan.planData as any)?.parseError)
       ? streamId
       : undefined,
   );
 
   const weekDays = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+
+  // Map day index (0-13) to weekday name (days 8-14 repeat days 1-7)
+  const getDayName = (dayIndex: number): string => {
+    return weekDays[dayIndex % 7];
+  };
+
+  // Compute today's day index from plan start date
+  const todayDayIndex = useMemo(() => {
+    if (!mealPlan?.startDate) return 0;
+    const start = new Date(mealPlan.startDate);
+    const diff = Math.floor((Date.now() - start.getTime()) / 86400000);
+    return Math.max(0, Math.min(13, diff));
+  }, [mealPlan?.startDate]);
+
+  // Auto-select today on mount
+  useState(() => {
+    if (mealPlan?.startDate) {
+      setSelectedDay(todayDayIndex);
+    }
+  });
 
   const handleGeneratePlan = async () => {
     setGeneratingPlan(true);
@@ -62,7 +83,7 @@ export default function MealPlanPage() {
     );
   }
 
-  // Show streaming banner while AI generates the plan
+  // Show streaming banner while AI generates
   if (mealPlan && isStreaming && streamedText) {
     return (
       <div className="px-4 py-6 space-y-5 max-w-3xl mx-auto">
@@ -92,32 +113,30 @@ export default function MealPlanPage() {
           <h1 className="text-2xl font-bold">{t("title")}</h1>
           <p className="text-sm text-muted-foreground mt-1">{t("getStarted")}</p>
         </div>
-        <div className="rounded-xl border border-border bg-card p-10 text-center shadow-card">
-          <div className="flex h-16 w-16 mx-auto items-center justify-center rounded-full bg-[#10B981]/12 mb-4">
-            <UtensilsCrossed className="h-8 w-8 text-[#10B981]" />
-          </div>
-          <h3 className="text-lg font-semibold">{t("noActivePlan")}</h3>
-          <p className="mt-2 text-sm text-muted-foreground max-w-sm mx-auto">
-            {t("generateDescription")}
-          </p>
-          <button
-            onClick={handleGeneratePlan}
-            disabled={generatingPlan}
-            className="mt-6 inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-50 transition-all active:scale-[0.97]"
-          >
-            {generatingPlan ? (
-              <><RefreshCw className="h-4 w-4 animate-spin" />{t("generating")}</>
-            ) : (
-              <><UtensilsCrossed className="h-4 w-4" />{t("generatePlan")}</>
-            )}
-          </button>
-        </div>
+        <EmptyState
+          icon={UtensilsCrossed}
+          title={tEmpty("noMealPlan.title")}
+          description={tEmpty("noMealPlan.description")}
+          action={{
+            label: tEmpty("noMealPlan.action"),
+            onClick: handleGeneratePlan,
+          }}
+        />
       </div>
     );
   }
 
   const planData = mealPlan.planData as unknown as GeneratedMealPlan;
-  const dayPlan = planData.weeklyPlan[selectedDay];
+  const dayName = getDayName(selectedDay);
+  const dayPlan = planData.weeklyPlan[dayName];
+
+  // Compute daily nutrition totals
+  const dailyTotals = dayPlan ? {
+    calories: dayPlan.dailyTotals?.calories ?? dayPlan.meals.reduce((sum, m) => sum + (m.calories || 0), 0),
+    protein: dayPlan.dailyTotals?.protein ?? dayPlan.meals.reduce((sum, m) => sum + (m.protein || 0), 0),
+    carbs: dayPlan.dailyTotals?.carbs ?? dayPlan.meals.reduce((sum, m) => sum + (m.carbs || 0), 0),
+    fat: dayPlan.dailyTotals?.fat ?? dayPlan.meals.reduce((sum, m) => sum + (m.fat || 0), 0),
+  } : null;
 
   return (
     <div className="px-4 py-6 space-y-5 max-w-3xl mx-auto lg:px-6">
@@ -139,75 +158,50 @@ export default function MealPlanPage() {
         </button>
       </div>
 
-      {/* Weekly Overview */}
-      <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
-        <div className="flex items-center gap-2 p-4 border-b border-border bg-[#10B981]/8">
-          <TrendingUp className="h-4 w-4 text-[#10B981]" />
-          <h2 className="font-semibold text-sm">{t("weeklyOverview")}</h2>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-border">
-          <div className="p-4 text-center">
-            <p className="text-2xl font-bold text-[#10B981]">{planData.weeklyTotals.calories}</p>
-            <p className="text-xs text-muted-foreground mt-1">{t("calories")}</p>
-          </div>
-          <div className="p-4 text-center">
-            <p className="text-2xl font-bold">{planData.weeklyTotals.protein}g</p>
-            <p className="text-xs text-muted-foreground mt-1">{t("protein")}</p>
-          </div>
-          <div className="p-4 text-center">
-            <p className="text-2xl font-bold">{planData.weeklyTotals.carbs}g</p>
-            <p className="text-xs text-muted-foreground mt-1">{t("carbs")}</p>
-          </div>
-          <div className="p-4 text-center">
-            <p className="text-2xl font-bold">{planData.weeklyTotals.fat}g</p>
-            <p className="text-xs text-muted-foreground mt-1">{t("fat")}</p>
-          </div>
-        </div>
-      </div>
+      {/* Day Selector (1-14) */}
+      <DaySelector
+        totalDays={14}
+        selectedDay={selectedDay}
+        onSelectDay={(day) => { setSelectedDay(day); setExpandedMeal(0); }}
+        planStartDate={mealPlan.startDate}
+        featureColor="nutrition"
+      />
 
-      {/* Day Selector */}
-      <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-4 px-4 scrollbar-hide">
-        {weekDays.map((day) => (
-          <button
-            key={day}
-            onClick={() => { setSelectedDay(day); setExpandedMeal(0); }}
-            className={cn(
-              "flex-shrink-0 min-w-[56px] px-3 py-2 rounded-lg text-xs font-semibold transition-colors",
-              selectedDay === day
-                ? "bg-[#10B981] text-white"
-                : "bg-neutral-100 text-muted-foreground hover:bg-neutral-200"
-            )}
-          >
-            {locale === "ar" ? tDays(day as any) : tDays((day.slice(0, 3)) as any)}
-          </button>
-        ))}
-      </div>
+      {/* Daily Nutrition Summary */}
+      {dailyTotals && (
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+          <span className="rounded-full bg-[#10B981]/10 text-[#10B981] px-3 py-1.5 text-xs font-semibold flex-shrink-0">
+            {dailyTotals.calories} {t("calories")}
+          </span>
+          <span className="rounded-full bg-[#10B981]/10 text-[#10B981] px-3 py-1.5 text-xs font-semibold flex-shrink-0">
+            {dailyTotals.protein}g {t("protein")}
+          </span>
+          <span className="rounded-full bg-[#10B981]/10 text-[#10B981] px-3 py-1.5 text-xs font-semibold flex-shrink-0">
+            {dailyTotals.carbs}g {t("carbs")}
+          </span>
+          <span className="rounded-full bg-[#10B981]/10 text-[#10B981] px-3 py-1.5 text-xs font-semibold flex-shrink-0">
+            {dailyTotals.fat}g {t("fat")}
+          </span>
+        </div>
+      )}
 
-      {/* Daily Meals */}
+      {/* Meals */}
       {dayPlan && (
-        <>
-          {/* Daily Totals */}
-          <div className="rounded-lg bg-[#10B981]/8 border border-[#10B981]/20 p-3.5 flex flex-wrap items-center gap-x-6 gap-y-2">
-            <div className="flex items-center gap-2">
-              <Flame className="h-4 w-4 text-[#10B981]" />
-              <span className="text-sm font-semibold">{t("dailyTotals")}</span>
-            </div>
-            <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-muted-foreground">
-              <span>{dayPlan.dailyTotals.calories} {t("calories")}</span>
-              <span>{dayPlan.dailyTotals.protein}g {t("protein")}</span>
-              <span>{dayPlan.dailyTotals.carbs}g {t("carbs")}</span>
-              <span>{dayPlan.dailyTotals.fat}g {t("fat")}</span>
-            </div>
-          </div>
+        <div className="space-y-3">
+          {dayPlan.meals.map((meal, index) => {
+            const isExpanded = expandedMeal === index;
+            const hasAlternatives = meal.alternatives && meal.alternatives.length > 0;
 
-          {/* Meals */}
-          <div className="space-y-3">
-            {dayPlan.meals.map((meal, index) => (
-              <div key={index} className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
-                {/* Meal Header -- tap to expand */}
+            return (
+              <div
+                key={index}
+                className="rounded-xl border border-border bg-card shadow-card overflow-hidden animate-slide-up"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                {/* Meal Header */}
                 <button
-                  onClick={() => setExpandedMeal(expandedMeal === index ? null : index)}
-                  className="w-full p-4 flex items-center justify-between gap-3 text-start hover:bg-neutral-50 transition-colors"
+                  onClick={() => setExpandedMeal(isExpanded ? null : index)}
+                  className="w-full p-4 flex items-center justify-between gap-3 text-start hover:bg-neutral-50 transition-colors active:scale-[0.97]"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#10B981]/12 text-[#10B981] text-xs font-bold">
@@ -215,24 +209,31 @@ export default function MealPlanPage() {
                     </div>
                     <div className="min-w-0">
                       <h3 className="font-semibold text-sm truncate">{meal.name}</h3>
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
-                        <Clock className="h-3 w-3" />
-                        {meal.time}
-                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                        {meal.ingredients?.slice(0, 3).join(", ")}
+                        {(meal.ingredients?.length ?? 0) > 3 && "..."}
+                      </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <span className="text-sm font-semibold text-[#10B981]">{meal.calories} {t("kcal")}</span>
-                    {expandedMeal === index ? (
-                      <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex items-center gap-2 shrink-0">
+                    {hasAlternatives && (
+                      <span className="rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px] font-medium">
+                        &#8596; {meal.alternatives!.length}
+                      </span>
                     )}
+                    <span className="text-sm font-semibold text-[#10B981]">{meal.calories} {t("kcal")}</span>
+                    <ChevronDown className={cn(
+                      "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                      isExpanded && "rotate-180"
+                    )} />
                   </div>
                 </button>
 
                 {/* Expanded Content */}
-                {expandedMeal === index && (
+                <div className={cn(
+                  "overflow-hidden transition-all duration-200 ease-in-out",
+                  isExpanded ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+                )}>
                   <div className="px-4 pb-4 space-y-4 border-t border-border pt-4">
                     {/* Macros */}
                     <div className="flex flex-wrap gap-2">
@@ -254,7 +255,7 @@ export default function MealPlanPage() {
                         <ul className="space-y-1.5 text-sm">
                           {meal.ingredients.map((ingredient, i) => (
                             <li key={i} className="flex items-start gap-2">
-                              <span className="text-[#10B981] mt-0.5">•</span>
+                              <span className="text-[#10B981] mt-0.5">&#8226;</span>
                               {ingredient}
                             </li>
                           ))}
@@ -280,14 +281,14 @@ export default function MealPlanPage() {
                     </div>
 
                     {/* Alternatives */}
-                    {meal.alternatives && meal.alternatives.length > 0 && (
+                    {hasAlternatives && (
                       <div>
                         <h4 className="text-sm font-semibold mb-2">{t("alternatives")}</h4>
                         <div className="rounded-lg border border-dashed border-[#10B981]/30 bg-[#10B981]/5 p-3">
                           <ul className="space-y-1.5 text-sm">
-                            {meal.alternatives.map((alt, i) => (
+                            {meal.alternatives!.map((alt, i) => (
                               <li key={i} className="flex items-start gap-2">
-                                <span className="text-[#10B981]">↔</span>
+                                <span className="text-[#10B981]">&#8596;</span>
                                 {alt}
                               </li>
                             ))}
@@ -296,11 +297,11 @@ export default function MealPlanPage() {
                       </div>
                     )}
                   </div>
-                )}
+                </div>
               </div>
-            ))}
-          </div>
-        </>
+            );
+          })}
+        </div>
       )}
 
       {/* Notes */}
