@@ -4,18 +4,18 @@
 
 /* FitFast Modern Clean Theme Configuration */
 @theme inline {
-  /* Color Palette — softened from brutalist */
+  /* Color Palette */
   --color-cream: #FFFEF5;
   --color-black: #000000;
-  --color-brand-orange: #FF3B00;
+  --color-brand-orange: #FF4500;
   --color-brand-green: #00FF94;
 
-  /* Primary Theme - Royal Blue */
-  --color-primary: #4169E1;
+  /* Primary Theme - Orange (matching marketing) */
+  --color-primary: #FF4500;
   --color-primary-foreground: #FFFFFF;
-  --color-primary-light: #5A82F0;
-  --color-primary-dark: #2952B3;
-  --color-accent: #4169E1;
+  --color-primary-light: #FF6833;
+  --color-primary-dark: #CC3700;
+  --color-accent: #FF4500;
   --color-accent-foreground: #FFFFFF;
 
   /* Neutral Colors */
@@ -45,18 +45,18 @@
   --color-streak: #F59E0B;       /* Amber — streaks, achievement */
   --color-routine: #8B5CF6;      /* Violet — tracking, calendar */
 
-  /* Background/Foreground — Modern Clean */
-  --color-background: #FFFEF5;
-  --color-foreground: #171717;
+  /* Background/Foreground — Clean White */
+  --color-background: #FFFFFF;
+  --color-foreground: #111111;
   --color-card: #FFFFFF;
-  --color-card-foreground: #171717;
+  --color-card-foreground: #111111;
   --color-popover: #FFFFFF;
-  --color-popover-foreground: #171717;
+  --color-popover-foreground: #111111;
   --color-muted: var(--color-neutral-100);
   --color-muted-foreground: var(--color-neutral-500);
-  --color-border: #e5e5e5;
+  --color-border: #E4E4E7;
   --color-input: #d4d4d4;
-  --color-ring: #4169E1;
+  --color-ring: #FF4500;
 
   /* Fonts */
   --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
@@ -127,16 +127,17 @@
 /* IMPORTANT: Override dark mode - design is always the same */
 @media (prefers-color-scheme: dark) {
   @theme inline {
-    --color-background: #FFFEF5;
-    --color-foreground: #171717;
+    --color-background: #FFFFFF;
+    --color-foreground: #111111;
     --color-card: #FFFFFF;
-    --color-card-foreground: #171717;
+    --color-card-foreground: #111111;
     --color-popover: #FFFFFF;
-    --color-popover-foreground: #171717;
+    --color-popover-foreground: #111111;
     --color-muted: var(--color-neutral-100);
     --color-muted-foreground: var(--color-neutral-500);
-    --color-border: #e5e5e5;
+    --color-border: #E4E4E7;
     --color-input: #d4d4d4;
+    --color-ring: #FF4500;
   }
 }
 

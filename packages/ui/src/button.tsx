@@ -23,7 +23,7 @@ const buttonVariants = cva(
         success:
           "bg-success-500 text-white rounded-lg hover:bg-success-600 shadow-sm",
         gradient:
-          "bg-gradient-to-r from-primary to-[#5A82F0] text-white rounded-xl shadow-[0_4px_16px_rgba(65,105,225,0.3)] hover:shadow-[0_6px_24px_rgba(65,105,225,0.4)]",
+          "bg-gradient-to-r from-primary to-[#FF6833] text-white rounded-xl shadow-[0_4px_16px_rgba(255,69,0,0.3)] hover:shadow-[0_6px_24px_rgba(255,69,0,0.4)]",
       },
       size: {
         default: "h-11 px-5",

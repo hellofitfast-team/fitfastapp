@@ -15,11 +15,11 @@ export default async function OnboardingLayout({
         <div className="max-w-4xl mx-auto flex h-14 items-center justify-center px-6">
           <div className="flex items-center gap-3">
             <Image
-              src="/icons/icon-512x512.png"
+              src="/logo.svg"
               alt="FitFast"
               width={32}
               height={32}
-              className="h-8 w-8 rounded"
+              className="h-8 w-8"
             />
             <h1 className="text-lg font-bold tracking-tight">
               {tBrand("name")}

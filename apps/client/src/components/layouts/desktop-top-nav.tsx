@@ -125,7 +125,7 @@ export function DesktopTopNav({ userName }: DesktopTopNavProps) {
       <div className="flex items-center gap-1">
         <Link href="/" className="flex items-center gap-2 me-4">
           <Image
-            src="/icons/icon-512x512.png"
+            src="/logo.svg"
             alt="FitFast"
             width={32}
             height={32}

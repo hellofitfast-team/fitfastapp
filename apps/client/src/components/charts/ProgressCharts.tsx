@@ -14,7 +14,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { SectionCard } from "@fitfast/ui/section-card";
 
 const CHART_COLORS = {
-  primary: "#4169E1",
+  primary: "#FF4500",
   background: "#ffffff",
   foreground: "#0a0a0a",
   success: "#22c55e",

@@ -5,8 +5,8 @@ import { cn } from "./cn";
 
 const FEATURE_SELECT_STYLES = {
   primary: {
-    selected: "border-[#4169E1]/30 bg-[#4169E1]/8 text-[#4169E1]",
-    check: "text-[#4169E1]",
+    selected: "border-[#FF4500]/30 bg-[#FF4500]/8 text-[#FF4500]",
+    check: "text-[#FF4500]",
   },
   nutrition: {
     selected: "border-[#10B981]/30 bg-[#10B981]/8 text-[#10B981]",

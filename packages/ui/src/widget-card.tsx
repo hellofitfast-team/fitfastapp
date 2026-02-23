@@ -7,7 +7,7 @@ import { cn } from "./cn";
 const FEATURE_ICON_STYLES = {
   primary: {
     bg: "bg-primary",
-    shadow: "shadow-[0_4px_16px_rgba(65,105,225,0.15)]",
+    shadow: "shadow-[0_4px_16px_rgba(255,69,0,0.15)]",
   },
   nutrition: {
     bg: "bg-nutrition",

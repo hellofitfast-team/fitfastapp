@@ -356,8 +356,8 @@ export default function DashboardPage() {
           href="/check-in"
           className="group rounded-xl border border-border bg-card p-5 shadow-card transition-all hover:shadow-md active:scale-[0.97]"
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#4169E1]/12 mb-3">
-            <ClipboardCheck className="h-5 w-5 text-[#4169E1]" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#FF4500]/12 mb-3">
+            <ClipboardCheck className="h-5 w-5 text-[#FF4500]" />
           </div>
           <p className="font-semibold text-sm">{t("checkIn.submitCheckIn")}</p>
           <p className="text-xs text-muted-foreground mt-0.5">{t("checkIn.title")}</p>
@@ -366,8 +366,8 @@ export default function DashboardPage() {
           href="/progress"
           className="group rounded-xl border border-border bg-card p-5 shadow-card transition-all hover:shadow-md active:scale-[0.97]"
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#4169E1]/12 mb-3">
-            <TrendingUp className="h-5 w-5 text-[#4169E1]" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#FF4500]/12 mb-3">
+            <TrendingUp className="h-5 w-5 text-[#FF4500]" />
           </div>
           <p className="font-semibold text-sm">{t("progress.title")}</p>
           <p className="text-xs text-muted-foreground mt-0.5">{t("progress.weightHistory")}</p>

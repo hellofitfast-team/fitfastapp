@@ -39,8 +39,8 @@ function WelcomeContent() {
       icon: TrendingUp,
       title: "Progress Tracking",
       description: "Monitor your weight, measurements, and achievements over time",
-      color: "text-[#4169E1]",
-      bg: "bg-[#4169E1]/12",
+      color: "text-[#FF4500]",
+      bg: "bg-[#FF4500]/12",
     },
     {
       icon: MessageSquare,

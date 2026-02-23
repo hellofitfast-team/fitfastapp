@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { LocaleSwitcher } from "@/components/auth/LocaleSwitcher";
-import { Dumbbell } from "lucide-react";
+import Image from "next/image";
 
 export default async function AuthLayout({
   children,
@@ -16,8 +16,8 @@ export default async function AuthLayout({
       <div className="bg-gradient-to-b from-primary/5 to-background">
         <header className="max-w-7xl mx-auto flex h-14 items-center justify-between px-4">
           <div className="flex items-center gap-2">
-            <Dumbbell className="h-5 w-5 text-primary" />
-            <span className="text-sm font-bold tracking-tight text-primary">
+            <Image src="/logo.svg" alt="FitFast" width={24} height={24} className="h-6 w-6" />
+            <span className="text-sm font-bold tracking-tight">
               {tBrand("name")}
             </span>
           </div>
@@ -26,10 +26,8 @@ export default async function AuthLayout({
 
         {/* Brand Section */}
         <div className="flex flex-col items-center gap-2 pt-8 pb-10">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 mb-2">
-            <Dumbbell className="h-8 w-8 text-primary" />
-          </div>
-          <h1 className="text-2xl font-bold text-primary">FitFast</h1>
+          <Image src="/logo.svg" alt="FitFast" width={64} height={64} className="h-16 w-16 mb-2" />
+          <h1 className="text-2xl font-bold">FitFast</h1>
           <p className="text-sm text-muted-foreground">{tAuth("brandTagline")}</p>
         </div>
       </div>

@@ -4,9 +4,9 @@ import { cn } from "./cn";
 
 const VARIANT_STYLES = {
   primary: {
-    headerBg: "bg-[#4169E1]/8",
-    iconContainer: "bg-[#4169E1]/12 border-[#4169E1]/20",
-    iconColor: "text-[#4169E1]",
+    headerBg: "bg-[#FF4500]/8",
+    iconContainer: "bg-[#FF4500]/12 border-[#FF4500]/20",
+    iconColor: "text-[#FF4500]",
   },
   nutrition: {
     headerBg: "bg-[#10B981]/8",
