@@ -20,7 +20,7 @@ export function AdminShell({
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-stone-50 text-stone-900" style={{ fontFamily: "var(--font-outfit)" }}>
+    <div className="flex min-h-screen bg-stone-50 text-stone-900" style={{ fontFamily: "var(--font-sans)" }}>
       <AdminSidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}

@@ -81,7 +81,11 @@
     "noScreenshot": "لا توجد صورة",
     "extractedPaymentData": "بيانات الدفع المستخرجة",
     "noOcrData": "لم يتم استخراج بيانات — تحقق يدويًا من الصورة",
-    "noPaymentProof": "لم يرفع العميل إثبات الدفع"
+    "noPaymentProof": "لم يرفع العميل إثبات الدفع",
+    "clientGrowth": "نمو العملاء",
+    "lastSixMonths": "آخر 6 أشهر",
+    "weeklyActivity": "النشاط الأسبوعي",
+    "lastFourWeeks": "آخر 4 أسابيع"
   },
   "signupDetail": {
     "backToList": "العودة إلى التسجيلات",

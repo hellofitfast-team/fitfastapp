@@ -81,7 +81,11 @@
     "noScreenshot": "No screenshot",
     "extractedPaymentData": "Extracted Payment Data",
     "noOcrData": "No OCR data extracted — verify manually from screenshot",
-    "noPaymentProof": "No payment proof uploaded by client"
+    "noPaymentProof": "No payment proof uploaded by client",
+    "clientGrowth": "Client Growth",
+    "lastSixMonths": "Last 6 months",
+    "weeklyActivity": "Weekly Activity",
+    "lastFourWeeks": "Last 4 weeks"
   },
   "signupDetail": {
     "backToList": "Back to Signups",

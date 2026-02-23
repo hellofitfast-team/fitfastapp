@@ -12,7 +12,6 @@ import {
   BookOpen,
   Settings,
   X,
-  Dumbbell,
   LucideIcon,
 } from "lucide-react";
 import { cn } from "@fitfast/ui/cn";
@@ -111,13 +110,16 @@ export function AdminSidebar({
       >
         {/* Logo area */}
         <div className="flex h-16 items-center justify-between px-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <Dumbbell className="h-4 w-4 text-white" />
-            </div>
+          <div className="flex items-center gap-3 group">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.svg"
+              alt="FitFast"
+              className="h-7 w-7 transition-transform duration-300 group-hover:scale-105"
+            />
             <div>
-              <span className="text-[15px] font-bold tracking-tight text-white">
-                FitFast
+              <span className="text-[15px] font-black italic tracking-tighter uppercase text-white" style={{ fontFamily: "var(--font-display)" }}>
+                Fit<span className="text-[#FF4500]">Fast</span>
               </span>
               <p className="text-[10px] font-medium text-stone-500 -mt-0.5">
                 Coach Panel

@@ -48,12 +48,17 @@ export default clerkMiddleware(
 
     if (!role) {
       // Session token not customized — fetch from Clerk Backend API
-      const client = await clerkClient();
-      const user = await client.users.getUser(userId);
-      role = (user.publicMetadata as { role?: string })?.role as
-        | "coach"
-        | "client"
-        | undefined;
+      try {
+        const client = await clerkClient();
+        const user = await client.users.getUser(userId);
+        role = (user.publicMetadata as { role?: string })?.role as
+          | "coach"
+          | "client"
+          | undefined;
+      } catch {
+        // Session may be stale (e.g. during sign-out/sign-in flow)
+        return NextResponse.redirect(new URL(`/${locale}/login`, origin));
+      }
     }
 
     if (role !== "coach") {

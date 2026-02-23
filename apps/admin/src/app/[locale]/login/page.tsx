@@ -1,15 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
+import gsap from "gsap";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useSignIn, useClerk } from "@clerk/nextjs";
 import { useConvexAuth, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Mail, Lock, ArrowRight, Dumbbell } from "lucide-react";
+import { Mail, Lock, ArrowRight } from "lucide-react";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -22,6 +23,7 @@ export default function AdminLoginPage() {
   const t = useTranslations("admin");
   const router = useRouter();
   const searchParams = useSearchParams();
+  const cardRef = useRef<HTMLDivElement>(null);
   const { signIn, setActive, isLoaded } = useSignIn();
   const { signOut } = useClerk();
   const [isLoading, setIsLoading] = useState(false);
@@ -38,6 +40,16 @@ export default function AdminLoginPage() {
     }
   }, [searchParams, t]);
 
+  // Redirect if already authenticated as coach
+  useEffect(() => {
+    if (!isConvexAuth || profile === undefined) return;
+    if (checkingCoach) return; // handled below
+
+    if (profile?.isCoach) {
+      router.replace("/");
+    }
+  }, [isConvexAuth, profile, checkingCoach, router]);
+
   // After sign-in, check if user is coach (wait for Convex to pick up Clerk JWT)
   useEffect(() => {
     if (!checkingCoach || !isConvexAuth || profile === undefined) return;
@@ -53,6 +65,19 @@ export default function AdminLoginPage() {
     }
   }, [checkingCoach, isConvexAuth, profile, router, signOut, t]);
 
+  // GSAP entrance animation
+  useEffect(() => {
+    if (!cardRef.current) return;
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        cardRef.current,
+        { y: 40, opacity: 0, scale: 0.96 },
+        { y: 0, opacity: 1, scale: 1, duration: 0.7, ease: "power3.out" }
+      );
+    }, cardRef);
+    return () => ctx.revert();
+  }, []);
+
   const {
     register,
     handleSubmit,
@@ -61,48 +86,68 @@ export default function AdminLoginPage() {
     resolver: zodResolver(loginSchema),
   });
 
+  const doSignIn = async (data: LoginFormData) => {
+    const result = await signIn!.create({
+      identifier: data.email,
+    });
+
+    if (result.status === "complete" && result.createdSessionId) {
+      await setActive!({ session: result.createdSessionId });
+      setCheckingCoach(true);
+      return;
+    }
+
+    const firstFactor = result.supportedFirstFactors?.find(
+      (f) => f.strategy === "password",
+    );
+
+    if (firstFactor) {
+      const attemptResult = await signIn!.attemptFirstFactor({
+        strategy: "password",
+        password: data.password,
+      });
+
+      if (attemptResult.status === "complete" && attemptResult.createdSessionId) {
+        await setActive!({ session: attemptResult.createdSessionId });
+        setCheckingCoach(true);
+      } else {
+        setError(t("invalidCredentials"));
+        setIsLoading(false);
+      }
+    } else {
+      setError(t("invalidCredentials"));
+      setIsLoading(false);
+    }
+  };
+
   const onSubmit = async (data: LoginFormData) => {
     if (!isLoaded || !signIn) return;
     setIsLoading(true);
     setError(null);
 
     try {
-      const result = await signIn.create({
-        identifier: data.email,
-      });
-
-      if (result.status === "complete" && result.createdSessionId) {
-        await setActive({ session: result.createdSessionId });
-        setCheckingCoach(true);
-        return;
-      }
-
-      const firstFactor = result.supportedFirstFactors?.find(
-        (f) => f.strategy === "password",
-      );
-
-      if (firstFactor) {
-        const attemptResult = await signIn.attemptFirstFactor({
-          strategy: "password",
-          password: data.password,
-        });
-
-        if (attemptResult.status === "complete" && attemptResult.createdSessionId) {
-          await setActive({ session: attemptResult.createdSessionId });
-          setCheckingCoach(true);
-        } else {
-          setError(t("invalidCredentials"));
-          setIsLoading(false);
-        }
-      } else {
-        setError(t("invalidCredentials"));
-        setIsLoading(false);
-      }
+      await doSignIn(data);
     } catch (err: unknown) {
-      console.error("Clerk signIn error:", err);
       const clerkErr = err as { errors?: Array<{ message?: string; code?: string }> };
-      const msg = clerkErr?.errors?.[0]?.message || t("invalidCredentials");
-      setError(msg);
+      const code = clerkErr?.errors?.[0]?.code;
+
+      // If a stale session exists, clear it and retry once
+      if (code === "session_exists") {
+        try {
+          await signOut();
+          await doSignIn(data);
+          return;
+        } catch (retryErr: unknown) {
+          console.error("Clerk signIn retry error:", retryErr);
+          const retryClerkErr = retryErr as { errors?: Array<{ message?: string; code?: string }> };
+          setError(retryClerkErr?.errors?.[0]?.message || t("invalidCredentials"));
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      console.error("Clerk signIn error:", err);
+      setError(clerkErr?.errors?.[0]?.message || t("invalidCredentials"));
       setIsLoading(false);
     }
   };
@@ -110,18 +155,21 @@ export default function AdminLoginPage() {
   return (
     <div
       className="flex min-h-screen items-center justify-center bg-stone-50 p-4"
-      style={{ fontFamily: "var(--font-outfit)" }}
+      style={{ fontFamily: "var(--font-sans)" }}
     >
-      <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, #4169E1 1px, transparent 0)", backgroundSize: "32px 32px" }} />
+      <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, #FF4500 1px, transparent 0)", backgroundSize: "32px 32px" }} />
 
-      <div className="relative w-full max-w-md">
+      <div ref={cardRef} className="relative w-full max-w-md">
         <div className="rounded-2xl border border-stone-200 bg-white shadow-xl shadow-stone-200/50">
           <div className="px-8 pt-10 pb-2 text-center">
-            <div className="inline-flex h-14 w-14 items-center justify-center rounded-xl bg-primary mb-5 shadow-lg shadow-primary/20">
-              <Dumbbell className="h-7 w-7 text-white" />
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight text-stone-900">
-              {t("signIn")}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.svg"
+              alt="FitFast"
+              className="mx-auto h-14 w-14 mb-5"
+            />
+            <h1 className="text-2xl font-black italic tracking-tighter uppercase text-stone-900" style={{ fontFamily: "var(--font-display)" }}>
+              Fit<span className="text-[#FF4500]">Fast</span>
             </h1>
             <p className="text-sm text-stone-500 mt-1.5">
               {t("signInDescription")}
@@ -183,7 +231,7 @@ export default function AdminLoginPage() {
               <button
                 type="submit"
                 disabled={isLoading || !isLoaded}
-                className="w-full h-11 rounded-xl bg-primary text-white font-semibold text-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
+                className="btn-magnetic w-full h-11 rounded-xl bg-[#FF4500] text-white font-semibold text-sm hover:bg-[#CC3700] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 shadow-lg shadow-[#FF4500]/20"
               >
                 {isLoading ? (
                   <span className="animate-pulse">{t("signingIn")}...</span>

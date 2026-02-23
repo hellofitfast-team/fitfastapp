@@ -10,12 +10,12 @@
   --color-brand-orange: #FF3B00;
   --color-brand-green: #00FF94;
 
-  /* Primary Theme - Royal Blue */
-  --color-primary: #4169E1;
+  /* Primary Theme - Brand Orange */
+  --color-primary: #FF4500;
   --color-primary-foreground: #FFFFFF;
-  --color-primary-light: #5A82F0;
-  --color-primary-dark: #2952B3;
-  --color-accent: #4169E1;
+  --color-primary-light: #FF6633;
+  --color-primary-dark: #CC3700;
+  --color-accent: #FF4500;
   --color-accent-foreground: #FFFFFF;
 
   /* Neutral Colors */
@@ -57,12 +57,12 @@
   --color-muted-foreground: var(--color-neutral-500);
   --color-border: #E8EAED;
   --color-input: #d4d4d4;
-  --color-ring: #4169E1;
+  --color-ring: #FF4500;
 
-  /* Fonts */
-  --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  --font-arabic: "Cairo", ui-sans-serif, system-ui, sans-serif;
-  --font-outfit: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  /* Fonts — aligned with marketing app */
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-arabic: "Alexandria", ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
 
   /* Border Radius — Modern rounded corners */
@@ -193,6 +193,8 @@
   [dir="rtl"] {
     text-align: right;
     font-family: var(--font-arabic);
+    --font-sans: var(--font-arabic);
+    --font-display: var(--font-arabic);
   }
 
   [dir="rtl"] * {
@@ -275,6 +277,43 @@
 
 .animate-marquee {
   animation: marquee 30s linear infinite;
+}
+
+/* Magnetic Button (from marketing app) */
+.btn-magnetic {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  z-index: 1;
+}
+
+.btn-magnetic:hover {
+  transform: scale(1.03);
+}
+
+.btn-magnetic-bg {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transition: top 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  z-index: -1;
+  border-radius: inherit;
+}
+
+.btn-magnetic:hover .btn-magnetic-bg {
+  top: 0;
+}
+
+/* Link Hover Lift (from marketing app) */
+.link-lift {
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  display: inline-block;
+}
+
+.link-lift:hover {
+  transform: translateY(-1px);
 }
 
 /* Reduced Motion — covers all animations globally */
