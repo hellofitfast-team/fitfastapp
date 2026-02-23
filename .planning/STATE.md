@@ -28,7 +28,7 @@ v1.0 Polish & Rebrand — SHIPPED 2026-02-16
 | 11 | Foundation — Shell and Navigation | 4 | Not started |
 | 12 | Design Tokens and Core Primitives | 3 | Not started |
 | 13 | Page-Level Renovation | 7 | Not started |
-| 14 | Check-in Wizard and Onboarding | 3 | Not started |
+| 14 | Check-in Wizard and Onboarding | 3 | Plan 03 complete |
 | 15 | RTL Audit and Polish | 3 | Not started |
 
 Total: 5 phases, 20 plans, 65 requirements
@@ -79,6 +79,9 @@ Total: 5 phases, 20 plans, 65 requirements
 - [11.1-06] Reject action uses inline textarea expansion in signups-table (no modal) — faster UX
 - [11.1-06] PlansManager uses local state + single Save button — avoids partial saves on every keystroke
 - [11.1-06] Max 4 plans enforced in UI only (business rule, not backend constraint)
+- [14-03] Inline fadeIn animation style fallback (Phase 12 animate-fade-in not available yet)
+- [14-03] Full re-validation of all steps on final submit as safety net
+- [14-03] Swipe RTL detection reads document.dir at swipe time (matches check-in wizard pattern)
 
 ### Roadmap Evolution
 
@@ -93,10 +96,10 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-21
-Stopped at: Phase 11.1 complete — all 7 plans executed + E2E verification passed
+Last session: 2026-02-23
+Stopped at: Completed 14-03-PLAN.md (Onboarding Assessment Step-by-Step Wizard)
 Resume file: None
 
 ---
 *State initialized: 2026-02-12*
-*Last updated: 2026-02-21 — Phase 11.1 complete: E2E verification found 8 bugs (auth race, i18n, routing), all fixed and committed*
+*Last updated: 2026-02-23 — Phase 14 plan 03 complete: onboarding assessment wizard with swipe navigation*
