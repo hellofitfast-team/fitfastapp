@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-17)
 ## Current Position
 
 Milestone: v1.1 Mobile UI Renovation
-Status: In progress — Phase 14 executing
-Phase: Phase 14 — Check-in Wizard and Onboarding
-Plan: 01 complete (swipe wizard + progress bar)
+Status: In progress — Phase 14 and Phase 15 executing
+Phase: Phase 14 — Check-in Wizard and Onboarding + Phase 15 — RTL Audit and Polish
+Plan: 14-01 complete (swipe wizard + progress bar), 15-01 complete (logical property audit + RTL swipe/scroll fixes)
 Progress: [#############.......] 13/20 plans (65%)
 Started: 2026-02-17
 
@@ -29,7 +29,7 @@ v1.0 Polish & Rebrand — SHIPPED 2026-02-16
 | 12 | Design Tokens and Core Primitives | 3 | Not started |
 | 13 | Page-Level Renovation | 7 | Not started |
 | 14 | Check-in Wizard and Onboarding | 1/3 | In progress |
-| 15 | RTL Audit and Polish | 3 | Not started |
+| 15 | RTL Audit and Polish | 1/3 | In progress |
 
 Total: 5 phases, 20 plans, 65 requirements
 
@@ -80,8 +80,11 @@ Total: 5 phases, 20 plans, 65 requirements
 - [11.1-06] PlansManager uses local state + single Save button — avoids partial saves on every keystroke
 - [11.1-06] Max 4 plans enforced in UI only (business rule, not backend constraint)
 - [14-01] Segmented bar uses single bg-primary for completed+current steps (no bg-success-500 distinction)
-- [14-01] RTL swipe detection via document.dir at swipe time (runtime check)
+- [14-01] RTL swipe detection via useLocale() from next-intl (more reliable than document.dir runtime check)
 - [14-01] Photos step disables swipe entirely to avoid drag/drop conflicts
+- [15-01] react-swipeable added to client app for check-in wizard swipe navigation
+- [15-01] useLocale() from next-intl used for RTL detection rather than DOM dir attribute
+- [15-01] Day selector uses scrollIntoView({ inline: 'nearest' }) which respects RTL automatically
 
 ### Roadmap Evolution
 
@@ -97,9 +100,9 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 14-01-PLAN.md (swipe wizard + progress bar)
+Stopped at: Merged 14-01 (swipe wizard) and 15-01 (RTL audit) branches
 Resume file: .planning/phases/14-checkin-wizard-onboarding/14-01-SUMMARY.md
 
 ---
 *State initialized: 2026-02-12*
-*Last updated: 2026-02-23 — Phase 14 plan 01 complete: swipe wizard + segmented progress bar*
+*Last updated: 2026-02-23 — Merged Phase 14 plan 01 (swipe wizard) + Phase 15 plan 01 (RTL audit)*

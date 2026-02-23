@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useSwipeable } from "react-swipeable";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -48,6 +48,8 @@ const STEP_ICONS = [Weight, Dumbbell, UtensilsCrossed, Camera, ClipboardCheck];
 
 export default function CheckInPage() {
   const t = useTranslations("checkIn");
+  const locale = useLocale();
+  const isRTL = locale === "ar";
   const router = useRouter();
   const { profile } = useAuth();
   const { toast } = useToast();
@@ -135,39 +137,47 @@ export default function CheckInPage() {
     if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
 
+  // Swipe support: In LTR, swipe left = next, swipe right = back
+  // In RTL (Arabic), directions are inverted: swipe right = next, swipe left = back
+  // Uses useLocale() for RTL detection (more reliable than document.dir)
+  const handleSwipeNext = useCallback(async () => {
+    if (currentStep === 4) return; // Disable swipe on photos step to avoid drag/drop conflicts
+    const isValid = await validateStep(currentStep);
+    if (isValid && currentStep < STEPS.length) setCurrentStep((s) => s + 1);
+  }, [currentStep, STEPS.length]);
+
+  const handleSwipeBack = useCallback(() => {
+    if (currentStep === 4) return; // Disable swipe on photos step to avoid drag/drop conflicts
+    if (currentStep > 1) setCurrentStep((s) => s - 1);
+  }, [currentStep]);
+
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () => {
+      if (isRTL) {
+        handleSwipeBack();
+      } else {
+        handleSwipeNext();
+      }
+    },
+    onSwipedRight: () => {
+      if (isRTL) {
+        handleSwipeNext();
+      } else {
+        handleSwipeBack();
+      }
+    },
+    trackMouse: false,
+    trackTouch: true,
+    preventScrollOnSwipe: false,
+    delta: 50,
+  });
+
   // Prevent form submission on Enter key (only submit on explicit button click)
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && currentStep < STEPS.length) {
       e.preventDefault();
     }
   };
-
-  const swipeHandlers = useSwipeable({
-    onSwipedLeft: async () => {
-      if (currentStep === 4) return;
-      const isRtl = document.dir === "rtl";
-      if (isRtl) {
-        handleBack();
-      } else {
-        const isValid = await validateStep(currentStep);
-        if (isValid && currentStep < STEPS.length) setCurrentStep(currentStep + 1);
-      }
-    },
-    onSwipedRight: async () => {
-      if (currentStep === 4) return;
-      const isRtl = document.dir === "rtl";
-      if (isRtl) {
-        const isValid = await validateStep(currentStep);
-        if (isValid && currentStep < STEPS.length) setCurrentStep(currentStep + 1);
-      } else {
-        handleBack();
-      }
-    },
-    delta: 50,
-    preventScrollOnSwipe: false,
-    trackTouch: true,
-    trackMouse: false,
-  });
 
   const onSubmit = async (data: CheckInFormData) => {
     if (!profile) {
@@ -263,7 +273,7 @@ export default function CheckInPage() {
           {/* Progress Steps */}
           <StepProgress currentStep={currentStep} steps={STEPS} />
 
-          {/* Form with FormProvider */}
+          {/* Form with FormProvider — swipe to navigate steps */}
           <FormProvider {...methods}>
             <form onSubmit={methods.handleSubmit(onSubmit)} onKeyDown={handleKeyDown} className="space-y-5">
               {/* Swipeable step content */}
