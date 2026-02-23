@@ -65,3 +65,6 @@ vitest.config.ts
 # temporary screenshots/test artifacts
 screenshots-for-fix/
 testing-instapay-screenshot.png
+
+# Turbo cache
+.turbo/
