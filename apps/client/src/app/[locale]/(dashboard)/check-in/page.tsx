@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+import { useSwipeable } from "react-swipeable";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -47,6 +48,8 @@ const STEP_ICONS = [Weight, Dumbbell, UtensilsCrossed, Camera, ClipboardCheck];
 
 export default function CheckInPage() {
   const t = useTranslations("checkIn");
+  const locale = useLocale();
+  const isRTL = locale === "ar";
   const router = useRouter();
   const { profile } = useAuth();
   const { toast } = useToast();
@@ -133,6 +136,36 @@ export default function CheckInPage() {
   const handleBack = () => {
     if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
+
+  // Swipe support: In LTR, swipe left = next, swipe right = back
+  // In RTL (Arabic), directions are inverted: swipe right = next, swipe left = back
+  const handleSwipeNext = useCallback(async () => {
+    const isValid = await validateStep(currentStep);
+    if (isValid && currentStep < STEPS.length) setCurrentStep((s) => s + 1);
+  }, [currentStep, STEPS.length]);
+
+  const handleSwipeBack = useCallback(() => {
+    if (currentStep > 1) setCurrentStep((s) => s - 1);
+  }, [currentStep]);
+
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () => {
+      if (isRTL) {
+        handleSwipeBack();
+      } else {
+        handleSwipeNext();
+      }
+    },
+    onSwipedRight: () => {
+      if (isRTL) {
+        handleSwipeNext();
+      } else {
+        handleSwipeBack();
+      }
+    },
+    trackMouse: false,
+    delta: 50,
+  });
 
   // Prevent form submission on Enter key (only submit on explicit button click)
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -235,39 +268,41 @@ export default function CheckInPage() {
           {/* Progress Steps */}
           <StepProgress currentStep={currentStep} steps={STEPS} />
 
-          {/* Form with FormProvider */}
+          {/* Form with FormProvider — swipe to navigate steps */}
           <FormProvider {...methods}>
-            <form onSubmit={methods.handleSubmit(onSubmit)} onKeyDown={handleKeyDown} className="space-y-5">
-              {/* Step 1: Weight & Measurements */}
-              {currentStep === 1 && <WeightStep />}
+            <div {...swipeHandlers}>
+              <form onSubmit={methods.handleSubmit(onSubmit)} onKeyDown={handleKeyDown} className="space-y-5">
+                {/* Step 1: Weight & Measurements */}
+                {currentStep === 1 && <WeightStep />}
 
-              {/* Step 2: Fitness Metrics */}
-              {currentStep === 2 && <FitnessStep />}
+                {/* Step 2: Fitness Metrics */}
+                {currentStep === 2 && <FitnessStep />}
 
-              {/* Step 3: Dietary Adherence */}
-              {currentStep === 3 && <DietaryStep />}
+                {/* Step 3: Dietary Adherence */}
+                {currentStep === 3 && <DietaryStep />}
 
-              {/* Step 4: Progress Photos */}
-              {currentStep === 4 && (
-                <PhotosStep
-                  uploadedPhotos={uploadedPhotos}
-                  onPhotoChange={handlePhotoChange}
-                  onRemovePhoto={removePhoto}
+                {/* Step 4: Progress Photos */}
+                {currentStep === 4 && (
+                  <PhotosStep
+                    uploadedPhotos={uploadedPhotos}
+                    onPhotoChange={handlePhotoChange}
+                    onRemovePhoto={removePhoto}
+                  />
+                )}
+
+                {/* Step 5: Review & Submit */}
+                {currentStep === 5 && <ReviewStep uploadedPhotosCount={uploadedPhotos.length} />}
+
+                {/* Navigation Buttons */}
+                <StepNavigation
+                  currentStep={currentStep}
+                  totalSteps={STEPS.length}
+                  isSubmitting={isSubmitting}
+                  onBack={handleBack}
+                  onNext={handleNext}
                 />
-              )}
-
-              {/* Step 5: Review & Submit */}
-              {currentStep === 5 && <ReviewStep uploadedPhotosCount={uploadedPhotos.length} />}
-
-              {/* Navigation Buttons */}
-              <StepNavigation
-                currentStep={currentStep}
-                totalSteps={STEPS.length}
-                isSubmitting={isSubmitting}
-                onBack={handleBack}
-                onNext={handleNext}
-              />
-            </form>
+              </form>
+            </div>
           </FormProvider>
         </>
       )}
