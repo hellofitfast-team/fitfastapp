@@ -38,7 +38,7 @@ export function PhotosTab({ photos }: PhotosTabProps) {
                     className="object-cover"
                   />
                 </div>
-                <div className="absolute bottom-0 left-0 right-0 bg-black/60 backdrop-blur-sm p-2">
+                <div className="absolute bottom-0 inset-x-0 bg-black/60 backdrop-blur-sm p-2">
                   <p className="text-xs font-medium text-white">{photo.date}</p>
                 </div>
               </div>
