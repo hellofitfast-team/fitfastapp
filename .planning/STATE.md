@@ -10,10 +10,10 @@ See: .planning/PROJECT.md (updated 2026-02-17)
 ## Current Position
 
 Milestone: v1.1 Mobile UI Renovation
-Status: In progress — Phase 11.1 executing
-Phase: Phase 11.1 — Auth, Authorization, and Marketing Landing Page
-Plan: 01–07 complete (backend infra + marketing scaffold + landing page + admin RBAC + checkout flow + signup detail + plans/payment-methods manager + E2E verification checkpoint)
-Progress: [#######.............] 7/20 plans (35%)
+Status: In progress — Phase 15 executing
+Phase: Phase 15 — RTL Audit and Polish
+Plan: 01 complete (logical property audit + RTL swipe/scroll fixes)
+Progress: [########............] 8/20 plans (40%)
 Started: 2026-02-17
 
 ## Previous Milestone
@@ -29,7 +29,7 @@ v1.0 Polish & Rebrand — SHIPPED 2026-02-16
 | 12 | Design Tokens and Core Primitives | 3 | Not started |
 | 13 | Page-Level Renovation | 7 | Not started |
 | 14 | Check-in Wizard and Onboarding | 3 | Not started |
-| 15 | RTL Audit and Polish | 3 | Not started |
+| 15 | RTL Audit and Polish | 3 | In progress (1/3) |
 
 Total: 5 phases, 20 plans, 65 requirements
 
@@ -79,6 +79,9 @@ Total: 5 phases, 20 plans, 65 requirements
 - [11.1-06] Reject action uses inline textarea expansion in signups-table (no modal) — faster UX
 - [11.1-06] PlansManager uses local state + single Save button — avoids partial saves on every keystroke
 - [11.1-06] Max 4 plans enforced in UI only (business rule, not backend constraint)
+- [15-01] react-swipeable added to client app for check-in wizard swipe navigation
+- [15-01] useLocale() from next-intl used for RTL detection rather than DOM dir attribute
+- [15-01] Day selector uses scrollIntoView({ inline: 'nearest' }) which respects RTL automatically
 
 ### Roadmap Evolution
 
@@ -93,10 +96,10 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-21
-Stopped at: Phase 11.1 complete — all 7 plans executed + E2E verification passed
+Last session: 2026-02-23
+Stopped at: Completed 15-01-PLAN.md
 Resume file: None
 
 ---
 *State initialized: 2026-02-12*
-*Last updated: 2026-02-21 — Phase 11.1 complete: E2E verification found 8 bugs (auth race, i18n, routing), all fixed and committed*
+*Last updated: 2026-02-23 — Phase 15 Plan 01 complete: RTL logical property audit (1 fix) + swipe/scroll RTL support added*
