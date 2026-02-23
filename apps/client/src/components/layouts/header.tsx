@@ -42,7 +42,7 @@ export function Header({ onMenuClick, userName }: HeaderProps) {
         {/* Left side - Menu button (mobile only) */}
         <div className="flex items-center">
           <button
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground hover:bg-neutral-100 hover:text-foreground transition-colors lg:hidden"
+            className="flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground hover:bg-neutral-100 hover:text-foreground transition-colors lg:hidden"
             onClick={onMenuClick}
             aria-label="Toggle menu"
           >
@@ -54,7 +54,7 @@ export function Header({ onMenuClick, userName }: HeaderProps) {
         <div className="flex items-center gap-1">
           {/* Language Switcher */}
           <button
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-xs font-bold text-muted-foreground hover:bg-neutral-100 hover:text-foreground transition-colors"
+            className="flex h-11 w-11 items-center justify-center rounded-lg text-xs font-bold text-muted-foreground hover:bg-neutral-100 hover:text-foreground transition-colors"
             onClick={switchLocale}
             aria-label="Switch language"
           >
@@ -63,7 +63,7 @@ export function Header({ onMenuClick, userName }: HeaderProps) {
 
           {/* Notifications */}
           <button
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground hover:bg-neutral-100 hover:text-foreground transition-colors"
+            className="flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground hover:bg-neutral-100 hover:text-foreground transition-colors"
             aria-label="Notifications"
           >
             <Bell className="h-5 w-5" />
@@ -73,7 +73,7 @@ export function Header({ onMenuClick, userName }: HeaderProps) {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
-                className="flex items-center gap-2 rounded-lg px-2.5 h-10 text-muted-foreground hover:bg-neutral-100 hover:text-foreground transition-colors"
+                className="flex items-center gap-2 rounded-lg px-2.5 h-11 text-muted-foreground hover:bg-neutral-100 hover:text-foreground transition-colors"
                 aria-label="User menu"
               >
                 <User className="h-5 w-5" />
