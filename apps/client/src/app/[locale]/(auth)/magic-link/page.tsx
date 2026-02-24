@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link } from "@fitfast/i18n/navigation";
-import { useSignIn } from "@clerk/nextjs";
+import { useAuthActions } from "@convex-dev/auth/react";
 import { ArrowLeft, Mail, CheckCircle2, Zap, Loader2 } from "lucide-react";
 
 const forgotPasswordSchema = z.object({
@@ -18,7 +18,7 @@ type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 export default function ForgotPasswordPage() {
   const t = useTranslations("auth");
   const tCommon = useTranslations("common");
-  const { signIn, isLoaded } = useSignIn();
+  const { signIn } = useAuthActions();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [emailSent, setEmailSent] = useState(false);
@@ -33,23 +33,22 @@ export default function ForgotPasswordPage() {
   });
 
   const onSubmit = async (data: ForgotPasswordFormData) => {
-    if (!isLoaded || !signIn) return;
     setIsLoading(true);
     setError(null);
 
     try {
-      await signIn.create({
-        strategy: "reset_password_email_code",
-        identifier: data.email,
-      });
+      const formData = new FormData();
+      formData.set("email", data.email);
+      formData.set("flow", "reset");
+
+      await signIn("password", formData);
       setSentEmail(data.email);
       setEmailSent(true);
     } catch (err: unknown) {
-      const clerkError = err as { errors?: Array<{ message?: string }> };
-      setError(
-        clerkError.errors?.[0]?.message ||
-          "An unexpected error occurred. Please try again.",
-      );
+      const message = err instanceof Error
+        ? err.message
+        : "An unexpected error occurred. Please try again.";
+      setError(message);
     } finally {
       setIsLoading(false);
     }
@@ -72,7 +71,7 @@ export default function ForgotPasswordPage() {
             </p>
             <p className="font-medium text-sm">{sentEmail}</p>
           </div>
-          <Link href="/set-password" className="block">
+          <Link href={`/set-password?email=${encodeURIComponent(sentEmail)}`} className="block">
             <button className="w-full py-3 rounded-lg bg-primary text-white font-semibold text-sm hover:bg-primary/90 transition-colors flex items-center justify-center gap-2">
               {t("enterCode")}
             </button>
@@ -131,7 +130,7 @@ export default function ForgotPasswordPage() {
 
           <button
             type="submit"
-            disabled={isLoading || !isLoaded}
+            disabled={isLoading}
             className="w-full py-3 rounded-lg bg-primary text-white font-semibold text-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.97] flex items-center justify-center gap-2"
           >
             {isLoading ? (

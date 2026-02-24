@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
-import { useQuery, useMutation } from "convex/react";
+import { useConvexAuth, useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import {
@@ -37,7 +37,8 @@ const categoryLabels: Record<string, string> = {
 export function TicketsList() {
   const t = useTranslations("admin");
   const locale = useLocale();
-  const tickets = useQuery(api.tickets.getAllTickets);
+  const { isAuthenticated } = useConvexAuth();
+  const tickets = useQuery(api.tickets.getAllTickets, isAuthenticated ? {} : "skip");
   const respondToTicket = useMutation(api.tickets.respondToTicket);
   const closeTicket = useMutation(api.tickets.closeTicket);
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "convex/react";
+import { useConvexAuth, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useTranslations } from "next-intl";
 import { ClientsList } from "./clients-list";
@@ -8,7 +8,8 @@ import { Loader2 } from "lucide-react";
 
 export default function AdminClientsPage() {
   const t = useTranslations("admin");
-  const clients = useQuery(api.profiles.getAllClients);
+  const { isAuthenticated } = useConvexAuth();
+  const clients = useQuery(api.profiles.getAllClients, isAuthenticated ? {} : "skip");
 
   const isLoading = clients === undefined;
 

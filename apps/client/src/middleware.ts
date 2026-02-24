@@ -1,11 +1,14 @@
 import createMiddleware from "next-intl/middleware";
 import { type NextRequest, NextResponse } from "next/server";
 import { routing } from "@fitfast/i18n/routing";
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import {
+  convexAuthNextjsMiddleware,
+  nextjsMiddlewareRedirect,
+} from "@convex-dev/auth/nextjs/server";
 
 const intlMiddleware = createMiddleware(routing);
 
-const publicRoutes = ["/login", "/magic-link", "/set-password"];
+const publicRoutes = ["/login", "/magic-link", "/set-password", "/accept-invite"];
 
 function stripLocale(pathname: string): string {
   const stripped = pathname.replace(/^\/(en|ar)/, "");
@@ -22,15 +25,9 @@ function getLocaleFromPath(pathname: string): string {
   return match ? match[1] : "en";
 }
 
-const isPublicClerkRoute = createRouteMatcher([
-  "/(en|ar)/login(.*)",
-  "/(en|ar)/magic-link(.*)",
-  "/(en|ar)/set-password(.*)",
-]);
-
-export default clerkMiddleware(
-  async (auth, request: NextRequest) => {
-    const { pathname, origin } = request.nextUrl;
+export default convexAuthNextjsMiddleware(
+  async (request, { convexAuth }) => {
+    const { pathname } = request.nextUrl;
 
     if (
       pathname.startsWith("/api") ||
@@ -45,11 +42,11 @@ export default clerkMiddleware(
       return intlMiddleware(request);
     }
 
-    const { userId } = await auth();
+    const isAuthenticated = await convexAuth.isAuthenticated();
     const locale = getLocaleFromPath(pathname);
 
-    if (!userId) {
-      return NextResponse.redirect(new URL(`/${locale}/login`, origin));
+    if (!isAuthenticated) {
+      return nextjsMiddlewareRedirect(request, `/${locale}/login`);
     }
 
     return intlMiddleware(request);

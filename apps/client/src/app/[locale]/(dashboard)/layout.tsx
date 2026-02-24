@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getLocale } from "next-intl/server";
-import { auth } from "@clerk/nextjs/server";
+import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
 import { fetchQuery } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
 import { DashboardShell } from "@/components/layouts";
@@ -11,8 +11,7 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const locale = await getLocale();
-  const { getToken } = await auth();
-  const token = await getToken({ template: "convex" });
+  const token = await convexAuthNextjsToken();
 
   if (!token) {
     redirect(`/${locale}/login`);

@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
-import { useQuery } from "convex/react";
+import { useConvexAuth, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import {
   User,
@@ -20,13 +20,14 @@ export default function ClientDetailPage() {
   const userId = params.id as string;
   const t = useTranslations("admin");
   const locale = useLocale();
+  const { isAuthenticated } = useConvexAuth();
 
-  const profile = useQuery(api.profiles.getProfileByUserId, {
+  const profile = useQuery(api.profiles.getProfileByUserId, isAuthenticated ? {
     userId: userId,
-  });
-  const assessment = useQuery(api.assessments.getAssessmentByUserId, {
+  } : "skip");
+  const assessment = useQuery(api.assessments.getAssessmentByUserId, isAuthenticated ? {
     userId: userId,
-  });
+  } : "skip");
 
   const isLoading = profile === undefined || assessment === undefined;
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { useQuery, useMutation, useAction } from "convex/react";
+import { useConvexAuth, useQuery, useMutation, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import {
   BookOpen,
@@ -17,7 +17,8 @@ import { cn } from "@fitfast/ui/cn";
 
 export function KnowledgeManager() {
   const t = useTranslations("knowledge");
-  const entries = useQuery(api.knowledgeBase.listKnowledgeEntries);
+  const { isAuthenticated } = useConvexAuth();
+  const entries = useQuery(api.knowledgeBase.listKnowledgeEntries, isAuthenticated ? {} : "skip");
   const addTextEntry = useMutation(api.knowledgeBase.addTextEntry);
   const deleteEntry = useMutation(api.knowledgeBase.deleteKnowledgeEntry);
   const generateUploadUrl = useMutation(api.storage.generateUploadUrl);

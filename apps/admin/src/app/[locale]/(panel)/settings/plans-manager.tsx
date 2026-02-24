@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { useQuery, useMutation } from "convex/react";
+import { useConvexAuth, useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Plus, Trash2, GripVertical, Save } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -44,7 +44,8 @@ const emptyPlan = (): Plan => ({
 
 export function PlansManager() {
   const t = useTranslations("settings");
-  const serverPlans = useQuery(api.systemConfig.getPlans);
+  const { isAuthenticated } = useConvexAuth();
+  const serverPlans = useQuery(api.systemConfig.getPlans, isAuthenticated ? {} : "skip");
   const updatePlans = useMutation(api.systemConfig.updatePlans);
 
   const [plans, setPlans] = useState<Plan[] | null>(null);

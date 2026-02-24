@@ -1,101 +1,12 @@
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { auth } from "./auth";
 
 const http = httpRouter();
 
-http.route({
-  path: "/clerk-webhook",
-  method: "POST",
-  handler: httpAction(async (ctx, request) => {
-    const body = await request.json();
-    const eventType = body.type as string;
-    const data = body.data;
-
-    switch (eventType) {
-      case "user.created": {
-        const userId = data.id as string;
-
-        // Extract email from Clerk webhook data
-        const primaryEmailId = data.primary_email_address_id as string | null;
-        const emailObj = primaryEmailId
-          ? (data.email_addresses as Array<{ id: string; email_address: string }>)?.find(
-              (e) => e.id === primaryEmailId,
-            )
-          : undefined;
-        const email = emailObj?.email_address;
-
-        const firstName = data.first_name as string | null;
-        const lastName = data.last_name as string | null;
-        const fullName =
-          firstName && lastName
-            ? `${firstName} ${lastName}`
-            : firstName || lastName || undefined;
-
-        // Check if profile already exists (idempotent)
-        const existing = await ctx.runQuery(
-          internal.helpers.getProfileInternal,
-          { userId },
-        );
-
-        if (!existing) {
-          await ctx.runMutation(
-            internal.profiles.createProfileForNewUser,
-            { userId, email, fullName },
-          );
-        }
-        break;
-      }
-
-      case "user.updated": {
-        const userId = data.id as string;
-        const firstName = data.first_name as string | null;
-        const lastName = data.last_name as string | null;
-        const phone = (data.primary_phone_number_id
-          ? data.phone_numbers?.find(
-              (p: { id: string }) => p.id === data.primary_phone_number_id,
-            )?.phone_number
-          : undefined) as string | undefined;
-
-        const primaryEmailId = data.primary_email_address_id as string | null;
-        const emailObj = primaryEmailId
-          ? (data.email_addresses as Array<{ id: string; email_address: string }>)?.find(
-              (e) => e.id === primaryEmailId,
-            )
-          : undefined;
-        const email = emailObj?.email_address;
-
-        const fullName =
-          firstName && lastName
-            ? `${firstName} ${lastName}`
-            : firstName || lastName || undefined;
-
-        await ctx.runMutation(internal.profiles.updateProfileFromClerk, {
-          userId,
-          fullName,
-          phone,
-          email,
-        });
-        break;
-      }
-
-      case "user.deleted": {
-        const userId = data.id as string;
-        if (userId) {
-          await ctx.runMutation(internal.profiles.deleteProfileFromClerk, {
-            userId,
-          });
-        }
-        break;
-      }
-    }
-
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
-  }),
-});
+// Convex Auth HTTP routes (JWT verification, JWKS, etc.)
+auth.addHttpRoutes(http);
 
 // ---------------------------------------------------------------------------
 // Stream plan endpoint — returns real-time AI generation text

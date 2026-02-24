@@ -7,7 +7,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link } from "@fitfast/i18n/navigation";
-import { useSignIn, useAuth } from "@clerk/nextjs";
+import { useAuthActions } from "@convex-dev/auth/react";
+import { useConvexAuth } from "convex/react";
 import { Mail, Lock, ArrowRight, Zap, Loader2 } from "lucide-react";
 
 const loginSchema = z.object({
@@ -21,17 +22,17 @@ export default function LoginPage() {
   const t = useTranslations("auth");
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { signIn, setActive, isLoaded } = useSignIn();
-  const { isSignedIn, signOut } = useAuth();
+  const { signIn } = useAuthActions();
+  const { isAuthenticated } = useConvexAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // If user is already signed in, redirect to home
   useEffect(() => {
-    if (isSignedIn) {
+    if (isAuthenticated) {
       router.replace("/");
     }
-  }, [isSignedIn, router]);
+  }, [isAuthenticated, router]);
 
   useEffect(() => {
     const errorParam = searchParams.get("error");
@@ -49,73 +50,20 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (data: LoginFormData) => {
-    if (!isLoaded || !signIn) return;
     setIsLoading(true);
     setError(null);
 
     try {
-      const result = await signIn.create({
-        identifier: data.email,
-        password: data.password,
-      });
+      const formData = new FormData();
+      formData.set("email", data.email);
+      formData.set("password", data.password);
+      formData.set("flow", "signIn");
 
-      console.log("Sign-in result:", JSON.stringify({ status: result.status, sessionId: result.createdSessionId, firstFactors: result.supportedFirstFactors?.map(f => f.strategy) }));
-
-      if (result.status === "complete") {
-        if (result.createdSessionId) {
-          await setActive({ session: result.createdSessionId });
-        }
-        router.replace("/");
-        return;
-      }
-
-      if (result.status === "needs_first_factor") {
-        const attemptResult = await signIn.attemptFirstFactor({
-          strategy: "password",
-          password: data.password,
-        });
-
-        console.log("First factor result:", attemptResult.status);
-
-        if (attemptResult.status === "complete") {
-          if (attemptResult.createdSessionId) {
-            await setActive({ session: attemptResult.createdSessionId });
-          }
-          router.replace("/");
-          return;
-        }
-      }
-
-      if (result.status === "needs_second_factor") {
-        setError("Two-factor authentication is enabled. Please disable MFA in Clerk Dashboard → Configure → Multi-factor.");
-      } else {
-        setError(`Sign in incomplete (status: ${result.status}). Please try again.`);
-      }
+      await signIn("password", formData);
+      router.replace("/");
     } catch (err: unknown) {
-      const clerkError = err as { errors?: Array<{ code?: string; message?: string }> };
-      const errorCode = clerkError.errors?.[0]?.code;
-
-      // If there's a stale session, sign out and retry
-      if (errorCode === "session_exists") {
-        await signOut();
-        try {
-          const retryResult = await signIn.create({
-            identifier: data.email,
-            password: data.password,
-          });
-          if (retryResult.status === "complete" && retryResult.createdSessionId) {
-            await setActive({ session: retryResult.createdSessionId });
-            router.replace("/");
-            return;
-          }
-        } catch {
-          // Fall through to generic error
-        }
-      }
-
-      setError(
-        clerkError.errors?.[0]?.message || "Invalid email or password",
-      );
+      const message = err instanceof Error ? err.message : "Invalid email or password";
+      setError(message);
     } finally {
       setIsLoading(false);
     }

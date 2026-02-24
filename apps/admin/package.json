@@ -10,7 +10,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@clerk/nextjs": "^6.37.5",
+    "@convex-dev/auth": "^0.0.90",
     "@fitfast/i18n": "workspace:*",
     "@fitfast/ui": "workspace:*",
     "@hookform/resolvers": "^5.2.2",

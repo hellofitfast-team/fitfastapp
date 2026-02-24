@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
-import { useMutation, useQuery } from "convex/react";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { Link } from "@fitfast/i18n/navigation";
@@ -51,7 +51,8 @@ const ocrFieldLabels: Record<string, string> = {
 export function SignupsTable() {
   const t = useTranslations("admin");
   const locale = useLocale();
-  const signups = useQuery(api.pendingSignups.getAllSignups);
+  const { isAuthenticated } = useConvexAuth();
+  const signups = useQuery(api.pendingSignups.getAllSignups, isAuthenticated ? {} : "skip");
   const approveSignup = useMutation(api.pendingSignups.approveSignup);
   const rejectSignup = useMutation(api.pendingSignups.rejectSignup);
 

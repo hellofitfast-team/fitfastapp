@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
-import { useMutation, useQuery } from "convex/react";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { Link } from "@fitfast/i18n/navigation";
@@ -47,10 +47,11 @@ export default function SignupDetailPage() {
   const signupId = params.id as string;
   const t = useTranslations("signupDetail");
   const locale = useLocale();
+  const { isAuthenticated } = useConvexAuth();
 
-  const signup = useQuery(api.pendingSignups.getSignupById, {
+  const signup = useQuery(api.pendingSignups.getSignupById, isAuthenticated ? {
     signupId: signupId as Id<"pendingSignups">,
-  });
+  } : "skip");
 
   const paymentImageUrl = useQuery(
     api.storage.getFileUrl,

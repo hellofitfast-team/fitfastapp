@@ -27,7 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@fitfast/ui/dropdown-menu";
 import { cn } from "@fitfast/ui/cn";
-import { useClerk } from "@clerk/nextjs";
+import { useAuthActions } from "@convex-dev/auth/react";
 import Image from "next/image";
 import { useNavBadges } from "@/hooks/useNavBadges";
 
@@ -98,7 +98,7 @@ export function DesktopTopNav({ userName }: DesktopTopNavProps) {
   const pathname = usePathname();
   const params = useParams();
   const currentLocale = params.locale as string;
-  const { signOut } = useClerk();
+  const { signOut } = useAuthActions();
   const { checkInDue, unreadTicketCount } = useNavBadges();
 
   const pathWithoutLocale = pathname.replace(/^\/(en|ar)/, "") || "/";

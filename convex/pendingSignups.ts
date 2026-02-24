@@ -93,16 +93,25 @@ export const approveSignup = mutation({
     const signup = await ctx.db.get(signupId);
     if (!signup) throw new Error("Signup not found");
 
-    await ctx.db.patch(signupId, { status: "approved", reviewedAt: Date.now() });
+    // Generate a secure invite token
+    const inviteToken = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
+    const inviteExpiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days
+
+    await ctx.db.patch(signupId, {
+      status: "approved",
+      reviewedAt: Date.now(),
+      inviteToken,
+      inviteExpiresAt,
+    });
     // Decrement pending count — signup is no longer "pending"
     await pendingSignupsCount.deleteIfExists(ctx, { key: signupId, id: signupId });
 
-    // Schedule Clerk invitation — replaces old welcome email
-    // The invitation email IS the welcome email (Clerk-branded, includes accept link)
-    await ctx.scheduler.runAfter(0, internal.clerkActions.sendInvitation, {
+    // Schedule invitation email
+    await ctx.scheduler.runAfter(0, internal.email.sendInvitationEmail, {
       email: signup.email,
       fullName: signup.fullName,
-      signupId,
+      inviteToken,
+      language: "en" as const,
     });
   },
 });
@@ -133,12 +142,6 @@ export const rejectSignup = mutation({
     // Decrement pending count — signup is no longer "pending"
     await pendingSignupsCount.deleteIfExists(ctx, { key: signupId, id: signupId });
 
-    // Schedule Clerk user/invitation cleanup (handles case where user may not exist yet)
-    await ctx.scheduler.runAfter(0, internal.clerkActions.deleteUserAndInvitation, {
-      email: signup.email,
-      clerkInvitationId: signup.clerkInvitationId,
-    });
-
     // Schedule rejection email with reason
     await ctx.scheduler.runAfter(0, internal.email.sendRejectionEmail, {
       email: signup.email,
@@ -150,15 +153,47 @@ export const rejectSignup = mutation({
 });
 
 // ---------------------------------------------------------------------------
-// Internal mutations — called from internalActions (no direct auth check needed)
+// Invite token validation — used by client app accept-invite page
+// ---------------------------------------------------------------------------
+
+export const validateInviteToken = query({
+  args: { token: v.string() },
+  handler: async (ctx, { token }) => {
+    const signups = await ctx.db.query("pendingSignups").collect();
+    const signup = signups.find((s) => s.inviteToken === token);
+
+    if (!signup) return null;
+    if (signup.inviteExpiresAt && signup.inviteExpiresAt < Date.now()) return null;
+
+    return {
+      email: signup.email,
+      fullName: signup.fullName,
+      planTier: signup.planTier,
+      signupId: signup._id,
+    };
+  },
+});
+
+export const markInviteUsed = internalMutation({
+  args: { signupId: v.id("pendingSignups") },
+  handler: async (ctx, { signupId }) => {
+    await ctx.db.patch(signupId, {
+      inviteToken: undefined,
+      inviteExpiresAt: undefined,
+    });
+  },
+});
+
+// ---------------------------------------------------------------------------
+// Internal mutations
 // ---------------------------------------------------------------------------
 
 export const patchInvitationId = internalMutation({
   args: {
     signupId: v.id("pendingSignups"),
-    clerkInvitationId: v.string(),
+    inviteToken: v.string(),
   },
-  handler: async (ctx, { signupId, clerkInvitationId }) => {
-    await ctx.db.patch(signupId, { clerkInvitationId });
+  handler: async (ctx, { signupId, inviteToken }) => {
+    await ctx.db.patch(signupId, { inviteToken });
   },
 });

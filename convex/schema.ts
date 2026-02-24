@@ -1,9 +1,12 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { authTables } from "@convex-dev/auth/server";
 
 export default defineSchema({
+  ...authTables,
+
   profiles: defineTable({
-    userId: v.string(), // Clerk user ID (e.g. "user_2abc...")
+    userId: v.string(), // Convex Auth user ID (references users._id)
     fullName: v.optional(v.string()),
     email: v.optional(v.string()),
     phone: v.optional(v.string()),
@@ -183,7 +186,8 @@ export default defineSchema({
     ),
     reviewedAt: v.optional(v.number()),
     rejectionReason: v.optional(v.string()),
-    clerkInvitationId: v.optional(v.string()),
+    inviteToken: v.optional(v.string()),
+    inviteExpiresAt: v.optional(v.number()),
   })
     .index("by_status", ["status"])
     .index("by_email", ["email"]),

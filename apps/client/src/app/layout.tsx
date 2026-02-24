@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
+import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -72,18 +73,20 @@ export default async function RootLayout({
   const dir = locale === "ar" ? "rtl" : "ltr";
 
   return (
-    <html lang={locale} dir={dir}>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;600;700;900&family=Outfit:wght@500;600;700;900&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body className="min-h-dvh bg-background text-foreground antialiased">
-        {children}
-      </body>
-    </html>
+    <ConvexAuthNextjsServerProvider>
+      <html lang={locale} dir={dir}>
+        <head>
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+          <link
+            href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;600;700;900&family=Outfit:wght@500;600;700;900&display=swap"
+            rel="stylesheet"
+          />
+        </head>
+        <body className="min-h-dvh bg-background text-foreground antialiased">
+          {children}
+        </body>
+      </html>
+    </ConvexAuthNextjsServerProvider>
   );
 }

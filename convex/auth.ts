@@ -1,24 +1,31 @@
-import { QueryCtx, MutationCtx, ActionCtx } from "./_generated/server";
+import { Password } from "@convex-dev/auth/providers/Password";
+import { convexAuth } from "@convex-dev/auth/server";
+import { internal } from "./_generated/api";
 
-/**
- * Get the authenticated Clerk user ID from context.
- * Returns the Clerk user ID string (e.g. "user_2abc...") or null if not authenticated.
- */
-export async function getAuthUserId(
-  ctx: QueryCtx | MutationCtx | ActionCtx,
-): Promise<string | null> {
-  const identity = await ctx.auth.getUserIdentity();
-  if (!identity) return null;
-  return identity.subject;
-}
+export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
+  providers: [Password],
+  callbacks: {
+    async afterUserCreatedOrUpdated(ctx, { userId, existingUserId }) {
+      // Only run for brand-new users (not updates)
+      if (existingUserId) return;
 
-/**
- * Same as getAuthUserId but throws if not authenticated.
- */
-export async function requireAuthUserId(
-  ctx: QueryCtx | MutationCtx | ActionCtx,
-): Promise<string> {
-  const userId = await getAuthUserId(ctx);
-  if (!userId) throw new Error("Not authenticated");
-  return userId;
-}
+      // Look up the user's email from authAccounts
+      const accounts = await ctx.db
+        .query("authAccounts")
+        .filter((q) => q.eq(q.field("userId"), userId))
+        .collect();
+      const email = accounts[0]?.providerAccountId; // Password provider uses email as account ID
+      if (!email) return;
+
+      // Delegate profile creation to an internal mutation that has full schema types
+      await ctx.scheduler.runAfter(0, internal.profiles.onNewUserCreated, {
+        userId,
+        email,
+      });
+    },
+  },
+});
+
+// Re-export getAuthUserId so existing convex functions keep working
+// with `import { getAuthUserId } from "./auth"`
+export { getAuthUserId } from "@convex-dev/auth/server";

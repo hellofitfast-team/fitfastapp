@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useEffect, useMemo } from "react";
-import { useQuery } from "convex/react";
+import { useConvexAuth, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useTranslations } from "next-intl";
 import {
@@ -231,10 +231,11 @@ function ActivityChart({ signups, tickets }: {
 export default function AdminDashboardPage() {
   const t = useTranslations("admin");
   const containerRef = useRef<HTMLDivElement>(null);
+  const { isAuthenticated } = useConvexAuth();
 
-  const clients = useQuery(api.profiles.getAllClients);
-  const signups = useQuery(api.pendingSignups.getAllSignups);
-  const tickets = useQuery(api.tickets.getAllTickets);
+  const clients = useQuery(api.profiles.getAllClients, isAuthenticated ? {} : "skip");
+  const signups = useQuery(api.pendingSignups.getAllSignups, isAuthenticated ? {} : "skip");
+  const tickets = useQuery(api.tickets.getAllTickets, isAuthenticated ? {} : "skip");
 
   const isLoading = clients === undefined || signups === undefined || tickets === undefined;
 

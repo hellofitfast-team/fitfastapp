@@ -1,42 +1,48 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useSignUp, useAuth } from "@clerk/nextjs";
 import { Link } from "@fitfast/i18n/navigation";
+import { useAuthActions } from "@convex-dev/auth/react";
+import { useConvexAuth, useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { Lock, ArrowRight, Loader2, AlertCircle } from "lucide-react";
 
 export default function AcceptInvitePage() {
   const t = useTranslations("auth");
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { signUp, setActive, isLoaded } = useSignUp();
-  const { isSignedIn } = useAuth();
+  const { signIn } = useAuthActions();
+  const { isAuthenticated } = useConvexAuth();
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const token = searchParams.get("__clerk_ticket");
+  const token = searchParams.get("token");
+
+  // Validate the invite token
+  const inviteData = useQuery(
+    api.pendingSignups.validateInviteToken,
+    token ? { token } : "skip",
+  );
 
   // If already signed in, redirect to pending
   useEffect(() => {
-    if (isSignedIn) {
+    if (isAuthenticated) {
       router.replace("/pending");
     }
-  }, [isSignedIn, router]);
+  }, [isAuthenticated, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isLoaded || !signUp) return;
 
     setError(null);
 
     if (password !== confirmPassword) {
-      setError(t("passwordsMustMatch"));
+      setError(t("passwordMismatch"));
       return;
     }
 
@@ -45,36 +51,24 @@ export default function AcceptInvitePage() {
       return;
     }
 
+    if (!inviteData?.email) {
+      setError(t("inviteExpired"));
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const result = await signUp.create({
-        strategy: "ticket",
-        ticket: token!,
-        password,
-      });
+      const formData = new FormData();
+      formData.set("email", inviteData.email);
+      formData.set("password", password);
+      formData.set("flow", "signUp");
 
-      if (result.status === "complete") {
-        if (result.createdSessionId) {
-          await setActive({ session: result.createdSessionId });
-        }
-        // isSignedIn effect will redirect to /pending
-      } else {
-        setError(t("inviteExpired"));
-      }
+      await signIn("password", formData);
+      // isAuthenticated effect will redirect to /pending
     } catch (err: unknown) {
-      const clerkError = err as {
-        errors?: Array<{ code?: string; message?: string }>;
-      };
-      const code = clerkError.errors?.[0]?.code;
-
-      if (code === "invitation_not_found" || code === "invitation_expired") {
-        setError(t("inviteExpired"));
-      } else {
-        setError(
-          clerkError.errors?.[0]?.message ?? t("inviteExpired"),
-        );
-      }
+      const message = err instanceof Error ? err.message : t("inviteExpired");
+      setError(message);
     } finally {
       setIsLoading(false);
     }
@@ -108,6 +102,45 @@ export default function AcceptInvitePage() {
     );
   }
 
+  // Loading invite validation
+  if (inviteData === undefined) {
+    return (
+      <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden animate-fade-in">
+        <div className="p-6 flex items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
+
+  // Invalid or expired token
+  if (inviteData === null) {
+    return (
+      <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden animate-fade-in">
+        <div className="p-6 text-center border-b border-border">
+          <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 mb-3">
+            <span className="text-xl font-bold text-primary">FF</span>
+          </div>
+          <h1 className="text-2xl font-bold">{t("inviteExpired")}</h1>
+        </div>
+        <div className="p-6 text-center">
+          <div className="flex items-center justify-center gap-2 mb-4 rounded-lg bg-error-500/10 border border-error-500/20 p-4">
+            <AlertCircle className="h-5 w-5 text-error-500 shrink-0" />
+            <p className="text-sm text-error-500">
+              {t("inviteExpired")}
+            </p>
+          </div>
+          <Link
+            href="/login"
+            className="text-sm text-primary hover:underline"
+          >
+            {t("signIn")}
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden animate-fade-in">
       {/* Header */}
@@ -119,6 +152,7 @@ export default function AcceptInvitePage() {
         <p className="text-sm text-muted-foreground mt-1">
           {t("setPassword")}
         </p>
+        <p className="text-sm font-medium mt-2">{inviteData.email}</p>
       </div>
 
       {/* Form */}
@@ -175,9 +209,6 @@ export default function AcceptInvitePage() {
               />
             </div>
           </div>
-
-          {/* Required by Clerk for bot protection */}
-          <div id="clerk-captcha" />
 
           <button
             type="submit"

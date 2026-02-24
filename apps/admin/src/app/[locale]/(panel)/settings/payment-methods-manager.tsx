@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { useQuery, useMutation } from "convex/react";
+import { useConvexAuth, useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Plus, Trash2, Save } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -35,7 +35,8 @@ function emptyMethod(): PaymentMethod {
 
 export function PaymentMethodsManager() {
   const t = useTranslations("settings");
-  const serverMethods = useQuery(api.systemConfig.getPaymentMethods);
+  const { isAuthenticated } = useConvexAuth();
+  const serverMethods = useQuery(api.systemConfig.getPaymentMethods, isAuthenticated ? {} : "skip");
   const updatePaymentMethods = useMutation(api.systemConfig.updatePaymentMethods);
 
   const [methods, setMethods] = useState<PaymentMethod[] | null>(null);

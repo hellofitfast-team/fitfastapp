@@ -127,9 +127,53 @@ function getRejectionEmail(fullName: string, rejectionReason: string, language: 
   };
 }
 
+function getInvitationEmail(fullName: string, inviteToken: string, language: "en" | "ar") {
+  const isAr = language === "ar";
+  const clientUrl = process.env.CLIENT_APP_URL ?? "https://app.fitfast.app";
+  const locale = isAr ? "ar" : "en";
+  const acceptLink = `${clientUrl}/${locale}/accept-invite?token=${inviteToken}`;
+
+  return {
+    subject: isAr
+      ? "مرحبًا بك في فيت فاست! أنشئ حسابك 🎉"
+      : "Welcome to FitFast! Create your account 🎉",
+    html: `
+      <div dir="${isAr ? "rtl" : "ltr"}" style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
+        <h1 style="color:#FF4500">${isAr ? `أهلاً ${fullName}!` : `Hey ${fullName}!`}</h1>
+        <p>${isAr
+          ? "تمت الموافقة على طلبك للانضمام إلى فيت فاست. اضغط على الزر أدناه لإنشاء حسابك وبدء رحلتك."
+          : "Your application to join FitFast has been approved. Click the button below to create your account and start your fitness journey."
+        }</p>
+        <div style="text-align:center;margin:32px 0">
+          <a href="${acceptLink}" style="background:#FF4500;color:#fff;padding:14px 32px;border-radius:12px;text-decoration:none;font-weight:600;display:inline-block">
+            ${isAr ? "أنشئ حسابك" : "Create Your Account"}
+          </a>
+        </div>
+        <p style="color:#6b7280;font-size:13px">${isAr
+          ? "هذا الرابط صالح لمدة 7 أيام."
+          : "This link is valid for 7 days."
+        }</p>
+        <p style="color:#6b7280;font-size:12px;margin-top:32px">— FitFast</p>
+      </div>`,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Internal actions — called from workflows and other actions
 // ---------------------------------------------------------------------------
+
+export const sendInvitationEmail = internalAction({
+  args: {
+    email: v.string(),
+    fullName: v.string(),
+    inviteToken: v.string(),
+    language: v.union(v.literal("en"), v.literal("ar")),
+  },
+  handler: async (_ctx, { email, fullName, inviteToken, language }): Promise<void> => {
+    const { subject, html } = getInvitationEmail(fullName, inviteToken, language);
+    await sendEmail(email, subject, html);
+  },
+});
 
 export const sendWelcomeEmail = internalAction({
   args: {

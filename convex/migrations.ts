@@ -13,7 +13,7 @@ export const run = migrations.runner();
 //   table: "profiles",
 //   migrateOne: async (_ctx, doc) => {
 //     // Profiles created before the email field was added get null.
-//     // The Clerk webhook will populate this going forward.
+//     // The auth callback will populate this going forward.
 //     if (doc.email === undefined) {
 //       return { email: undefined };
 //     }

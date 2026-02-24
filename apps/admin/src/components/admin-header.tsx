@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { Menu, LogOut, Globe } from "lucide-react";
 import { useRouter, usePathname } from "@fitfast/i18n/navigation";
 import { useParams } from "next/navigation";
-import { useClerk } from "@clerk/nextjs";
+import { useAuthActions } from "@convex-dev/auth/react";
 
 interface AdminHeaderProps {
   onMenuClick?: () => void;
@@ -17,7 +17,7 @@ export function AdminHeader({ onMenuClick, coachName }: AdminHeaderProps) {
   const pathname = usePathname();
   const params = useParams();
   const currentLocale = params.locale as string;
-  const { signOut } = useClerk();
+  const { signOut } = useAuthActions();
 
   const switchLocale = () => {
     const newLocale = currentLocale === "en" ? "ar" : "en";

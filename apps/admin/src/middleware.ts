@@ -1,7 +1,11 @@
 import createMiddleware from "next-intl/middleware";
 import { type NextRequest, NextResponse } from "next/server";
 import { routing } from "@fitfast/i18n/routing";
-import { clerkClient, clerkMiddleware } from "@clerk/nextjs/server";
+import {
+  convexAuthNextjsMiddleware,
+  createRouteMatcher,
+  nextjsMiddlewareRedirect,
+} from "@convex-dev/auth/nextjs/server";
 
 const intlMiddleware = createMiddleware(routing);
 
@@ -15,10 +19,17 @@ function getLocaleFromPath(pathname: string): string {
   return match ? match[1] : "en";
 }
 
-export default clerkMiddleware(
-  async (auth, request: NextRequest) => {
-    const { pathname, origin } = request.nextUrl;
+const isPublicRoute = createRouteMatcher([
+  "/login",
+  "/en/login",
+  "/ar/login",
+]);
 
+export default convexAuthNextjsMiddleware(
+  async (request, { convexAuth }) => {
+    const { pathname } = request.nextUrl;
+
+    // Skip static files
     if (
       pathname.startsWith("/api") ||
       pathname.startsWith("/_next") ||
@@ -29,6 +40,7 @@ export default clerkMiddleware(
     }
 
     const path = stripLocale(pathname);
+    const locale = getLocaleFromPath(pathname);
 
     // Login page is public
     if (path === "/login") {
@@ -36,37 +48,14 @@ export default clerkMiddleware(
     }
 
     // All other routes require authentication
-    const { userId, sessionClaims } = await auth();
-    const locale = getLocaleFromPath(pathname);
+    const isAuthenticated = await convexAuth.isAuthenticated();
 
-    if (!userId) {
-      return NextResponse.redirect(new URL(`/${locale}/login`, origin));
+    if (!isAuthenticated) {
+      return nextjsMiddlewareRedirect(request, `/${locale}/login`);
     }
 
-    // Check role: first try JWT claims (fast), then fall back to API (reliable)
-    let role = (sessionClaims as CustomJwtSessionClaims)?.metadata?.role;
-
-    if (!role) {
-      // Session token not customized — fetch from Clerk Backend API
-      try {
-        const client = await clerkClient();
-        const user = await client.users.getUser(userId);
-        role = (user.publicMetadata as { role?: string })?.role as
-          | "coach"
-          | "client"
-          | undefined;
-      } catch {
-        // Session may be stale (e.g. during sign-out/sign-in flow)
-        return NextResponse.redirect(new URL(`/${locale}/login`, origin));
-      }
-    }
-
-    if (role !== "coach") {
-      return NextResponse.redirect(
-        new URL(`/${locale}/login?error=not_coach`, origin),
-      );
-    }
-
+    // Coach role check is done at the layout level via Convex query
+    // (checking profile.isCoach) — middleware only checks authentication
     return intlMiddleware(request);
   },
 );

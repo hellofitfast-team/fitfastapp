@@ -11,7 +11,7 @@ import {
 } from "@fitfast/ui/dropdown-menu";
 import { Link, useRouter, usePathname } from "@fitfast/i18n/navigation";
 import { useParams } from "next/navigation";
-import { useClerk } from "@clerk/nextjs";
+import { useAuthActions } from "@convex-dev/auth/react";
 
 const PAGE_TITLES: Record<string, string> = {
   "/": "nav.dashboard",
@@ -49,7 +49,7 @@ export function MobileHeader({ userName }: MobileHeaderProps) {
   const isDashboard = pathWithoutLocale === "/";
   const titleKey = PAGE_TITLES[pathWithoutLocale] || "nav.dashboard";
 
-  const { signOut } = useClerk();
+  const { signOut } = useAuthActions();
 
   const switchLocale = () => {
     const newLocale = currentLocale === "en" ? "ar" : "en";

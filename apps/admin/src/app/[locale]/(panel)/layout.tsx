@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { auth } from "@clerk/nextjs/server";
+import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
 import { fetchQuery } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
 import { AdminShell } from "@/components/admin-shell";
@@ -10,8 +10,7 @@ export default async function AdminPanelLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { getToken } = await auth();
-  const token = await getToken({ template: "convex" });
+  const token = await convexAuthNextjsToken();
 
   if (!token) {
     redirect("/login");

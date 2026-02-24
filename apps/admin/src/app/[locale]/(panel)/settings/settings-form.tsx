@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { useQuery, useMutation } from "convex/react";
+import { useConvexAuth, useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Save, CreditCard, Calendar, Tag, DollarSign, Wallet } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -13,17 +13,18 @@ import { PaymentMethodsManager } from "./payment-methods-manager";
 export function AdminSettingsForm() {
   const t = useTranslations("admin");
   const tSettings = useTranslations("settings");
+  const { isAuthenticated } = useConvexAuth();
   const setConfig = useMutation(api.systemConfig.setConfig);
 
-  const checkInConfig = useQuery(api.systemConfig.getConfig, {
+  const checkInConfig = useQuery(api.systemConfig.getConfig, isAuthenticated ? {
     key: "check_in_frequency_days",
-  });
-  const instapayConfig = useQuery(api.systemConfig.getConfig, {
+  } : "skip");
+  const instapayConfig = useQuery(api.systemConfig.getConfig, isAuthenticated ? {
     key: "coach_instapay_account",
-  });
-  const pricingConfig = useQuery(api.systemConfig.getConfig, {
+  } : "skip");
+  const pricingConfig = useQuery(api.systemConfig.getConfig, isAuthenticated ? {
     key: "plan_pricing",
-  });
+  } : "skip");
 
   const instapay = (instapayConfig?.value ?? {
     name: "",

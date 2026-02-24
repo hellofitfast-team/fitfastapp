@@ -7,7 +7,7 @@ import gsap from "gsap";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useSignIn, useClerk } from "@clerk/nextjs";
+import { useAuthActions } from "@convex-dev/auth/react";
 import { useConvexAuth, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Mail, Lock, ArrowRight } from "lucide-react";
@@ -24,8 +24,7 @@ export default function AdminLoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const cardRef = useRef<HTMLDivElement>(null);
-  const { signIn, setActive, isLoaded } = useSignIn();
-  const { signOut } = useClerk();
+  const { signIn } = useAuthActions();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [checkingCoach, setCheckingCoach] = useState(false);
@@ -35,8 +34,8 @@ export default function AdminLoginPage() {
 
   useEffect(() => {
     const errorParam = searchParams.get("error");
-    if (errorParam === "coach_account") {
-      setError(t("coachAccountRedirect"));
+    if (errorParam === "not_coach") {
+      setError(t("notAuthorized"));
     }
   }, [searchParams, t]);
 
@@ -50,20 +49,20 @@ export default function AdminLoginPage() {
     }
   }, [isConvexAuth, profile, checkingCoach, router]);
 
-  // After sign-in, check if user is coach (wait for Convex to pick up Clerk JWT)
+  // After sign-in, check if user is coach
   useEffect(() => {
     if (!checkingCoach || !isConvexAuth || profile === undefined) return;
 
     if (profile?.isCoach) {
       router.replace("/");
     } else {
-      signOut().then(() => {
-        setError(t("notAuthorized"));
-        setCheckingCoach(false);
-        setIsLoading(false);
-      });
+      // Not a coach — sign out and show error
+      void signIn("password", new FormData()).catch(() => {});
+      setError(t("notAuthorized"));
+      setCheckingCoach(false);
+      setIsLoading(false);
     }
-  }, [checkingCoach, isConvexAuth, profile, router, signOut, t]);
+  }, [checkingCoach, isConvexAuth, profile, router, signIn, t]);
 
   // GSAP entrance animation
   useEffect(() => {
@@ -86,68 +85,21 @@ export default function AdminLoginPage() {
     resolver: zodResolver(loginSchema),
   });
 
-  const doSignIn = async (data: LoginFormData) => {
-    const result = await signIn!.create({
-      identifier: data.email,
-    });
-
-    if (result.status === "complete" && result.createdSessionId) {
-      await setActive!({ session: result.createdSessionId });
-      setCheckingCoach(true);
-      return;
-    }
-
-    const firstFactor = result.supportedFirstFactors?.find(
-      (f) => f.strategy === "password",
-    );
-
-    if (firstFactor) {
-      const attemptResult = await signIn!.attemptFirstFactor({
-        strategy: "password",
-        password: data.password,
-      });
-
-      if (attemptResult.status === "complete" && attemptResult.createdSessionId) {
-        await setActive!({ session: attemptResult.createdSessionId });
-        setCheckingCoach(true);
-      } else {
-        setError(t("invalidCredentials"));
-        setIsLoading(false);
-      }
-    } else {
-      setError(t("invalidCredentials"));
-      setIsLoading(false);
-    }
-  };
-
   const onSubmit = async (data: LoginFormData) => {
-    if (!isLoaded || !signIn) return;
     setIsLoading(true);
     setError(null);
 
     try {
-      await doSignIn(data);
+      const formData = new FormData();
+      formData.set("email", data.email);
+      formData.set("password", data.password);
+      formData.set("flow", "signIn");
+
+      await signIn("password", formData);
+      setCheckingCoach(true);
     } catch (err: unknown) {
-      const clerkErr = err as { errors?: Array<{ message?: string; code?: string }> };
-      const code = clerkErr?.errors?.[0]?.code;
-
-      // If a stale session exists, clear it and retry once
-      if (code === "session_exists") {
-        try {
-          await signOut();
-          await doSignIn(data);
-          return;
-        } catch (retryErr: unknown) {
-          console.error("Clerk signIn retry error:", retryErr);
-          const retryClerkErr = retryErr as { errors?: Array<{ message?: string; code?: string }> };
-          setError(retryClerkErr?.errors?.[0]?.message || t("invalidCredentials"));
-          setIsLoading(false);
-          return;
-        }
-      }
-
-      console.error("Clerk signIn error:", err);
-      setError(clerkErr?.errors?.[0]?.message || t("invalidCredentials"));
+      const message = err instanceof Error ? err.message : t("invalidCredentials");
+      setError(message);
       setIsLoading(false);
     }
   };
@@ -230,7 +182,7 @@ export default function AdminLoginPage() {
 
               <button
                 type="submit"
-                disabled={isLoading || !isLoaded}
+                disabled={isLoading}
                 className="btn-magnetic w-full h-11 rounded-xl bg-[#FF4500] text-white font-semibold text-sm hover:bg-[#CC3700] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 shadow-lg shadow-[#FF4500]/20"
               >
                 {isLoading ? (

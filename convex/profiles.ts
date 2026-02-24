@@ -125,7 +125,7 @@ export const updateClientStatus = mutation({
   },
 });
 
-// Internal: called from Clerk webhook when a new user signs up
+// Internal: create a profile for a new user (called during signup acceptance)
 export const createProfileForNewUser = internalMutation({
   args: {
     userId: v.string(),
@@ -145,40 +145,63 @@ export const createProfileForNewUser = internalMutation({
   },
 });
 
-// Internal: called from Clerk webhook when a user is updated
-export const updateProfileFromClerk = internalMutation({
+// Called by auth.ts afterUserCreatedOrUpdated callback via scheduler
+export const onNewUserCreated = internalMutation({
   args: {
     userId: v.string(),
-    fullName: v.optional(v.string()),
-    phone: v.optional(v.string()),
-    email: v.optional(v.string()),
+    email: v.string(),
   },
-  handler: async (ctx, { userId, fullName, phone, email }) => {
-    const profile = await ctx.db
+  handler: async (ctx, { userId, email }) => {
+    // Check if a profile already exists
+    const existing = await ctx.db
       .query("profiles")
       .withIndex("by_userId", (q) => q.eq("userId", userId))
       .unique();
-    if (!profile) return;
+    if (existing) return;
 
-    const updates: Record<string, unknown> = { updatedAt: Date.now() };
-    if (fullName !== undefined) updates.fullName = fullName;
-    if (phone !== undefined) updates.phone = phone;
-    if (email !== undefined) updates.email = email;
+    // Check if this user came from an approved pending signup (invite flow)
+    const signup = await ctx.db
+      .query("pendingSignups")
+      .withIndex("by_email", (q) => q.eq("email", email))
+      .first();
 
-    await ctx.db.patch(profile._id, updates);
-  },
-});
+    if (signup && signup.status === "approved") {
+      // Create profile from the approved signup data
+      const planMonths =
+        signup.planTier === "12_months" ? 12 : signup.planTier === "6_months" ? 6 : 3;
+      const endDate = new Date();
+      endDate.setMonth(endDate.getMonth() + planMonths);
 
-// Internal: called from Clerk webhook when a user is deleted
-export const deleteProfileFromClerk = internalMutation({
-  args: { userId: v.string() },
-  handler: async (ctx, { userId }) => {
-    const profile = await ctx.db
-      .query("profiles")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .unique();
-    if (!profile) return;
+      await ctx.db.insert("profiles", {
+        userId,
+        email: signup.email,
+        fullName: signup.fullName,
+        language: "en",
+        status: "active",
+        isCoach: false,
+        planTier: signup.planTier,
+        planStartDate: new Date().toISOString().split("T")[0],
+        planEndDate: endDate.toISOString().split("T")[0],
+        updatedAt: Date.now(),
+      });
 
-    await ctx.db.delete(profile._id);
+      // Mark invite token as used
+      if (signup.inviteToken) {
+        await ctx.db.patch(signup._id, {
+          inviteToken: undefined,
+          inviteExpiresAt: undefined,
+        });
+      }
+    } else {
+      // Fallback: create a basic pending profile
+      await ctx.db.insert("profiles", {
+        userId,
+        email,
+        language: "en",
+        status: "pending_approval",
+        isCoach: false,
+        updatedAt: Date.now(),
+      });
+    }
   },
 });

@@ -95,8 +95,8 @@ export const seedFAQs = internalMutation({
 });
 
 /**
- * Promote a user to coach by Clerk user ID.
- * Run: npx convex run seed:makeCoach '{"userId":"user_xxx"}'
+ * Promote a user to coach by Convex Auth user ID.
+ * Run: npx convex run seed:makeCoach '{"userId":"..."}'
  */
 export const makeCoach = internalMutation({
   args: { userId: v.string() },
@@ -107,7 +107,17 @@ export const makeCoach = internalMutation({
       .unique();
 
     if (!profile) {
-      throw new Error(`No profile found for userId: ${userId}`);
+      // Create profile if it doesn't exist (e.g. webhook didn't fire)
+      await ctx.db.insert("profiles", {
+        userId,
+        email: undefined,
+        fullName: "Coach",
+        language: "en",
+        status: "active",
+        isCoach: true,
+        updatedAt: Date.now(),
+      });
+      return `Created new coach profile for ${userId}.`;
     }
 
     await ctx.db.patch(profile._id, {
@@ -122,8 +132,8 @@ export const makeCoach = internalMutation({
 });
 
 /**
- * Activate a client account by Clerk user ID.
- * Run: npx convex run seed:activateClient '{"userId":"user_xxx"}'
+ * Activate a client account by Convex Auth user ID.
+ * Run: npx convex run seed:activateClient '{"userId":"..."}'
  */
 export const activateClient = internalMutation({
   args: { userId: v.string() },

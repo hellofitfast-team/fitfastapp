@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "@fitfast/i18n/navigation";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useSignIn } from "@clerk/nextjs";
+import { useAuthActions } from "@convex-dev/auth/react";
 import { Lock, CheckCircle2, ArrowRight, Loader2 } from "lucide-react";
 import { cn } from "@fitfast/ui/cn";
 
@@ -32,10 +33,13 @@ type SetPasswordFormData = z.infer<typeof setPasswordSchema>;
 export default function SetPasswordPage() {
   const t = useTranslations("auth");
   const router = useRouter();
-  const { signIn, setActive, isLoaded } = useSignIn();
+  const searchParams = useSearchParams();
+  const { signIn } = useAuthActions();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [passwordSet, setPasswordSet] = useState(false);
+
+  const email = searchParams.get("email") ?? "";
 
   const {
     register,
@@ -49,36 +53,30 @@ export default function SetPasswordPage() {
   const password = watch("password");
 
   const onSubmit = async (data: SetPasswordFormData) => {
-    if (!isLoaded || !signIn) return;
+    if (!email) {
+      setError("Email not found. Please start the password reset process again.");
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     try {
-      // Verify the code
-      const result = await signIn.attemptFirstFactor({
-        strategy: "reset_password_email_code",
-        code: data.code,
-      });
+      const formData = new FormData();
+      formData.set("email", email);
+      formData.set("code", data.code);
+      formData.set("newPassword", data.password);
+      formData.set("flow", "reset-verification");
 
-      if (result.status === "needs_new_password") {
-        // Set the new password
-        const resetResult = await signIn.resetPassword({
-          password: data.password,
-        });
-
-        if (resetResult.status === "complete" && resetResult.createdSessionId) {
-          await setActive({ session: resetResult.createdSessionId });
-          setPasswordSet(true);
-          setTimeout(() => {
-            router.replace("/");
-          }, 2000);
-        }
-      }
+      await signIn("password", formData);
+      setPasswordSet(true);
+      setTimeout(() => {
+        router.replace("/");
+      }, 2000);
     } catch (err: unknown) {
-      const clerkError = err as { errors?: Array<{ message?: string }> };
-      setError(
-        clerkError.errors?.[0]?.message ||
-          "An unexpected error occurred. Please try again.",
-      );
+      const message = err instanceof Error
+        ? err.message
+        : "An unexpected error occurred. Please try again.";
+      setError(message);
     } finally {
       setIsLoading(false);
     }
@@ -124,6 +122,7 @@ export default function SetPasswordPage() {
         </div>
         <h1 className="text-2xl font-bold">{t("setPassword")}</h1>
         <p className="text-sm text-muted-foreground mt-1">{t("createPasswordDescription")}</p>
+        {email && <p className="text-sm font-medium mt-2">{email}</p>}
       </div>
 
       {/* Form */}
@@ -213,7 +212,7 @@ export default function SetPasswordPage() {
 
           <button
             type="submit"
-            disabled={isLoading || !isLoaded}
+            disabled={isLoading}
             className="w-full py-3 rounded-lg bg-primary text-white font-semibold text-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.97] flex items-center justify-center gap-2"
           >
             {isLoading ? (

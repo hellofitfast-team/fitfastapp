@@ -12,10 +12,11 @@
     "type-check": "turbo type-check"
   },
   "dependencies": {
-    "@clerk/backend": "^2.32.0",
+    "@auth/core": "^0.37.4",
     "@convex-dev/action-cache": "^0.3.0",
     "@convex-dev/action-retrier": "^0.3.0",
     "@convex-dev/aggregate": "^0.2.1",
+    "@convex-dev/auth": "^0.0.90",
     "@convex-dev/crons": "^0.2.0",
     "@convex-dev/migrations": "^0.3.1",
     "@convex-dev/persistent-text-streaming": "^0.3.0",

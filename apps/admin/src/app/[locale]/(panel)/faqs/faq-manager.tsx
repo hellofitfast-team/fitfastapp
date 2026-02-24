@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { useQuery, useMutation } from "convex/react";
+import { useConvexAuth, useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import {
@@ -16,8 +16,9 @@ import {
 
 export function FaqManager() {
   const t = useTranslations("admin");
-  const enFaqs = useQuery(api.faqs.getFAQs, { language: "en" });
-  const arFaqs = useQuery(api.faqs.getFAQs, { language: "ar" });
+  const { isAuthenticated } = useConvexAuth();
+  const enFaqs = useQuery(api.faqs.getFAQs, isAuthenticated ? { language: "en" } : "skip");
+  const arFaqs = useQuery(api.faqs.getFAQs, isAuthenticated ? { language: "ar" } : "skip");
   const createFAQ = useMutation(api.faqs.createFAQ);
   const updateFAQ = useMutation(api.faqs.updateFAQ);
   const deleteFAQ = useMutation(api.faqs.deleteFAQ);

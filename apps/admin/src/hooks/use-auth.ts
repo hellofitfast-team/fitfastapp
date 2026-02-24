@@ -3,20 +3,20 @@
 import { useRouter } from "next/navigation";
 import { useConvexAuth } from "convex/react";
 import { useQuery } from "convex/react";
-import { useClerk } from "@clerk/nextjs";
+import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "@/convex/_generated/api";
 
 export function useAuth() {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useConvexAuth();
-  const { signOut: clerkSignOut } = useClerk();
+  const { signOut: convexSignOut } = useAuthActions();
   const profile = useQuery(
     api.profiles.getMyProfile,
     isAuthenticated ? {} : "skip",
   );
 
   const signOut = async () => {
-    await clerkSignOut();
+    await convexSignOut();
     router.push("/login");
   };
 
