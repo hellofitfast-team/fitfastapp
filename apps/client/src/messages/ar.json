@@ -211,7 +211,8 @@
     "restDescription": "الراحة والتعافي ضروريان لنمو العضلات. خذ هذا اليوم للاسترخاء ودع جسمك يتعافى.",
     "progressionNotes": "ملاحظات التقدم",
     "safetyTips": "نصائح السلامة",
-    "aiGenerating": "الذكاء الاصطناعي يُعد خطة تمارينك..."
+    "aiGenerating": "الذكاء الاصطناعي يُعد خطة تمارينك...",
+    "trainingSplit": "نظام التقسيم"
   },
   "checkIn": {
     "title": "المتابعة",
@@ -453,11 +454,22 @@
     "notificationsUnavailableTitle": "الإشعارات غير متاحة",
     "notificationsUnavailableDescription": "تعذر تهيئة الإشعارات. قد يكون السبب أداة حظر الإعلانات أو إعدادات المتصفح.",
     "darkModeDescription": "تبديل الوضع الداكن",
+    "email": "البريد الإلكتروني",
     "saveChanges": "حفظ التغييرات",
     "signOut": "تسجيل الخروج",
     "status": "الحالة",
-    "active": "نشط",
-    "months": "أشهر"
+    "planStart": "تاريخ البدء",
+    "planTiers": {
+      "monthly": "شهري",
+      "quarterly": "ربع سنوي (٣ أشهر)"
+    },
+    "statuses": {
+      "active": "نشط",
+      "pending_approval": "قيد المراجعة",
+      "inactive": "غير نشط",
+      "expired": "منتهي"
+    },
+    "noPlan": "لا توجد خطة حالية"
   },
   "onboarding": {
     "welcome": {
@@ -469,12 +481,104 @@
       "title": "التقييم الأولي",
       "subtitle": "ساعدنا في إنشاء خطتك المخصصة",
       "goals": "ما هي أهدافك اللياقية؟",
+      "primaryGoalTitle": "إيه هدفك الأساسي؟",
+      "primaryGoalDesc": "اختار واحد — ده اللي هيحدد خطة التغذية والتمرين",
+      "secondaryFocusTitle": "عايز تركز على حاجة تانية؟",
+      "secondaryFocusDesc": "اختياري — اختار لحد ٢",
+      "primaryGoals": {
+        "lose_fat": "خسارة دهون",
+        "lose_fat_desc": "تقليل دهون الجسم مع الحفاظ على العضلات",
+        "build_muscle": "بناء عضلات",
+        "build_muscle_desc": "زيادة الكتلة العضلية والحجم",
+        "body_recomposition": "إعادة تكوين الجسم",
+        "body_recomposition_desc": "خسارة دهون وبناء عضلات في نفس الوقت — الأفضل للمبتدئين",
+        "get_stronger": "زيادة القوة",
+        "get_stronger_desc": "زيادة القوة وأداء رفع الأثقال",
+        "improve_fitness": "تحسين اللياقة العامة",
+        "improve_fitness_desc": "صحة متوازنة وطاقة وتكوين جسم أفضل"
+      },
+      "secondaryFocuses": {
+        "improve_endurance": "تحسين التحمل",
+        "improve_flexibility": "تحسين المرونة",
+        "boost_energy": "زيادة الطاقة والتعافي",
+        "build_habit": "بناء عادة ثابتة"
+      },
       "currentWeight": "الوزن الحالي",
       "height": "الطول",
       "schedule": "جدولك الأسبوعي المتاح",
+      "scheduleTitle": "أيام التمرين",
+      "scheduleDesc": "اختار الأيام اللي تقدر تتمرن فيها",
+      "scheduleHint": "بناءً على هدفك ومستواك، ننصح بـ {recommended} أيام في الأسبوع (الحد الأدنى {min}، الحد الأقصى {max}). أيام الراحة ضرورية للتقدم.",
+      "daysSelected": "{count} أيام مختارة (الحد الأدنى {min}، الحد الأقصى {max})",
+      "sessionDurationTitle": "مدة الجلسة",
+      "sessionDurationDesc": "قد إيه تقدر تتمرن في الجلسة الواحدة؟",
+      "sessionDurations": {
+        "30": "٣٠ دقيقة",
+        "45": "٤٥ دقيقة",
+        "60": "٦٠ دقيقة",
+        "90": "٩٠+ دقيقة"
+      },
+      "trainingTimeTitle": "وقت التمرين المفضل",
+      "trainingTimeDesc": "اختياري — بيساعد في تحسين توقيت وجباتك",
+      "trainingTimes": {
+        "morning": "الصبح",
+        "afternoon": "بعد الظهر",
+        "evening": "بالليل",
+        "varies": "متغير"
+      },
+      "days": {
+        "Mon": "الاثنين",
+        "Tue": "الثلاثاء",
+        "Wed": "الأربعاء",
+        "Thu": "الخميس",
+        "Fri": "الجمعة",
+        "Sat": "السبت",
+        "Sun": "الأحد"
+      },
+      "cuisineTitle": "تفضيلات المطبخ",
+      "cuisineDesc": "إيه نوع الأكل اللي بتحبه؟ ده بيساعدنا نعمل وجبات هتعجبك فعلاً",
+      "cuisines": {
+        "mediterranean": "متوسطي",
+        "middle_eastern": "شرق أوسطي",
+        "asian": "آسيوي",
+        "western": "غربي",
+        "indian": "هندي",
+        "latin": "لاتيني",
+        "mixed": "بدون تفضيل"
+      },
+      "mealsPerDayTitle": "عدد الوجبات في اليوم",
+      "mealsPerDayDesc": "بتفضل تاكل إزاي على مدار اليوم؟",
+      "mealsPerDayOptions": {
+        "3_meals": "٣ وجبات",
+        "3_plus_snacks": "٣ وجبات + سناكس",
+        "5_small": "٥ وجبات صغيرة",
+        "flexible": "مرن"
+      },
       "foodPreferences": "تفضيلات الطعام",
-      "allergies": "الحساسية",
-      "dietaryRestrictions": "القيود الغذائية",
+      "allergiesTitle": "حساسية الطعام",
+      "allergies": {
+        "none": "لا يوجد",
+        "nuts": "مكسرات",
+        "dairy": "ألبان",
+        "eggs": "بيض",
+        "shellfish": "مأكولات بحرية",
+        "gluten": "جلوتين",
+        "soy": "صويا",
+        "fish": "سمك",
+        "lactose": "لاكتوز",
+        "other": "أخرى"
+      },
+      "restrictionsTitle": "القيود الغذائية",
+      "restrictions": {
+        "none": "لا يوجد",
+        "halal": "حلال",
+        "kosher": "كوشر",
+        "no_pork": "بدون لحم خنزير",
+        "no_beef": "بدون لحم بقري",
+        "vegetarian": "نباتي",
+        "vegan": "نباتي صرف",
+        "other": "أخرى"
+      },
       "medicalConditions": "الحالات الطبية",
       "injuries": "الإصابات الحالية",
       "exerciseHistory": "تاريخ التمارين",
@@ -492,7 +596,8 @@
         "medical": "طبي"
       },
       "completeAssessment": "إكمال التقييم",
-      "submitting": "جاري إنشاء خطتك..."
+      "submitting": "جاري إنشاء خطتك...",
+      "generatingDescription": "نقوم بإنشاء خطط الوجبات والتمارين المخصصة لك. قد يستغرق هذا لحظة."
     },
     "pending": {
       "title": "الحساب قيد المراجعة",
@@ -558,8 +663,11 @@
     "uploadFailed": "فشل الرفع. يرجى المحاولة مرة أخرى.",
     "goalRequired": "يرجى اختيار هدف واحد على الأقل",
     "weightHeightRequired": "يرجى إدخال وزنك وطولك",
+    "ageGenderRequired": "يرجى إدخال عمرك واختيار جنسك",
     "experienceLevelRequired": "يرجى اختيار مستوى الخبرة",
     "workoutDaysRequired": "يرجى اختيار يوم تمرين واحد على الأقل",
+    "workoutDaysMin": "يرجى اختيار {min} أيام تمرين على الأقل لنتائج فعلية",
+    "sessionDurationRequired": "يرجى اختيار مدة الجلسة",
     "equipmentRequired": "يرجى اختيار المعدات المتاحة",
     "equipmentSpecify": "يرجى تحديد المعدات الخاصة بك",
     "signInRequired": "يرجى تسجيل الدخول للمتابعة",

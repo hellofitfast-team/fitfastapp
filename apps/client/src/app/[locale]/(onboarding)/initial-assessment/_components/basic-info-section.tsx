@@ -6,13 +6,17 @@ import { SectionCard } from "@fitfast/ui/section-card";
 import { FormField } from "@fitfast/ui/form-field";
 import { Input } from "@fitfast/ui/input";
 import { cn } from "@fitfast/ui/cn";
-import { EQUIPMENT_OPTIONS } from "./constants";
+import { EQUIPMENT_OPTIONS, GENDER_OPTIONS } from "./constants";
 
 interface BasicInfoSectionProps {
   currentWeight: string;
   setCurrentWeight: (value: string) => void;
   height: string;
   setHeight: (value: string) => void;
+  age: string;
+  setAge: (value: string) => void;
+  gender: string;
+  setGender: (value: string) => void;
   experienceLevel: string;
   setExperienceLevel: (value: string) => void;
   equipment: string;
@@ -27,6 +31,10 @@ export function BasicInfoSection({
   setCurrentWeight,
   height,
   setHeight,
+  age,
+  setAge,
+  gender,
+  setGender,
   experienceLevel,
   setExperienceLevel,
   equipment,
@@ -65,6 +73,38 @@ export function BasicInfoSection({
                 disabled={isLoading}
               />
               <span className="font-semibold text-sm text-muted-foreground">{tUnits("cm")}</span>
+            </div>
+          </FormField>
+          <FormField label="Age">
+            <Input
+              type="number"
+              min={14}
+              max={80}
+              placeholder="25"
+              value={age}
+              onChange={(e) => setAge(e.target.value)}
+              disabled={isLoading}
+            />
+          </FormField>
+          <FormField label="Gender">
+            <div className="flex gap-2">
+              {GENDER_OPTIONS.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => setGender(option.id)}
+                  disabled={isLoading}
+                  className={cn(
+                    "flex-1 p-2.5 rounded-lg border text-sm font-medium transition-colors",
+                    gender === option.id
+                      ? "border-[#F97316]/30 bg-[#F97316]/8 text-[#F97316]"
+                      : "border-border bg-card hover:bg-neutral-50",
+                    isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer active:scale-[0.97]"
+                  )}
+                >
+                  {option.label}
+                </button>
+              ))}
             </div>
           </FormField>
         </div>
@@ -114,19 +154,36 @@ export function BasicInfoSection({
       {/* Equipment */}
       <SectionCard icon={Wrench} title="Available Equipment" variant="fitness">
         <div className="space-y-3">
-          <select
-            value={equipment}
-            onChange={(e) => setEquipment(e.target.value)}
-            disabled={isLoading}
-            className="w-full h-11 px-3.5 rounded-lg border border-input bg-card text-sm appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring transition-colors"
-          >
-            <option value="">Select your equipment access</option>
+          <div className="flex flex-col gap-2">
             {EQUIPMENT_OPTIONS.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.label}
-              </option>
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => setEquipment(option.id)}
+                disabled={isLoading}
+                className={cn(
+                  "flex items-center gap-3 p-3.5 rounded-lg border transition-colors text-start",
+                  equipment === option.id
+                    ? "border-[#F97316]/30 bg-[#F97316]/8"
+                    : "border-border bg-card hover:bg-neutral-50",
+                  isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer active:scale-[0.97]"
+                )}
+              >
+                <div className={cn(
+                  "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs",
+                  equipment === option.id
+                    ? "border-[#F97316]/30 bg-[#F97316]/12 text-[#F97316]"
+                    : "border-border bg-neutral-50 text-muted-foreground"
+                )}>
+                  {equipment === option.id ? "✓" : ""}
+                </div>
+                <span className={cn(
+                  "text-sm font-medium",
+                  equipment === option.id && "text-[#F97316]"
+                )}>{option.label}</span>
+              </button>
             ))}
-          </select>
+          </div>
           {equipment === "other" && (
             <Input
               type="text"

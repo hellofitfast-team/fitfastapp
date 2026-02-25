@@ -64,6 +64,10 @@ export const toggleMealCompletion = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
+    // Verify plan ownership
+    const plan = await ctx.db.get(mealPlanId);
+    if (!plan || plan.userId !== userId) throw new Error("Not authorized");
+
     // Find existing completion
     const existing = await ctx.db
       .query("mealCompletions")
@@ -96,6 +100,10 @@ export const toggleWorkoutCompletion = mutation({
   handler: async (ctx, { workoutPlanId, date, workoutIndex, completed }) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
+
+    // Verify plan ownership
+    const plan = await ctx.db.get(workoutPlanId);
+    if (!plan || plan.userId !== userId) throw new Error("Not authorized");
 
     const existing = await ctx.db
       .query("workoutCompletions")

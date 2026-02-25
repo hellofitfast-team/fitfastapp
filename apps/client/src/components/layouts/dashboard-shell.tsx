@@ -32,8 +32,11 @@ export function DashboardShell({ children, userName }: DashboardShellProps) {
       {/* Mobile header */}
       <MobileHeader userName={userName} />
 
+      {/* PWA install banner — inline between header and content */}
+      <InstallPrompt />
+
       {/* Main content area */}
-      <main className="relative z-10 flex-1 overflow-y-auto overflow-x-hidden pb-[calc(var(--height-bottom-nav)+max(0.5rem,env(safe-area-inset-bottom))+0.75rem)] lg:pb-0">
+      <main className="relative z-0 flex-1 overflow-y-auto overflow-x-hidden pb-[calc(var(--height-bottom-nav)+max(0.5rem,env(safe-area-inset-bottom))+0.75rem)] lg:pb-0">
         {children}
       </main>
 
@@ -42,9 +45,6 @@ export function DashboardShell({ children, userName }: DashboardShellProps) {
 
       {/* More menu bottom sheet */}
       <MoreMenu open={moreMenuOpen} onOpenChange={setMoreMenuOpen} />
-
-      {/* PWA components */}
-      <InstallPrompt />
       <OneSignalIdentity />
     </div>
   );

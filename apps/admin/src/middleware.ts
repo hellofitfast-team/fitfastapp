@@ -29,9 +29,8 @@ export default convexAuthNextjsMiddleware(
   async (request, { convexAuth }) => {
     const { pathname } = request.nextUrl;
 
-    // Skip static files
+    // Skip static files (but NOT /api/auth — handled by convexAuthNextjsMiddleware)
     if (
-      pathname.startsWith("/api") ||
       pathname.startsWith("/_next") ||
       pathname.startsWith("/favicon") ||
       pathname.includes(".")
@@ -61,5 +60,5 @@ export default convexAuthNextjsMiddleware(
 );
 
 export const config = {
-  matcher: ["/((?!api|_next|.*\\..*).*)"],
+  matcher: ["/((?!_next|.*\\..*).*)"],
 };

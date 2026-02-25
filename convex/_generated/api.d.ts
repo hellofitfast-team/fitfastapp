@@ -15,9 +15,11 @@ import type * as assessments from "../assessments.js";
 import type * as auth from "../auth.js";
 import type * as checkInWorkflow from "../checkInWorkflow.js";
 import type * as checkIns from "../checkIns.js";
+import type * as clientContext from "../clientContext.js";
 import type * as completions from "../completions.js";
 import type * as cronJobs from "../cronJobs.js";
 import type * as dashboard from "../dashboard.js";
+import type * as dataRetention from "../dataRetention.js";
 import type * as email from "../email.js";
 import type * as faqs from "../faqs.js";
 import type * as helpers from "../helpers.js";
@@ -28,6 +30,8 @@ import type * as mealPlans from "../mealPlans.js";
 import type * as migrations from "../migrations.js";
 import type * as navBadges from "../navBadges.js";
 import type * as notifications from "../notifications.js";
+import type * as nutritionEngine from "../nutritionEngine.js";
+import type * as ocrExtraction from "../ocrExtraction.js";
 import type * as pendingSignups from "../pendingSignups.js";
 import type * as profiles from "../profiles.js";
 import type * as pushSubscriptions from "../pushSubscriptions.js";
@@ -35,6 +39,7 @@ import type * as ragManager from "../ragManager.js";
 import type * as rateLimiter from "../rateLimiter.js";
 import type * as reflections from "../reflections.js";
 import type * as seed from "../seed.js";
+import type * as seedActions from "../seedActions.js";
 import type * as staticCrons from "../staticCrons.js";
 import type * as storage from "../storage.js";
 import type * as streamingManager from "../streamingManager.js";
@@ -42,6 +47,7 @@ import type * as systemConfig from "../systemConfig.js";
 import type * as tickets from "../tickets.js";
 import type * as workflowManager from "../workflowManager.js";
 import type * as workoutPlans from "../workoutPlans.js";
+import type * as workoutSplitEngine from "../workoutSplitEngine.js";
 import type * as workpoolManager from "../workpoolManager.js";
 
 import type {
@@ -58,9 +64,11 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   checkInWorkflow: typeof checkInWorkflow;
   checkIns: typeof checkIns;
+  clientContext: typeof clientContext;
   completions: typeof completions;
   cronJobs: typeof cronJobs;
   dashboard: typeof dashboard;
+  dataRetention: typeof dataRetention;
   email: typeof email;
   faqs: typeof faqs;
   helpers: typeof helpers;
@@ -71,6 +79,8 @@ declare const fullApi: ApiFromModules<{
   migrations: typeof migrations;
   navBadges: typeof navBadges;
   notifications: typeof notifications;
+  nutritionEngine: typeof nutritionEngine;
+  ocrExtraction: typeof ocrExtraction;
   pendingSignups: typeof pendingSignups;
   profiles: typeof profiles;
   pushSubscriptions: typeof pushSubscriptions;
@@ -78,6 +88,7 @@ declare const fullApi: ApiFromModules<{
   rateLimiter: typeof rateLimiter;
   reflections: typeof reflections;
   seed: typeof seed;
+  seedActions: typeof seedActions;
   staticCrons: typeof staticCrons;
   storage: typeof storage;
   streamingManager: typeof streamingManager;
@@ -85,6 +96,7 @@ declare const fullApi: ApiFromModules<{
   tickets: typeof tickets;
   workflowManager: typeof workflowManager;
   workoutPlans: typeof workoutPlans;
+  workoutSplitEngine: typeof workoutSplitEngine;
   workpoolManager: typeof workpoolManager;
 }>;
 

@@ -6,12 +6,14 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
   ArrowRight,
   CalendarCheck,
+  Check,
   ChevronRight,
   Dumbbell,
   Globe,
   LineChart,
   Loader2,
   MessageCircle,
+  Minus,
   Play,
   Zap,
 } from "lucide-react";
@@ -555,7 +557,7 @@ function Pricing() {
               "grid gap-8 max-w-4xl mx-auto",
               plans.length === 1 ? "grid-cols-1 max-w-lg" : "grid-cols-1 md:grid-cols-2"
             )}>
-              {plans.map((plan, idx) => {
+              {[...plans].sort((a, b) => a.price - b.price).map((plan, idx) => {
                 const badge = locale === "ar" ? plan.badgeAr : plan.badge;
                 const name = locale === "ar" ? plan.nameAr : plan.name;
                 const duration = locale === "ar" ? plan.durationAr : plan.duration;
@@ -566,16 +568,16 @@ function Pricing() {
                   <div
                     key={plan.id}
                     className={cn(
-                      "pricing-card rounded-[2rem] p-10 flex flex-col relative overflow-hidden",
+                      "pricing-card rounded-[2rem] p-10 flex flex-col relative",
                       isHighlighted
-                        ? "bg-[var(--color-foreground)] text-[var(--color-background)]"
-                        : "bg-[var(--color-background)] border border-[var(--color-foreground)]/5"
+                        ? "bg-[var(--color-foreground)] text-[var(--color-background)] overflow-visible"
+                        : "bg-[var(--color-background)] border border-[var(--color-foreground)]/5 overflow-hidden"
                     )}
                   >
                     {isHighlighted && (
                       <>
                         <div className="absolute top-0 end-0 w-64 h-64 bg-[var(--color-accent)]/20 rounded-full blur-[60px] -translate-y-1/2 translate-x-1/4 rtl:-translate-x-1/4 pointer-events-none" />
-                        <div className="absolute top-6 end-6 bg-[var(--color-accent)] text-white text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full">
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[var(--color-accent)] text-white text-xs font-bold uppercase tracking-wider px-4 py-1.5 rounded-full whitespace-nowrap z-10">
                           {badge === "Most Popular" ? t("mostPopular") : badge === "Best Value" ? t("bestValue") : badge}
                         </div>
                       </>
@@ -591,8 +593,8 @@ function Pricing() {
                       </span>
                     </div>
 
-                    <ul className="space-y-4 mb-10 flex-1 relative z-10">
-                      {features.map((feat, i) => (
+                    <ul className="space-y-4 mb-6 flex-1 relative z-10">
+                      {features.slice(0, 5).map((feat, i) => (
                         <li
                           key={i}
                           className={cn(
@@ -613,6 +615,21 @@ function Pricing() {
                       ))}
                     </ul>
 
+                    {features.length > 5 && (
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          document.getElementById("plan-comparison")?.scrollIntoView({ behavior: "smooth" });
+                        }}
+                        className={cn(
+                          "text-sm underline underline-offset-4 mb-8 text-start",
+                          isHighlighted ? "text-[var(--color-background)]/40 hover:text-[var(--color-background)]/60" : "text-[var(--color-foreground)]/40 hover:text-[var(--color-foreground)]/60"
+                        )}
+                      >
+                        {t("viewAllFeatures")}
+                      </button>
+                    )}
+
                     <MagneticButton
                       className={cn(
                         "w-full",
@@ -628,6 +645,85 @@ function Pricing() {
               })}
             </div>
           )}
+
+          {/* ── Plan Comparison Table ── */}
+          {!isLoading && !isEmpty && plans.length > 1 && (() => {
+            const sorted = [...plans].sort((a, b) => a.price - b.price);
+            // Build a union of all features across plans, preserving order from first plan then appending extras
+            const allFeatures: string[] = [];
+            const allFeaturesAr: string[] = [];
+            for (const p of sorted) {
+              const feats = p.features;
+              const featsAr = p.featuresAr;
+              feats.forEach((f, i) => {
+                if (!allFeatures.includes(f)) {
+                  allFeatures.push(f);
+                  allFeaturesAr.push(featsAr[i] ?? f);
+                }
+              });
+            }
+
+            return (
+              <div id="plan-comparison" className="mt-24 max-w-5xl mx-auto scroll-mt-24">
+                <div className="text-center mb-12">
+                  <h3 className="font-display text-4xl md:text-5xl font-black tracking-tighter leading-[0.9] rtl:leading-[1.7] uppercase italic mb-4">
+                    {t("compareTitle")} <span className="text-[var(--color-accent)]">{t("compareHighlight")}</span>
+                  </h3>
+                  <p className="text-lg text-[var(--color-foreground)]/60 font-medium">{t("compareDesc")}</p>
+                </div>
+
+                <div className="rounded-2xl border border-[var(--color-foreground)]/10 overflow-hidden bg-[var(--color-background)]">
+                  {/* Header row */}
+                  <div className="grid items-center border-b border-[var(--color-foreground)]/10 bg-[var(--color-surface)]" style={{ gridTemplateColumns: `2fr repeat(${sorted.length}, 1fr)` }}>
+                    <div className="px-6 py-4 text-sm font-bold uppercase tracking-wider text-[var(--color-foreground)]/50">
+                      {t("feature")}
+                    </div>
+                    {sorted.map((plan) => {
+                      const name = locale === "ar" ? plan.nameAr : plan.name;
+                      return (
+                        <div key={plan.id} className="px-4 py-4 text-center text-sm font-bold uppercase tracking-wide text-[var(--color-foreground)]">
+                          {name}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Feature rows */}
+                  {allFeatures.map((feat, fi) => {
+                    const label = locale === "ar" ? allFeaturesAr[fi] : feat;
+                    return (
+                      <div
+                        key={feat}
+                        className={cn(
+                          "grid items-center border-b border-[var(--color-foreground)]/5 last:border-0",
+                          fi % 2 === 0 ? "bg-[var(--color-background)]" : "bg-[var(--color-surface)]/50"
+                        )}
+                        style={{ gridTemplateColumns: `2fr repeat(${sorted.length}, 1fr)` }}
+                      >
+                        <div className="px-6 py-3.5 text-sm font-medium text-[var(--color-foreground)]/80">
+                          {label}
+                        </div>
+                        {sorted.map((plan) => {
+                          const has = plan.features.includes(feat);
+                          return (
+                            <div key={plan.id} className="flex items-center justify-center px-4 py-3.5">
+                              {has ? (
+                                <div className="w-6 h-6 rounded-full bg-[var(--color-accent)]/10 flex items-center justify-center">
+                                  <Check className="w-3.5 h-3.5 text-[var(--color-accent)]" />
+                                </div>
+                              ) : (
+                                <Minus className="w-4 h-4 text-[var(--color-foreground)]/20" />
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </section>
 
@@ -698,46 +794,45 @@ function CTA() {
 
 function Footer() {
   const t = useTranslations("landing");
+  const socialLinks = useQuery(api.systemConfig.getSocialLinks) ?? {};
+
+  const socialEntries = Object.entries(socialLinks).filter(([, url]) => url);
+  const socialLabels: Record<string, string> = {
+    twitter: "Twitter",
+    instagram: "Instagram",
+    tiktok: "TikTok",
+    youtube: "YouTube",
+    facebook: "Facebook",
+    linkedin: "LinkedIn",
+  };
+
   return (
     <footer className="pt-20 pb-10 px-4 bg-[var(--color-background)]">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start gap-12 mb-20">
-        <div className="max-w-sm">
-          <div className="flex items-center gap-2 mb-6">
-            <FitFastLogo />
-            <span className="font-display font-extrabold text-2xl tracking-tighter italic pe-2">FITFAST</span>
-          </div>
-          <p className="text-[var(--color-foreground)]/50 text-sm leading-relaxed font-medium">{t("footerDesc")}</p>
+      <div className="max-w-7xl mx-auto flex flex-col items-center text-center gap-6 mb-16">
+        <div className="flex items-center gap-2">
+          <FitFastLogo />
+          <span className="font-display font-extrabold text-2xl tracking-tighter italic pe-2">FITFAST</span>
         </div>
-
-        <div className="flex gap-16">
-          <div>
-            <h4 className="font-bold mb-6 text-sm uppercase tracking-wider text-[var(--color-foreground)]">{t("platform")}</h4>
-            <ul className="space-y-4 text-sm text-[var(--color-foreground)]/60 font-medium">
-              <li><a href="#method" className="hover:text-[var(--color-accent)] transition-colors">{t("methodology")}</a></li>
-              <li><a href="#method" className="hover:text-[var(--color-accent)] transition-colors">{t("nutrition")}</a></li>
-              <li><a href="#method" className="hover:text-[var(--color-accent)] transition-colors">{t("training")}</a></li>
-              <li><a href="#ecosystem" className="hover:text-[var(--color-accent)] transition-colors">{t("integrations")}</a></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-bold mb-6 text-sm uppercase tracking-wider text-[var(--color-foreground)]">{t("company")}</h4>
-            <ul className="space-y-4 text-sm text-[var(--color-foreground)]/60 font-medium">
-              <li><a href="#" className="hover:text-[var(--color-accent)] transition-colors">{t("about")}</a></li>
-              <li><a href="#" className="hover:text-[var(--color-accent)] transition-colors">{t("careers")}</a></li>
-              <li><a href="#" className="hover:text-[var(--color-accent)] transition-colors">{t("contact")}</a></li>
-              <li><a href="#" className="hover:text-[var(--color-accent)] transition-colors">{t("privacy")}</a></li>
-            </ul>
-          </div>
-        </div>
+        <p className="text-[var(--color-foreground)]/50 text-sm leading-relaxed font-medium max-w-md">{t("footerDesc")}</p>
       </div>
 
       <div className="max-w-7xl mx-auto pt-8 border-t border-[var(--color-foreground)]/10 flex flex-col md:flex-row items-center justify-between text-xs text-[var(--color-foreground)]/40 font-medium">
         <p>{t("rights")}</p>
-        <div className="flex gap-6 mt-4 md:mt-0" dir="ltr">
-          <a href="#" className="hover:text-[var(--color-foreground)] transition-colors">Twitter</a>
-          <a href="#" className="hover:text-[var(--color-foreground)] transition-colors">Instagram</a>
-          <a href="#" className="hover:text-[var(--color-foreground)] transition-colors">LinkedIn</a>
-        </div>
+        {socialEntries.length > 0 && (
+          <div className="flex gap-6 mt-4 md:mt-0" dir="ltr">
+            {socialEntries.map(([key, url]) => (
+              <a
+                key={key}
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-[var(--color-foreground)] transition-colors"
+              >
+                {socialLabels[key] ?? key}
+              </a>
+            ))}
+          </div>
+        )}
       </div>
     </footer>
   );

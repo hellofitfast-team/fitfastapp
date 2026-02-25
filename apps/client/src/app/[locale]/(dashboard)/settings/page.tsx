@@ -113,6 +113,15 @@ export default function SettingsPage() {
         </div>
         <form onSubmit={handleSubmit(onSubmit)} className="p-4 space-y-4">
           <div>
+            <label className="block text-sm font-medium mb-1.5">{t("email")}</label>
+            <input
+              type="email"
+              value={profile?.email || ""}
+              readOnly
+              className="w-full h-11 px-3.5 rounded-lg border border-input bg-neutral-50 text-sm text-muted-foreground cursor-not-allowed"
+            />
+          </div>
+          <div>
             <label className="block text-sm font-medium mb-1.5">{t("fullName")}</label>
             <input
               type="text"
@@ -256,32 +265,51 @@ export default function SettingsPage() {
           <h3 className="font-semibold text-sm">{t("planDetails")}</h3>
         </div>
         <div className="p-4 space-y-4">
-          <div className="flex justify-between items-center py-2 border-b border-border">
-            <span className="text-xs text-muted-foreground">{t("planTier")}</span>
-            <span className="text-sm font-semibold">
-              {profile?.planTier ? `${profile.planTier} ${t("months")}` : `6 ${t("months")}`}
-            </span>
-          </div>
-          <div className="flex justify-between items-center py-2 border-b border-border">
-            <span className="text-xs text-muted-foreground">{t("planExpiry")}</span>
-            <span className="text-sm font-semibold">{formattedEndDate}</span>
-          </div>
-          <div className="flex justify-between items-center py-2 border-b border-border">
-            <span className="text-xs text-muted-foreground">{t("status")}</span>
-            <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-              {profile?.status || t("active")}
-            </span>
-          </div>
-          <div className="rounded-lg bg-neutral-50 border border-border p-4">
-            <p className="text-xs text-muted-foreground mb-1">{t("daysRemaining")}</p>
-            <p className="text-3xl font-bold">{daysRemaining}</p>
-            <div className="mt-3 h-2 rounded-full bg-neutral-200 overflow-hidden" dir={locale === "ar" ? "rtl" : "ltr"}>
-              <div
-                className="h-full bg-primary rounded-full transition-all"
-                style={{ width: `${progressPercentage.toFixed(1)}%` }}
-              />
-            </div>
-          </div>
+          {profile?.planTier ? (
+            <>
+              <div className="flex justify-between items-center py-2 border-b border-border">
+                <span className="text-xs text-muted-foreground">{t("planTier")}</span>
+                <span className="text-sm font-semibold">
+                  {t(`planTiers.${profile.planTier === "monthly" ? "monthly" : "quarterly"}`)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-border">
+                <span className="text-xs text-muted-foreground">{t("planStart")}</span>
+                <span className="text-sm font-semibold">
+                  {profile.planStartDate
+                    ? new Date(profile.planStartDate).toLocaleDateString(locale === "ar" ? "ar-u-nu-latn" : "en-US", { month: "long", day: "numeric", year: "numeric" })
+                    : "—"}
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-border">
+                <span className="text-xs text-muted-foreground">{t("planExpiry")}</span>
+                <span className="text-sm font-semibold">{formattedEndDate}</span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-border">
+                <span className="text-xs text-muted-foreground">{t("status")}</span>
+                <span className={cn(
+                  "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+                  profile.status === "active" ? "bg-[#10B981]/10 text-[#10B981]" :
+                  profile.status === "expired" ? "bg-error-500/10 text-error-500" :
+                  "bg-amber-500/10 text-amber-600"
+                )}>
+                  {t(`statuses.${profile.status}`)}
+                </span>
+              </div>
+              <div className="rounded-lg bg-neutral-50 border border-border p-4">
+                <p className="text-xs text-muted-foreground mb-1">{t("daysRemaining")}</p>
+                <p className="text-3xl font-bold">{daysRemaining}</p>
+                <div className="mt-3 h-2 rounded-full bg-neutral-200 overflow-hidden" dir={locale === "ar" ? "rtl" : "ltr"}>
+                  <div
+                    className="h-full bg-primary rounded-full transition-all"
+                    style={{ width: `${progressPercentage.toFixed(1)}%` }}
+                  />
+                </div>
+              </div>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground py-4 text-center">{t("noPlan")}</p>
+          )}
         </div>
       </div>
     </div>

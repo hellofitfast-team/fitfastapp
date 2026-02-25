@@ -112,6 +112,11 @@ export function MultiSelect({
           placeholder="Please specify..."
           value={otherValue}
           onChange={(e) => onOtherChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+            }
+          }}
           disabled={disabled}
           className="w-full h-11 px-3 rounded-lg border border-input bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 transition-colors"
         />

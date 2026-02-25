@@ -40,17 +40,42 @@ export const getLockStatus = query({
     const userId = await getAuthUserId(ctx);
     if (!userId) return { isLocked: false, nextCheckInDate: null };
 
-    const latest = await ctx.db
+    const frequencyDays = await getCheckInFrequencyDays(ctx);
+
+    const latestCheckIn = await ctx.db
       .query("checkIns")
       .withIndex("by_userId", (q) => q.eq("userId", userId))
       .order("desc")
       .first();
 
-    if (!latest) return { isLocked: false, nextCheckInDate: null };
+    // Determine the anchor date: last check-in, or if none, the latest plan creation
+    // This ensures new clients are locked after their initial plans are generated
+    let anchorTime: number | null = latestCheckIn?._creationTime ?? null;
 
-    const frequencyDays = await getCheckInFrequencyDays(ctx);
-    const lastCheckInDate = new Date(latest._creationTime);
-    const nextCheckInDate = new Date(lastCheckInDate);
+    if (!anchorTime) {
+      // No check-ins yet — check if initial plans were generated (from assessment)
+      const latestMealPlan = await ctx.db
+        .query("mealPlans")
+        .withIndex("by_userId", (q) => q.eq("userId", userId))
+        .order("desc")
+        .first();
+      const latestWorkoutPlan = await ctx.db
+        .query("workoutPlans")
+        .withIndex("by_userId", (q) => q.eq("userId", userId))
+        .order("desc")
+        .first();
+
+      // Use the earliest plan creation as anchor (both are generated together)
+      const planTimes = [latestMealPlan?._creationTime, latestWorkoutPlan?._creationTime].filter(
+        (t): t is number => t != null,
+      );
+      anchorTime = planTimes.length > 0 ? Math.min(...planTimes) : null;
+    }
+
+    if (!anchorTime) return { isLocked: false, nextCheckInDate: null };
+
+    const anchorDate = new Date(anchorTime);
+    const nextCheckInDate = new Date(anchorDate);
     nextCheckInDate.setDate(nextCheckInDate.getDate() + frequencyDays);
 
     const isLocked = Date.now() < nextCheckInDate.getTime();
@@ -58,7 +83,7 @@ export const getLockStatus = query({
     return {
       isLocked,
       nextCheckInDate: nextCheckInDate.toISOString(),
-      lastCheckInDate: lastCheckInDate.toISOString(),
+      lastCheckInDate: anchorDate.toISOString(),
     };
   },
 });

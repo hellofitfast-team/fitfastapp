@@ -42,7 +42,7 @@ interface AdherenceStats {
 interface ProgressChartsProps {
   weightChartData: WeightChartDatum[];
   measurementChartData: MeasurementChartDatum[];
-  adherenceStats: AdherenceStats;
+  adherenceStats?: AdherenceStats;
 }
 
 export default function ProgressCharts({
@@ -92,7 +92,8 @@ export default function ProgressCharts({
         )}
       </SectionCard>
 
-      {/* Adherence Stats */}
+      {/* Adherence Stats — only show when real data exists */}
+      {adherenceStats && (adherenceStats.mealAdherence > 0 || adherenceStats.workoutAdherence > 0) && (
       <div className="grid gap-3 md:grid-cols-2">
         <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
           <div className="p-4 border-b border-border bg-success-500/5">
@@ -132,6 +133,7 @@ export default function ProgressCharts({
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }

@@ -175,6 +175,9 @@ export const updatePaymentMethods = mutation({
   },
 });
 
+// Keys whose values must always be stored as numbers
+const NUMERIC_CONFIG_KEYS = new Set(["check_in_frequency_days"]);
+
 export const setConfig = mutation({
   args: {
     key: v.string(),
@@ -190,17 +193,79 @@ export const setConfig = mutation({
       .unique();
     if (!profile?.isCoach) throw new Error("Not authorized");
 
+    // Coerce string-typed numbers for keys that must be numeric
+    const storedValue = NUMERIC_CONFIG_KEYS.has(key) && typeof value === "string"
+      ? Number(value) || 14
+      : value;
+
     const existing = await ctx.db
       .query("systemConfig")
       .withIndex("by_key", (q) => q.eq("key", key))
       .unique();
 
     if (existing) {
-      await ctx.db.patch(existing._id, { value, updatedAt: Date.now() });
+      await ctx.db.patch(existing._id, { value: storedValue, updatedAt: Date.now() });
     } else {
       await ctx.db.insert("systemConfig", {
         key,
-        value,
+        value: storedValue,
+        updatedAt: Date.now(),
+      });
+    }
+  },
+});
+
+// ── Social Links ──────────────────────────────────────────────────────────────
+
+export const getSocialLinks = query({
+  args: {},
+  handler: async (ctx) => {
+    const row = await ctx.db
+      .query("systemConfig")
+      .withIndex("by_key", (q) => q.eq("key", "social_links"))
+      .unique();
+    return (row?.value ?? {}) as Record<string, string>;
+  },
+});
+
+export const updateSocialLinks = mutation({
+  args: {
+    links: v.object({
+      twitter: v.optional(v.string()),
+      instagram: v.optional(v.string()),
+      tiktok: v.optional(v.string()),
+      youtube: v.optional(v.string()),
+      facebook: v.optional(v.string()),
+      linkedin: v.optional(v.string()),
+    }),
+  },
+  handler: async (ctx, { links }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .unique();
+    if (!profile?.isCoach) throw new Error("Not authorized");
+
+    // Strip empty strings
+    const cleaned: Record<string, string> = {};
+    for (const [key, val] of Object.entries(links)) {
+      if (val && val.trim()) cleaned[key] = val.trim();
+    }
+
+    const existing = await ctx.db
+      .query("systemConfig")
+      .withIndex("by_key", (q) => q.eq("key", "social_links"))
+      .unique();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, { value: cleaned, updatedAt: Date.now() });
+    } else {
+      await ctx.db.insert("systemConfig", {
+        key: "social_links",
+        value: cleaned,
         updatedAt: Date.now(),
       });
     }

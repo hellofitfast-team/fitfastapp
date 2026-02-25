@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { query, mutation, internalMutation } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { getAuthUserId } from "./auth";
 import { activeClientsCount } from "./adminStats";
 
@@ -90,9 +91,8 @@ export const updateClientStatus = mutation({
     ),
     planTier: v.optional(
       v.union(
-        v.literal("3_months"),
-        v.literal("6_months"),
-        v.literal("12_months"),
+        v.literal("monthly"),
+        v.literal("quarterly"),
       ),
     ),
     planStartDate: v.optional(v.string()),
@@ -121,7 +121,54 @@ export const updateClientStatus = mutation({
       }
     }
 
-    await ctx.db.patch(profileId, { ...args, updatedAt: Date.now() });
+    // Track inactiveSince for data retention policy (90-day cleanup)
+    const patchData: Record<string, unknown> = { ...args, updatedAt: Date.now() };
+    if (args.status === "inactive" || args.status === "expired") {
+      patchData.inactiveSince = Date.now();
+    } else if (args.status === "active") {
+      // Clear inactiveSince on reactivation
+      patchData.inactiveSince = undefined;
+    }
+
+    await ctx.db.patch(profileId, patchData);
+  },
+});
+
+export const rejectClient = mutation({
+  args: {
+    profileId: v.id("profiles"),
+    rejectionReason: v.string(),
+  },
+  handler: async (ctx, { profileId, rejectionReason }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const callerProfile = await ctx.db
+      .query("profiles")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .unique();
+    if (!callerProfile?.isCoach) throw new Error("Not authorized");
+
+    const profile = await ctx.db.get(profileId);
+    if (!profile) throw new Error("Profile not found");
+
+    // Schedule rejection email before deleting
+    if (profile.email) {
+      await ctx.scheduler.runAfter(0, internal.email.sendRejectionEmail, {
+        email: profile.email,
+        fullName: profile.fullName ?? "there",
+        rejectionReason,
+        language: profile.language ?? "en",
+      });
+    }
+
+    // Remove from active count if applicable
+    if (profile.status === "active") {
+      await activeClientsCount.deleteIfExists(ctx, { key: profileId, id: profileId });
+    }
+
+    // Delete the profile
+    await ctx.db.delete(profileId);
   },
 });
 
@@ -167,8 +214,7 @@ export const onNewUserCreated = internalMutation({
 
     if (signup && signup.status === "approved") {
       // Create profile from the approved signup data
-      const planMonths =
-        signup.planTier === "12_months" ? 12 : signup.planTier === "6_months" ? 6 : 3;
+      const planMonths = signup.planTier === "quarterly" ? 3 : 1;
       const endDate = new Date();
       endDate.setMonth(endDate.getMonth() + planMonths);
 

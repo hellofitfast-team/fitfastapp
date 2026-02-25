@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { internalMutation } from "./_generated/server";
+import { internalMutation, internalQuery } from "./_generated/server";
 
 /**
  * Seed the database with test data.
@@ -27,7 +27,7 @@ export const seedConfig = internalMutation({
     });
     await ctx.db.insert("systemConfig", {
       key: "plan_pricing",
-      value: { "3_months": 2500, "6_months": 4000, "12_months": 7000 },
+      value: { monthly: 800, quarterly: 2000 },
       updatedAt: now,
     });
     await ctx.db.insert("systemConfig", {
@@ -149,7 +149,7 @@ export const activateClient = internalMutation({
 
     await ctx.db.patch(profile._id, {
       status: "active",
-      planTier: "3_months",
+      planTier: "monthly",
       planStartDate: new Date().toISOString().split("T")[0],
       planEndDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
       updatedAt: Date.now(),
@@ -183,7 +183,7 @@ export const run = internalMutation({
       });
       await ctx.db.insert("systemConfig", {
         key: "plan_pricing",
-        value: { "3_months": 2500, "6_months": 4000, "12_months": 7000 },
+        value: { monthly: 800, quarterly: 2000 },
         updatedAt: now,
       });
       await ctx.db.insert("systemConfig", {
@@ -224,5 +224,274 @@ export const run = internalMutation({
     }
 
     return "Seed complete! Config + FAQs populated.";
+  },
+});
+
+/** Insert a pre-hashed auth user into the database. Called by seedActions:seedTestUsers. */
+export const insertAuthUser = internalMutation({
+  args: {
+    email: v.string(),
+    hashedPassword: v.string(),
+    fullName: v.string(),
+    isCoach: v.boolean(),
+  },
+  handler: async (ctx, { email, hashedPassword, fullName, isCoach }) => {
+    // Check if user already exists
+    const existing = await ctx.db
+      .query("authAccounts")
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("provider"), "password"),
+          q.eq(q.field("providerAccountId"), email),
+        ),
+      )
+      .first();
+
+    if (existing) {
+      return `User ${email} already exists — skipped.`;
+    }
+
+    // Create user in auth tables
+    const userId = await ctx.db.insert("users", { email });
+
+    await ctx.db.insert("authAccounts", {
+      userId,
+      provider: "password",
+      providerAccountId: email,
+      secret: hashedPassword,
+    });
+
+    // Create profile
+    await ctx.db.insert("profiles", {
+      userId,
+      email,
+      fullName,
+      language: "en",
+      status: "active",
+      isCoach,
+      planTier: isCoach ? undefined : ("monthly" as const),
+      planStartDate: isCoach
+        ? undefined
+        : new Date().toISOString().split("T")[0],
+      planEndDate: isCoach
+        ? undefined
+        : new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split("T")[0],
+      updatedAt: Date.now(),
+    });
+
+    return `Created ${isCoach ? "coach" : "client"}: ${email} (userId: ${userId})`;
+  },
+});
+
+/** Full cascade-delete a user by email: auth tables + profile + all data. */
+export const deleteUserByEmail = internalMutation({
+  args: { email: v.string() },
+  handler: async (ctx, { email }) => {
+    // Find auth account
+    const authAccount = await ctx.db
+      .query("authAccounts")
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("provider"), "password"),
+          q.eq(q.field("providerAccountId"), email),
+        ),
+      )
+      .first();
+    if (!authAccount) return `No user found with email ${email}`;
+
+    const userId = authAccount.userId;
+
+    // Find profile
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_userId", (q: any) => q.eq("userId", userId))
+      .first();
+
+    // Delete all user data (same tables as dataRetention)
+    async function deleteByIndex(table: string, indexName: string) {
+      const docs = await (ctx.db as any)
+        .query(table)
+        .withIndex(indexName, (q: any) => q.eq("userId", userId))
+        .collect();
+      for (const doc of docs) {
+        await ctx.db.delete(doc._id);
+      }
+    }
+
+    await deleteByIndex("dailyReflections", "by_userId_date");
+    await deleteByIndex("mealCompletions", "by_userId_date");
+    await deleteByIndex("workoutCompletions", "by_userId_date");
+    await deleteByIndex("mealPlans", "by_userId");
+    await deleteByIndex("workoutPlans", "by_userId");
+    await deleteByIndex("checkIns", "by_userId");
+    await deleteByIndex("initialAssessments", "by_userId");
+    await deleteByIndex("assessmentHistory", "by_userId");
+    await deleteByIndex("tickets", "by_userId");
+    await deleteByIndex("pushSubscriptions", "by_userId");
+
+    // Delete file metadata + storage
+    const fileMeta = await ctx.db
+      .query("fileMetadata")
+      .withIndex("by_uploadedBy", (q) => q.eq("uploadedBy", userId))
+      .collect();
+    for (const fm of fileMeta) {
+      try { await ctx.storage.delete(fm.storageId); } catch {}
+      await ctx.db.delete(fm._id);
+    }
+
+    // Delete auth session/refresh tokens
+    const sessions = await ctx.db
+      .query("authSessions")
+      .filter((q) => q.eq(q.field("userId"), userId))
+      .collect();
+    for (const s of sessions) {
+      // Delete refresh tokens for this session
+      const tokens = await ctx.db
+        .query("authRefreshTokens")
+        .filter((q) => q.eq(q.field("sessionId"), s._id))
+        .collect();
+      for (const t of tokens) await ctx.db.delete(t._id);
+      await ctx.db.delete(s._id);
+    }
+
+    // Delete profile, auth account, and user
+    if (profile) await ctx.db.delete(profile._id);
+    await ctx.db.delete(authAccount._id);
+    await ctx.db.delete(userId);
+
+    return `Deleted user ${email} and all associated data`;
+  },
+});
+
+/**
+ * One-off migration: coerce string config values to numbers.
+ * Run from dashboard: `npx convex run seed:fixConfigTypes`
+ */
+/** Check if a knowledge entry with the given title already exists. Used by seedKnowledgeBase. */
+export const checkKnowledgeExists = internalQuery({
+  args: { title: v.string() },
+  handler: async (ctx, { title }): Promise<boolean> => {
+    const entry = await ctx.db
+      .query("coachKnowledge")
+      .filter((q) => q.eq(q.field("title"), title))
+      .first();
+    return !!entry;
+  },
+});
+
+export const fixConfigTypes = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const config = await ctx.db
+      .query("systemConfig")
+      .withIndex("by_key", (q: any) => q.eq("key", "check_in_frequency_days"))
+      .unique();
+    if (config && typeof config.value === "string") {
+      await ctx.db.patch(config._id, { value: Number(config.value) || 14 });
+      return `Fixed: "${config.value}" → ${Number(config.value) || 14}`;
+    }
+    return `No fix needed — value is already ${typeof config?.value}: ${config?.value}`;
+  },
+});
+
+/**
+ * Reset a client's data (plans, assessment, check-ins, completions, tickets)
+ * but keep the auth account + profile intact so they can log in and get
+ * redirected back to onboarding (initial-assessment).
+ *
+ * Run: npx convex run seed:resetClientData '{"email":"test_client@client.com"}'
+ */
+export const resetClientData = internalMutation({
+  args: { email: v.string() },
+  handler: async (ctx, { email }) => {
+    // Find auth account → userId
+    const authAccount = await ctx.db
+      .query("authAccounts")
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("provider"), "password"),
+          q.eq(q.field("providerAccountId"), email),
+        ),
+      )
+      .first();
+    if (!authAccount) return `No user found with email ${email}`;
+
+    const userId = authAccount.userId;
+
+    // Helper: delete all docs in a table matching userId via index
+    async function deleteByIndex(table: string, indexName: string) {
+      const docs = await (ctx.db as any)
+        .query(table)
+        .withIndex(indexName, (q: any) => q.eq("userId", userId))
+        .collect();
+      for (const doc of docs) {
+        await ctx.db.delete(doc._id);
+      }
+      return docs.length;
+    }
+
+    const counts: Record<string, number> = {};
+    counts.mealPlans = await deleteByIndex("mealPlans", "by_userId");
+    counts.workoutPlans = await deleteByIndex("workoutPlans", "by_userId");
+    counts.checkIns = await deleteByIndex("checkIns", "by_userId");
+    counts.initialAssessments = await deleteByIndex("initialAssessments", "by_userId");
+    counts.assessmentHistory = await deleteByIndex("assessmentHistory", "by_userId");
+    counts.mealCompletions = await deleteByIndex("mealCompletions", "by_userId_date");
+    counts.workoutCompletions = await deleteByIndex("workoutCompletions", "by_userId_date");
+    counts.dailyReflections = await deleteByIndex("dailyReflections", "by_userId_date");
+    counts.tickets = await deleteByIndex("tickets", "by_userId");
+
+    // Delete file metadata + storage (progress photos, ticket screenshots)
+    const fileMeta = await ctx.db
+      .query("fileMetadata")
+      .withIndex("by_uploadedBy", (q) => q.eq("uploadedBy", userId))
+      .collect();
+    for (const fm of fileMeta) {
+      try { await ctx.storage.delete(fm.storageId); } catch {}
+      await ctx.db.delete(fm._id);
+    }
+    counts.files = fileMeta.length;
+
+    const summary = Object.entries(counts)
+      .filter(([, n]) => n > 0)
+      .map(([t, n]) => `${t}: ${n}`)
+      .join(", ");
+
+    return `Reset ${email} — deleted: ${summary || "nothing to delete"}. Profile kept as active — user will see onboarding on next login.`;
+  },
+});
+
+/**
+ * One-off: patch tags onto existing knowledge base documents.
+ * Run: npx convex run seed:patchKnowledgeTags
+ */
+export const patchKnowledgeTags = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const tagMap: Record<string, string[]> = {
+      "Nutrition Science Fundamentals": ["nutrition"],
+      "Egyptian & MENA Food Database": ["nutrition"],
+      "Exercise Selection Guide": ["workout"],
+      "Injury Modification Protocol": ["workout", "recovery"],
+      "Progressive Overload Guidelines": ["workout"],
+      "Recovery & Lifestyle": ["recovery"],
+    };
+
+    const results: string[] = [];
+    for (const [title, tags] of Object.entries(tagMap)) {
+      const entry = await ctx.db
+        .query("coachKnowledge")
+        .filter((q) => q.eq(q.field("title"), title))
+        .first();
+      if (!entry) {
+        results.push(`NOT FOUND: "${title}"`);
+        continue;
+      }
+      await ctx.db.patch(entry._id, { tags });
+      results.push(`PATCHED: "${title}" → [${tags.join(", ")}]`);
+    }
+    return results.join("\n");
   },
 });

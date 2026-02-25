@@ -4,9 +4,9 @@ import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { useConvexAuth, useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Plus, Trash2, Save } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { Plus, Trash2 } from "lucide-react";
 import * as Sentry from "@sentry/nextjs";
+import { SaveButton } from "./save-button";
 
 type PaymentMethod = {
   type: string;
@@ -40,7 +40,6 @@ export function PaymentMethodsManager() {
   const updatePaymentMethods = useMutation(api.systemConfig.updatePaymentMethods);
 
   const [methods, setMethods] = useState<PaymentMethod[] | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
   const [confirmRemoveIdx, setConfirmRemoveIdx] = useState<number | null>(null);
 
   // Initialize local state once server data arrives
@@ -87,7 +86,6 @@ export function PaymentMethodsManager() {
   };
 
   const handleSave = async () => {
-    setIsSaving(true);
     try {
       const cleanMethods = methods.map((m) => ({
         type: m.type,
@@ -96,21 +94,12 @@ export function PaymentMethodsManager() {
         instructions: m.instructions?.trim() || undefined,
       }));
       await updatePaymentMethods({ paymentMethods: cleanMethods });
-      toast({
-        title: t("savePaymentMethodsSuccess"),
-        description: t("savePaymentMethodsSuccessDescription"),
-      });
     } catch (error) {
       Sentry.captureException(error, {
         tags: { feature: "admin-settings", operation: "update-payment-methods" },
       });
-      toast({
-        title: t("savePaymentMethodsError"),
-        description: error instanceof Error ? error.message : "Unexpected error",
-        variant: "destructive",
-      });
+      throw error;
     }
-    setIsSaving(false);
   };
 
   return (
@@ -227,14 +216,7 @@ export function PaymentMethodsManager() {
 
       {/* Save button */}
       <div className="flex justify-end pt-2">
-        <button
-          onClick={handleSave}
-          disabled={isSaving}
-          className="flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white hover:bg-primary/90 transition-colors disabled:opacity-50 shadow-md shadow-primary/20"
-        >
-          <Save className="h-4 w-4" />
-          {isSaving ? "Saving..." : t("savePaymentMethods")}
-        </button>
+        <SaveButton onSave={handleSave} label={t("savePaymentMethods")} />
       </div>
     </div>
   );

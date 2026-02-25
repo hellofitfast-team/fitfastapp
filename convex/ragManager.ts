@@ -15,17 +15,18 @@ function createRagClient() {
     apiKey: process.env.OPENROUTER_API_KEY!,
   });
 
-  return new RAG(components.rag, {
+  return new RAG<{ tag: string }>(components.rag, {
     textEmbeddingModel: openrouter.textEmbeddingModel(
       "openai/text-embedding-3-small",
     ),
     embeddingDimension: 1536,
+    filterNames: ["tag"],
   });
 }
 
-let _ragClient: RAG | null = null;
+let _ragClient: RAG<{ tag: string }> | null = null;
 
-export function getRagClient(): RAG {
+export function getRagClient(): RAG<{ tag: string }> {
   if (!_ragClient) {
     _ragClient = createRagClient();
   }

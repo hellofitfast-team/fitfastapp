@@ -15,6 +15,12 @@ export interface MealPlanGenerationParams {
 
 /** @deprecated Use ValidatedMealPlan from @/lib/validation instead */
 export interface GeneratedMealPlan {
+  dailyTargets?: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+  };
   weeklyPlan: {
     [day: string]: {
       meals: Array<{

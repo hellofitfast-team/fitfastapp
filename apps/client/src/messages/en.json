@@ -211,7 +211,8 @@
     "restDescription": "Rest and recovery are essential for muscle growth. Take this day to relax and let your body recover.",
     "progressionNotes": "Progression Notes",
     "safetyTips": "Safety Tips",
-    "aiGenerating": "AI is crafting your workout plan..."
+    "aiGenerating": "AI is crafting your workout plan...",
+    "trainingSplit": "Training Split"
   },
   "checkIn": {
     "title": "Check-in",
@@ -453,11 +454,22 @@
     "notificationsUnavailableTitle": "Notifications Unavailable",
     "notificationsUnavailableDescription": "Push notifications could not be initialized. This may be caused by an ad blocker or browser settings.",
     "darkModeDescription": "Toggle dark mode on or off",
+    "email": "Email",
     "saveChanges": "Save Changes",
     "signOut": "Sign Out",
     "status": "Status",
-    "active": "Active",
-    "months": "Months"
+    "planStart": "Started",
+    "planTiers": {
+      "monthly": "Monthly",
+      "quarterly": "Quarterly (3 Months)"
+    },
+    "statuses": {
+      "active": "Active",
+      "pending_approval": "Pending",
+      "inactive": "Inactive",
+      "expired": "Expired"
+    },
+    "noPlan": "No plan assigned"
   },
   "onboarding": {
     "welcome": {
@@ -469,12 +481,104 @@
       "title": "Initial Assessment",
       "subtitle": "Help us create your personalized plan",
       "goals": "What are your fitness goals?",
+      "primaryGoalTitle": "What's your main goal?",
+      "primaryGoalDesc": "Pick one — this drives your nutrition and training plan",
+      "secondaryFocusTitle": "Anything else you'd like to focus on?",
+      "secondaryFocusDesc": "Optional — pick up to 2",
+      "primaryGoals": {
+        "lose_fat": "Lose Fat",
+        "lose_fat_desc": "Reduce body fat while preserving muscle",
+        "build_muscle": "Build Muscle",
+        "build_muscle_desc": "Gain muscle mass and size",
+        "body_recomposition": "Body Recomposition",
+        "body_recomposition_desc": "Lose fat and build muscle simultaneously — best for beginners",
+        "get_stronger": "Get Stronger",
+        "get_stronger_desc": "Increase strength and lifting performance",
+        "improve_fitness": "Improve Overall Fitness",
+        "improve_fitness_desc": "Balanced health, energy, and body composition"
+      },
+      "secondaryFocuses": {
+        "improve_endurance": "Improve Endurance",
+        "improve_flexibility": "Improve Flexibility",
+        "boost_energy": "Boost Energy & Recovery",
+        "build_habit": "Build A Consistent Habit"
+      },
       "currentWeight": "Current Weight",
       "height": "Height",
       "schedule": "Weekly Schedule Availability",
+      "scheduleTitle": "Workout Days",
+      "scheduleDesc": "Select the days you can train",
+      "scheduleHint": "Based on your goal and experience, we recommend {recommended} days per week (min {min}, max {max}). Recovery days are essential for progress.",
+      "daysSelected": "{count} days selected (min {min}, max {max})",
+      "sessionDurationTitle": "Session Duration",
+      "sessionDurationDesc": "How long can you train per session?",
+      "sessionDurations": {
+        "30": "30 min",
+        "45": "45 min",
+        "60": "60 min",
+        "90": "90+ min"
+      },
+      "trainingTimeTitle": "Preferred Training Time",
+      "trainingTimeDesc": "Optional — helps optimize your meal timing",
+      "trainingTimes": {
+        "morning": "Morning",
+        "afternoon": "Afternoon",
+        "evening": "Evening",
+        "varies": "Varies"
+      },
+      "days": {
+        "Mon": "Mon",
+        "Tue": "Tue",
+        "Wed": "Wed",
+        "Thu": "Thu",
+        "Fri": "Fri",
+        "Sat": "Sat",
+        "Sun": "Sun"
+      },
+      "cuisineTitle": "Cuisine Preferences",
+      "cuisineDesc": "What kind of food do you enjoy? This helps us create meals you'll actually love",
+      "cuisines": {
+        "mediterranean": "Mediterranean",
+        "middle_eastern": "Middle Eastern",
+        "asian": "Asian",
+        "western": "Western",
+        "indian": "Indian",
+        "latin": "Latin American",
+        "mixed": "No Preference"
+      },
+      "mealsPerDayTitle": "Meals Per Day",
+      "mealsPerDayDesc": "How do you prefer to eat throughout the day?",
+      "mealsPerDayOptions": {
+        "3_meals": "3 Meals",
+        "3_plus_snacks": "3 Meals + Snacks",
+        "5_small": "5 Small Meals",
+        "flexible": "Flexible"
+      },
       "foodPreferences": "Food Preferences",
-      "allergies": "Allergies",
-      "dietaryRestrictions": "Dietary Restrictions",
+      "allergiesTitle": "Food Allergies",
+      "allergies": {
+        "none": "None",
+        "nuts": "Nuts",
+        "dairy": "Dairy",
+        "eggs": "Eggs",
+        "shellfish": "Shellfish",
+        "gluten": "Gluten",
+        "soy": "Soy",
+        "fish": "Fish",
+        "lactose": "Lactose",
+        "other": "Other"
+      },
+      "restrictionsTitle": "Dietary Restrictions",
+      "restrictions": {
+        "none": "None",
+        "halal": "Halal",
+        "kosher": "Kosher",
+        "no_pork": "No Pork",
+        "no_beef": "No Beef",
+        "vegetarian": "Vegetarian",
+        "vegan": "Vegan",
+        "other": "Other"
+      },
       "medicalConditions": "Medical Conditions",
       "injuries": "Current Injuries",
       "exerciseHistory": "Exercise History",
@@ -492,7 +596,8 @@
         "medical": "Medical"
       },
       "completeAssessment": "Complete Assessment",
-      "submitting": "Creating your plan..."
+      "submitting": "Creating your plan...",
+      "generatingDescription": "We're generating your personalized meal and workout plans. This may take a moment."
     },
     "pending": {
       "title": "Account Pending Approval",
@@ -558,8 +663,11 @@
     "uploadFailed": "Upload failed. Please try again.",
     "goalRequired": "Please select at least one fitness goal",
     "weightHeightRequired": "Please enter your weight and height",
+    "ageGenderRequired": "Please enter your age and select your gender",
     "experienceLevelRequired": "Please select your experience level",
     "workoutDaysRequired": "Please select at least one workout day",
+    "workoutDaysMin": "Please select at least {min} workout days for meaningful results",
+    "sessionDurationRequired": "Please select your session duration",
     "equipmentRequired": "Please select your available equipment",
     "equipmentSpecify": "Please specify your equipment",
     "signInRequired": "Please sign in to continue",

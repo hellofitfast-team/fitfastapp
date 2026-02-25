@@ -11,7 +11,9 @@ export async function getCheckInFrequencyDays(ctx: { db: any }): Promise<number>
     .query("systemConfig")
     .withIndex("by_key", (q: any) => q.eq("key", "check_in_frequency_days"))
     .unique();
-  return (config?.value as number) ?? 14;
+  const raw = config?.value;
+  if (raw == null) return 14;
+  return typeof raw === "number" ? raw : Number(raw) || 14;
 }
 
 // Internal queries used by AI actions to fetch data
@@ -62,8 +64,11 @@ export const getTicketInternal = internalQuery({
 });
 
 /**
- * Count recent meal + workout plans for a user since a given timestamp.
+ * Count recent plan generation pairs (meal + workout = 1 pair) for a user since a given timestamp.
  * Used for dynamic plan-generation rate limiting.
+ * Returns the MAX of meal plans or workout plans (not the sum),
+ * since each check-in generates one of each — counting the sum would
+ * exhaust the limit after a single generation cycle.
  */
 export const countRecentPlans = internalQuery({
   args: { userId: v.string(), since: v.number() },
@@ -79,6 +84,8 @@ export const countRecentPlans = internalQuery({
       .withIndex("by_userId", (q: any) => q.eq("userId", userId))
       .filter((q: any) => q.gte(q.field("_creationTime"), since))
       .collect();
-    return meals.length + workouts.length;
+    // Each generation cycle produces one meal + one workout plan.
+    // Use the max count so the limit represents generation cycles, not individual plans.
+    return Math.max(meals.length, workouts.length);
   },
 });

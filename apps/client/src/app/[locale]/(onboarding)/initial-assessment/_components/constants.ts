@@ -1,24 +1,37 @@
-// Predefined options for deterministic AI generation
-export const FITNESS_GOALS = [
-  { id: "lose_weight", label: "LOSE WEIGHT" },
-  { id: "build_muscle", label: "BUILD MUSCLE" },
-  { id: "improve_endurance", label: "IMPROVE ENDURANCE" },
-  { id: "increase_strength", label: "INCREASE STRENGTH" },
-  { id: "improve_flexibility", label: "IMPROVE FLEXIBILITY" },
-  { id: "general_fitness", label: "GENERAL FITNESS" },
-  { id: "body_recomposition", label: "BODY RECOMPOSITION" },
-  { id: "athletic_performance", label: "ATHLETIC PERFORMANCE" },
+// ── Primary goal (single select) ─────────────────────────────────────────────
+// Each maps to a distinct caloric & training strategy the AI can act on.
+export const PRIMARY_GOALS = [
+  { id: "lose_fat", label: "LOSE FAT", description: "Reduce body fat while preserving muscle" },
+  { id: "build_muscle", label: "BUILD MUSCLE", description: "Gain muscle mass and size" },
+  { id: "body_recomposition", label: "BODY RECOMPOSITION", description: "Lose fat and build muscle simultaneously — best for beginners" },
+  { id: "get_stronger", label: "GET STRONGER", description: "Increase strength and lifting performance" },
+  { id: "improve_fitness", label: "IMPROVE OVERALL FITNESS", description: "Balanced health, energy, and body composition" },
 ];
 
-export const FOOD_PREFERENCES = [
+// ── Optional secondary focus (multi-select, up to 2) ────────────────────────
+// These layer on top of the primary goal without conflicting.
+export const SECONDARY_FOCUSES = [
+  { id: "improve_endurance", label: "IMPROVE ENDURANCE" },
+  { id: "improve_flexibility", label: "IMPROVE FLEXIBILITY" },
+  { id: "boost_energy", label: "BOOST ENERGY & RECOVERY" },
+  { id: "build_habit", label: "BUILD A CONSISTENT HABIT" },
+];
+
+export const CUISINE_PREFERENCES = [
   { id: "mediterranean", label: "MEDITERRANEAN" },
-  { id: "high_protein", label: "HIGH PROTEIN" },
-  { id: "low_carb", label: "LOW CARB" },
-  { id: "balanced", label: "BALANCED DIET" },
   { id: "middle_eastern", label: "MIDDLE EASTERN" },
   { id: "asian", label: "ASIAN CUISINE" },
-  { id: "vegetarian", label: "VEGETARIAN" },
-  { id: "vegan", label: "VEGAN" },
+  { id: "western", label: "WESTERN" },
+  { id: "indian", label: "INDIAN" },
+  { id: "latin", label: "LATIN" },
+  { id: "mixed", label: "NO PREFERENCE" },
+];
+
+export const MEALS_PER_DAY = [
+  { id: "3_meals", label: "3 MEALS" },
+  { id: "3_plus_snacks", label: "3 MEALS + SNACKS" },
+  { id: "5_small", label: "5 SMALL MEALS" },
+  { id: "flexible", label: "FLEXIBLE" },
 ];
 
 export const COMMON_ALLERGIES = [
@@ -30,17 +43,19 @@ export const COMMON_ALLERGIES = [
   { id: "gluten", label: "GLUTEN" },
   { id: "soy", label: "SOY" },
   { id: "fish", label: "FISH" },
+  { id: "lactose", label: "LACTOSE" },
 ];
 
 export const DIETARY_RESTRICTIONS = [
   { id: "none", label: "NONE" },
-  { id: "halal", label: "HALAL" },
-  { id: "kosher", label: "KOSHER" },
-  { id: "no_pork", label: "NO PORK" },
   { id: "no_beef", label: "NO BEEF" },
-  { id: "lactose_free", label: "LACTOSE FREE" },
-  { id: "low_sodium", label: "LOW SODIUM" },
-  { id: "diabetic_friendly", label: "DIABETIC FRIENDLY" },
+  { id: "vegetarian", label: "VEGETARIAN" },
+  { id: "vegan", label: "VEGAN" },
+];
+
+export const GENDER_OPTIONS = [
+  { id: "male", label: "MALE" },
+  { id: "female", label: "FEMALE" },
 ];
 
 export const EQUIPMENT_OPTIONS = [
@@ -61,3 +76,39 @@ export const DAYS = [
   { id: "Sat", label: "S" },
   { id: "Sun", label: "S" },
 ];
+
+// ── Session duration options ─────────────────────────────────────────────────
+export const SESSION_DURATIONS = [
+  { id: "30", label: "30 MIN" },
+  { id: "45", label: "45 MIN" },
+  { id: "60", label: "60 MIN" },
+  { id: "90", label: "90+ MIN" },
+];
+
+// ── Preferred training time ──────────────────────────────────────────────────
+export const TRAINING_TIMES = [
+  { id: "morning", label: "MORNING" },
+  { id: "afternoon", label: "AFTERNOON" },
+  { id: "evening", label: "EVENING" },
+  { id: "varies", label: "VARIES" },
+];
+
+// ── Day limits by goal × experience ─────────────────────────────────────────
+// min = minimum days needed to see real results for this goal
+// max = maximum before recovery becomes an issue at this experience level
+// recommended = sweet spot the AI will suggest
+type DayLimits = { min: number; max: number; recommended: number };
+
+const DAY_LIMITS: Record<string, Record<string, DayLimits>> = {
+  lose_fat:            { beginner: { min: 3, max: 5, recommended: 3 }, intermediate: { min: 3, max: 5, recommended: 4 }, advanced: { min: 3, max: 6, recommended: 5 } },
+  build_muscle:        { beginner: { min: 3, max: 4, recommended: 3 }, intermediate: { min: 3, max: 5, recommended: 4 }, advanced: { min: 4, max: 6, recommended: 5 } },
+  body_recomposition:  { beginner: { min: 3, max: 4, recommended: 3 }, intermediate: { min: 3, max: 5, recommended: 4 }, advanced: { min: 4, max: 6, recommended: 5 } },
+  get_stronger:        { beginner: { min: 3, max: 4, recommended: 3 }, intermediate: { min: 3, max: 5, recommended: 4 }, advanced: { min: 3, max: 5, recommended: 4 } },
+  improve_fitness:     { beginner: { min: 3, max: 5, recommended: 3 }, intermediate: { min: 3, max: 5, recommended: 4 }, advanced: { min: 3, max: 6, recommended: 5 } },
+};
+
+const DEFAULT_LIMITS: DayLimits = { min: 3, max: 6, recommended: 4 };
+
+export function getDayLimits(goal: string, experience: string): DayLimits {
+  return DAY_LIMITS[goal]?.[experience] ?? DEFAULT_LIMITS;
+}

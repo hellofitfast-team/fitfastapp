@@ -13,6 +13,9 @@ export default defineSchema({
     language: v.union(v.literal("en"), v.literal("ar")),
     planTier: v.optional(
       v.union(
+        v.literal("monthly"),
+        v.literal("quarterly"),
+        // Legacy values — kept for backward compat with existing data
         v.literal("3_months"),
         v.literal("6_months"),
         v.literal("12_months"),
@@ -28,11 +31,21 @@ export default defineSchema({
     planEndDate: v.optional(v.string()),
     isCoach: v.boolean(),
     notificationReminderTime: v.optional(v.string()),
+    inactiveSince: v.optional(v.number()),
     updatedAt: v.number(),
   })
     .index("by_userId", ["userId"])
     .index("by_isCoach", ["isCoach"])
     .index("by_status", ["status"]),
+
+  assessmentHistory: defineTable({
+    userId: v.string(),
+    assessmentSnapshot: v.any(),
+    changedFields: v.array(v.string()),
+    versionNumber: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_userId", ["userId"]),
 
   initialAssessments: defineTable({
     userId: v.string(),
@@ -46,6 +59,8 @@ export default defineSchema({
     dietaryRestrictions: v.optional(v.array(v.string())),
     medicalConditions: v.optional(v.array(v.string())),
     injuries: v.optional(v.array(v.string())),
+    age: v.optional(v.number()),
+    gender: v.optional(v.string()),
     exerciseHistory: v.optional(v.string()),
     experienceLevel: v.optional(
       v.union(
@@ -172,6 +187,9 @@ export default defineSchema({
     planId: v.optional(v.string()),
     planTier: v.optional(
       v.union(
+        v.literal("monthly"),
+        v.literal("quarterly"),
+        // Legacy values
         v.literal("3_months"),
         v.literal("6_months"),
         v.literal("12_months"),
@@ -222,6 +240,7 @@ export default defineSchema({
     type: v.union(v.literal("text"), v.literal("pdf")),
     content: v.optional(v.string()),
     storageId: v.optional(v.id("_storage")),
+    tags: v.optional(v.array(v.string())),
     createdAt: v.number(),
     updatedAt: v.number(),
   })

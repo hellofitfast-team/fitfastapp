@@ -55,6 +55,46 @@ export const getSignupById = query({
   },
 });
 
+export const getSignupByEmail = query({
+  args: { email: v.string() },
+  handler: async (ctx, { email }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .unique();
+    if (!profile?.isCoach) throw new Error("Not authorized");
+
+    return ctx.db
+      .query("pendingSignups")
+      .withIndex("by_email", (q) => q.eq("email", email))
+      .order("desc")
+      .first();
+  },
+});
+
+export const getSignupsByEmail = query({
+  args: { email: v.string() },
+  handler: async (ctx, { email }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .unique();
+    if (!profile?.isCoach) throw new Error("Not authorized");
+
+    return ctx.db
+      .query("pendingSignups")
+      .withIndex("by_email", (q) => q.eq("email", email))
+      .order("desc")
+      .collect();
+  },
+});
+
 export const createSignup = mutation({
   args: {
     email: v.string(),
@@ -63,9 +103,8 @@ export const createSignup = mutation({
     planId: v.optional(v.string()),
     planTier: v.optional(
       v.union(
-        v.literal("3_months"),
-        v.literal("6_months"),
-        v.literal("12_months"),
+        v.literal("monthly"),
+        v.literal("quarterly"),
       ),
     ),
     paymentScreenshotId: v.optional(v.id("_storage")),
@@ -74,6 +113,15 @@ export const createSignup = mutation({
     const id = await ctx.db.insert("pendingSignups", { ...args, status: "pending" });
     // Increment the denormalized pending count for the admin dashboard
     await pendingSignupsCount.insert(ctx, { key: id, id });
+
+    // Schedule OCR extraction if a payment screenshot was uploaded
+    if (args.paymentScreenshotId) {
+      await ctx.scheduler.runAfter(0, internal.ocrExtraction.extractPaymentData, {
+        signupId: id,
+        storageId: args.paymentScreenshotId,
+      });
+    }
+
     return id;
   },
 });
@@ -187,6 +235,16 @@ export const markInviteUsed = internalMutation({
 // ---------------------------------------------------------------------------
 // Internal mutations
 // ---------------------------------------------------------------------------
+
+export const patchOcrData = internalMutation({
+  args: {
+    signupId: v.id("pendingSignups"),
+    ocrExtractedData: v.any(),
+  },
+  handler: async (ctx, { signupId, ocrExtractedData }) => {
+    await ctx.db.patch(signupId, { ocrExtractedData });
+  },
+});
 
 export const patchInvitationId = internalMutation({
   args: {

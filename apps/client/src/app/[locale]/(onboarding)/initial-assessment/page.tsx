@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useMutation, useAction } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/hooks/use-auth";
 import { useSwipeable } from "react-swipeable";
@@ -13,6 +13,7 @@ import { AssessmentProgress } from "./_components/assessment-progress";
 import { GoalsSection } from "./_components/goals-section";
 import { BasicInfoSection } from "./_components/basic-info-section";
 import { ScheduleSection } from "./_components/schedule-section";
+import { getDayLimits } from "./_components/constants";
 import { DietarySection } from "./_components/dietary-section";
 import { MedicalSection } from "./_components/medical-section";
 
@@ -30,8 +31,12 @@ export default function InitialAssessmentPage() {
 
   const submitAssessment = useMutation(api.assessments.submitAssessment);
   const updateProfile = useMutation(api.profiles.updateProfile);
-  const generateMealPlan = useAction(api.ai.generateMealPlan);
-  const generateWorkoutPlan = useAction(api.ai.generateWorkoutPlan);
+
+  // Fetch admin-configured cycle duration for initial plan generation
+  const frequencyConfig = useQuery(api.systemConfig.getConfig, { key: "check_in_frequency_days" });
+  const planDuration = typeof frequencyConfig?.value === "number"
+    ? frequencyConfig.value
+    : Number(frequencyConfig?.value) || 14;
 
   // Step labels from translations
   const STEP_LABELS = [
@@ -43,12 +48,17 @@ export default function InitialAssessmentPage() {
   ];
 
   // Form state
-  const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
-  const [goalsOther, setGoalsOther] = useState("");
+  const [primaryGoal, setPrimaryGoal] = useState("");
+  const [secondaryFocuses, setSecondaryFocuses] = useState<string[]>([]);
   const [currentWeight, setCurrentWeight] = useState("");
   const [height, setHeight] = useState("");
+  const [age, setAge] = useState("");
+  const [gender, setGender] = useState("");
   const [experienceLevel, setExperienceLevel] = useState("");
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
+  const [sessionDuration, setSessionDuration] = useState("");
+  const [trainingTime, setTrainingTime] = useState("");
+  const [mealsPerDay, setMealsPerDay] = useState("");
   const [selectedFoodPrefs, setSelectedFoodPrefs] = useState<string[]>([]);
   const [foodPrefsOther, setFoodPrefsOther] = useState("");
   const [selectedAllergies, setSelectedAllergies] = useState<string[]>([]);
@@ -73,12 +83,12 @@ export default function InitialAssessmentPage() {
   const validateStep = (step: number): string | null => {
     switch (step) {
       case 1: {
-        const finalGoals = getFinalValues(selectedGoals, goalsOther);
-        if (finalGoals.length === 0) return tErrors("goalRequired");
+        if (!primaryGoal) return tErrors("goalRequired");
         return null;
       }
       case 2: {
         if (!currentWeight || !height) return tErrors("weightHeightRequired");
+        if (!age || !gender) return tErrors("ageGenderRequired");
         if (!experienceLevel) return tErrors("experienceLevelRequired");
         if (!equipment) return tErrors("equipmentRequired");
         if (equipment === "other" && !equipmentOther.trim())
@@ -86,7 +96,10 @@ export default function InitialAssessmentPage() {
         return null;
       }
       case 3: {
-        if (selectedDays.length === 0) return tErrors("workoutDaysRequired");
+        const limits = getDayLimits(primaryGoal, experienceLevel);
+        if (selectedDays.length < limits.min)
+          return tErrors("workoutDaysMin", { min: limits.min });
+        if (!sessionDuration) return tErrors("sessionDurationRequired");
         return null;
       }
       case 4:
@@ -98,6 +111,12 @@ export default function InitialAssessmentPage() {
     }
   };
 
+  // Guard: block form submission for a short window after advancing to the last step.
+  // When clicking "Next" on step 4, React re-renders the Submit button in the same
+  // DOM position as the old Next button, and the browser's click event can propagate
+  // to the new submit button, triggering an unintended form submission.
+  const justAdvancedToFinal = useRef(false);
+
   // Step navigation
   const handleNext = () => {
     const validationError = validateStep(currentStep);
@@ -107,6 +126,10 @@ export default function InitialAssessmentPage() {
     }
     setError(null);
     if (currentStep < TOTAL_STEPS) {
+      if (currentStep + 1 === TOTAL_STEPS) {
+        justAdvancedToFinal.current = true;
+        setTimeout(() => { justAdvancedToFinal.current = false; }, 300);
+      }
       setCurrentStep(currentStep + 1);
     }
   };
@@ -139,6 +162,19 @@ export default function InitialAssessmentPage() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Guard: only allow submission from the final step.
+    // Prevents implicit form submission (e.g. pressing Enter in a text input)
+    // from triggering submit on earlier steps where optional validation passes.
+    if (currentStep < TOTAL_STEPS) {
+      return;
+    }
+
+    // Guard: block submission that fires from click propagation when the
+    // Next button on step 4 is replaced by the Submit button in the same render.
+    if (justAdvancedToFinal.current) {
+      return;
+    }
+
     // Final validation for the last step (all steps should already be validated)
     for (let step = 1; step <= TOTAL_STEPS; step++) {
       const validationError = validateStep(step);
@@ -158,7 +194,7 @@ export default function InitialAssessmentPage() {
     setError(null);
 
     try {
-      const finalGoals = getFinalValues(selectedGoals, goalsOther);
+      const finalGoals = [primaryGoal, ...secondaryFocuses];
       const finalFoodPrefs = getFinalValues(selectedFoodPrefs, foodPrefsOther);
       const finalAllergies = getFinalValues(selectedAllergies, allergiesOther);
       const finalRestrictions = getFinalValues(
@@ -168,15 +204,23 @@ export default function InitialAssessmentPage() {
       const finalEquipment =
         equipment === "other" ? equipmentOther.trim() : equipment;
 
+      const language = (profile.language || "en") as "en" | "ar";
+
       await submitAssessment({
         goals: finalGoals.join(", "),
         currentWeight: parseFloat(currentWeight),
         height: parseFloat(height),
+        age: parseInt(age),
+        gender,
         experienceLevel: experienceLevel as
           | "beginner"
           | "intermediate"
           | "advanced",
-        scheduleAvailability: { days: selectedDays },
+        scheduleAvailability: {
+          days: selectedDays,
+          sessionDuration: sessionDuration ? parseInt(sessionDuration) : undefined,
+          preferredTime: trainingTime || undefined,
+        },
         foodPreferences:
           finalFoodPrefs.length > 0 ? finalFoodPrefs : undefined,
         allergies: finalAllergies.length > 0 ? finalAllergies : undefined,
@@ -185,29 +229,19 @@ export default function InitialAssessmentPage() {
         medicalConditions: medicalNotes ? [medicalNotes] : undefined,
         exerciseHistory: finalEquipment,
         measurements: {},
-        lifestyleHabits: { equipment: finalEquipment },
+        lifestyleHabits: { equipment: finalEquipment, mealsPerDay: mealsPerDay || undefined },
+        // Schedule server-side plan generation (survives client navigation)
+        generatePlans: { language, planDuration },
       });
 
       // Update profile status to active
       try {
         await updateProfile({});
-        // Note: The status update is handled server-side or separately
       } catch (updateError) {
         console.error("Error updating profile:", updateError);
       }
 
-      // Generate initial meal + workout plans from assessment data
-      const language = profile.language || "en";
-      try {
-        await Promise.all([
-          generateMealPlan({ language, planDuration: 14 }),
-          generateWorkoutPlan({ language, planDuration: 14 }),
-        ]);
-      } catch (planError) {
-        console.error("Initial plan generation error:", planError);
-        // Don't block navigation -- plans can be regenerated on first check-in
-      }
-
+      // Navigate immediately — plans generate server-side via scheduler
       router.push("/");
     } catch (err) {
       console.error("Assessment error:", err);
@@ -233,7 +267,25 @@ export default function InitialAssessmentPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 pb-12">
+    <div className="relative max-w-3xl mx-auto space-y-6 pb-12">
+      {/* Full-screen generating overlay */}
+      {isLoading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-4 text-center px-6">
+            <div className="relative">
+              <div className="h-16 w-16 rounded-full border-4 border-primary/20" />
+              <div className="absolute inset-0 h-16 w-16 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+            </div>
+            <div className="space-y-1.5">
+              <p className="text-lg font-semibold">{t("submitting")}</p>
+              <p className="text-sm text-muted-foreground max-w-xs">
+                {t("generatingDescription")}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="text-center">
         <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
@@ -259,10 +311,10 @@ export default function InitialAssessmentPage() {
           {currentStep === 1 && (
             <div style={{ animation: "fadeIn 0.2s ease-out" }}>
               <GoalsSection
-                selectedGoals={selectedGoals}
-                setSelectedGoals={setSelectedGoals}
-                goalsOther={goalsOther}
-                setGoalsOther={setGoalsOther}
+                primaryGoal={primaryGoal}
+                setPrimaryGoal={setPrimaryGoal}
+                secondaryFocuses={secondaryFocuses}
+                setSecondaryFocuses={setSecondaryFocuses}
                 isLoading={isLoading}
               />
             </div>
@@ -274,6 +326,10 @@ export default function InitialAssessmentPage() {
                 setCurrentWeight={setCurrentWeight}
                 height={height}
                 setHeight={setHeight}
+                age={age}
+                setAge={setAge}
+                gender={gender}
+                setGender={setGender}
                 experienceLevel={experienceLevel}
                 setExperienceLevel={setExperienceLevel}
                 equipment={equipment}
@@ -289,6 +345,12 @@ export default function InitialAssessmentPage() {
               <ScheduleSection
                 selectedDays={selectedDays}
                 setSelectedDays={setSelectedDays}
+                sessionDuration={sessionDuration}
+                setSessionDuration={setSessionDuration}
+                trainingTime={trainingTime}
+                setTrainingTime={setTrainingTime}
+                primaryGoal={primaryGoal}
+                experienceLevel={experienceLevel}
                 isLoading={isLoading}
               />
             </div>
@@ -300,6 +362,8 @@ export default function InitialAssessmentPage() {
                 setSelectedFoodPrefs={setSelectedFoodPrefs}
                 foodPrefsOther={foodPrefsOther}
                 setFoodPrefsOther={setFoodPrefsOther}
+                mealsPerDay={mealsPerDay}
+                setMealsPerDay={setMealsPerDay}
                 selectedAllergies={selectedAllergies}
                 setSelectedAllergies={setSelectedAllergies}
                 allergiesOther={allergiesOther}
@@ -353,14 +417,8 @@ export default function InitialAssessmentPage() {
               disabled={isLoading}
               loading={isLoading}
             >
-              {isLoading ? (
-                t("submitting")
-              ) : (
-                <>
-                  {t("completeAssessment")}
-                  <ArrowRight className="h-5 w-5 rtl:rotate-180" />
-                </>
-              )}
+              {t(isLoading ? "submitting" : "completeAssessment")}
+              {!isLoading && <ArrowRight className="h-5 w-5 rtl:rotate-180" />}
             </Button>
           )}
         </div>

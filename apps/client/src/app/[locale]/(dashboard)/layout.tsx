@@ -27,6 +27,11 @@ export default async function DashboardLayout({
     redirect(`/${locale}/login`);
   }
 
+  // Block coach accounts from accessing the client app
+  if (profile.isCoach) {
+    redirect(`/${locale}/login?message=${encodeURIComponent("Coach accounts cannot access the client app. Please use the admin panel.")}`);
+  }
+
   const hasAssessment = !!assessment;
 
   // Route based on profile status

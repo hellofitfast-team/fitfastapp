@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslations } from "next-intl";
-import { useConvexAuth, useQuery, useMutation } from "convex/react";
+import { useConvexAuth, useQuery, useMutation, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Plus, Trash2, GripVertical, Save } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { Plus, Trash2, GripVertical, Check, Loader2 } from "lucide-react";
 import * as Sentry from "@sentry/nextjs";
+import { SaveButton } from "./save-button";
 
 type Plan = {
   id: string;
@@ -28,16 +28,45 @@ function generateId() {
   return `plan_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 }
 
+// ── Duration options (dropdown) ──────────────────────────────────────────────
+const DURATION_OPTIONS = [
+  { value: "1 month", label: "1 Month", labelAr: "شهر واحد" },
+  { value: "3 months", label: "3 Months", labelAr: "3 أشهر" },
+] as const;
+
+// ── Predefined feature catalog (chips) ───────────────────────────────────────
+const FEATURE_CATALOG: { en: string; ar: string }[] = [
+  { en: "AI-personalized meal plans", ar: "خطط وجبات مخصصة بالذكاء الاصطناعي" },
+  { en: "AI-personalized workout plans", ar: "خطط تمارين مخصصة بالذكاء الاصطناعي" },
+  { en: "Bi-weekly check-ins with your coach", ar: "متابعة مع المدرب كل أسبوعين" },
+  { en: "Daily meal & workout tracking", ar: "تتبع يومي للوجبات والتمارين" },
+  { en: "Progress charts & analytics", ar: "رسوم بيانية وتحليلات للتقدم" },
+  { en: "Direct coach support via tickets", ar: "دعم مباشر من المدرب عبر التذاكر" },
+  { en: "Bilingual app (English & Arabic)", ar: "تطبيق ثنائي اللغة (إنجليزي وعربي)" },
+  { en: "Mobile-first PWA — no app store needed", ar: "تطبيق ويب للموبايل — بدون تحميل" },
+  { en: "Progress photo tracking", ar: "تتبع صور التقدم" },
+  { en: "Personalized dietary preferences", ar: "تفضيلات غذائية مخصصة" },
+  { en: "Injury & medical condition support", ar: "دعم الإصابات والحالات الطبية" },
+  { en: "Smart schedule-based workout plans", ar: "خطط تمارين ذكية حسب جدولك" },
+  { en: "Daily reflection journal", ar: "دفتر تأمل يومي" },
+  { en: "Automatic plan regeneration on check-in", ar: "تجديد تلقائي للخطط عند المتابعة" },
+  { en: "Push notifications & reminders", ar: "إشعارات وتذكيرات فورية" },
+  { en: "FAQ & help center", ar: "الأسئلة الشائعة ومركز المساعدة" },
+];
+
+// First 8 features are selected by default; the rest are opt-in
+const DEFAULT_SELECTED_COUNT = 8;
+
 const emptyPlan = (): Plan => ({
   id: generateId(),
   name: "",
   nameAr: "",
   price: 0,
   currency: "EGP",
-  duration: "",
-  durationAr: "",
-  features: [""],
-  featuresAr: [""],
+  duration: "1 month",
+  durationAr: "شهر واحد",
+  features: FEATURE_CATALOG.slice(0, DEFAULT_SELECTED_COUNT).map((f) => f.en),
+  featuresAr: FEATURE_CATALOG.slice(0, DEFAULT_SELECTED_COUNT).map((f) => f.ar),
   badge: undefined,
   badgeAr: undefined,
 });
@@ -47,15 +76,68 @@ export function PlansManager() {
   const { isAuthenticated } = useConvexAuth();
   const serverPlans = useQuery(api.systemConfig.getPlans, isAuthenticated ? {} : "skip");
   const updatePlans = useMutation(api.systemConfig.updatePlans);
+  const translateAction = useAction(api.ai.translateToArabic);
 
   const [plans, setPlans] = useState<Plan[] | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
+  // Track which AR name fields the coach has manually edited (skip auto-translate for those)
+  const manualArEdits = useRef<Set<string>>(new Set());
+  // Track which plan names are currently being translated
+  const [translatingIds, setTranslatingIds] = useState<Set<string>>(new Set());
+  // Debounce timers for translation per plan
+  const translateTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  const autoTranslateName = useCallback(
+    (planId: string, enName: string) => {
+      // Clear existing timer for this plan
+      const existing = translateTimers.current.get(planId);
+      if (existing) clearTimeout(existing);
+
+      if (!enName.trim()) {
+        setPlans((prev) =>
+          prev?.map((p) => (p.id === planId ? { ...p, nameAr: "" } : p)) ?? null
+        );
+        return;
+      }
+
+      // Skip if the coach manually edited the AR field
+      if (manualArEdits.current.has(planId)) return;
+
+      const timer = setTimeout(async () => {
+        setTranslatingIds((prev) => new Set(prev).add(planId));
+        try {
+          const translated = await translateAction({ text: enName });
+          if (translated && !manualArEdits.current.has(planId)) {
+            setPlans((prev) =>
+              prev?.map((p) =>
+                p.id === planId ? { ...p, nameAr: translated } : p
+              ) ?? null
+            );
+          }
+        } catch {
+          // Silently fail — coach can always type manually
+        }
+        setTranslatingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(planId);
+          return next;
+        });
+      }, 800);
+
+      translateTimers.current.set(planId, timer);
+    },
+    [translateAction]
+  );
 
   // Initialize local state once server data arrives
   useEffect(() => {
     if (serverPlans !== undefined && plans === null) {
       setPlans(serverPlans.length > 0 ? serverPlans : []);
+      // Mark loaded plans as manually edited so we don't overwrite existing AR names
+      for (const p of serverPlans) {
+        if (p.nameAr) manualArEdits.current.add(p.id);
+      }
     }
   }, [serverPlans, plans]);
 
@@ -74,7 +156,13 @@ export function PlansManager() {
 
   const handleAddPlan = () => {
     if (plans.length >= MAX_PLANS) return;
-    setPlans([...plans, emptyPlan()]);
+    const newPlan = emptyPlan();
+    // Inherit feature selection from the first plan so they stay consistent
+    if (plans.length > 0) {
+      newPlan.features = [...plans[0].features];
+      newPlan.featuresAr = [...plans[0].featuresAr];
+    }
+    setPlans([...plans, newPlan]);
   };
 
   const handleRemovePlan = (id: string) => {
@@ -94,104 +182,79 @@ export function PlansManager() {
     setPlans(plans.map((p) => (p.id === id ? { ...p, [field]: value } : p)));
   };
 
-  const handleFeatureChange = (
-    planId: string,
-    index: number,
-    value: string,
-    lang: "en" | "ar"
-  ) => {
-    const field = lang === "en" ? "features" : "featuresAr";
+  const handleDurationChange = (planId: string, durationValue: string) => {
+    const opt = DURATION_OPTIONS.find((o) => o.value === durationValue);
+    if (!opt) return;
     setPlans(
-      plans.map((p) => {
-        if (p.id !== planId) return p;
-        const updated = [...p[field]];
-        updated[index] = value;
-        return { ...p, [field]: updated };
-      })
+      plans.map((p) =>
+        p.id === planId
+          ? { ...p, duration: opt.value, durationAr: opt.labelAr }
+          : p
+      )
     );
   };
 
-  const handleAddFeature = (planId: string) => {
-    setPlans(
-      plans.map((p) => {
-        if (p.id !== planId) return p;
-        return {
-          ...p,
-          features: [...p.features, ""],
-          featuresAr: [...p.featuresAr, ""],
-        };
-      })
-    );
-  };
+  const handleToggleFeature = (planId: string, featureIndex: number) => {
+    const feature = FEATURE_CATALOG[featureIndex];
+    const sourcePlan = plans.find((p) => p.id === planId);
+    if (!sourcePlan) return;
+    const isSelected = sourcePlan.features.includes(feature.en);
 
-  const handleRemoveFeature = (planId: string, index: number) => {
+    // Apply the same toggle to ALL plans
     setPlans(
       plans.map((p) => {
-        if (p.id !== planId) return p;
-        return {
-          ...p,
-          features: p.features.filter((_, i) => i !== index),
-          featuresAr: p.featuresAr.filter((_, i) => i !== index),
-        };
+        const idx = p.features.indexOf(feature.en);
+        if (isSelected && idx >= 0) {
+          return {
+            ...p,
+            features: p.features.filter((_, i) => i !== idx),
+            featuresAr: p.featuresAr.filter((_, i) => i !== idx),
+          };
+        }
+        if (!isSelected && idx < 0) {
+          return {
+            ...p,
+            features: [...p.features, feature.en],
+            featuresAr: [...p.featuresAr, feature.ar],
+          };
+        }
+        return p;
       })
     );
   };
 
   const handleSave = async () => {
+    setValidationError(null);
+
     // Validate
     for (const plan of plans) {
       if (!plan.name.trim()) {
-        toast({
-          title: t("savePlansError"),
-          description: `Plan "${plan.name || "Unnamed"}" requires an English name.`,
-          variant: "destructive",
-        });
-        return;
+        setValidationError(`Plan "${plan.name || "Unnamed"}" requires an English name.`);
+        throw new Error("Validation failed");
       }
       if (plan.price <= 0) {
-        toast({
-          title: t("savePlansError"),
-          description: `Plan "${plan.name}" must have a price greater than 0.`,
-          variant: "destructive",
-        });
-        return;
+        setValidationError(`Plan "${plan.name}" must have a price greater than 0.`);
+        throw new Error("Validation failed");
       }
-      if (plan.features.every((f) => !f.trim())) {
-        toast({
-          title: t("savePlansError"),
-          description: `Plan "${plan.name}" needs at least one feature.`,
-          variant: "destructive",
-        });
-        return;
+      if (plan.features.length === 0) {
+        setValidationError(`Plan "${plan.name}" needs at least one feature.`);
+        throw new Error("Validation failed");
       }
     }
 
-    setIsSaving(true);
     try {
-      // Clean up empty features
       const cleanPlans = plans.map((p) => ({
         ...p,
-        features: p.features.filter((f) => f.trim()),
-        featuresAr: p.featuresAr.filter((f) => f.trim()),
         badge: p.badge || undefined,
         badgeAr: p.badgeAr || undefined,
       }));
       await updatePlans({ plans: cleanPlans });
-      toast({
-        title: t("savePlansSuccess"),
-        description: t("savePlansSuccessDescription"),
-      });
     } catch (error) {
       Sentry.captureException(error, {
         tags: { feature: "admin-settings", operation: "update-plans" },
       });
-      toast({
-        title: t("savePlansError"),
-        description: error instanceof Error ? error.message : "Unexpected error",
-        variant: "destructive",
-      });
+      throw error;
     }
-    setIsSaving(false);
   };
 
   return (
@@ -238,7 +301,13 @@ export function PlansManager() {
                 <input
                   type="text"
                   value={plan.name}
-                  onChange={(e) => handlePlanChange(plan.id, "name", e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    handlePlanChange(plan.id, "name", val);
+                    // EN name changed — allow auto-translate again
+                    manualArEdits.current.delete(plan.id);
+                    autoTranslateName(plan.id, val);
+                  }}
                   placeholder={t("planNamePlaceholder")}
                   className="w-full h-10 rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 />
@@ -247,14 +316,24 @@ export function PlansManager() {
                 <label className="block text-xs font-medium text-stone-500 mb-1">
                   {t("planNameAr")}
                 </label>
-                <input
-                  type="text"
-                  value={plan.nameAr}
-                  onChange={(e) => handlePlanChange(plan.id, "nameAr", e.target.value)}
-                  placeholder={t("planNameArPlaceholder")}
-                  dir="rtl"
-                  className="w-full h-10 rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={plan.nameAr}
+                    onChange={(e) => {
+                      manualArEdits.current.add(plan.id);
+                      handlePlanChange(plan.id, "nameAr", e.target.value);
+                    }}
+                    placeholder={t("planNameArPlaceholder")}
+                    dir="rtl"
+                    className="w-full h-10 rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  />
+                  {translatingIds.has(plan.id) && (
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-stone-400" />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -291,37 +370,22 @@ export function PlansManager() {
               </div>
             </div>
 
-            {/* Duration row */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-stone-500 mb-1">
-                  {t("duration")}
-                </label>
-                <input
-                  type="text"
-                  value={plan.duration}
-                  onChange={(e) =>
-                    handlePlanChange(plan.id, "duration", e.target.value)
-                  }
-                  placeholder={t("durationPlaceholder")}
-                  className="w-full h-10 rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-stone-500 mb-1">
-                  {t("durationAr")}
-                </label>
-                <input
-                  type="text"
-                  value={plan.durationAr}
-                  onChange={(e) =>
-                    handlePlanChange(plan.id, "durationAr", e.target.value)
-                  }
-                  placeholder={t("durationArPlaceholder")}
-                  dir="rtl"
-                  className="w-full h-10 rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                />
-              </div>
+            {/* Duration dropdown */}
+            <div>
+              <label className="block text-xs font-medium text-stone-500 mb-1">
+                {t("duration")}
+              </label>
+              <select
+                value={plan.duration}
+                onChange={(e) => handleDurationChange(plan.id, e.target.value)}
+                className="w-full h-10 rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              >
+                {DURATION_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label} / {opt.labelAr}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Badge row */}
@@ -369,67 +433,36 @@ export function PlansManager() {
               </div>
             </div>
 
-            {/* Features */}
-            <div className="grid grid-cols-2 gap-3">
-              {/* EN features */}
-              <div>
-                <label className="block text-xs font-medium text-stone-500 mb-2">
-                  {t("features")}
-                </label>
-                <div className="space-y-2">
-                  {plan.features.map((feature, fi) => (
-                    <div key={fi} className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={feature}
-                        onChange={(e) =>
-                          handleFeatureChange(plan.id, fi, e.target.value, "en")
-                        }
-                        placeholder={t("featurePlaceholder")}
-                        className="flex-1 h-9 rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                      />
-                      {plan.features.length > 1 && (
-                        <button
-                          onClick={() => handleRemoveFeature(plan.id, fi)}
-                          className="h-11 w-11 shrink-0 flex items-center justify-center rounded-lg border border-stone-200 text-stone-400 hover:border-red-200 hover:text-red-600 transition-colors"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                  <button
-                    onClick={() => handleAddFeature(plan.id)}
-                    className="flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/70 transition-colors"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    {t("addFeature")}
-                  </button>
-                </div>
+            {/* Features — selectable chips */}
+            <div>
+              <label className="block text-xs font-medium text-stone-500 mb-2">
+                {t("features")}
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {FEATURE_CATALOG.map((feat, fi) => {
+                  const isSelected = plan.features.includes(feat.en);
+                  return (
+                    <button
+                      key={fi}
+                      type="button"
+                      onClick={() => handleToggleFeature(plan.id, fi)}
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all ${
+                        isSelected
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-stone-200 bg-stone-50 text-stone-400 hover:border-stone-300 hover:text-stone-600"
+                      }`}
+                    >
+                      {isSelected && <Check className="h-3 w-3" />}
+                      {feat.en}
+                    </button>
+                  );
+                })}
               </div>
-
-              {/* AR features */}
-              <div>
-                <label className="block text-xs font-medium text-stone-500 mb-2">
-                  {t("featuresAr")}
-                </label>
-                <div className="space-y-2">
-                  {plan.featuresAr.map((feature, fi) => (
-                    <div key={fi} className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={feature}
-                        onChange={(e) =>
-                          handleFeatureChange(plan.id, fi, e.target.value, "ar")
-                        }
-                        placeholder={t("featureArPlaceholder")}
-                        dir="rtl"
-                        className="flex-1 h-9 rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
+              {plan.features.length > 0 && (
+                <p className="mt-2 text-[11px] text-stone-400">
+                  {plan.features.length} feature{plan.features.length !== 1 ? "s" : ""} selected
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -448,16 +481,16 @@ export function PlansManager() {
         <p className="text-center text-xs text-stone-400">{t("maxPlansReached")}</p>
       )}
 
+      {/* Validation error */}
+      {validationError && (
+        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-2">
+          {validationError}
+        </p>
+      )}
+
       {/* Save button */}
       <div className="flex justify-end pt-2">
-        <button
-          onClick={handleSave}
-          disabled={isSaving}
-          className="flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white hover:bg-primary/90 transition-colors disabled:opacity-50 shadow-md shadow-primary/20"
-        >
-          <Save className="h-4 w-4" />
-          {isSaving ? "Saving..." : t("savePlans")}
-        </button>
+        <SaveButton onSave={handleSave} label={t("savePlans")} />
       </div>
     </div>
   );

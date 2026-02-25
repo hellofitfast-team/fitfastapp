@@ -27,6 +27,7 @@
     "@openrouter/ai-sdk-provider": "^2.2.3",
     "ai": "^6.0.86",
     "convex": "^1.31.7",
+    "lucia": "^3.2.2",
     "pdf-parse": "^2.4.5",
     "resend": "^6.9.2"
   },

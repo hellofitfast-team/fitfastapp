@@ -24,10 +24,10 @@ export default function AdminLoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const cardRef = useRef<HTMLDivElement>(null);
-  const { signIn } = useAuthActions();
+  const { signIn, signOut } = useAuthActions();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [checkingCoach, setCheckingCoach] = useState(false);
+  const [signInComplete, setSignInComplete] = useState(false);
 
   const { isAuthenticated: isConvexAuth } = useConvexAuth();
   const profile = useQuery(api.profiles.getMyProfile, isConvexAuth ? {} : "skip");
@@ -39,30 +39,20 @@ export default function AdminLoginPage() {
     }
   }, [searchParams, t]);
 
-  // Redirect if already authenticated as coach
+  // Redirect if authenticated as coach (covers both fresh login and revisiting login page)
   useEffect(() => {
     if (!isConvexAuth || profile === undefined) return;
-    if (checkingCoach) return; // handled below
 
     if (profile?.isCoach) {
       router.replace("/");
-    }
-  }, [isConvexAuth, profile, checkingCoach, router]);
-
-  // After sign-in, check if user is coach
-  useEffect(() => {
-    if (!checkingCoach || !isConvexAuth || profile === undefined) return;
-
-    if (profile?.isCoach) {
-      router.replace("/");
-    } else {
-      // Not a coach — sign out and show error
-      void signIn("password", new FormData()).catch(() => {});
+    } else if (signInComplete) {
+      // Signed in but not a coach — sign out and show error
+      void signOut().catch(() => {});
       setError(t("notAuthorized"));
-      setCheckingCoach(false);
+      setSignInComplete(false);
       setIsLoading(false);
     }
-  }, [checkingCoach, isConvexAuth, profile, router, signIn, t]);
+  }, [isConvexAuth, profile, signInComplete, router, signOut, t]);
 
   // GSAP entrance animation
   useEffect(() => {
@@ -90,13 +80,14 @@ export default function AdminLoginPage() {
     setError(null);
 
     try {
-      const formData = new FormData();
-      formData.set("email", data.email);
-      formData.set("password", data.password);
-      formData.set("flow", "signIn");
-
-      await signIn("password", formData);
-      setCheckingCoach(true);
+      const result = await signIn("password", {
+        email: data.email,
+        password: data.password,
+        flow: "signIn",
+      });
+      if (result.signingIn) {
+        setSignInComplete(true);
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : t("invalidCredentials");
       setError(message);

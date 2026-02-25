@@ -2,29 +2,92 @@
 
 import { useTranslations, useLocale } from "next-intl";
 import { useCurrentMealPlan } from "@/hooks/use-meal-plans";
-import { useAction } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { useAuth } from "@/hooks/use-auth";
-import { UtensilsCrossed, Calendar, TrendingUp, RefreshCw, Clock, Flame, Loader2, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
+import { UtensilsCrossed, TrendingUp, RefreshCw, Clock, Flame, Loader2, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { cn } from "@fitfast/ui/cn";
 import { usePlanStream } from "@/hooks/use-plan-stream";
 import { EmptyState } from "@fitfast/ui/empty-state";
 import { DaySelector } from "./_components/day-selector";
 import type { GeneratedMealPlan } from "@/lib/ai/meal-plan-generator";
+import { useAction, useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { Button } from "@fitfast/ui/button";
+import { useAuth } from "@/hooks/use-auth";
+
+// Normalize a meal object to handle both old format (macros nested in .macros)
+// and new format (flat calories/protein/carbs/fat)
+function normalizeMeal(raw: any) {
+  const macros = raw.macros || {};
+  return {
+    name: raw.name || "",
+    type: raw.type || "",
+    calories: raw.calories || macros.calories || 0,
+    protein: raw.protein || macros.protein || 0,
+    carbs: raw.carbs || macros.carbs || 0,
+    fat: raw.fat || macros.fat || 0,
+    ingredients: Array.isArray(raw.ingredients) ? raw.ingredients : [],
+    instructions: Array.isArray(raw.instructions)
+      ? raw.instructions
+      : typeof raw.instructions === "string"
+        ? raw.instructions.split(/\.\s+/).filter(Boolean)
+        : [],
+    alternatives: Array.isArray(raw.alternatives) ? raw.alternatives : [],
+  };
+}
+
+// Resolve the day plan from weeklyPlan — tries "dayN" format first, then weekday names
+function resolveDayPlan(weeklyPlan: Record<string, any>, dayIndex: number, startDate?: string) {
+  // Try new format: "day1", "day2", ...
+  const dayKey = `day${dayIndex + 1}`;
+  if (weeklyPlan[dayKey]) return weeklyPlan[dayKey];
+
+  // Try old format: weekday name based on startDate + offset
+  if (startDate) {
+    const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+    const date = new Date(startDate);
+    date.setDate(date.getDate() + dayIndex);
+    const weekdayName = dayNames[date.getDay()];
+    if (weeklyPlan[weekdayName]) return weeklyPlan[weekdayName];
+  }
+
+  return null;
+}
 
 export default function MealPlanPage() {
   const t = useTranslations("meals");
   const tCommon = useTranslations("common");
   const tEmpty = useTranslations("emptyStates");
   const locale = useLocale();
-  const { profile } = useAuth();
   const { mealPlan, isLoading, error } = useCurrentMealPlan();
   const [selectedDay, setSelectedDay] = useState(0);
-  const [generatingPlan, setGeneratingPlan] = useState(false);
   const [expandedMeal, setExpandedMeal] = useState<number | null>(0);
+  const [expandedAlts, setExpandedAlts] = useState<Set<string>>(new Set());
   const daySelectorRef = useRef<HTMLDivElement>(null);
   const isRTL = locale === "ar";
+  const { profile } = useAuth();
+
+  // Generate meal plan action + plan duration config
+  const generateMealPlan = useAction(api.ai.generateMealPlan);
+  const frequencyConfig = useQuery(api.systemConfig.getConfig, { key: "check_in_frequency_days" });
+  const planDuration = typeof frequencyConfig?.value === "number"
+    ? frequencyConfig.value
+    : Number(frequencyConfig?.value) || 14;
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState<string | null>(null);
+
+  const handleGenerate = async () => {
+    setIsGenerating(true);
+    setGenerateError(null);
+    try {
+      const language = (profile?.language || locale || "en") as "en" | "ar";
+      await generateMealPlan({ language, planDuration, isInitialGeneration: true });
+    } catch (err) {
+      console.error("Meal plan generation failed:", err);
+      setGenerateError(err instanceof Error ? err.message : "Generation failed");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   // Scroll day selector to show day 1 on the correct edge for RTL
   useEffect(() => {
@@ -46,8 +109,6 @@ export default function MealPlanPage() {
     }
   }, [selectedDay]);
 
-  const generateMealPlan = useAction(api.ai.generateMealPlan);
-
   // Streaming support
   const streamId = mealPlan?.streamId;
   const { streamedText, isStreaming } = usePlanStream(
@@ -56,43 +117,23 @@ export default function MealPlanPage() {
       : undefined,
   );
 
-  const weekDays = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
-
-  // Map day index (0-13) to weekday name (days 8-14 repeat days 1-7)
-  const getDayName = (dayIndex: number): string => {
-    return weekDays[dayIndex % 7];
-  };
-
   // Compute today's day index from plan start date
+  const maxDayIndex = mealPlan?.startDate && mealPlan?.endDate
+    ? Math.ceil((new Date(mealPlan.endDate).getTime() - new Date(mealPlan.startDate).getTime()) / 86400000) - 1
+    : 13;
   const todayDayIndex = useMemo(() => {
     if (!mealPlan?.startDate) return 0;
     const start = new Date(mealPlan.startDate);
     const diff = Math.floor((Date.now() - start.getTime()) / 86400000);
-    return Math.max(0, Math.min(13, diff));
-  }, [mealPlan?.startDate]);
+    return Math.max(0, Math.min(maxDayIndex, diff));
+  }, [mealPlan?.startDate, maxDayIndex]);
 
   // Auto-select today on mount
-  useState(() => {
+  useEffect(() => {
     if (mealPlan?.startDate) {
       setSelectedDay(todayDayIndex);
     }
-  });
-
-  const handleGeneratePlan = async () => {
-    setGeneratingPlan(true);
-    try {
-      await generateMealPlan({
-        language: (profile?.language || "en") as "en" | "ar",
-        planDuration: 14,
-      });
-      window.location.reload();
-    } catch (err) {
-      console.error("Error generating meal plan:", err);
-      alert("Failed to generate meal plan. Please try again.");
-    } finally {
-      setGeneratingPlan(false);
-    }
-  };
+  }, [todayDayIndex, mealPlan?.startDate]);
 
   if (isLoading) {
     return (
@@ -105,8 +146,8 @@ export default function MealPlanPage() {
     );
   }
 
-  // Show streaming banner while AI generates
-  if (mealPlan && isStreaming && streamedText) {
+  // Show streaming banner while AI generates (only if planData not yet parsed)
+  if (mealPlan && isStreaming && streamedText && !mealPlan.planData) {
     return (
       <div className="px-4 py-6 space-y-5 max-w-3xl mx-auto lg:px-6">
         <div>
@@ -138,51 +179,75 @@ export default function MealPlanPage() {
         <EmptyState
           icon={UtensilsCrossed}
           title={tEmpty("noMealPlan.title")}
-          description={tEmpty("noMealPlan.description")}
-          action={{
-            label: tEmpty("noMealPlan.action"),
-            onClick: handleGeneratePlan,
-          }}
+          description={isGenerating ? t("generating") : tEmpty("noMealPlan.description")}
         />
+        {generateError && (
+          <div className="rounded-lg border border-error-500/30 bg-error-500/10 p-3 text-center">
+            <p className="text-sm text-error-500">{generateError}</p>
+          </div>
+        )}
+        <div className="flex justify-center">
+          <Button
+            onClick={handleGenerate}
+            disabled={isGenerating}
+            loading={isGenerating}
+            variant="gradient"
+          >
+            <Sparkles className="h-4 w-4" />
+            {isGenerating ? t("generating") : t("generatePlan")}
+          </Button>
+        </div>
       </div>
     );
   }
 
   const planData = mealPlan.planData as unknown as GeneratedMealPlan;
-  const dayName = getDayName(selectedDay);
-  const dayPlan = planData.weeklyPlan[dayName];
 
-  // Compute daily nutrition totals
+  // Guard: if weeklyPlan is missing, show empty state instead of crashing
+  if (!planData?.weeklyPlan) {
+    return (
+      <div className="px-4 py-6 space-y-6 max-w-3xl mx-auto lg:px-6">
+        <div>
+          <h1 className="text-2xl font-bold">{t("title")}</h1>
+          <p className="text-sm text-muted-foreground mt-1">{t("getStarted")}</p>
+        </div>
+        <EmptyState
+          icon={UtensilsCrossed}
+          title={tEmpty("noMealPlan.title")}
+          description={tEmpty("noMealPlan.description")}
+        />
+      </div>
+    );
+  }
+
+  const totalDays = mealPlan.startDate && mealPlan.endDate
+    ? Math.ceil((new Date(mealPlan.endDate).getTime() - new Date(mealPlan.startDate).getTime()) / 86400000)
+    : 14;
+  const dayPlan = resolveDayPlan(planData.weeklyPlan, selectedDay, mealPlan.startDate);
+
+  // Normalize meals to handle both old (nested macros) and new (flat) formats
+  const rawMeals = dayPlan?.meals ?? [];
+  const meals = rawMeals.map(normalizeMeal);
   const dailyTotals = dayPlan ? {
-    calories: dayPlan.dailyTotals?.calories ?? dayPlan.meals.reduce((sum, m) => sum + (m.calories || 0), 0),
-    protein: dayPlan.dailyTotals?.protein ?? dayPlan.meals.reduce((sum, m) => sum + (m.protein || 0), 0),
-    carbs: dayPlan.dailyTotals?.carbs ?? dayPlan.meals.reduce((sum, m) => sum + (m.carbs || 0), 0),
-    fat: dayPlan.dailyTotals?.fat ?? dayPlan.meals.reduce((sum, m) => sum + (m.fat || 0), 0),
+    calories: dayPlan.dailyTotals?.calories ?? meals.reduce((sum: number, m: any) => sum + (m.calories || 0), 0),
+    protein: dayPlan.dailyTotals?.protein ?? meals.reduce((sum: number, m: any) => sum + (m.protein || 0), 0),
+    carbs: dayPlan.dailyTotals?.carbs ?? meals.reduce((sum: number, m: any) => sum + (m.carbs || 0), 0),
+    fat: dayPlan.dailyTotals?.fat ?? meals.reduce((sum: number, m: any) => sum + (m.fat || 0), 0),
   } : null;
 
   return (
     <div className="px-4 py-6 space-y-5 max-w-3xl mx-auto lg:px-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">{t("title")}</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {mealPlan.startDate} - {mealPlan.endDate}
-          </p>
-        </div>
-        <button
-          onClick={handleGeneratePlan}
-          disabled={generatingPlan}
-          className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium hover:bg-neutral-50 disabled:opacity-50 transition-all active:scale-[0.97]"
-        >
-          <Calendar className="h-4 w-4" />
-          {generatingPlan ? t("generating") : t("newPlan")}
-        </button>
+      <div>
+        <h1 className="text-2xl font-bold">{t("title")}</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          {mealPlan.startDate} - {mealPlan.endDate}
+        </p>
       </div>
 
       {/* Day Selector (1-14) */}
       <DaySelector
-        totalDays={14}
+        totalDays={totalDays}
         selectedDay={selectedDay}
         onSelectDay={(day) => { setSelectedDay(day); setExpandedMeal(0); }}
         planStartDate={mealPlan.startDate}
@@ -210,9 +275,9 @@ export default function MealPlanPage() {
       {/* Meals */}
       {dayPlan && (
         <div className="space-y-3">
-          {dayPlan.meals.map((meal, index) => {
+          {meals.map((meal: any, index: number) => {
             const isExpanded = expandedMeal === index;
-            const hasAlternatives = meal.alternatives && meal.alternatives.length > 0;
+            const hasAlternatives = Array.isArray(meal.alternatives) && meal.alternatives.length > 0;
 
             return (
               <div
@@ -275,7 +340,7 @@ export default function MealPlanPage() {
                       <h4 className="text-sm font-semibold mb-2">{t("ingredients")}</h4>
                       <div className="rounded-lg bg-neutral-50 p-3">
                         <ul className="space-y-1.5 text-sm">
-                          {meal.ingredients.map((ingredient, i) => (
+                          {(Array.isArray(meal.ingredients) ? meal.ingredients : []).map((ingredient: string, i: number) => (
                             <li key={i} className="flex items-start gap-2">
                               <span className="text-[#10B981] mt-0.5">&#8226;</span>
                               {ingredient}
@@ -290,7 +355,7 @@ export default function MealPlanPage() {
                       <h4 className="text-sm font-semibold mb-2">{t("instructions")}</h4>
                       <div className="rounded-lg bg-neutral-50 p-3">
                         <ol className="space-y-2 text-sm">
-                          {meal.instructions.map((instruction, i) => (
+                          {(Array.isArray(meal.instructions) ? meal.instructions : []).map((instruction: string, i: number) => (
                             <li key={i} className="flex items-start gap-2.5">
                               <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#10B981]/12 text-[#10B981] text-[10px] font-bold mt-0.5">
                                 {i + 1}
@@ -306,15 +371,111 @@ export default function MealPlanPage() {
                     {hasAlternatives && (
                       <div>
                         <h4 className="text-sm font-semibold mb-2">{t("alternatives")}</h4>
-                        <div className="rounded-lg border border-dashed border-[#10B981]/30 bg-[#10B981]/5 p-3">
-                          <ul className="space-y-1.5 text-sm">
-                            {meal.alternatives!.map((alt, i) => (
-                              <li key={i} className="flex items-start gap-2">
-                                <span className="text-[#10B981]">&#8596;</span>
-                                {alt}
-                              </li>
-                            ))}
-                          </ul>
+                        <div className="rounded-lg border border-dashed border-[#10B981]/30 bg-[#10B981]/5 p-3 space-y-1.5">
+                          {meal.alternatives!.map((alt: any, i: number) => {
+                            if (typeof alt === "string") {
+                              // Old format: plain string
+                              return (
+                                <div key={i} className="flex items-start gap-2 text-sm">
+                                  <span className="text-[#10B981]">&#8596;</span>
+                                  {alt}
+                                </div>
+                              );
+                            }
+
+                            // New format: detailed alternative object
+                            const altKey = `${index}-${i}`;
+                            const isAltExpanded = expandedAlts.has(altKey);
+                            const toggleAlt = () => {
+                              setExpandedAlts((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(altKey)) {
+                                  next.delete(altKey);
+                                } else {
+                                  next.add(altKey);
+                                }
+                                return next;
+                              });
+                            };
+                            const normalizedAlt = normalizeMeal(alt);
+
+                            return (
+                              <div key={i} className="rounded-md border border-[#10B981]/20 bg-white/60 overflow-hidden">
+                                {/* Collapsed header */}
+                                <button
+                                  onClick={toggleAlt}
+                                  className="w-full flex items-center justify-between gap-2 px-3 py-2 text-start hover:bg-[#10B981]/5 transition-colors"
+                                >
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <span className="text-[#10B981] text-sm shrink-0">&#8596;</span>
+                                    <span className="text-sm font-medium truncate">{normalizedAlt.name}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    <span className="rounded-full bg-[#10B981]/10 text-[#10B981] px-2 py-0.5 text-[10px] font-semibold">
+                                      {normalizedAlt.calories} {t("kcal")}
+                                    </span>
+                                    <ChevronDown className={cn(
+                                      "h-3.5 w-3.5 text-[#10B981]/60 transition-transform duration-150",
+                                      isAltExpanded && "rotate-180"
+                                    )} />
+                                  </div>
+                                </button>
+
+                                {/* Expanded body */}
+                                <div className={cn(
+                                  "overflow-hidden transition-all duration-150",
+                                  isAltExpanded ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+                                )}>
+                                  <div className="px-3 pb-3 pt-2 space-y-3 border-t border-[#10B981]/15">
+                                    {/* Macro chips */}
+                                    <div className="flex flex-wrap gap-1.5">
+                                      <span className="rounded-md bg-[#10B981]/10 text-[#10B981] px-2 py-0.5 text-[10px] font-medium">
+                                        {t("protein")}: {normalizedAlt.protein}g
+                                      </span>
+                                      <span className="rounded-md bg-[#10B981]/10 text-[#10B981] px-2 py-0.5 text-[10px] font-medium">
+                                        {t("carbs")}: {normalizedAlt.carbs}g
+                                      </span>
+                                      <span className="rounded-md bg-[#10B981]/10 text-[#10B981] px-2 py-0.5 text-[10px] font-medium">
+                                        {t("fat")}: {normalizedAlt.fat}g
+                                      </span>
+                                    </div>
+
+                                    {/* Ingredients */}
+                                    {normalizedAlt.ingredients.length > 0 && (
+                                      <div>
+                                        <h5 className="text-xs font-semibold mb-1 text-muted-foreground">{t("ingredients")}</h5>
+                                        <ul className="space-y-1 text-xs">
+                                          {normalizedAlt.ingredients.map((ingredient: string, j: number) => (
+                                            <li key={j} className="flex items-start gap-1.5">
+                                              <span className="text-[#10B981] mt-0.5">&#8226;</span>
+                                              {ingredient}
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                    )}
+
+                                    {/* Instructions */}
+                                    {normalizedAlt.instructions.length > 0 && (
+                                      <div>
+                                        <h5 className="text-xs font-semibold mb-1 text-muted-foreground">{t("instructions")}</h5>
+                                        <ol className="space-y-1 text-xs">
+                                          {normalizedAlt.instructions.map((instruction: string, j: number) => (
+                                            <li key={j} className="flex items-start gap-1.5">
+                                              <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#10B981]/12 text-[#10B981] text-[9px] font-bold mt-0.5">
+                                                {j + 1}
+                                              </span>
+                                              {instruction}
+                                            </li>
+                                          ))}
+                                        </ol>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     )}

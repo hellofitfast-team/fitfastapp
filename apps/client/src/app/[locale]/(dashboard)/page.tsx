@@ -104,37 +104,62 @@ export default function DashboardPage() {
 
   const userName = dashboardData.profile?.fullName?.split(" ")[0] || (locale === "ar" ? "مستخدم" : "User");
 
+  // Resolve a day plan from weeklyPlan — tries "dayN" first, then weekday names
+  const resolveDayPlan = (weeklyPlan: Record<string, any> | undefined, startDate?: string) => {
+    if (!weeklyPlan || !startDate) return null;
+    const diff = Math.floor((Date.now() - new Date(startDate).getTime()) / 86400000);
+    const dayIndex = Math.max(0, diff);
+
+    // Try new format: "day1", "day2", ...
+    const dayKey = `day${dayIndex + 1}`;
+    if (weeklyPlan[dayKey]) return weeklyPlan[dayKey];
+
+    // Try old format: weekday name
+    const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+    const date = new Date(startDate);
+    date.setDate(date.getDate() + dayIndex);
+    const weekdayName = dayNames[date.getDay()];
+    if (weeklyPlan[weekdayName]) return weeklyPlan[weekdayName];
+
+    return null;
+  };
+
   // Derive today's meals from meal plan + completions
-  const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-  const todayDayName = dayNames[new Date().getDay()];
   const mealPlanData = dashboardData.currentMealPlan?.planData as unknown as GeneratedMealPlan | undefined;
-  const todaysMealData = mealPlanData?.weeklyPlan?.[todayDayName]?.meals ?? [];
+  const todaysMealDayPlan = resolveDayPlan(mealPlanData?.weeklyPlan, dashboardData.currentMealPlan?.startDate);
+  const todaysMealData = todaysMealDayPlan?.meals ?? [];
   const todayMealCompletions = dashboardData.todayMealCompletions ?? [];
   const todayWorkoutCompletions = dashboardData.todayWorkoutCompletions ?? [];
 
-  const todaysMeals = todaysMealData.map((meal, idx) => ({
-    id: idx,
-    name: meal.name,
-    time: meal.type || "",
-    calories: meal.calories || 0,
-    done: todayMealCompletions.some((c) => c.mealIndex === idx && c.completed),
-  }));
+  const todaysMeals = todaysMealData.map((meal: any, idx: number) => {
+    const macros = meal.macros || {};
+    return {
+      id: idx,
+      name: meal.name,
+      time: meal.type || "",
+      calories: meal.calories || macros.calories || 0,
+      done: todayMealCompletions.some((c) => c.mealIndex === idx && c.completed),
+    };
+  });
 
   // Derive today's workout from workout plan + completions
   const workoutPlanData = dashboardData.currentWorkoutPlan?.planData as unknown as GeneratedWorkoutPlan | undefined;
-  const todaysWorkoutData = workoutPlanData?.weeklyPlan?.[todayDayName];
+  const todaysWorkoutData = resolveDayPlan(workoutPlanData?.weeklyPlan, dashboardData.currentWorkoutPlan?.startDate);
+  const workoutExercises = Array.isArray(todaysWorkoutData?.exercises) ? todaysWorkoutData.exercises
+    : Array.isArray(todaysWorkoutData?.workout) ? todaysWorkoutData.workout
+    : [];
   const todaysWorkout = todaysWorkoutData && !todaysWorkoutData.restDay
     ? {
-        name: todaysWorkoutData.workoutName || todayDayName,
-        type: todaysWorkoutData.targetMuscles?.join(", ") || "",
+        name: todaysWorkoutData.workoutName || todaysWorkoutData.name || "",
+        type: (Array.isArray(todaysWorkoutData.targetMuscles) ? todaysWorkoutData.targetMuscles : []).join(", "),
         duration: todaysWorkoutData.duration ? `${todaysWorkoutData.duration}m` : "-",
-        exercises: todaysWorkoutData.exercises?.length ?? 0,
+        exercises: workoutExercises.length,
         done: todayWorkoutCompletions.some((c) => c.completed),
       }
     : null;
 
   const mealProgress = {
-    completed: todaysMeals.filter((m) => m.done).length,
+    completed: todaysMeals.filter((m: any) => m.done).length,
     total: todaysMeals.length,
   };
   const workoutProgress = {
@@ -154,8 +179,12 @@ export default function DashboardPage() {
 
   // Plan countdown (HOME-05)
   const mealPlanStartDate = dashboardData.currentMealPlan?.startDate;
+  const mealPlanEndDate = dashboardData.currentMealPlan?.endDate;
+  const planTotalDays = mealPlanStartDate && mealPlanEndDate
+    ? Math.ceil((new Date(mealPlanEndDate).getTime() - new Date(mealPlanStartDate).getTime()) / 86400000)
+    : 14;
   const planCurrentDay = mealPlanStartDate
-    ? Math.min(14, Math.max(1, Math.floor((Date.now() - new Date(mealPlanStartDate).getTime()) / 86400000) + 1))
+    ? Math.min(planTotalDays, Math.max(1, Math.floor((Date.now() - new Date(mealPlanStartDate).getTime()) / 86400000) + 1))
     : null;
 
   // No plan empty state
@@ -209,10 +238,10 @@ export default function DashboardPage() {
         <p className="text-xs text-muted-foreground">{t("dashboard.noMealsToday")}</p>
       ) : (
         <div className="space-y-1.5">
-          <p className="text-lg font-bold">{t("dashboard.totalCalories")}: {todaysMeals.reduce((sum, m) => sum + m.calories, 0)}</p>
+          <p className="text-lg font-bold">{t("dashboard.totalCalories")}: {todaysMeals.reduce((sum: number, m: any) => sum + m.calories, 0)}</p>
           <p className="text-xs text-muted-foreground">{t("dashboard.mealCount", { count: todaysMeals.length })}</p>
           <div className="space-y-1">
-            {todaysMeals.slice(0, 3).map((meal) => (
+            {todaysMeals.slice(0, 3).map((meal: any) => (
               <p key={meal.id} className={cn("text-xs truncate", meal.done && "line-through text-muted-foreground")}>
                 {meal.name}
               </p>
@@ -247,12 +276,12 @@ export default function DashboardPage() {
       {planCurrentDay ? (
         <div className="space-y-2">
           <p className="text-lg font-bold">
-            {t("dashboard.planDay", { current: planCurrentDay, total: 14 })}
+            {t("dashboard.planDay", { current: planCurrentDay, total: planTotalDays })}
           </p>
           <div className="h-1.5 bg-neutral-100 rounded-full overflow-hidden" dir={locale === "ar" ? "rtl" : "ltr"}>
             <div
               className="h-full bg-[#8B5CF6] rounded-full transition-all"
-              style={{ width: `${(planCurrentDay / 14) * 100}%` }}
+              style={{ width: `${(planCurrentDay / planTotalDays) * 100}%` }}
             />
           </div>
         </div>

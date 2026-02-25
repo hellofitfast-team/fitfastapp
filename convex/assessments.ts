@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { getAuthUserId } from "./auth";
 
 export const getMyAssessment = query({
@@ -39,6 +40,8 @@ export const submitAssessment = mutation({
     goals: v.optional(v.string()),
     currentWeight: v.optional(v.number()),
     height: v.optional(v.number()),
+    age: v.optional(v.number()),
+    gender: v.optional(v.string()),
     measurements: v.optional(v.any()),
     scheduleAvailability: v.optional(v.any()),
     foodPreferences: v.optional(v.array(v.string())),
@@ -55,10 +58,17 @@ export const submitAssessment = mutation({
       ),
     ),
     lifestyleHabits: v.optional(v.any()),
+    // Optional: trigger server-side plan generation after assessment
+    generatePlans: v.optional(v.object({
+      language: v.union(v.literal("en"), v.literal("ar")),
+      planDuration: v.number(),
+    })),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
+
+    const { generatePlans, ...assessmentData } = args;
 
     // Check if assessment already exists
     const existing = await ctx.db
@@ -66,14 +76,57 @@ export const submitAssessment = mutation({
       .withIndex("by_userId", (q) => q.eq("userId", userId))
       .unique();
 
+    let assessmentId;
+
     if (existing) {
-      await ctx.db.patch(existing._id, args);
-      return existing._id;
+      // Snapshot the old assessment for AI progressive context
+      const changedFields: string[] = [];
+      for (const [key, value] of Object.entries(assessmentData)) {
+        const oldValue = (existing as Record<string, unknown>)[key];
+        if (JSON.stringify(oldValue) !== JSON.stringify(value)) {
+          changedFields.push(key);
+        }
+      }
+
+      if (changedFields.length > 0) {
+        // Count existing history entries for version number
+        const historyEntries = await ctx.db
+          .query("assessmentHistory")
+          .withIndex("by_userId", (q) => q.eq("userId", userId))
+          .collect();
+
+        await ctx.db.insert("assessmentHistory", {
+          userId,
+          assessmentSnapshot: { ...existing },
+          changedFields,
+          versionNumber: historyEntries.length + 1,
+          createdAt: Date.now(),
+        });
+      }
+
+      await ctx.db.patch(existing._id, assessmentData);
+      assessmentId = existing._id;
+    } else {
+      assessmentId = await ctx.db.insert("initialAssessments", {
+        userId,
+        ...assessmentData,
+      });
     }
 
-    return ctx.db.insert("initialAssessments", {
-      userId,
-      ...args,
-    });
+    // Schedule server-side plan generation (survives client navigation)
+    if (generatePlans) {
+      await ctx.scheduler.runAfter(0, internal.ai.generateMealPlanInternal, {
+        userId,
+        language: generatePlans.language,
+        planDuration: generatePlans.planDuration,
+      });
+      await ctx.scheduler.runAfter(0, internal.ai.generateWorkoutPlanInternal, {
+        userId,
+        language: generatePlans.language,
+        planDuration: generatePlans.planDuration,
+      });
+    }
+
+    return assessmentId;
   },
 });

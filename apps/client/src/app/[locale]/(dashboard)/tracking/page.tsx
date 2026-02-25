@@ -41,9 +41,13 @@ export default function TrackingPage() {
     saveDailyReflection,
   } = useTracking(selectedDate);
 
-  const getDayName = (date: string): string => {
-    const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-    return dayNames[new Date(date).getDay()];
+  // Map a calendar date to the plan's "day1", "day2", etc. key
+  const getDayKey = (date: string, planStartDate?: string): string => {
+    if (!planStartDate) return "day1";
+    const start = new Date(planStartDate);
+    const current = new Date(date);
+    const diffDays = Math.floor((current.getTime() - start.getTime()) / 86400000);
+    return `day${Math.max(1, diffDays + 1)}`;
   };
 
   const handleMealToggle = async (mealIndex: number, currentlyCompleted: boolean) => {
@@ -78,22 +82,23 @@ export default function TrackingPage() {
     }
   };
 
-  const calculateCompletionPercentage = (): number => {
-    const dayName = getDayName(selectedDate);
-    const mealPlanData = mealPlan?.planData as unknown as GeneratedMealPlan;
-    const workoutPlanData = workoutPlan?.planData as unknown as GeneratedWorkoutPlan;
+  const mealPlanData = mealPlan?.planData as unknown as GeneratedMealPlan;
+  const workoutPlanData = workoutPlan?.planData as unknown as GeneratedWorkoutPlan;
+  const mealDayKey = getDayKey(selectedDate, mealPlan?.startDate);
+  const workoutDayKey = getDayKey(selectedDate, workoutPlan?.startDate);
 
+  const calculateCompletionPercentage = (): number => {
     let totalItems = 0;
     let completedItems = 0;
 
-    if (mealPlanData?.weeklyPlan?.[dayName]) {
-      const meals = mealPlanData.weeklyPlan[dayName].meals;
+    if (mealPlanData?.weeklyPlan?.[mealDayKey]) {
+      const meals = mealPlanData.weeklyPlan[mealDayKey].meals ?? [];
       totalItems += meals.length;
       completedItems += trackingData.mealCompletions.filter((c) => c.completed).length;
     }
 
-    if (workoutPlanData?.weeklyPlan?.[dayName]) {
-      const workout = workoutPlanData.weeklyPlan[dayName];
+    if (workoutPlanData?.weeklyPlan?.[workoutDayKey]) {
+      const workout = workoutPlanData.weeklyPlan[workoutDayKey];
       if (!workout.restDay) {
         totalItems += 1;
         completedItems += trackingData.workoutCompletions.filter((c) => c.completed).length;
@@ -106,13 +111,10 @@ export default function TrackingPage() {
   const completionPercentage = calculateCompletionPercentage();
   const mealProgress = {
     completed: trackingData.mealCompletions.filter((c) => c.completed).length,
-    total: (mealPlan?.planData as unknown as GeneratedMealPlan)?.weeklyPlan?.[getDayName(selectedDate)]?.meals?.length || 0,
+    total: mealPlanData?.weeklyPlan?.[mealDayKey]?.meals?.length || 0,
   };
-  const dayName = getDayName(selectedDate);
-  const mealPlanData = mealPlan?.planData as unknown as GeneratedMealPlan;
-  const workoutPlanData = workoutPlan?.planData as unknown as GeneratedWorkoutPlan;
-  const todaysMeals = mealPlanData?.weeklyPlan?.[dayName]?.meals || [];
-  const todaysWorkout = workoutPlanData?.weeklyPlan?.[dayName];
+  const todaysMeals = mealPlanData?.weeklyPlan?.[mealDayKey]?.meals || [];
+  const todaysWorkout = workoutPlanData?.weeklyPlan?.[workoutDayKey];
 
   if (mealPlanLoading || workoutPlanLoading || trackingLoading) {
     return <TrackingSkeleton />;

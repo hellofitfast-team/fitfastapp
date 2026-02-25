@@ -30,7 +30,6 @@ export default convexAuthNextjsMiddleware(
     const { pathname } = request.nextUrl;
 
     if (
-      pathname.startsWith("/api") ||
       pathname.startsWith("/_next") ||
       pathname.startsWith("/favicon") ||
       pathname.includes(".")
@@ -54,5 +53,5 @@ export default convexAuthNextjsMiddleware(
 );
 
 export const config = {
-  matcher: ["/((?!api|_next|.*\\..*).*)"],
+  matcher: ["/((?!_next|.*\\..*).*)"],
 };

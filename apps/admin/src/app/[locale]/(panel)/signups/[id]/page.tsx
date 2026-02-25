@@ -76,6 +76,7 @@ export default function SignupDetailPage() {
       toast({
         title: t("approveSuccess"),
         description: t("approveSuccessDescription"),
+        variant: "success",
       });
     } catch (err) {
       toast({
@@ -98,6 +99,7 @@ export default function SignupDetailPage() {
       toast({
         title: t("rejectSuccess"),
         description: t("rejectSuccessDescription"),
+        variant: "success",
       });
       setShowRejectInput(false);
       setRejectionReason("");

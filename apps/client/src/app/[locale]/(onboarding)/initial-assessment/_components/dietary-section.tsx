@@ -1,15 +1,19 @@
 "use client";
 
-import { UtensilsCrossed, ShieldAlert, Ban } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { UtensilsCrossed, Clock, ShieldAlert, Ban } from "lucide-react";
 import { MultiSelect } from "@fitfast/ui/multi-select";
 import { SectionCard } from "@fitfast/ui/section-card";
-import { FOOD_PREFERENCES, COMMON_ALLERGIES, DIETARY_RESTRICTIONS } from "./constants";
+import { cn } from "@fitfast/ui/cn";
+import { CUISINE_PREFERENCES, MEALS_PER_DAY, COMMON_ALLERGIES, DIETARY_RESTRICTIONS } from "./constants";
 
 interface DietarySectionProps {
   selectedFoodPrefs: string[];
   setSelectedFoodPrefs: (prefs: string[]) => void;
   foodPrefsOther: string;
   setFoodPrefsOther: (value: string) => void;
+  mealsPerDay: string;
+  setMealsPerDay: (value: string) => void;
   selectedAllergies: string[];
   setSelectedAllergies: (allergies: string[]) => void;
   allergiesOther: string;
@@ -26,6 +30,8 @@ export function DietarySection({
   setSelectedFoodPrefs,
   foodPrefsOther,
   setFoodPrefsOther,
+  mealsPerDay,
+  setMealsPerDay,
   selectedAllergies,
   setSelectedAllergies,
   allergiesOther,
@@ -36,11 +42,22 @@ export function DietarySection({
   setRestrictionsOther,
   isLoading,
 }: DietarySectionProps) {
+  const t = useTranslations("onboarding.assessment");
+
   return (
-    <>
-      <SectionCard icon={UtensilsCrossed} title="Food Preferences" description="Select your preferred cuisine styles" variant="nutrition">
+    <div className="space-y-6">
+      {/* Cuisine Preferences */}
+      <SectionCard
+        icon={UtensilsCrossed}
+        title={t("cuisineTitle")}
+        description={t("cuisineDesc")}
+        variant="nutrition"
+      >
         <MultiSelect
-          options={FOOD_PREFERENCES}
+          options={CUISINE_PREFERENCES.map((item) => ({
+            ...item,
+            label: t(`cuisines.${item.id}`),
+          }))}
           selected={selectedFoodPrefs}
           onChange={setSelectedFoodPrefs}
           otherValue={foodPrefsOther}
@@ -50,9 +67,47 @@ export function DietarySection({
         />
       </SectionCard>
 
-      <SectionCard icon={ShieldAlert} title="Food Allergies" variant="nutrition">
+      {/* Meals Per Day */}
+      <SectionCard
+        icon={Clock}
+        title={t("mealsPerDayTitle")}
+        description={t("mealsPerDayDesc")}
+        variant="nutrition"
+      >
+        <div className="grid grid-cols-2 gap-2">
+          {MEALS_PER_DAY.map((option) => {
+            const isSelected = mealsPerDay === option.id;
+            return (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => setMealsPerDay(isSelected ? "" : option.id)}
+                disabled={isLoading}
+                className={cn(
+                  "flex items-center justify-center rounded-xl border-2 px-3 py-3 text-xs font-semibold uppercase tracking-wide transition-all",
+                  isSelected
+                    ? "border-[#22C55E] bg-[#22C55E]/5 text-[#22C55E]"
+                    : "border-stone-200 text-stone-500 hover:border-stone-300"
+                )}
+              >
+                {t(`mealsPerDayOptions.${option.id}`)}
+              </button>
+            );
+          })}
+        </div>
+      </SectionCard>
+
+      {/* Food Allergies */}
+      <SectionCard
+        icon={ShieldAlert}
+        title={t("allergiesTitle")}
+        variant="nutrition"
+      >
         <MultiSelect
-          options={COMMON_ALLERGIES}
+          options={COMMON_ALLERGIES.map((item) => ({
+            ...item,
+            label: t(`allergies.${item.id}`),
+          }))}
           selected={selectedAllergies}
           onChange={setSelectedAllergies}
           otherValue={allergiesOther}
@@ -63,9 +118,17 @@ export function DietarySection({
         />
       </SectionCard>
 
-      <SectionCard icon={Ban} title="Dietary Restrictions" variant="nutrition">
+      {/* Dietary Restrictions */}
+      <SectionCard
+        icon={Ban}
+        title={t("restrictionsTitle")}
+        variant="nutrition"
+      >
         <MultiSelect
-          options={DIETARY_RESTRICTIONS}
+          options={DIETARY_RESTRICTIONS.map((item) => ({
+            ...item,
+            label: t(`restrictions.${item.id}`),
+          }))}
           selected={selectedRestrictions}
           onChange={setSelectedRestrictions}
           otherValue={restrictionsOther}
@@ -75,6 +138,6 @@ export function DietarySection({
           featureColor="nutrition"
         />
       </SectionCard>
-    </>
+    </div>
   );
 }

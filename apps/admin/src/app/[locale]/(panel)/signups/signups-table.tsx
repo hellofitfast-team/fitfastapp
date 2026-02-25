@@ -15,6 +15,7 @@ import {
   Receipt,
   ExternalLink,
   ImageIcon,
+  Loader2,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
@@ -29,9 +30,8 @@ interface OcrData {
 }
 
 const tierLabels: Record<string, string> = {
-  "3_months": "3 Mo",
-  "6_months": "6 Mo",
-  "12_months": "12 Mo",
+  monthly: "Monthly",
+  quarterly: "Quarterly",
 };
 
 const statusStyles: Record<string, string> = {
@@ -47,6 +47,68 @@ const ocrFieldLabels: Record<string, string> = {
   date: "Date",
   bank: "Bank",
 };
+
+function PaymentScreenshot({ storageId }: { storageId: Id<"_storage"> }) {
+  const url = useQuery(api.storage.getFileUrl, { storageId });
+  const [isZoomed, setIsZoomed] = useState(false);
+
+  if (url === undefined) {
+    return (
+      <div className="flex w-64 shrink-0 items-center justify-center rounded-lg border border-stone-200 bg-stone-50 p-8">
+        <Loader2 className="h-6 w-6 animate-spin text-stone-300" />
+      </div>
+    );
+  }
+
+  if (!url) {
+    return (
+      <div className="flex w-64 shrink-0 items-center justify-center rounded-lg border border-dashed border-stone-200 p-8">
+        <div className="text-center">
+          <ImageIcon className="h-8 w-8 mx-auto text-stone-300 mb-2" />
+          <p className="text-xs text-stone-400">Image unavailable</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setIsZoomed(true)}
+        className="w-64 shrink-0 overflow-hidden rounded-lg border border-stone-200 hover:border-primary/40 transition-colors cursor-zoom-in"
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={url}
+          alt="Payment screenshot"
+          className="w-full h-48 object-contain bg-stone-50"
+        />
+      </button>
+
+      {isZoomed && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          onClick={() => setIsZoomed(false)}
+        >
+          <button
+            onClick={() => setIsZoomed(false)}
+            className="absolute top-4 end-4 w-9 h-9 rounded-full bg-white/20 text-white flex items-center justify-center hover:bg-white/40 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={url}
+            alt="Payment screenshot full size"
+            className="max-w-full max-h-full object-contain rounded-lg"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+    </>
+  );
+}
 
 export function SignupsTable() {
   const t = useTranslations("admin");
@@ -303,17 +365,18 @@ export function SignupsTable() {
                   {isExpanded && (
                     <div className="border-t border-stone-100 bg-stone-50/50 p-4">
                       <div className="flex flex-col gap-4 lg:flex-row">
-                        {/* No screenshot URL in Convex -- would need to resolve from storageId */}
-                        <div className="flex w-64 shrink-0 items-center justify-center rounded-lg border border-dashed border-stone-200 p-8">
-                          <div className="text-center">
-                            <ImageIcon className="h-8 w-8 mx-auto text-stone-300 mb-2" />
-                            <p className="text-xs text-stone-400">
-                              {signup.paymentScreenshotId
-                                ? t("screenshotUploadedViewDetails")
-                                : t("noScreenshot")}
-                            </p>
+                        {signup.paymentScreenshotId ? (
+                          <PaymentScreenshot storageId={signup.paymentScreenshotId} />
+                        ) : (
+                          <div className="flex w-64 shrink-0 items-center justify-center rounded-lg border border-dashed border-stone-200 p-8">
+                            <div className="text-center">
+                              <ImageIcon className="h-8 w-8 mx-auto text-stone-300 mb-2" />
+                              <p className="text-xs text-stone-400">
+                                {t("noScreenshot")}
+                              </p>
+                            </div>
                           </div>
-                        </div>
+                        )}
 
                         {/* OCR extracted data */}
                         {ocrEntries.length > 0 && (

@@ -29,6 +29,11 @@ interface CheckoutFormProps {
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
+const durationToTier: Record<string, "monthly" | "quarterly"> = {
+  "1 month": "monthly",
+  "3 months": "quarterly",
+};
+
 const checkoutSchema = z.object({
   fullName: z.string().min(2).max(100),
   email: z.string().email(),
@@ -147,11 +152,13 @@ export function CheckoutForm({ selectedPlan, onSuccess }: CheckoutFormProps) {
       }
 
       // Submit signup mutation
+      const planTier = durationToTier[selectedPlan.duration];
       await createSignup({
         fullName: data.fullName,
         email: data.email,
         phone: data.phone,
         planId: selectedPlan.id,
+        ...(planTier ? { planTier } : {}),
         paymentScreenshotId: storageId as Parameters<typeof createSignup>[0]["paymentScreenshotId"],
       });
 

@@ -27,17 +27,38 @@ export function KnowledgeManager() {
   const [showAddText, setShowAddText] = useState(false);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [pdfTags, setPdfTags] = useState<string[]>([]);
+
+  const TAG_OPTIONS = [
+    { id: "nutrition", color: "bg-green-50 text-green-700 border-green-200" },
+    { id: "workout", color: "bg-blue-50 text-blue-700 border-blue-200" },
+    { id: "recovery", color: "bg-purple-50 text-purple-700 border-purple-200" },
+    { id: "general", color: "bg-stone-50 text-stone-700 border-stone-200" },
+  ] as const;
+
+  const toggleTag = (tagId: string, list: string[], setList: (tags: string[]) => void) => {
+    setList(list.includes(tagId) ? list.filter((t) => t !== tagId) : [...list, tagId]);
+  };
+
+  const getTagColor = (tagId: string) =>
+    TAG_OPTIONS.find((t) => t.id === tagId)?.color ?? "bg-stone-50 text-stone-600 border-stone-200";
 
   const handleAddText = async () => {
     if (!title.trim() || !content.trim()) return;
     setIsSubmitting(true);
     try {
-      await addTextEntry({ title: title.trim(), content: content.trim() });
+      await addTextEntry({
+        title: title.trim(),
+        content: content.trim(),
+        tags: selectedTags.length > 0 ? selectedTags : undefined,
+      });
       setTitle("");
       setContent("");
+      setSelectedTags([]);
       setShowAddText(false);
     } finally {
       setIsSubmitting(false);
@@ -61,9 +82,11 @@ export function KnowledgeManager() {
       await processPdf({
         title: file.name.replace(/\.pdf$/i, ""),
         storageId,
+        tags: pdfTags.length > 0 ? pdfTags : undefined,
       });
     } finally {
       setIsUploading(false);
+      setPdfTags([]);
       e.target.value = "";
     }
   };
@@ -110,6 +133,30 @@ export function KnowledgeManager() {
         </label>
       </div>
 
+      {/* PDF Tag Selection (shown inline) */}
+      <div>
+        <label className="text-xs font-medium text-stone-500 mb-1.5 block">
+          {t("selectTags")}
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {TAG_OPTIONS.map((tag) => (
+            <button
+              key={tag.id}
+              type="button"
+              onClick={() => toggleTag(tag.id, pdfTags, setPdfTags)}
+              className={cn(
+                "rounded-full border px-3 py-1 text-xs font-medium transition-all",
+                pdfTags.includes(tag.id)
+                  ? `${tag.color} ring-1 ring-current`
+                  : "border-stone-200 text-stone-400 hover:border-stone-300",
+              )}
+            >
+              {t(`tag${tag.id.charAt(0).toUpperCase()}${tag.id.slice(1)}`)}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Add Text Form */}
       {showAddText && (
         <div className="rounded-xl border border-stone-200 bg-white p-5 space-y-4">
@@ -136,6 +183,28 @@ export function KnowledgeManager() {
             rows={6}
             className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-y"
           />
+          <div>
+            <label className="text-xs font-medium text-stone-500 mb-1.5 block">
+              {t("selectTags")}
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {TAG_OPTIONS.map((tag) => (
+                <button
+                  key={tag.id}
+                  type="button"
+                  onClick={() => toggleTag(tag.id, selectedTags, setSelectedTags)}
+                  className={cn(
+                    "rounded-full border px-3 py-1 text-xs font-medium transition-all",
+                    selectedTags.includes(tag.id)
+                      ? `${tag.color} ring-1 ring-current`
+                      : "border-stone-200 text-stone-400 hover:border-stone-300",
+                  )}
+                >
+                  {t(`tag${tag.id.charAt(0).toUpperCase()}${tag.id.slice(1)}`)}
+                </button>
+              ))}
+            </div>
+          </div>
           <button
             onClick={handleAddText}
             disabled={isSubmitting || !title.trim() || !content.trim()}
@@ -187,7 +256,7 @@ export function KnowledgeManager() {
                     <h3 className="font-semibold text-sm truncate">
                       {entry.title}
                     </h3>
-                    <div className="flex items-center gap-2 mt-0.5">
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                       <span className="text-xs text-stone-500 uppercase font-medium">
                         {entry.type}
                       </span>
@@ -196,6 +265,17 @@ export function KnowledgeManager() {
                           {entry.content.split(/\s+/).length} {t("words")}
                         </span>
                       )}
+                      {entry.tags?.map((tag: string) => (
+                        <span
+                          key={tag}
+                          className={cn(
+                            "rounded-full border px-2 py-0.5 text-[10px] font-medium",
+                            getTagColor(tag),
+                          )}
+                        >
+                          {t(`tag${tag.charAt(0).toUpperCase()}${tag.slice(1)}`)}
+                        </span>
+                      ))}
                     </div>
                     {entry.content && (
                       <p className="text-xs text-stone-500 mt-2 line-clamp-2">

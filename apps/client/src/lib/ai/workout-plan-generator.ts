@@ -15,6 +15,9 @@ export interface WorkoutPlanGenerationParams {
 
 /** @deprecated Use ValidatedWorkoutPlan from @/lib/validation instead */
 export interface GeneratedWorkoutPlan {
+  splitType?: string;
+  splitName?: string;
+  splitDescription?: string;
   weeklyPlan: {
     [day: string]: {
       workoutName: string;

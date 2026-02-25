@@ -8,7 +8,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link } from "@fitfast/i18n/navigation";
 import { useAuthActions } from "@convex-dev/auth/react";
-import { useConvexAuth } from "convex/react";
+import { useConvexAuth, useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { Mail, Lock, ArrowRight, Zap, Loader2 } from "lucide-react";
 
 const loginSchema = z.object({
@@ -22,22 +23,37 @@ export default function LoginPage() {
   const t = useTranslations("auth");
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { signIn } = useAuthActions();
+  const { signIn, signOut } = useAuthActions();
   const { isAuthenticated } = useConvexAuth();
+  const profile = useQuery(api.profiles.getMyProfile, isAuthenticated ? {} : "skip");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // If user is already signed in, redirect to home
+  // If user is already signed in, check role then redirect
   useEffect(() => {
+    if (!isAuthenticated || profile === undefined) return; // still loading
+
+    if (profile?.isCoach) {
+      // Coach trying to use client app — sign them out and show error
+      signOut().then(() => {
+        setError(t("coachAccountError"));
+      });
+      return;
+    }
+
+    // Regular client — proceed to dashboard
     if (isAuthenticated) {
       router.replace("/");
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, profile, router, signOut, t]);
 
   useEffect(() => {
     const errorParam = searchParams.get("error");
+    const messageParam = searchParams.get("message");
     if (errorParam === "coach_account") {
       setError(t("coachAccountError"));
+    } else if (messageParam) {
+      setError(messageParam);
     }
   }, [searchParams, t]);
 

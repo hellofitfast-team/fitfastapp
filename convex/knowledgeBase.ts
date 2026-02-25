@@ -43,14 +43,16 @@ export const addTextEntry = mutation({
   args: {
     title: v.string(),
     content: v.string(),
+    tags: v.optional(v.array(v.string())),
   },
-  handler: async (ctx, { title, content }) => {
+  handler: async (ctx, { title, content, tags }) => {
     await requireCoach(ctx);
 
     const id = await ctx.db.insert("coachKnowledge", {
       title,
       type: "text",
       content,
+      tags,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
@@ -108,16 +110,43 @@ export const getEntryInternal = internalQuery({
   },
 });
 
+export const insertTextEntryInternal = internalMutation({
+  args: {
+    title: v.string(),
+    content: v.string(),
+    tags: v.optional(v.array(v.string())),
+  },
+  handler: async (ctx, { title, content, tags }) => {
+    const id = await ctx.db.insert("coachKnowledge", {
+      title,
+      type: "text",
+      content,
+      tags,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+
+    // Schedule embedding in background
+    await ctx.scheduler.runAfter(0, internal.knowledgeBaseActions.embedEntry, {
+      entryId: id,
+    });
+
+    return id;
+  },
+});
+
 export const insertPdfEntry = internalMutation({
   args: {
     title: v.string(),
     storageId: v.id("_storage"),
+    tags: v.optional(v.array(v.string())),
   },
-  handler: async (ctx, { title, storageId }) => {
+  handler: async (ctx, { title, storageId, tags }) => {
     return ctx.db.insert("coachKnowledge", {
       title,
       type: "pdf",
       storageId,
+      tags,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });

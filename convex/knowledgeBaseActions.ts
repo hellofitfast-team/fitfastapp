@@ -10,18 +10,18 @@ const NAMESPACE = "coach_knowledge";
 const CHUNK_SIZE = 500; // words per chunk
 const CHUNK_OVERLAP = 50; // words overlap
 
-function chunkText(text: string, title: string): string[] {
+function chunkText(text: string): string[] {
   const words = text.split(/\s+/);
   const chunks: string[] = [];
 
   for (let i = 0; i < words.length; i += CHUNK_SIZE - CHUNK_OVERLAP) {
     const chunk = words.slice(i, i + CHUNK_SIZE).join(" ");
     if (chunk.trim()) {
-      chunks.push(`[${title}] ${chunk}`);
+      chunks.push(chunk);
     }
   }
 
-  return chunks.length > 0 ? chunks : [`[${title}] ${text}`];
+  return chunks.length > 0 ? chunks : [text];
 }
 
 // ---------------------------------------------------------------------------
@@ -38,13 +38,20 @@ export const embedEntry = internalAction({
     if (!entry?.content) return;
 
     const rag = getRagClient();
-    const chunks = chunkText(entry.content, entry.title);
+    const chunks = chunkText(entry.content);
+
+    // Build filter values from entry tags for category-based retrieval
+    const filterValues = (entry.tags ?? []).map((tag: string) => ({
+      name: "tag" as const,
+      value: tag,
+    }));
 
     await rag.add(ctx, {
       namespace: NAMESPACE,
       key: entryId,
       title: entry.title,
       chunks,
+      filterValues,
     });
   },
 });
@@ -99,15 +106,22 @@ export const searchKnowledge = internalAction({
   args: {
     query: v.string(),
     limit: v.optional(v.number()),
+    tags: v.optional(v.array(v.string())),
   },
-  handler: async (ctx, { query, limit = 5 }): Promise<string[]> => {
+  handler: async (ctx, { query, limit = 5, tags }): Promise<string[]> => {
     const rag = getRagClient();
 
     try {
+      // Build tag filters — OR logic: matches entries with ANY of these tags
+      const filters = tags?.length
+        ? tags.map((tag) => ({ name: "tag" as const, value: tag }))
+        : undefined;
+
       const result = await rag.search(ctx, {
         namespace: NAMESPACE,
         query,
         limit,
+        filters,
       });
 
       return result.results.map((r) =>
@@ -127,15 +141,20 @@ export const processPdfUploadPublic = action({
   args: {
     title: v.string(),
     storageId: v.id("_storage"),
+    tags: v.optional(v.array(v.string())),
   },
-  handler: async (ctx, { title, storageId }): Promise<void> => {
+  handler: async (ctx, { title, storageId, tags }): Promise<void> => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
+
+    // Coach-only guard
+    const profile = await ctx.runQuery(internal.helpers.getProfileInternal, { userId });
+    if (!profile?.isCoach) throw new Error("Not authorized — coach only");
 
     // Insert knowledge entry
     const entryId = await ctx.runMutation(
       internal.knowledgeBase.insertPdfEntry,
-      { title, storageId },
+      { title, storageId, tags },
     );
 
     // Process PDF in background

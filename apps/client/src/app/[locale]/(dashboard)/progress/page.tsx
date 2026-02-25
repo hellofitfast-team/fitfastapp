@@ -101,10 +101,6 @@ export default function ProgressPage() {
     ? ((weightChange / firstCheckIn.weight) * 100).toFixed(1)
     : "0";
 
-  // Adherence stats are not easily calculable from check-ins alone in Convex
-  // For now, use placeholder values
-  const adherenceStats = { mealAdherence: 0, workoutAdherence: 0 };
-
   const allPhotos = useMemo(() => {
     return filteredCheckIns
       .filter((checkIn) => checkIn.progressPhotoIds && checkIn.progressPhotoIds.length > 0)
@@ -184,7 +180,6 @@ export default function ProgressPage() {
         <ProgressCharts
           weightChartData={weightChartData}
           measurementChartData={measurementChartData}
-          adherenceStats={adherenceStats}
         />
       )}
       {activeTab === "photos" && <PhotosTab photos={allPhotos} />}

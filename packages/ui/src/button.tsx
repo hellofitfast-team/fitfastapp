@@ -23,7 +23,7 @@ const buttonVariants = cva(
         success:
           "bg-success-500 text-white rounded-lg hover:bg-success-600 shadow-sm",
         gradient:
-          "bg-gradient-to-r from-primary to-[#FF6833] text-white rounded-xl shadow-[0_4px_16px_rgba(255,69,0,0.3)] hover:shadow-[0_6px_24px_rgba(255,69,0,0.4)]",
+          "text-white rounded-xl disabled:bg-primary/50",
       },
       size: {
         default: "h-11 px-5",
@@ -39,6 +39,13 @@ const buttonVariants = cva(
   }
 );
 
+// Gradient style applied via inline style to avoid Tailwind v4 JIT issues
+// with gradient stops (from-primary, to-[#hex]) inside CVA strings
+const gradientStyle: React.CSSProperties = {
+  backgroundImage: "linear-gradient(to right, #FF4500, #FF6833)",
+  boxShadow: "0 4px 16px rgba(255, 69, 0, 0.3)",
+};
+
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
@@ -48,7 +55,7 @@ export interface ButtonProps
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   (
-    { className, variant, size, asChild = false, loading = false, children, disabled, ...props },
+    { className, variant, size, style, asChild = false, loading = false, children, disabled, ...props },
     ref
   ) => {
     const Comp = asChild ? Slot : "button";
@@ -57,6 +64,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
         disabled={disabled || loading}
+        style={variant === "gradient" && !(disabled || loading) ? { ...gradientStyle, ...style } : style}
         {...props}
       >
         {loading ? (

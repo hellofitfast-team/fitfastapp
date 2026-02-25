@@ -13,4 +13,10 @@ crons.daily(
   internal.storage.runOrphanedStorageCleanup,
 );
 
+crons.daily(
+  "data-retention-cleanup",
+  { hourUTC: 4, minuteUTC: 0 },
+  internal.dataRetention.runRetentionCleanup,
+);
+
 export default crons;
