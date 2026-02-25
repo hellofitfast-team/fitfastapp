@@ -180,9 +180,8 @@
     "accountTypeCIB": "CIB",
     "accountTypeOther": "أخرى",
     "socialLinks": "روابط التواصل الاجتماعي",
-    "socialLinksDesc": "أضف روابط التواصل الاجتماعي. تظهر فقط الروابط المملوءة في الموقع.",
-    "saveSocialLinks": "حفظ الروابط",
-    "socialLinksHint": "ستظهر فقط المنصات التي تحتوي على رابط في تذييل الموقع."
+    "socialLinksDesc": "أضف روابط التواصل الاجتماعي الخاصة بك. ستظهر فقط المنصات التي تحتوي على رابط في الموقع.",
+    "saveSocialLinks": "حفظ الروابط"
   },
   "adminNav": {
     "dashboard": "لوحة التحكم",

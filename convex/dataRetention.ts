@@ -93,6 +93,7 @@ export const runRetentionCleanup = internalAction({
     const expiredUsers: { userId: string; profileId: Id<"profiles"> }[] =
       await ctx.runQuery(internal.dataRetention.findExpiredUsers, {});
 
+    const failures: string[] = [];
     for (const { userId, profileId } of expiredUsers) {
       try {
         await ctx.runMutation(internal.dataRetention.cascadeDeleteUser, {
@@ -100,9 +101,12 @@ export const runRetentionCleanup = internalAction({
           profileId,
         });
       } catch (err) {
-        console.error(`Failed to delete user ${userId}:`, err);
-        // Continue with remaining users
+        const msg = err instanceof Error ? err.message : String(err);
+        failures.push(`user:${userId.slice(0, 8)}…: ${msg}`);
       }
+    }
+    if (failures.length > 0) {
+      console.error(`[DataRetention] ${failures.length}/${expiredUsers.length} deletions failed:\n${failures.join("\n")}`);
     }
   },
 });

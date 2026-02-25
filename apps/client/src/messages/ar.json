@@ -461,7 +461,10 @@
     "planStart": "تاريخ البدء",
     "planTiers": {
       "monthly": "شهري",
-      "quarterly": "ربع سنوي (٣ أشهر)"
+      "quarterly": "ربع سنوي",
+      "3_months": "3 أشهر",
+      "6_months": "6 أشهر",
+      "12_months": "12 شهر"
     },
     "statuses": {
       "active": "نشط",

@@ -461,7 +461,10 @@
     "planStart": "Started",
     "planTiers": {
       "monthly": "Monthly",
-      "quarterly": "Quarterly (3 Months)"
+      "quarterly": "Quarterly",
+      "3_months": "3 Months",
+      "6_months": "6 Months",
+      "12_months": "12 Months"
     },
     "statuses": {
       "active": "Active",

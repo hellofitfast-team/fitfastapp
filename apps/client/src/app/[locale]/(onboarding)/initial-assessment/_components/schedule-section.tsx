@@ -37,7 +37,7 @@ export function ScheduleSection({
     if (selectedDays.length > limits.max) {
       setSelectedDays(selectedDays.slice(0, limits.max));
     }
-  }, [limits.max]);
+  }, [limits.max, selectedDays, setSelectedDays]);
 
   const handleToggleDay = (dayId: string) => {
     if (selectedDays.includes(dayId)) {

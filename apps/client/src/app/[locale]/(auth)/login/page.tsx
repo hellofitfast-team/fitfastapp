@@ -50,7 +50,7 @@ export default function LoginPage() {
   useEffect(() => {
     const errorParam = searchParams.get("error");
     const messageParam = searchParams.get("message");
-    if (errorParam === "coach_account") {
+    if (errorParam === "coach_account" || errorParam === "coach_not_allowed") {
       setError(t("coachAccountError"));
     } else if (messageParam) {
       setError(messageParam);

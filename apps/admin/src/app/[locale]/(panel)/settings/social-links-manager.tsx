@@ -72,7 +72,7 @@ export function SocialLinksManager() {
           </div>
         ))}
         <p className="text-[11px] text-stone-400">
-          {t("socialLinksHint")}
+          {t("socialLinksDesc")}
         </p>
       </div>
 

@@ -7,6 +7,9 @@ import * as Sentry from "@sentry/nextjs";
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
+  // Enable structured logging
+  enableLogs: true,
+
   // Adjust this value in production, or use tracesSampler for greater control
   tracesSampleRate: 0.2,
 
@@ -19,12 +22,13 @@ Sentry.init({
   // in development and sample at a lower rate in production
   replaysSessionSampleRate: 0.01,
 
-  // You can remove this option if you're not planning to use the Sentry Session Replay feature:
   integrations: [
     Sentry.replayIntegration({
-      // Additional Replay configuration goes in here, for example:
       maskAllText: true,
       blockAllMedia: true,
+    }),
+    Sentry.consoleLoggingIntegration({
+      levels: ["warn", "error"],
     }),
   ],
 

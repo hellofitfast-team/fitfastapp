@@ -180,9 +180,8 @@
     "accountTypeCIB": "CIB",
     "accountTypeOther": "Other",
     "socialLinks": "Social Links",
-    "socialLinksDesc": "Add your social media links. Only filled ones appear on the marketing site.",
-    "saveSocialLinks": "Save Social Links",
-    "socialLinksHint": "Only platforms with a URL will appear in the marketing site footer."
+    "socialLinksDesc": "Configure your social media links. Only platforms with a URL will be shown on the marketing site.",
+    "saveSocialLinks": "Save Social Links"
   },
   "adminNav": {
     "dashboard": "Dashboard",

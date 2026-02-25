@@ -237,7 +237,7 @@ export default function WorkoutPlanPage() {
       <div>
         <h1 className="text-2xl font-bold">{t("title")}</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
-          {new Date(workoutPlan.startDate).toLocaleDateString(locale === "ar" ? "ar-EG" : "en-US")} - {new Date(workoutPlan.endDate).toLocaleDateString(locale === "ar" ? "ar-EG" : "en-US")}
+          {new Date(workoutPlan.startDate).toLocaleDateString(locale === "ar" ? "ar-EG" : "en")} - {new Date(workoutPlan.endDate).toLocaleDateString(locale === "ar" ? "ar-EG" : "en")}
         </p>
       </div>
 

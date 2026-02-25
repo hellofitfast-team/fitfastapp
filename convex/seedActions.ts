@@ -4,6 +4,11 @@ import { internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { randomBytes, scryptSync } from "crypto";
 
+/**
+ * Hash password using Node.js scrypt — format: "hex_salt:hex_hash"
+ * Must match the verification logic in the Convex Auth password provider.
+ * scrypt params: N=2^15 (default), r=8, p=1, keylen=64
+ */
 function hashPassword(password: string): string {
   const salt = randomBytes(16).toString("hex");
   const hash = scryptSync(password, salt, 64).toString("hex");
@@ -47,8 +52,8 @@ export const resetClientUser = internalAction({
         });
         results.push(r);
       } catch (error) {
-        console.error(`Failed to delete user ${email}:`, error);
-        results.push(`ERROR deleting ${email}: ${error}`);
+        console.error("Failed to delete seed user:", error);
+        results.push(`ERROR deleting seed user: ${error}`);
       }
     }
 
@@ -64,7 +69,7 @@ export const resetClientUser = internalAction({
       results.push(r);
     } catch (error) {
       console.error("Failed to create client user:", error);
-      results.push(`ERROR creating client@fitfast.app: ${error}`);
+      results.push(`ERROR creating client user: ${error}`);
     }
 
     return results.join("\n");
@@ -534,8 +539,8 @@ export const seedTestUsers = internalAction({
         });
         results.push(result);
       } catch (error) {
-        console.error(`Failed to seed user ${user.email}:`, error);
-        results.push(`ERROR seeding ${user.email}: ${error}`);
+        console.error("Failed to seed user:", error);
+        results.push(`ERROR seeding user: ${error}`);
       }
     }
 

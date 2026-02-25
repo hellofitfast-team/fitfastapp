@@ -62,6 +62,28 @@ function RejectModal({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [onClose, isSubmitting]);
 
+  // Focus trap — keep Tab within the modal
+  useEffect(() => {
+    const modal = document.querySelector('[role="dialog"]');
+    if (!modal) return;
+    const focusable = modal.querySelectorAll<HTMLElement>(
+      'button, textarea, input, [tabindex]:not([tabindex="-1"])'
+    );
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    const handleTab = (e: KeyboardEvent) => {
+      if (e.key !== "Tab") return;
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+      } else {
+        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    };
+    document.addEventListener("keydown", handleTab);
+    return () => document.removeEventListener("keydown", handleTab);
+  }, []);
+
   const handleSubmit = async () => {
     if (!reason.trim()) return;
     setIsSubmitting(true);
