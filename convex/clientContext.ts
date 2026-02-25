@@ -1,0 +1,224 @@
+import { v } from "convex/values";
+import { internalQuery } from "./_generated/server";
+import { Id, Doc } from "./_generated/dataModel";
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+export interface ClientContext {
+  profile: Doc<"profiles">;
+  assessment: Doc<"initialAssessments"> | null;
+  assessmentChanges: string[] | null;
+  currentCheckIn: Doc<"checkIns"> | null;
+  checkInHistory: Doc<"checkIns">[];
+  adherence: {
+    meal: { completed: number; total: number; rate: number } | null;
+    workout: { completed: number; total: number; rate: number } | null;
+  };
+  recentReflections: Doc<"dailyReflections">[];
+}
+
+// ---------------------------------------------------------------------------
+// Build full AI context for a client
+// ---------------------------------------------------------------------------
+
+export const buildClientContext = internalQuery({
+  args: {
+    userId: v.string(),
+    checkInId: v.optional(v.id("checkIns")),
+  },
+  handler: async (ctx, { userId, checkInId }): Promise<ClientContext> => {
+    // 1. Profile
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .unique();
+    if (!profile) throw new Error("Profile not found");
+
+    // 2. Current assessment
+    const assessment = await ctx.db
+      .query("initialAssessments")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .unique();
+
+    // 3. Recent assessment changes (last version snapshot)
+    const latestHistory = await ctx.db
+      .query("assessmentHistory")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .order("desc")
+      .first();
+
+    // 4. Current check-in
+    const currentCheckIn = checkInId ? await ctx.db.get(checkInId) : null;
+
+    // 5. Historical check-ins (last 5, excluding current)
+    const recentCheckIns = await ctx.db
+      .query("checkIns")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .order("desc")
+      .take(6);
+    const checkInHistory = recentCheckIns
+      .filter((c) => !checkInId || c._id !== checkInId)
+      .slice(0, 5);
+
+    // 6. Plan adherence from last cycle
+    const lastMealPlan = await ctx.db
+      .query("mealPlans")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .order("desc")
+      .first();
+    const lastWorkoutPlan = await ctx.db
+      .query("workoutPlans")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .order("desc")
+      .first();
+
+    let mealAdherence = null;
+    if (lastMealPlan) {
+      const completions = await ctx.db
+        .query("mealCompletions")
+        .withIndex("by_planId_date", (q) => q.eq("mealPlanId", lastMealPlan._id))
+        .collect();
+      if (completions.length > 0) {
+        const completed = completions.filter((c) => c.completed).length;
+        mealAdherence = {
+          completed,
+          total: completions.length,
+          rate: Math.round((completed / completions.length) * 100),
+        };
+      }
+    }
+
+    let workoutAdherence = null;
+    if (lastWorkoutPlan) {
+      const completions = await ctx.db
+        .query("workoutCompletions")
+        .withIndex("by_planId_date", (q) => q.eq("workoutPlanId", lastWorkoutPlan._id))
+        .collect();
+      if (completions.length > 0) {
+        const completed = completions.filter((c) => c.completed).length;
+        workoutAdherence = {
+          completed,
+          total: completions.length,
+          rate: Math.round((completed / completions.length) * 100),
+        };
+      }
+    }
+
+    // 7. Recent reflections (last 7)
+    const recentReflections = await ctx.db
+      .query("dailyReflections")
+      .withIndex("by_userId_date", (q) => q.eq("userId", userId))
+      .order("desc")
+      .take(7);
+
+    return {
+      profile,
+      assessment,
+      assessmentChanges: latestHistory?.changedFields ?? null,
+      currentCheckIn,
+      checkInHistory,
+      adherence: { meal: mealAdherence, workout: workoutAdherence },
+      recentReflections: recentReflections.filter((r) => r.reflection),
+    };
+  },
+});
+
+// ---------------------------------------------------------------------------
+// Format context into a compact, token-efficient string for LLM prompts
+// ---------------------------------------------------------------------------
+
+export function formatContextForPrompt(ctx: ClientContext): string {
+  const parts: string[] = [];
+  const a = ctx.assessment;
+
+  // ── Static data ──
+  if (a) {
+    parts.push(`GOALS: ${a.goals || "Not specified"}`);
+    parts.push(`BODY: ${a.currentWeight}kg, ${a.height}cm`);
+    parts.push(`AGE: ${a.age || "Not specified"}`);
+    parts.push(`GENDER: ${a.gender || "Not specified"}`);
+    parts.push(`EXPERIENCE: ${a.experienceLevel || "Not specified"}`);
+    parts.push(`SCHEDULE: ${JSON.stringify(a.scheduleAvailability || {})}`);
+    parts.push(`CUISINE PREFERENCES: ${a.foodPreferences?.join(", ") || "None"}`);
+    parts.push(`ALLERGIES: ${a.allergies?.join(", ") || "None"}`);
+    parts.push(`DIETARY RESTRICTIONS: ${a.dietaryRestrictions?.join(", ") || "None"}`);
+    parts.push(`MEDICAL CONDITIONS: ${a.medicalConditions?.join(", ") || "None"}`);
+    parts.push(`INJURIES: ${a.injuries?.join(", ") || "None"}`);
+    if (a.lifestyleHabits) {
+      const habits = a.lifestyleHabits as Record<string, unknown>;
+      if (habits.equipment) parts.push(`EQUIPMENT: ${habits.equipment}`);
+      if (habits.mealsPerDay) parts.push(`MEALS PER DAY: ${habits.mealsPerDay}`);
+    }
+  }
+
+  // ── Assessment changes (if reassessment happened) ──
+  if (ctx.assessmentChanges?.length) {
+    parts.push(`\nRECENT ASSESSMENT CHANGES: ${ctx.assessmentChanges.join(", ")}`);
+  }
+
+  // ── Weight trend (progressive) ──
+  const allCheckIns = [ctx.currentCheckIn, ...ctx.checkInHistory].filter(
+    (c): c is Doc<"checkIns"> => c != null && c.weight != null,
+  );
+  if (allCheckIns.length > 1) {
+    const trend = allCheckIns
+      .reverse()
+      .map(
+        (c) =>
+          `${new Date(c._creationTime).toISOString().split("T")[0]}: ${c.weight}kg`,
+      );
+    parts.push(`\nWEIGHT TREND: ${trend.join(" → ")}`);
+  }
+
+  // ── Averages from check-in history ──
+  const energyVals = allCheckIns
+    .filter((c) => c.energyLevel != null)
+    .map((c) => c.energyLevel!);
+  const sleepVals = allCheckIns
+    .filter((c) => c.sleepQuality != null)
+    .map((c) => c.sleepQuality!);
+  if (energyVals.length > 0) {
+    const avg = (arr: number[]) =>
+      Math.round((arr.reduce((a, b) => a + b, 0) / arr.length) * 10) / 10;
+    parts.push(
+      `AVG ENERGY: ${avg(energyVals)}/10 | AVG SLEEP: ${avg(sleepVals)}/10 (last ${energyVals.length} check-ins)`,
+    );
+  }
+
+  // ── Current check-in snapshot ──
+  if (ctx.currentCheckIn) {
+    const ci = ctx.currentCheckIn;
+    const ciParts = [`Weight ${ci.weight}kg`];
+    if (ci.energyLevel != null) ciParts.push(`Energy ${ci.energyLevel}/10`);
+    if (ci.sleepQuality != null) ciParts.push(`Sleep ${ci.sleepQuality}/10`);
+    if (ci.dietaryAdherence != null) ciParts.push(`Diet adherence ${ci.dietaryAdherence}/10`);
+    parts.push(`\nCURRENT CHECK-IN: ${ciParts.join(", ")}`);
+    if (ci.workoutPerformance) parts.push(`WORKOUT FEEDBACK: ${ci.workoutPerformance}`);
+    if (ci.newInjuries) parts.push(`NEW INJURIES: ${ci.newInjuries}`);
+    if (ci.notes) parts.push(`CLIENT NOTES: ${ci.notes}`);
+  }
+
+  // ── Adherence data ──
+  if (ctx.adherence.meal) {
+    parts.push(
+      `\nLAST CYCLE MEAL ADHERENCE: ${ctx.adherence.meal.rate}% (${ctx.adherence.meal.completed}/${ctx.adherence.meal.total})`,
+    );
+  }
+  if (ctx.adherence.workout) {
+    parts.push(
+      `LAST CYCLE WORKOUT ADHERENCE: ${ctx.adherence.workout.rate}% (${ctx.adherence.workout.completed}/${ctx.adherence.workout.total})`,
+    );
+  }
+
+  // ── Recent reflections (compact) ──
+  const reflections = ctx.recentReflections
+    .filter((r) => r.reflection)
+    .map((r) => `${r.date}: ${r.reflection!.substring(0, 80)}`);
+  if (reflections.length > 0) {
+    parts.push(`\nRECENT REFLECTIONS:\n${reflections.join("\n")}`);
+  }
+
+  return parts.join("\n");
+}
