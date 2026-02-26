@@ -229,7 +229,7 @@ export default function InitialAssessmentPage() {
         medicalConditions: medicalNotes ? [medicalNotes] : undefined,
         exerciseHistory: finalEquipment,
         measurements: {},
-        lifestyleHabits: { equipment: finalEquipment, mealsPerDay: mealsPerDay || undefined },
+        lifestyleHabits: { equipment: finalEquipment, mealsPerDay: mealsPerDay ? parseInt(mealsPerDay) : undefined },
         // Schedule server-side plan generation (survives client navigation)
         generatePlans: { language, planDuration },
       });

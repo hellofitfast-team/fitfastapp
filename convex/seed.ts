@@ -25,16 +25,6 @@ export const seedConfig = internalMutation({
       value: 14,
       updatedAt: now,
     });
-    await ctx.db.insert("systemConfig", {
-      key: "plan_pricing",
-      value: { monthly: 800, quarterly: 2000 },
-      updatedAt: now,
-    });
-    await ctx.db.insert("systemConfig", {
-      key: "coach_instapay_account",
-      value: { name: "FitFast Coach", number: "01234567890" },
-      updatedAt: now,
-    });
 
     return "Config seeded.";
   },
@@ -147,15 +137,20 @@ export const activateClient = internalMutation({
       throw new Error(`No profile found for userId: ${userId}`);
     }
 
+    const planTier = (profile.planTier as "monthly" | "quarterly") ?? "monthly";
+    const planMonths = planTier === "quarterly" ? 3 : 1;
+    const endDate = new Date();
+    endDate.setMonth(endDate.getMonth() + planMonths);
+
     await ctx.db.patch(profile._id, {
       status: "active",
-      planTier: "quarterly",
+      planTier,
       planStartDate: new Date().toISOString().split("T")[0],
-      planEndDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+      planEndDate: endDate.toISOString().split("T")[0],
       updatedAt: Date.now(),
     });
 
-    return `${userId} is now active with 3-month plan.`;
+    return `${userId} is now active with ${planTier} plan.`;
   },
 });
 
@@ -179,16 +174,6 @@ export const run = internalMutation({
       await ctx.db.insert("systemConfig", {
         key: "check_in_frequency_days",
         value: 14,
-        updatedAt: now,
-      });
-      await ctx.db.insert("systemConfig", {
-        key: "plan_pricing",
-        value: { monthly: 800, quarterly: 2000 },
-        updatedAt: now,
-      });
-      await ctx.db.insert("systemConfig", {
-        key: "coach_instapay_account",
-        value: { name: "FitFast Coach", number: "01234567890" },
         updatedAt: now,
       });
     }
@@ -269,15 +254,13 @@ export const insertAuthUser = internalMutation({
       language: "en",
       status: "active",
       isCoach,
-      planTier: isCoach ? undefined : ("quarterly" as const),
+      planTier: isCoach ? undefined : ("monthly" as const),
       planStartDate: isCoach
         ? undefined
         : new Date().toISOString().split("T")[0],
       planEndDate: isCoach
         ? undefined
-        : new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
-            .toISOString()
-            .split("T")[0],
+        : (() => { const d = new Date(); d.setMonth(d.getMonth() + 1); return d.toISOString().split("T")[0]; })(),
       updatedAt: Date.now(),
     });
 
@@ -455,6 +438,22 @@ export const resetClientData = internalMutation({
       .map(([t, n]) => `${t}: ${n}`)
       .join(", ");
 
+    // Also fix planEndDate to match planTier
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .unique();
+    if (profile?.planTier && profile.planStartDate) {
+      const planMonths = profile.planTier === "quarterly" ? 3 : 1;
+      const start = new Date(profile.planStartDate);
+      const end = new Date(start);
+      end.setMonth(end.getMonth() + planMonths);
+      await ctx.db.patch(profile._id, {
+        planEndDate: end.toISOString().split("T")[0],
+        updatedAt: Date.now(),
+      });
+    }
+
     return `Reset ${email} — deleted: ${summary || "nothing to delete"}. Profile kept as active — user will see onboarding on next login.`;
   },
 });
@@ -491,3 +490,30 @@ export const patchKnowledgeTags = internalMutation({
     return results.join("\n");
   },
 });
+
+/**
+ * Debug: list all auth accounts + profiles.
+ * Run: npx convex run seed:listAccounts
+ */
+export const listAccounts = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const accounts = await ctx.db.query("authAccounts").collect();
+    const profiles = await ctx.db.query("profiles").collect();
+    return {
+      accounts: accounts.map((a) => ({
+        provider: a.provider,
+        email: a.providerAccountId,
+        userId: a.userId,
+      })),
+      profiles: profiles.map((p) => ({
+        userId: p.userId,
+        fullName: p.fullName,
+        email: p.email,
+        isCoach: p.isCoach,
+        status: p.status,
+      })),
+    };
+  },
+});
+

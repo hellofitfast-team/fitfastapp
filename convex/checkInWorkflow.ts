@@ -13,7 +13,15 @@ export const submitCheckInInternal = internalMutation({
   args: {
     userId: v.string(),
     weight: v.optional(v.number()),
-    measurements: v.optional(v.any()),
+    measurements: v.optional(
+      v.object({
+        chest: v.optional(v.union(v.number(), v.null())),
+        waist: v.optional(v.union(v.number(), v.null())),
+        hips: v.optional(v.union(v.number(), v.null())),
+        arms: v.optional(v.union(v.number(), v.null())),
+        thighs: v.optional(v.union(v.number(), v.null())),
+      }),
+    ),
     workoutPerformance: v.optional(v.string()),
     energyLevel: v.optional(v.number()),
     sleepQuality: v.optional(v.number()),
@@ -24,7 +32,7 @@ export const submitCheckInInternal = internalMutation({
   },
   returns: v.id("checkIns"),
   handler: async (ctx, { userId, ...fields }) => {
-    return ctx.db.insert("checkIns", { userId, ...fields });
+    return ctx.db.insert("checkIns", { userId, submittedAt: Date.now(), ...fields });
   },
 });
 
@@ -44,7 +52,15 @@ export const checkInAndGeneratePlans = workflow.define({
     language: v.union(v.literal("en"), v.literal("ar")),
     planDuration: v.optional(v.number()),
     weight: v.optional(v.number()),
-    measurements: v.optional(v.any()),
+    measurements: v.optional(
+      v.object({
+        chest: v.optional(v.union(v.number(), v.null())),
+        waist: v.optional(v.union(v.number(), v.null())),
+        hips: v.optional(v.union(v.number(), v.null())),
+        arms: v.optional(v.union(v.number(), v.null())),
+        thighs: v.optional(v.union(v.number(), v.null())),
+      }),
+    ),
     workoutPerformance: v.optional(v.string()),
     energyLevel: v.optional(v.number()),
     sleepQuality: v.optional(v.number()),

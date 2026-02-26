@@ -42,8 +42,22 @@ export const submitAssessment = mutation({
     height: v.optional(v.number()),
     age: v.optional(v.number()),
     gender: v.optional(v.string()),
-    measurements: v.optional(v.any()),
-    scheduleAvailability: v.optional(v.any()),
+    measurements: v.optional(
+      v.object({
+        chest: v.optional(v.number()),
+        waist: v.optional(v.number()),
+        hips: v.optional(v.number()),
+        arms: v.optional(v.number()),
+        thighs: v.optional(v.number()),
+      }),
+    ),
+    scheduleAvailability: v.optional(
+      v.object({
+        days: v.optional(v.array(v.string())),
+        sessionDuration: v.optional(v.number()),
+        preferredTime: v.optional(v.string()),
+      }),
+    ),
     foodPreferences: v.optional(v.array(v.string())),
     allergies: v.optional(v.array(v.string())),
     dietaryRestrictions: v.optional(v.array(v.string())),
@@ -57,7 +71,12 @@ export const submitAssessment = mutation({
         v.literal("advanced"),
       ),
     ),
-    lifestyleHabits: v.optional(v.any()),
+    lifestyleHabits: v.optional(
+      v.object({
+        equipment: v.optional(v.string()),
+        mealsPerDay: v.optional(v.number()),
+      }),
+    ),
     // Optional: trigger server-side plan generation after assessment
     generatePlans: v.optional(v.object({
       language: v.union(v.literal("en"), v.literal("ar")),

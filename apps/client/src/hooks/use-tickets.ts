@@ -10,7 +10,7 @@ interface CreateTicketData {
   category: "meal_issue" | "workout_issue" | "technical" | "bug_report" | "other";
   description?: string;
   screenshotId?: Id<"_storage">;
-  deviceInfo?: Record<string, unknown>;
+  deviceInfo?: { browser?: string; os?: string; screenSize?: string; userAgent?: string };
   pageUrl?: string;
 }
 

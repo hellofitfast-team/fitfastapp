@@ -52,8 +52,22 @@ export default defineSchema({
     goals: v.optional(v.string()),
     currentWeight: v.optional(v.number()),
     height: v.optional(v.number()),
-    measurements: v.optional(v.any()),
-    scheduleAvailability: v.optional(v.any()),
+    measurements: v.optional(
+      v.object({
+        chest: v.optional(v.number()),
+        waist: v.optional(v.number()),
+        hips: v.optional(v.number()),
+        arms: v.optional(v.number()),
+        thighs: v.optional(v.number()),
+      }),
+    ),
+    scheduleAvailability: v.optional(
+      v.object({
+        days: v.optional(v.array(v.string())),
+        sessionDuration: v.optional(v.number()),
+        preferredTime: v.optional(v.string()),
+      }),
+    ),
     foodPreferences: v.optional(v.array(v.string())),
     allergies: v.optional(v.array(v.string())),
     dietaryRestrictions: v.optional(v.array(v.string())),
@@ -69,13 +83,27 @@ export default defineSchema({
         v.literal("advanced"),
       ),
     ),
-    lifestyleHabits: v.optional(v.any()),
+    lifestyleHabits: v.optional(
+      v.object({
+        equipment: v.optional(v.string()),
+        mealsPerDay: v.optional(v.number()),
+      }),
+    ),
   }).index("by_userId", ["userId"]),
 
   checkIns: defineTable({
     userId: v.string(),
+    submittedAt: v.optional(v.number()),
     weight: v.optional(v.number()),
-    measurements: v.optional(v.any()),
+    measurements: v.optional(
+      v.object({
+        chest: v.optional(v.union(v.number(), v.null())),
+        waist: v.optional(v.union(v.number(), v.null())),
+        hips: v.optional(v.union(v.number(), v.null())),
+        arms: v.optional(v.union(v.number(), v.null())),
+        thighs: v.optional(v.union(v.number(), v.null())),
+      }),
+    ),
     workoutPerformance: v.optional(v.string()),
     energyLevel: v.optional(v.number()),
     sleepQuality: v.optional(v.number()),
@@ -165,7 +193,14 @@ export default defineSchema({
       }),
     ),
     screenshotId: v.optional(v.id("_storage")),
-    deviceInfo: v.optional(v.any()),
+    deviceInfo: v.optional(
+      v.object({
+        browser: v.optional(v.string()),
+        os: v.optional(v.string()),
+        screenSize: v.optional(v.string()),
+        userAgent: v.optional(v.string()),
+      }),
+    ),
     pageUrl: v.optional(v.string()),
     updatedAt: v.number(),
   })
@@ -208,7 +243,8 @@ export default defineSchema({
     inviteExpiresAt: v.optional(v.number()),
   })
     .index("by_status", ["status"])
-    .index("by_email", ["email"]),
+    .index("by_email", ["email"])
+    .index("by_inviteToken", ["inviteToken"]),
 
   systemConfig: defineTable({
     key: v.string(),

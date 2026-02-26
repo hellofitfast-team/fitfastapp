@@ -38,7 +38,7 @@ export const getLockStatus = query({
   args: {},
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
-    if (!userId) return { isLocked: false, nextCheckInDate: null };
+    if (!userId) return { isLocked: false, nextCheckInDate: null, frequencyDays: 14 };
 
     const frequencyDays = await getCheckInFrequencyDays(ctx);
 
@@ -72,7 +72,7 @@ export const getLockStatus = query({
       anchorTime = planTimes.length > 0 ? Math.min(...planTimes) : null;
     }
 
-    if (!anchorTime) return { isLocked: false, nextCheckInDate: null };
+    if (!anchorTime) return { isLocked: false, nextCheckInDate: null, frequencyDays };
 
     const anchorDate = new Date(anchorTime);
     const nextCheckInDate = new Date(anchorDate);
@@ -84,6 +84,7 @@ export const getLockStatus = query({
       isLocked,
       nextCheckInDate: nextCheckInDate.toISOString(),
       lastCheckInDate: anchorDate.toISOString(),
+      frequencyDays,
     };
   },
 });
@@ -96,7 +97,15 @@ export const getLockStatus = query({
 export const submitCheckIn = mutation({
   args: {
     weight: v.optional(v.number()),
-    measurements: v.optional(v.any()),
+    measurements: v.optional(
+      v.object({
+        chest: v.optional(v.union(v.number(), v.null())),
+        waist: v.optional(v.union(v.number(), v.null())),
+        hips: v.optional(v.union(v.number(), v.null())),
+        arms: v.optional(v.union(v.number(), v.null())),
+        thighs: v.optional(v.union(v.number(), v.null())),
+      }),
+    ),
     workoutPerformance: v.optional(v.string()),
     energyLevel: v.optional(v.number()),
     sleepQuality: v.optional(v.number()),
@@ -114,7 +123,7 @@ export const submitCheckIn = mutation({
       throw new Error(`Too many check-ins — try again in ${Math.ceil((retryAfter ?? 0) / 1000)}s`);
     }
 
-    return ctx.db.insert("checkIns", { userId, ...args });
+    return ctx.db.insert("checkIns", { userId, submittedAt: Date.now(), ...args });
   },
 });
 
@@ -129,7 +138,15 @@ export const startCheckInWorkflow = mutation({
     language: v.union(v.literal("en"), v.literal("ar")),
     planDuration: v.optional(v.number()),
     weight: v.optional(v.number()),
-    measurements: v.optional(v.any()),
+    measurements: v.optional(
+      v.object({
+        chest: v.optional(v.union(v.number(), v.null())),
+        waist: v.optional(v.union(v.number(), v.null())),
+        hips: v.optional(v.union(v.number(), v.null())),
+        arms: v.optional(v.union(v.number(), v.null())),
+        thighs: v.optional(v.union(v.number(), v.null())),
+      }),
+    ),
     workoutPerformance: v.optional(v.string()),
     energyLevel: v.optional(v.number()),
     sleepQuality: v.optional(v.number()),
@@ -164,7 +181,7 @@ export const startCheckInWorkflow = mutation({
       .withIndex("by_userId", (q: any) => q.eq("userId", userId))
       .filter((q: any) => q.gte(q.field("_creationTime"), windowStart))
       .collect();
-    if (recentMeals.length + recentWorkouts.length >= 2) {
+    if (Math.max(recentMeals.length, recentWorkouts.length) >= 2) {
       throw new Error("Plan generation limit reached for this cycle");
     }
 

@@ -77,7 +77,14 @@ export const createTicket = mutation({
     ),
     description: v.optional(v.string()),
     screenshotId: v.optional(v.id("_storage")),
-    deviceInfo: v.optional(v.any()),
+    deviceInfo: v.optional(
+      v.object({
+        browser: v.optional(v.string()),
+        os: v.optional(v.string()),
+        screenSize: v.optional(v.string()),
+        userAgent: v.optional(v.string()),
+      }),
+    ),
     pageUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
@@ -117,6 +124,7 @@ export const replyToTicket = mutation({
     const ticket = await ctx.db.get(ticketId);
     if (!ticket) throw new Error("Ticket not found");
     if (ticket.userId !== userId) throw new Error("Not authorized");
+    if (ticket.status === "closed") throw new Error("Cannot reply to closed ticket");
 
     await ctx.db.patch(ticketId, {
       messages: [
