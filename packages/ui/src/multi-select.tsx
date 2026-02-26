@@ -38,6 +38,8 @@ export interface MultiSelectProps {
   columns?: number;
   hasNoneOption?: boolean;
   featureColor?: MultiSelectColor;
+  otherLabel?: string;
+  otherPlaceholder?: string;
 }
 
 export function MultiSelect({
@@ -49,6 +51,8 @@ export function MultiSelect({
   disabled,
   hasNoneOption = false,
   featureColor = "primary",
+  otherLabel,
+  otherPlaceholder,
 }: MultiSelectProps) {
   const styles = FEATURE_SELECT_STYLES[featureColor];
 
@@ -74,7 +78,7 @@ export function MultiSelect({
     }
   };
 
-  const allOptions = [...options, { id: "other", label: "Other" }];
+  const allOptions = [...options, { id: "other", label: otherLabel ?? "Other" }];
 
   return (
     <div className="space-y-3">
@@ -109,7 +113,7 @@ export function MultiSelect({
       {selected.includes("other") && (
         <input
           type="text"
-          placeholder="Please specify..."
+          placeholder={otherPlaceholder ?? "Please specify..."}
           value={otherValue}
           onChange={(e) => onOtherChange(e.target.value)}
           onKeyDown={(e) => {

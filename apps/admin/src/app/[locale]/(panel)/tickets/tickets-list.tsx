@@ -11,6 +11,7 @@ import {
   CheckCircle,
   Clock,
   MessageCircle,
+  Loader2,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
@@ -46,7 +47,13 @@ export function TicketsList() {
   const [response, setResponse] = useState("");
   const [respondingId, setRespondingId] = useState<string | null>(null);
 
-  if (tickets === undefined) return null;
+  if (tickets === undefined) {
+    return (
+      <div className="flex justify-center p-8">
+        <Loader2 className="h-6 w-6 animate-spin" />
+      </div>
+    );
+  }
 
   const handleRespond = async (ticketId: Id<"tickets">) => {
     if (!response.trim()) return;

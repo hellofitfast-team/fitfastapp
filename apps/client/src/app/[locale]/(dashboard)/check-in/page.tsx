@@ -76,6 +76,7 @@ export default function CheckInPage() {
   const { isLocked: isCheckInLocked, nextCheckInDate, daysUntilNextCheckIn, isLoadingLockStatus } = useCheckInLock();
 
   const methods = useForm<CheckInFormData>({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- zodResolver type inference gap with react-hook-form v7
     resolver: zodResolver(checkInSchema) as any,
     defaultValues: { energyLevel: 5, sleepQuality: 5, dietaryAdherence: 5 },
   });
@@ -118,6 +119,7 @@ export default function CheckInPage() {
         headers: { "Content-Type": photo.type },
         body: photo,
       });
+      if (!result.ok) throw new Error(`Upload failed: ${result.status}`);
       const { storageId } = await result.json();
       uploadedIds.push(storageId as Id<"_storage">);
     }
@@ -236,7 +238,7 @@ export default function CheckInPage() {
         });
       }
 
-      router.push("/");
+      router.replace("/");
     } catch (error) {
       Sentry.captureException(error, {
         tags: { feature: "check-in-submission" },

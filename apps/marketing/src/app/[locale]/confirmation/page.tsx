@@ -1,6 +1,6 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { CheckCircle2 } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@fitfast/i18n/navigation";
 
 interface ConfirmationPageProps {
   params: Promise<{ locale: string }>;
@@ -46,7 +46,7 @@ export default async function ConfirmationPage({ params }: ConfirmationPageProps
 
           {/* Back to home */}
           <Link
-            href={`/${locale}`}
+            href="/"
             className="inline-flex items-center justify-center w-full h-11 rounded-xl bg-[var(--color-primary)] text-white font-semibold text-sm hover:bg-[var(--color-primary)]/90 transition-colors"
           >
             {t("backToHome")}

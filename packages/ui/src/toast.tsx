@@ -17,7 +17,7 @@ const ToastViewport = React.forwardRef<
     style={{
       position: "fixed",
       bottom: 16,
-      right: 16,
+      insetInlineEnd: 16,
       zIndex: 100,
       maxWidth: 420,
       width: "100%",

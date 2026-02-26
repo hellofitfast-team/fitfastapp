@@ -28,7 +28,9 @@ import { cn } from "@fitfast/ui/cn";
 import { CheckoutDrawer } from "@/components/checkout/checkout-drawer";
 import type { SelectedPlan } from "@/components/checkout/checkout-form";
 
-gsap.registerPlugin(ScrollTrigger);
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(ScrollTrigger);
+}
 
 // --- Reusable UI Components ---
 

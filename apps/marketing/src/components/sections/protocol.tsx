@@ -91,10 +91,10 @@ export function Protocol() {
         <section ref={containerRef} className="relative w-full bg-white py-24 border-y border-[var(--color-border)]">
             <div className="max-w-6xl mx-auto px-6 mb-24 text-center">
                 <h2 className="text-4xl md:text-6xl font-bold font-sans text-slate-900 tracking-tight mb-4">
-                    The System Protocol
+                    {t("protocolTitle")}
                 </h2>
                 <p className="text-slate-500 max-w-2xl mx-auto text-lg">
-                    We don't do guesswork. Every variable is measured, computed, and acted upon.
+                    {t("protocolSubtitle")}
                 </p>
             </div>
 

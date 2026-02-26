@@ -8,6 +8,7 @@ export interface RatingSelectorProps {
   max?: number;
   label?: string;
   disabled?: boolean;
+  labels?: { low: string; mid: string; high: string };
 }
 
 function getZoneColor(num: number, isSelected: boolean) {
@@ -17,10 +18,10 @@ function getZoneColor(num: number, isSelected: boolean) {
   return "bg-success-500 text-white";
 }
 
-function getZoneLabel(value: number) {
-  if (value <= 4) return "Needs work";
-  if (value <= 7) return "Moderate";
-  return "Great";
+function getZoneLabel(value: number, labels?: { low: string; mid: string; high: string }) {
+  if (value <= 4) return labels?.low ?? "Needs work";
+  if (value <= 7) return labels?.mid ?? "Moderate";
+  return labels?.high ?? "Great";
 }
 
 export function RatingSelector({
@@ -29,6 +30,7 @@ export function RatingSelector({
   max = 10,
   label,
   disabled,
+  labels,
 }: RatingSelectorProps) {
   return (
     <div>
@@ -45,7 +47,7 @@ export function RatingSelector({
                   : "bg-success-500/10 text-success-600"
             )}
           >
-            {value}/{max} · {getZoneLabel(value)}
+            {value}/{max} · {getZoneLabel(value, labels)}
           </span>
         </div>
       )}

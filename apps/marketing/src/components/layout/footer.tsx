@@ -20,7 +20,7 @@ export function Footer() {
 
                 <div className="flex items-center gap-3 bg-white/5 px-5 py-2.5 rounded-full border border-white/10 shadow-inner">
                     <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-success-500)] animate-ping shadow-[0_0_10px_var(--color-success-500)]" />
-                    <span className="text-xs font-mono text-white/80 uppercase tracking-widest">System Operational</span>
+                    <span className="text-xs font-mono text-white/80 uppercase tracking-widest">{t("systemOperational")}</span>
                 </div>
             </div>
         </footer>

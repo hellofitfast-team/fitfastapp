@@ -124,7 +124,13 @@ export function SignupsTable() {
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
 
-  if (signups === undefined) return null;
+  if (signups === undefined) {
+    return (
+      <div className="flex justify-center p-8">
+        <Loader2 className="h-6 w-6 animate-spin" />
+      </div>
+    );
+  }
 
   const handleApprove = async (signupId: Id<"pendingSignups">) => {
     setActionId(signupId);

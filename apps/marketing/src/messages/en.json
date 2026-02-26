@@ -61,7 +61,10 @@
     "about": "About Us",
     "careers": "Careers",
     "contact": "Contact",
-    "privacy": "Privacy Policy"
+    "privacy": "Privacy Policy",
+    "protocolTitle": "The System Protocol",
+    "protocolSubtitle": "We don't do guesswork. Every variable is measured, computed, and acted upon.",
+    "systemOperational": "System Operational"
   },
   "checkout": {
     "formTitle": "Complete Your Subscription",
@@ -82,7 +85,8 @@
     "fileTooLarge": "File is too large. Maximum size is 5MB.",
     "invalidFileType": "Please upload an image file (PNG, JPG, WEBP).",
     "paymentInstructions": "Send Payment To",
-    "noPaymentMethods": "Contact us for payment details."
+    "noPaymentMethods": "Contact us for payment details.",
+    "invalidPhone": "Please enter a valid phone number"
   },
   "confirmation": {
     "title": "Signup Submitted Successfully!",

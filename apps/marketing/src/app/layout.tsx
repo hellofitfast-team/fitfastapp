@@ -67,7 +67,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html suppressHydrationWarning className={`${inter.variable} ${spaceGrotesk.variable} ${alexandria.variable}`}>
+    <html suppressHydrationWarning lang="en" dir="ltr" className={`${inter.variable} ${spaceGrotesk.variable} ${alexandria.variable}`}>
       <body className="min-h-screen bg-[var(--color-background)] text-[var(--color-foreground)] antialiased font-sans">
         <svg className="noise-overlay" xmlns="http://www.w3.org/2000/svg">
           <filter id="noiseFilter">

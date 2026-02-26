@@ -34,16 +34,21 @@ const durationToTier: Record<string, "monthly" | "quarterly"> = {
   "3 months": "quarterly",
 };
 
-const checkoutSchema = z.object({
-  fullName: z.string().min(2).max(100),
-  email: z.string().email(),
-  phone: z.string().min(10).max(15),
-});
+function makeCheckoutSchema(invalidPhoneMsg: string) {
+  return z.object({
+    fullName: z.string().min(2).max(100),
+    email: z.string().email(),
+    phone: z.string().regex(/^\+?[0-9\s-]{10,15}$/, invalidPhoneMsg),
+  });
+}
 
-type CheckoutFormValues = z.infer<typeof checkoutSchema>;
+type CheckoutSchema = ReturnType<typeof makeCheckoutSchema>;
+
+type CheckoutFormValues = z.infer<CheckoutSchema>;
 
 export function CheckoutForm({ selectedPlan, onSuccess }: CheckoutFormProps) {
   const t = useTranslations("checkout");
+  const checkoutSchema = makeCheckoutSchema(t("invalidPhone"));
   const createSignup = useMutation(api.pendingSignups.createSignup);
 
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
@@ -133,6 +138,7 @@ export function CheckoutForm({ selectedPlan, onSuccess }: CheckoutFormProps) {
         }
 
         const { uploadUrl } = await urlResponse.json() as { uploadUrl: string };
+        if (!uploadUrl || typeof uploadUrl !== "string") throw new Error("Invalid upload response");
 
         // Upload file directly to Convex storage
         const uploadResponse = await fetch(uploadUrl, {
@@ -148,11 +154,16 @@ export function CheckoutForm({ selectedPlan, onSuccess }: CheckoutFormProps) {
         }
 
         const uploadResult = await uploadResponse.json() as { storageId: string };
-        storageId = uploadResult.storageId;
+        const { storageId: resolvedStorageId } = uploadResult;
+        if (!resolvedStorageId || typeof resolvedStorageId !== "string") throw new Error("Invalid storage response");
+        storageId = resolvedStorageId;
       }
 
       // Submit signup mutation
       const planTier = durationToTier[selectedPlan.duration];
+      if (!planTier) {
+        console.warn(`Unknown plan duration: ${selectedPlan.duration}`);
+      }
       await createSignup({
         fullName: data.fullName,
         email: data.email,
@@ -165,7 +176,7 @@ export function CheckoutForm({ selectedPlan, onSuccess }: CheckoutFormProps) {
       onSuccess();
     } catch (err) {
       console.error("Checkout error:", err);
-      setSubmitError(err instanceof Error ? err.message : t("submitError"));
+      setSubmitError(t("submitError"));
     } finally {
       setIsSubmitting(false);
     }

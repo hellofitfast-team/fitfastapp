@@ -61,7 +61,10 @@
     "about": "عننا",
     "careers": "الوظائف",
     "contact": "تواصل معنا",
-    "privacy": "سياسة الخصوصية"
+    "privacy": "سياسة الخصوصية",
+    "protocolTitle": "بروتوكول النظام",
+    "protocolSubtitle": "لا نعمل بالتخمين. كل متغير يُقاس ويُحسب ويُتصرف بناءً عليه.",
+    "systemOperational": "النظام يعمل"
   },
   "checkout": {
     "formTitle": "أكمل اشتراكك",
@@ -82,7 +85,8 @@
     "fileTooLarge": "حجم الملف كبير جداً. الحد الأقصى 5 ميغابايت.",
     "invalidFileType": "يرجى رفع صورة (PNG، JPG، WEBP).",
     "paymentInstructions": "أرسل الدفعة إلى",
-    "noPaymentMethods": "تواصل معنا للحصول على تفاصيل الدفع."
+    "noPaymentMethods": "تواصل معنا للحصول على تفاصيل الدفع.",
+    "invalidPhone": "يرجى إدخال رقم هاتف صالح"
   },
   "confirmation": {
     "title": "تم إرسال طلبك بنجاح!",
