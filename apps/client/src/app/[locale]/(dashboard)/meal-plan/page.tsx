@@ -25,9 +25,42 @@ import { api } from "@/convex/_generated/api";
 import { Button } from "@fitfast/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 
+/** Normalized meal with flat macros (handles both old nested and new flat formats) */
+interface NormalizedMeal {
+  name: string;
+  type: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  ingredients: string[];
+  instructions: string[];
+  alternatives: (string | RawMeal)[];
+}
+
+/** Raw meal from AI output — may have nested macros or flat fields */
+interface RawMeal {
+  name?: string;
+  type?: string;
+  calories?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
+  macros?: { calories?: number; protein?: number; carbs?: number; fat?: number };
+  ingredients?: string[] | string;
+  instructions?: string[] | string;
+  alternatives?: (string | RawMeal)[];
+}
+
+/** Day plan structure from AI-generated meal plan */
+interface MealDayPlan {
+  meals?: RawMeal[];
+  dailyTotals?: { calories?: number; protein?: number; carbs?: number; fat?: number };
+}
+
 // Normalize a meal object to handle both old format (macros nested in .macros)
 // and new format (flat calories/protein/carbs/fat)
-function normalizeMeal(raw: any) {
+function normalizeMeal(raw: RawMeal): NormalizedMeal {
   const macros = raw.macros || {};
   return {
     name: raw.name || "",
@@ -47,7 +80,11 @@ function normalizeMeal(raw: any) {
 }
 
 // Resolve the day plan from weeklyPlan — tries "dayN" format first, then weekday names
-function resolveDayPlan(weeklyPlan: Record<string, any>, dayIndex: number, startDate?: string) {
+function resolveDayPlan(
+  weeklyPlan: Record<string, MealDayPlan>,
+  dayIndex: number,
+  startDate?: string,
+): MealDayPlan | null {
   // Try new format: "day1", "day2", ...
   const dayKey = `day${dayIndex + 1}`;
   if (weeklyPlan[dayKey]) return weeklyPlan[dayKey];
@@ -95,7 +132,7 @@ export default function MealPlanPage() {
       const language = (profile?.language || locale || "en") as "en" | "ar";
       await generateMealPlan({ language, planDuration, isInitialGeneration: true });
     } catch (err) {
-      console.error("Meal plan generation failed:", err);
+      console.error("Meal plan generation failed:", err); // Sentry captures this
       setGenerateError(err instanceof Error ? err.message : "Generation failed");
     } finally {
       setIsGenerating(false);
@@ -125,7 +162,7 @@ export default function MealPlanPage() {
   // Streaming support
   const streamId = mealPlan?.streamId;
   const { streamedText, isStreaming } = usePlanStream(
-    mealPlan && (!mealPlan.planData || (mealPlan.planData as any)?.parseError)
+    mealPlan && (!mealPlan.planData || (mealPlan.planData as Record<string, unknown>)?.parseError)
       ? streamId
       : undefined,
   );
@@ -264,16 +301,11 @@ export default function MealPlanPage() {
   const dailyTotals = dayPlan
     ? {
         calories:
-          dayPlan.dailyTotals?.calories ??
-          meals.reduce((sum: number, m: any) => sum + (m.calories || 0), 0),
+          dayPlan.dailyTotals?.calories ?? meals.reduce((sum, m) => sum + (m.calories || 0), 0),
         protein:
-          dayPlan.dailyTotals?.protein ??
-          meals.reduce((sum: number, m: any) => sum + (m.protein || 0), 0),
-        carbs:
-          dayPlan.dailyTotals?.carbs ??
-          meals.reduce((sum: number, m: any) => sum + (m.carbs || 0), 0),
-        fat:
-          dayPlan.dailyTotals?.fat ?? meals.reduce((sum: number, m: any) => sum + (m.fat || 0), 0),
+          dayPlan.dailyTotals?.protein ?? meals.reduce((sum, m) => sum + (m.protein || 0), 0),
+        carbs: dayPlan.dailyTotals?.carbs ?? meals.reduce((sum, m) => sum + (m.carbs || 0), 0),
+        fat: dayPlan.dailyTotals?.fat ?? meals.reduce((sum, m) => sum + (m.fat || 0), 0),
       }
     : null;
 
@@ -334,7 +366,7 @@ export default function MealPlanPage() {
       {/* Meals */}
       {dayPlan && (
         <div className="space-y-3">
-          {meals.map((meal: any, index: number) => {
+          {meals.map((meal, index) => {
             const isExpanded = expandedMeal === index;
             const hasAlternatives =
               Array.isArray(meal.alternatives) && meal.alternatives.length > 0;
@@ -442,7 +474,7 @@ export default function MealPlanPage() {
                       <div>
                         <h4 className="mb-2 text-sm font-semibold">{t("alternatives")}</h4>
                         <div className="space-y-1.5 rounded-lg border border-dashed border-[#10B981]/30 bg-[#10B981]/5 p-3">
-                          {meal.alternatives!.map((alt: any, i: number) => {
+                          {meal.alternatives!.map((alt, i) => {
                             if (typeof alt === "string") {
                               // Old format: plain string
                               return (

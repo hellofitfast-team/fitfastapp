@@ -3,6 +3,10 @@
  * Used to send push notifications from API routes / server actions.
  */
 
+import { createLogger } from "@fitfast/config/logger";
+
+const log = createLogger("onesignal");
+
 const ONESIGNAL_API_URL = "https://api.onesignal.com/notifications";
 
 interface SendOptions {
@@ -69,7 +73,7 @@ class OneSignalClient {
 
     if (!response.ok) {
       const error = await response.text();
-      console.error("OneSignal API error:", response.status, error);
+      log.error({ status: response.status, err: error }, "OneSignal API error");
       return { success: false, error };
     }
 

@@ -235,13 +235,13 @@ export default function InitialAssessmentPage() {
       try {
         await updateProfile({});
       } catch (updateError) {
-        console.error("Error updating profile:", updateError);
+        console.error("Error updating profile:", updateError); // Sentry captures this
       }
 
       // Navigate immediately — plans generate server-side via scheduler
       router.push("/");
     } catch (err) {
-      console.error("Assessment error:", err);
+      console.error("Assessment error:", err); // Sentry captures this
       setError(err instanceof Error ? err.message : tErrors("unexpectedError"));
     } finally {
       setIsLoading(false);

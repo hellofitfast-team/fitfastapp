@@ -736,7 +736,10 @@
     "errorId": "Error ID",
     "tryAgain": "Try again",
     "replyFailed": "Failed to send reply. Please try again.",
-    "saveFailed": "Failed to save. Please try again."
+    "saveFailed": "Failed to save. Please try again.",
+    "pageNotFound": "Page Not Found",
+    "pageNotFoundDescription": "The page you're looking for doesn't exist or has been moved.",
+    "goHome": "Go Home"
   },
   "subscription": {
     "banner": {
@@ -768,6 +771,13 @@
       "perQuarter": "/quarter",
       "popular": "Popular"
     }
+  },
+  "validation": {
+    "nameMinLength": "Name must be at least 2 characters",
+    "nameMaxLength": "Name must be under 100 characters",
+    "invalidPhone": "Invalid phone number format",
+    "invalidEmail": "Please enter a valid email",
+    "passwordMinLength": "Password must be at least 6 characters"
   },
   "routeErrors": {
     "checkIn": {

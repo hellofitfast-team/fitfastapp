@@ -23,8 +23,80 @@ import { WidgetCard } from "@fitfast/ui/widget-card";
 import { DaySelector } from "../meal-plan/_components/day-selector";
 import type { GeneratedWorkoutPlan } from "@/lib/ai/workout-plan-generator";
 
+/** Normalized exercise used in the main workout section */
+interface NormalizedExercise {
+  name: string;
+  sets: number;
+  reps: string;
+  rest: string;
+  targetMuscles: string[];
+  instructions: string[];
+  equipment: string;
+  notes: string;
+}
+
+/** Warmup/cooldown exercise */
+interface WarmupCooldownExercise {
+  name: string;
+  duration: number;
+  instructions: string[];
+}
+
+/** Normalized workout day plan */
+interface NormalizedWorkoutDay {
+  workoutName: string;
+  duration: number | null;
+  targetMuscles: string[];
+  restDay: boolean;
+  exercises: NormalizedExercise[];
+  warmup: { exercises: WarmupCooldownExercise[] };
+  cooldown: { exercises: WarmupCooldownExercise[] };
+}
+
+/** Raw workout day data from AI output (may have old or new field names) */
+interface RawWorkoutDay {
+  workoutName?: string;
+  name?: string;
+  duration?: number;
+  targetMuscles?: string[];
+  musclesTargeted?: string[];
+  restDay?: boolean;
+  exercises?: RawExercise[];
+  workout?: RawExercise[];
+  warmup?: RawWarmupCooldown;
+  warmUp?: RawWarmupCooldown;
+  cooldown?: RawWarmupCooldown;
+  coolDown?: RawWarmupCooldown;
+}
+
+interface RawExercise {
+  name?: string;
+  exercise?: string;
+  sets?: number;
+  reps?: string;
+  rest?: string | number;
+  restBetweenSets?: string;
+  targetMuscles?: string[];
+  musclesTargeted?: string[];
+  instructions?: string[];
+  equipment?: string;
+  notes?: string;
+}
+
+interface RawWarmupCooldown {
+  exercises?: WarmupCooldownExercise[];
+  cardio?: string;
+  duration?: number;
+  dynamicStretching?: string[];
+  staticStretching?: string[];
+}
+
 // Resolve the day plan from weeklyPlan — tries "dayN" format first, then weekday names
-function resolveDayPlan(weeklyPlan: Record<string, any>, dayIndex: number, startDate?: string) {
+function resolveDayPlan(
+  weeklyPlan: Record<string, RawWorkoutDay>,
+  dayIndex: number,
+  startDate?: string,
+): RawWorkoutDay | null {
   const dayKey = `day${dayIndex + 1}`;
   if (weeklyPlan[dayKey]) return weeklyPlan[dayKey];
 
@@ -41,21 +113,21 @@ function resolveDayPlan(weeklyPlan: Record<string, any>, dayIndex: number, start
 
 // Normalize a workout day to handle both old format (workout[], warmUp/coolDown)
 // and new format (exercises[], warmup/cooldown)
-function normalizeWorkoutDay(raw: any) {
+function normalizeWorkoutDay(raw: RawWorkoutDay | null): NormalizedWorkoutDay | null {
   if (!raw) return null;
 
   // Handle exercise list: old format uses "workout" array, new uses "exercises"
-  const rawExercises = Array.isArray(raw.exercises)
+  const rawExercises: RawExercise[] = Array.isArray(raw.exercises)
     ? raw.exercises
     : Array.isArray(raw.workout)
       ? raw.workout
       : [];
 
-  const exercises = rawExercises.map((ex: any) => ({
+  const exercises: NormalizedExercise[] = rawExercises.map((ex) => ({
     name: ex.name || ex.exercise || "",
     sets: ex.sets || 0,
     reps: ex.reps || "",
-    rest: ex.rest || ex.restBetweenSets || "-",
+    rest: String(ex.rest || ex.restBetweenSets || "-"),
     targetMuscles: Array.isArray(ex.targetMuscles)
       ? ex.targetMuscles
       : Array.isArray(ex.musclesTargeted)
@@ -67,7 +139,7 @@ function normalizeWorkoutDay(raw: any) {
   }));
 
   // Normalize warmup: old format has warmUp.cardio + warmUp.dynamicStretching
-  let warmupExercises: any[] = [];
+  let warmupExercises: WarmupCooldownExercise[] = [];
   const warmup = raw.warmup || raw.warmUp;
   if (warmup) {
     if (Array.isArray(warmup.exercises) && warmup.exercises.length > 0) {
@@ -90,7 +162,7 @@ function normalizeWorkoutDay(raw: any) {
   }
 
   // Normalize cooldown: old format has coolDown.staticStretching
-  let cooldownExercises: any[] = [];
+  let cooldownExercises: WarmupCooldownExercise[] = [];
   const cooldown = raw.cooldown || raw.coolDown;
   if (cooldown) {
     if (Array.isArray(cooldown.exercises) && cooldown.exercises.length > 0) {
@@ -154,7 +226,8 @@ export default function WorkoutPlanPage() {
   // Streaming support
   const streamId = workoutPlan?.streamId;
   const { streamedText, isStreaming } = usePlanStream(
-    workoutPlan && (!workoutPlan.planData || (workoutPlan.planData as any)?.parseError)
+    workoutPlan &&
+      (!workoutPlan.planData || (workoutPlan.planData as Record<string, unknown>)?.parseError)
       ? streamId
       : undefined,
   );
@@ -360,7 +433,7 @@ export default function WorkoutPlanPage() {
                       <h3 className="text-sm font-semibold">{t("warmup")}</h3>
                     </div>
                     <div className="divide-border divide-y">
-                      {dayPlan.warmup.exercises.map((exercise: any, index: number) => (
+                      {dayPlan.warmup.exercises.map((exercise, index) => (
                         <div key={index} className="p-4">
                           <div className="mb-1.5 flex items-center justify-between">
                             <span className="text-sm font-medium">{exercise.name}</span>
@@ -384,7 +457,7 @@ export default function WorkoutPlanPage() {
 
               {/* Exercise Mini-Cards (WORK-02, WORK-03, WORK-04) */}
               <div className="space-y-3">
-                {(dayPlan.exercises ?? []).map((exercise: any, index: number) => {
+                {(dayPlan.exercises ?? []).map((exercise, index) => {
                   const isExpanded = expandedExercise === index;
 
                   return (
@@ -458,9 +531,7 @@ export default function WorkoutPlanPage() {
                               <p className="text-muted-foreground text-[10px]">{t("reps")}</p>
                             </div>
                             <div className="rounded-lg bg-neutral-50 p-2 text-center">
-                              <p className="text-sm font-bold">
-                                {exercise.rest || (exercise as any).restBetweenSets || "-"}
-                              </p>
+                              <p className="text-sm font-bold">{exercise.rest || "-"}</p>
                               <p className="text-muted-foreground text-[10px]">{t("rest")}</p>
                             </div>
                           </div>
@@ -497,7 +568,7 @@ export default function WorkoutPlanPage() {
                       <h3 className="text-sm font-semibold">{t("cooldown")}</h3>
                     </div>
                     <div className="divide-border divide-y">
-                      {dayPlan.cooldown.exercises.map((exercise: any, index: number) => (
+                      {dayPlan.cooldown.exercises.map((exercise, index) => (
                         <div key={index} className="p-4">
                           <div className="mb-1.5 flex items-center justify-between">
                             <span className="text-sm font-medium">{exercise.name}</span>

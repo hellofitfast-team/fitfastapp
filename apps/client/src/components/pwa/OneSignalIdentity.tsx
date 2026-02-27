@@ -20,7 +20,9 @@ const log = createLogger("onesignal-identity");
 export function OneSignalIdentity() {
   const { profile } = useAuth();
   const linkedRef = useRef(false);
-  const handlerRef = useRef<((event: any) => void) | null>(null);
+  const handlerRef = useRef<
+    ((event: { current: { id?: string | null; optedIn?: boolean } }) => void) | null
+  >(null);
   const saveSubscription = useMutation(api.pushSubscriptions.saveSubscription);
   const deactivateSubscription = useMutation(api.pushSubscriptions.deactivateSubscription);
 

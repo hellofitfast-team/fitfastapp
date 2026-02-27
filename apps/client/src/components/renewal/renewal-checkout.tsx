@@ -8,6 +8,7 @@ import { Button } from "@fitfast/ui/button";
 import { cn } from "@fitfast/ui/cn";
 import { Upload, Check, Loader2, CreditCard, ImageIcon } from "lucide-react";
 import { useParams } from "next/navigation";
+import type { Id } from "@/convex/_generated/dataModel";
 
 export function RenewalCheckout() {
   const t = useTranslations("subscription.renewal");
@@ -22,7 +23,7 @@ export function RenewalCheckout() {
 
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [selectedTier, setSelectedTier] = useState<"monthly" | "quarterly" | null>(null);
-  const [screenshotId, setScreenshotId] = useState<string | null>(null);
+  const [screenshotId, setScreenshotId] = useState<Id<"_storage"> | null>(null);
   const [screenshotName, setScreenshotName] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -89,11 +90,11 @@ export function RenewalCheckout() {
       await createRenewal({
         planId: selectedPlan,
         planTier: selectedTier,
-        paymentScreenshotId: screenshotId as any,
+        paymentScreenshotId: screenshotId ?? undefined,
       });
       setSubmitted(true);
-    } catch (err: any) {
-      setError(err.message || "Something went wrong");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setSubmitting(false);
     }

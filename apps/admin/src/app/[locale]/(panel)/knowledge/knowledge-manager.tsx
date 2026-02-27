@@ -17,6 +17,7 @@ import {
   Search,
 } from "lucide-react";
 import { cn } from "@fitfast/ui/cn";
+import type { Id } from "@/convex/_generated/dataModel";
 
 const CATEGORY_OPTIONS = [
   "protein",
@@ -153,7 +154,7 @@ function KnowledgeTab() {
     }
   };
 
-  const handleDelete = async (entryId: any) => {
+  const handleDelete = async (entryId: Id<"coachKnowledge">) => {
     setDeletingId(entryId);
     try {
       await deleteEntry({ entryId });
@@ -162,7 +163,12 @@ function KnowledgeTab() {
     }
   };
 
-  const startEditing = (entry: any) => {
+  const startEditing = (entry: {
+    _id: string;
+    title: string;
+    content?: string;
+    tags?: string[];
+  }) => {
     setEditingId(entry._id);
     setEditTitle(entry.title);
     setEditContent(entry.content || "");
@@ -182,7 +188,7 @@ function KnowledgeTab() {
     setIsSavingEdit(true);
     try {
       await updateEntry({
-        entryId: editingId as any,
+        entryId: editingId as Id<"coachKnowledge">,
         title: editTitle.trim(),
         content: editContent.trim(),
         tags: editTags.length > 0 ? editTags : undefined,
@@ -613,7 +619,7 @@ function FoodTab() {
     }
   };
 
-  const handleDelete = async (id: any) => {
+  const handleDeleteFood = async (id: Id<"foodDatabase">) => {
     setDeletingId(id);
     try {
       await deleteFood({ foodId: id });
@@ -940,7 +946,7 @@ function FoodTab() {
                   )}
                 </div>
                 <button
-                  onClick={() => handleDelete(food._id)}
+                  onClick={() => handleDeleteFood(food._id)}
                   disabled={deletingId === food._id}
                   className="shrink-0 rounded-lg p-2 text-stone-400 transition-colors hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
                 >

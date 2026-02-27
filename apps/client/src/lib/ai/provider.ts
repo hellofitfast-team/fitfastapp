@@ -1,10 +1,15 @@
 import "server-only";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 
+const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+if (!appUrl) {
+  throw new Error("NEXT_PUBLIC_APP_URL environment variable is required");
+}
+
 const openrouter = createOpenRouter({
   apiKey: process.env.OPENROUTER_API_KEY,
   headers: {
-    "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+    "HTTP-Referer": appUrl,
     "X-Title": "FitFast",
   },
 });

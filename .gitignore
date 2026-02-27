@@ -57,9 +57,8 @@ next-env.d.ts
 .claude/
 CLAUDE.md
 
-# Development scripts and docs
+# Development scripts
 /scripts/
-/docs/
 
 # temporary screenshots/test artifacts
 screenshots-for-fix/

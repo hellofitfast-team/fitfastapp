@@ -67,14 +67,32 @@ function PaymentScreenshot({ storageId }: { storageId: Id<"_storage"> }) {
   );
 }
 
+/** OCR-extracted payment data from a signup screenshot */
+interface OcrExtractedData {
+  reference_number?: string;
+  amount?: string;
+  sender_name?: string;
+  bank?: string;
+}
+
+/** Signup record from the pendingSignups table */
+interface SignupRecord {
+  _id: string;
+  _creationTime: number;
+  status: "pending" | "approved" | "rejected";
+  planTier?: string;
+  paymentScreenshotId?: string;
+  ocrExtractedData?: OcrExtractedData;
+}
+
 const statusBadge: Record<string, string> = {
   pending: "bg-primary/10 text-primary border-primary/20",
   approved: "bg-emerald-50 text-emerald-700 border-emerald-200",
   rejected: "bg-red-50 text-red-700 border-red-200",
 };
 
-function SignupPaymentCard({ signup }: { signup: any }) {
-  const ocr = signup.ocrExtractedData as any;
+function SignupPaymentCard({ signup }: { signup: SignupRecord }) {
+  const ocr = signup.ocrExtractedData;
 
   return (
     <div className="rounded-lg border border-stone-100 bg-stone-50/50 p-4">

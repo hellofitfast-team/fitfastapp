@@ -169,7 +169,7 @@ export function CheckoutForm({ selectedPlan, onSuccess }: CheckoutFormProps) {
       // Submit signup mutation
       const planTier = durationToTier[selectedPlan.duration];
       if (!planTier) {
-        console.warn(`Unknown plan duration: ${selectedPlan.duration}`);
+        console.warn(`Unknown plan duration: ${selectedPlan.duration}`); // Sentry captures this
       }
       await createSignup({
         fullName: data.fullName,
@@ -182,7 +182,7 @@ export function CheckoutForm({ selectedPlan, onSuccess }: CheckoutFormProps) {
 
       onSuccess();
     } catch (err) {
-      console.error("Checkout error:", err);
+      console.error("Checkout error:", err); // Sentry captures this
       setSubmitError(t("submitError"));
     } finally {
       setIsSubmitting(false);

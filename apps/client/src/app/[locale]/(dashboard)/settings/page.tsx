@@ -14,23 +14,24 @@ import { z } from "zod";
 import { cn } from "@fitfast/ui/cn";
 import { useToast } from "@/hooks/use-toast";
 
-const profileSchema = z.object({
-  fullName: z
-    .string()
-    .min(2, "Name must be at least 2 characters")
-    .max(100, "Name must be under 100 characters"),
-  phone: z
-    .string()
-    .regex(/^[\d+\-\s()]*$/, "Invalid phone number format")
-    .optional()
-    .or(z.literal("")),
-  language: z.enum(["en", "ar"]),
-});
-type ProfileFormData = z.infer<typeof profileSchema>;
+function createProfileSchema(t: (key: string) => string) {
+  return z.object({
+    fullName: z.string().min(2, t("nameMinLength")).max(100, t("nameMaxLength")),
+    phone: z
+      .string()
+      .regex(/^[\d+\-\s()]*$/, t("invalidPhone"))
+      .optional()
+      .or(z.literal("")),
+    language: z.enum(["en", "ar"]),
+  });
+}
+type ProfileFormData = z.infer<ReturnType<typeof createProfileSchema>>;
 
 export default function SettingsPage() {
   const t = useTranslations("settings");
   const tTracking = useTranslations("tracking");
+  const tValidation = useTranslations("validation");
+  const profileSchema = createProfileSchema((key) => tValidation(key));
   const locale = useLocale();
   const { profile, signOut } = useAuth();
   const {
@@ -85,7 +86,7 @@ export default function SettingsPage() {
         language: data.language,
       });
     } catch (err) {
-      console.error("Failed to update profile:", err);
+      console.error("Failed to update profile:", err); // Sentry captures this
       toast({ title: t("errors.saveFailed"), variant: "destructive" });
     }
     setIsSaving(false);

@@ -12,15 +12,19 @@ import { useConvexAuth, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Mail, Lock, ArrowRight } from "lucide-react";
 
-const loginSchema = z.object({
-  email: z.string().email("Please enter a valid email"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-});
+function createLoginSchema(t: (key: string) => string) {
+  return z.object({
+    email: z.string().email(t("invalidEmail")),
+    password: z.string().min(6, t("passwordMinLength")),
+  });
+}
 
-type LoginFormData = z.infer<typeof loginSchema>;
+type LoginFormData = z.infer<ReturnType<typeof createLoginSchema>>;
 
 export default function AdminLoginPage() {
   const t = useTranslations("admin");
+  const tValidation = useTranslations("validation");
+  const loginSchema = createLoginSchema((key) => tValidation(key));
   const router = useRouter();
   const searchParams = useSearchParams();
   const cardRef = useRef<HTMLDivElement>(null);

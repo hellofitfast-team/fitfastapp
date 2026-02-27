@@ -10,7 +10,23 @@ if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-const protocols = [
+type ProtocolTranslationKey =
+  | "protocol1Title"
+  | "protocol1Desc"
+  | "protocol2Title"
+  | "protocol2Desc"
+  | "protocol3Title"
+  | "protocol3Desc";
+
+interface ProtocolItem {
+  id: string;
+  titleKey: ProtocolTranslationKey;
+  descKey: ProtocolTranslationKey;
+  defaultTitle: string;
+  defaultDesc: string;
+}
+
+const protocols: ProtocolItem[] = [
   {
     id: "01",
     titleKey: "protocol1Title",
@@ -195,10 +211,10 @@ export function Protocol() {
                   Phase {protocol.id}
                 </span>
                 <h3 className="mb-6 font-sans text-4xl font-bold tracking-tight text-slate-900 md:text-5xl">
-                  {t(protocol.titleKey as any) || protocol.defaultTitle}
+                  {t(protocol.titleKey) || protocol.defaultTitle}
                 </h3>
                 <p className="text-lg leading-relaxed font-medium text-slate-500">
-                  {t(protocol.descKey as any) || protocol.defaultDesc}
+                  {t(protocol.descKey) || protocol.defaultDesc}
                 </p>
               </div>
             </div>

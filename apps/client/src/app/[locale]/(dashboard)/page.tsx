@@ -24,6 +24,42 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import type { GeneratedMealPlan } from "@/lib/ai/meal-plan-generator";
 import type { GeneratedWorkoutPlan } from "@/lib/ai/workout-plan-generator";
 
+/** Simplified meal used in the dashboard summary cards */
+interface DashboardMeal {
+  id: number;
+  name: string;
+  time: string;
+  calories: number;
+  done: boolean;
+}
+
+/** Raw meal data from the AI-generated plan (may have nested or flat macros) */
+interface RawMealData {
+  name?: string;
+  type?: string;
+  calories?: number;
+  macros?: { calories?: number };
+}
+
+/** Shape of a meal day plan from AI output */
+interface MealDayPlan {
+  meals?: RawMealData[];
+  dailyTotals?: { calories?: number; protein?: number; carbs?: number; fat?: number };
+  [key: string]: unknown;
+}
+
+/** Shape of a workout day plan from AI output */
+interface WorkoutDayPlan {
+  workoutName?: string;
+  name?: string;
+  restDay?: boolean;
+  duration?: number;
+  targetMuscles?: string[];
+  exercises?: Array<{ name?: string; [key: string]: unknown }>;
+  workout?: Array<{ name?: string; [key: string]: unknown }>;
+  [key: string]: unknown;
+}
+
 export default function DashboardPage() {
   const t = useTranslations();
   const locale = useLocale();
@@ -109,7 +145,10 @@ export default function DashboardPage() {
     dashboardData.profile?.fullName?.split(" ")[0] || (locale === "ar" ? "مستخدم" : "User");
 
   // Resolve a day plan from weeklyPlan — tries "dayN" first, then weekday names
-  const resolveDayPlan = (weeklyPlan: Record<string, any> | undefined, startDate?: string) => {
+  function resolveDayPlan<T>(
+    weeklyPlan: Record<string, T> | undefined,
+    startDate?: string,
+  ): T | null {
     if (!weeklyPlan || !startDate) return null;
     const diff = Math.floor((Date.now() - new Date(startDate).getTime()) / 86400000);
     const dayIndex = Math.max(0, diff);
@@ -126,25 +165,25 @@ export default function DashboardPage() {
     if (weeklyPlan[weekdayName]) return weeklyPlan[weekdayName];
 
     return null;
-  };
+  }
 
   // Derive today's meals from meal plan + completions
   const mealPlanData = dashboardData.currentMealPlan?.planData as unknown as
     | GeneratedMealPlan
     | undefined;
-  const todaysMealDayPlan = resolveDayPlan(
-    mealPlanData?.weeklyPlan,
+  const todaysMealDayPlan = resolveDayPlan<MealDayPlan>(
+    mealPlanData?.weeklyPlan as Record<string, MealDayPlan> | undefined,
     dashboardData.currentMealPlan?.startDate,
   );
   const todaysMealData = todaysMealDayPlan?.meals ?? [];
   const todayMealCompletions = dashboardData.todayMealCompletions ?? [];
   const todayWorkoutCompletions = dashboardData.todayWorkoutCompletions ?? [];
 
-  const todaysMeals = todaysMealData.map((meal: any, idx: number) => {
+  const todaysMeals: DashboardMeal[] = todaysMealData.map((meal: RawMealData, idx: number) => {
     const macros = meal.macros || {};
     return {
       id: idx,
-      name: meal.name,
+      name: meal.name || "",
       time: meal.type || "",
       calories: meal.calories ?? macros.calories ?? 0,
       done: todayMealCompletions.some((c) => c.mealIndex === idx && c.completed),
@@ -155,8 +194,8 @@ export default function DashboardPage() {
   const workoutPlanData = dashboardData.currentWorkoutPlan?.planData as unknown as
     | GeneratedWorkoutPlan
     | undefined;
-  const todaysWorkoutData = resolveDayPlan(
-    workoutPlanData?.weeklyPlan,
+  const todaysWorkoutData = resolveDayPlan<WorkoutDayPlan>(
+    workoutPlanData?.weeklyPlan as Record<string, WorkoutDayPlan> | undefined,
     dashboardData.currentWorkoutPlan?.startDate,
   );
   const workoutExercises = Array.isArray(todaysWorkoutData?.exercises)
@@ -167,7 +206,7 @@ export default function DashboardPage() {
   const todaysWorkout =
     todaysWorkoutData && !todaysWorkoutData.restDay
       ? {
-          name: todaysWorkoutData.workoutName || todaysWorkoutData.name || "",
+          name: (todaysWorkoutData.workoutName || todaysWorkoutData.name || "") as string,
           type: (Array.isArray(todaysWorkoutData.targetMuscles)
             ? todaysWorkoutData.targetMuscles
             : []
@@ -179,7 +218,7 @@ export default function DashboardPage() {
       : null;
 
   const mealProgress = {
-    completed: todaysMeals.filter((m: any) => m.done).length,
+    completed: todaysMeals.filter((m) => m.done).length,
     total: todaysMeals.length,
   };
   const workoutProgress = {
@@ -292,14 +331,13 @@ export default function DashboardPage() {
       ) : (
         <div className="space-y-1.5">
           <p className="text-lg font-bold">
-            {t("dashboard.totalCalories")}:{" "}
-            {todaysMeals.reduce((sum: number, m: any) => sum + m.calories, 0)}
+            {t("dashboard.totalCalories")}: {todaysMeals.reduce((sum, m) => sum + m.calories, 0)}
           </p>
           <p className="text-muted-foreground text-xs">
             {t("dashboard.mealCount", { count: todaysMeals.length })}
           </p>
           <div className="space-y-1">
-            {todaysMeals.slice(0, 3).map((meal: any) => (
+            {todaysMeals.slice(0, 3).map((meal) => (
               <p
                 key={meal.id}
                 className={cn(

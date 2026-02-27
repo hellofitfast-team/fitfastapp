@@ -137,7 +137,7 @@ export function SignupsTable() {
     try {
       await approveSignup({ signupId });
     } catch (err) {
-      console.error("Approve failed:", err);
+      console.error("Approve failed:", err); // Sentry captures this
       toast({
         title: t("actionError"),
         description: err instanceof Error ? err.message : t("actionErrorGeneric"),
@@ -160,7 +160,7 @@ export function SignupsTable() {
       setRejectingId(null);
       setRejectionReason("");
     } catch (err) {
-      console.error("Reject failed:", err);
+      console.error("Reject failed:", err); // Sentry captures this
       toast({
         title: t("actionError"),
         description: err instanceof Error ? err.message : t("actionErrorGeneric"),

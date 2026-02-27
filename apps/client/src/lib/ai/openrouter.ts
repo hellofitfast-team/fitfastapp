@@ -4,8 +4,11 @@
  */
 import "server-only";
 
+import { createLogger } from "@fitfast/config/logger";
 import { withRetry, AIGenerationError } from "@/lib/errors";
 import * as Sentry from "@sentry/nextjs";
+
+const log = createLogger("openrouter");
 
 export interface OpenRouterMessage {
   role: "system" | "user" | "assistant";
@@ -34,12 +37,17 @@ const MODEL = "deepseek/deepseek-chat"; // DeepSeek V3
 
 export class OpenRouterClient {
   private apiKey: string;
+  private appUrl: string;
 
   constructor(apiKey?: string) {
     this.apiKey = apiKey || process.env.OPENROUTER_API_KEY || "";
+    this.appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
 
     if (!this.apiKey) {
-      console.warn("OpenRouter API key not configured");
+      log.warn("OpenRouter API key not configured");
+    }
+    if (!this.appUrl) {
+      log.warn("NEXT_PUBLIC_APP_URL not configured — HTTP-Referer header will be empty");
     }
   }
 
@@ -64,7 +72,7 @@ export class OpenRouterClient {
             headers: {
               "Content-Type": "application/json",
               Authorization: `Bearer ${this.apiKey}`,
-              "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+              "HTTP-Referer": this.appUrl,
               "X-Title": "FitFast",
             },
             body: JSON.stringify({

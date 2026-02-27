@@ -1,8 +1,34 @@
 "use node";
 
+/**
+ * ============================================================================
+ * WARNING: SEED FUNCTIONS — NOT FOR PRODUCTION USE
+ * ============================================================================
+ * These functions create/delete test users and seed demo data.
+ * They are exported as `internalAction` (not publicly callable) but still
+ * executable via `npx convex run`. A production guard below prevents
+ * accidental execution on production deployments.
+ * ============================================================================
+ */
+
 import { internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { Scrypt } from "lucia";
+
+/**
+ * Guard against accidental execution on production deployments.
+ * Set SEED_ENABLED=true on the Convex dashboard to override.
+ */
+function assertNotProduction() {
+  const convexUrl = process.env.CONVEX_CLOUD_URL ?? "";
+  const isProduction = convexUrl.includes(".convex.cloud") && !convexUrl.includes("dev");
+  if (isProduction && process.env.SEED_ENABLED !== "true") {
+    throw new Error(
+      "Seed functions are disabled on production deployments. " +
+        "Set the SEED_ENABLED=true environment variable on the Convex dashboard to override.",
+    );
+  }
+}
 
 /**
  * Hash password using Lucia's Scrypt — same algorithm used by Convex Auth.
@@ -30,6 +56,7 @@ async function hashPassword(password: string): Promise<string> {
 export const resetClientUser = internalAction({
   args: {},
   handler: async (ctx) => {
+    assertNotProduction();
     const seedPassword = process.env.SEED_USER_PASSWORD;
     if (!seedPassword) throw new Error("SEED_USER_PASSWORD env var is required");
 
@@ -87,6 +114,7 @@ export const resetClientUser = internalAction({
 export const seedKnowledgeBase = internalAction({
   args: {},
   handler: async (ctx) => {
+    assertNotProduction();
     const documents = [
       {
         title: "Nutrition Science Fundamentals",
@@ -516,6 +544,7 @@ MONITORING RECOVERY (coach should track):
 export const seedDemoUsers = internalAction({
   args: {},
   handler: async (ctx) => {
+    assertNotProduction();
     const seedPassword = process.env.SEED_USER_PASSWORD;
     if (!seedPassword) throw new Error("SEED_USER_PASSWORD env var is required");
 
@@ -586,6 +615,7 @@ export const seedDemoUsers = internalAction({
 export const seedTestUsers = internalAction({
   args: {},
   handler: async (ctx) => {
+    assertNotProduction();
     const seedPassword = process.env.SEED_USER_PASSWORD;
     if (!seedPassword) throw new Error("SEED_USER_PASSWORD env var is required");
 
@@ -1065,6 +1095,7 @@ const SEED_FOODS: FoodEntry[] = [
 export const seedFoods = internalAction({
   args: {},
   handler: async (ctx) => {
+    assertNotProduction();
     const existing = await ctx.runQuery(internal.foodDatabase.getFoodReferenceForPrompt);
     if (existing.length > 100) {
       console.log("[Seed] Food database already populated, skipping.");

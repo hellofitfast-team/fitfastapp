@@ -56,7 +56,7 @@ export default function TrackingPage() {
     try {
       await toggleMealCompletion(mealPlan._id, mealIndex, !currentlyCompleted);
     } catch (error) {
-      console.error("Failed to toggle meal completion:", error);
+      console.error("Failed to toggle meal completion:", error); // Sentry captures this
     } finally {
       setIsTogglingMeal(null);
     }
@@ -68,7 +68,7 @@ export default function TrackingPage() {
     try {
       await toggleWorkoutCompletion(workoutPlan._id, workoutIndex, !currentlyCompleted);
     } catch (error) {
-      console.error("Failed to toggle workout completion:", error);
+      console.error("Failed to toggle workout completion:", error); // Sentry captures this
     } finally {
       setIsTogglingWorkout(null);
     }
@@ -78,7 +78,7 @@ export default function TrackingPage() {
     try {
       await saveDailyReflection(data.reflection);
     } catch (error) {
-      console.error("Failed to save reflection:", error);
+      console.error("Failed to save reflection:", error); // Sentry captures this
     }
   };
 

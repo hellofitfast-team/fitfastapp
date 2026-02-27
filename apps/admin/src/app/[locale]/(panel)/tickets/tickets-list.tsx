@@ -55,7 +55,7 @@ export function TicketsList() {
       setResponse("");
       setExpandedId(null);
     } catch (err) {
-      console.error("Failed to respond:", err);
+      console.error("Failed to respond:", err); // Sentry captures this
       toast({ title: t("respondFailed"), variant: "destructive" });
     }
     setRespondingId(null);
@@ -65,7 +65,7 @@ export function TicketsList() {
     try {
       await closeTicket({ ticketId });
     } catch (err) {
-      console.error("Failed to close:", err);
+      console.error("Failed to close:", err); // Sentry captures this
       toast({ title: t("closeFailed"), variant: "destructive" });
     }
   };

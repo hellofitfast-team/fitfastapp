@@ -287,7 +287,13 @@
     "equipmentRequired": "يرجى اختيار المعدات المتاحة",
     "equipmentSpecify": "يرجى تحديد المعدات الخاصة بك",
     "signInRequired": "يرجى تسجيل الدخول للمتابعة",
-    "unexpectedError": "حدث خطأ غير متوقع"
+    "unexpectedError": "حدث خطأ غير متوقع",
+    "somethingWentWrong": "حدث خطأ ما. تم إبلاغ فريقنا ونعمل على إصلاحه.",
+    "errorId": "رقم الخطأ",
+    "tryAgain": "حاول مرة أخرى",
+    "pageNotFound": "الصفحة غير موجودة",
+    "pageNotFoundDescription": "الصفحة التي تبحث عنها غير موجودة أو تم نقلها.",
+    "goToDashboard": "الذهاب إلى لوحة التحكم"
   },
   "auth": {
     "login": "تسجيل الدخول",

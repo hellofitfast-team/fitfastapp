@@ -99,7 +99,7 @@ function RejectModal({ client, onClose }: { client: Client; onClose: () => void 
       });
       onClose();
     } catch (err) {
-      console.error("Reject failed:", err);
+      console.error("Reject failed:", err); // Sentry captures this
       toast({
         title: "Error",
         description: err instanceof Error ? err.message : "Failed to reject client",

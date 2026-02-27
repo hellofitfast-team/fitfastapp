@@ -12,7 +12,7 @@ export function ServiceWorkerRegistration() {
 
     if ("serviceWorker" in navigator && navigator.serviceWorker) {
       navigator.serviceWorker.register("/OneSignalSDKWorker.js", { scope: "/" }).catch((err) => {
-        console.error("SW registration failed:", err);
+        console.error("SW registration failed:", err); // Sentry captures this
       });
     }
   }, []);
