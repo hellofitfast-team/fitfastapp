@@ -95,9 +95,7 @@ export function PlansManager() {
       if (existing) clearTimeout(existing);
 
       if (!enName.trim()) {
-        setPlans((prev) =>
-          prev?.map((p) => (p.id === planId ? { ...p, nameAr: "" } : p)) ?? null
-        );
+        setPlans((prev) => prev?.map((p) => (p.id === planId ? { ...p, nameAr: "" } : p)) ?? null);
         return;
       }
 
@@ -109,10 +107,9 @@ export function PlansManager() {
         try {
           const translated = await translateAction({ text: enName });
           if (translated && !manualArEdits.current.has(planId)) {
-            setPlans((prev) =>
-              prev?.map((p) =>
-                p.id === planId ? { ...p, nameAr: translated } : p
-              ) ?? null
+            setPlans(
+              (prev) =>
+                prev?.map((p) => (p.id === planId ? { ...p, nameAr: translated } : p)) ?? null,
             );
           }
         } catch {
@@ -127,7 +124,7 @@ export function PlansManager() {
 
       translateTimers.current.set(planId, timer);
     },
-    [translateAction]
+    [translateAction],
   );
 
   // Initialize local state once server data arrives
@@ -147,7 +144,7 @@ export function PlansManager() {
         {[1, 2].map((i) => (
           <div
             key={i}
-            className="h-32 rounded-xl border border-stone-200 bg-stone-50 animate-pulse"
+            className="h-32 animate-pulse rounded-xl border border-stone-200 bg-stone-50"
           />
         ))}
       </div>
@@ -174,11 +171,7 @@ export function PlansManager() {
     }
   };
 
-  const handlePlanChange = <K extends keyof Plan>(
-    id: string,
-    field: K,
-    value: Plan[K]
-  ) => {
+  const handlePlanChange = <K extends keyof Plan>(id: string, field: K, value: Plan[K]) => {
     setPlans(plans.map((p) => (p.id === id ? { ...p, [field]: value } : p)));
   };
 
@@ -187,10 +180,8 @@ export function PlansManager() {
     if (!opt) return;
     setPlans(
       plans.map((p) =>
-        p.id === planId
-          ? { ...p, duration: opt.value, durationAr: opt.labelAr }
-          : p
-      )
+        p.id === planId ? { ...p, duration: opt.value, durationAr: opt.labelAr } : p,
+      ),
     );
   };
 
@@ -219,7 +210,7 @@ export function PlansManager() {
           };
         }
         return p;
-      })
+      }),
     );
   };
 
@@ -266,15 +257,12 @@ export function PlansManager() {
       )}
 
       {plans.map((plan, planIndex) => (
-        <div
-          key={plan.id}
-          className="rounded-xl border border-stone-200 bg-white overflow-hidden"
-        >
+        <div key={plan.id} className="overflow-hidden rounded-xl border border-stone-200 bg-white">
           {/* Plan header */}
-          <div className="flex items-center justify-between px-4 py-3 bg-stone-50/50 border-b border-stone-100">
+          <div className="flex items-center justify-between border-b border-stone-100 bg-stone-50/50 px-4 py-3">
             <div className="flex items-center gap-2">
               <GripVertical className="h-4 w-4 text-stone-300" />
-              <span className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+              <span className="text-xs font-semibold tracking-wide text-stone-500 uppercase">
                 {t("planCard")} {planIndex + 1}
               </span>
             </div>
@@ -291,11 +279,11 @@ export function PlansManager() {
             </button>
           </div>
 
-          <div className="p-4 space-y-4">
+          <div className="space-y-4 p-4">
             {/* Name row */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-stone-500 mb-1">
+                <label className="mb-1 block text-xs font-medium text-stone-500">
                   {t("planName")}
                 </label>
                 <input
@@ -309,11 +297,11 @@ export function PlansManager() {
                     autoTranslateName(plan.id, val);
                   }}
                   placeholder={t("planNamePlaceholder")}
-                  className="w-full h-10 rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  className="focus:ring-primary/20 focus:border-primary h-10 w-full rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm text-stone-900 transition-all placeholder:text-stone-400 focus:ring-2 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-stone-500 mb-1">
+                <label className="mb-1 block text-xs font-medium text-stone-500">
                   {t("planNameAr")}
                 </label>
                 <div className="relative">
@@ -326,10 +314,10 @@ export function PlansManager() {
                     }}
                     placeholder={t("planNameArPlaceholder")}
                     dir="rtl"
-                    className="w-full h-10 rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    className="focus:ring-primary/20 focus:border-primary h-10 w-full rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm text-stone-900 transition-all placeholder:text-stone-400 focus:ring-2 focus:outline-none"
                   />
                   {translatingIds.has(plan.id) && (
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                    <div className="absolute top-1/2 left-3 -translate-y-1/2">
                       <Loader2 className="h-3.5 w-3.5 animate-spin text-stone-400" />
                     </div>
                   )}
@@ -340,45 +328,41 @@ export function PlansManager() {
             {/* Price & Currency row */}
             <div className="grid grid-cols-3 gap-3">
               <div className="col-span-2">
-                <label className="block text-xs font-medium text-stone-500 mb-1">
+                <label className="mb-1 block text-xs font-medium text-stone-500">
                   {t("price")}
                 </label>
                 <input
                   type="number"
                   min="0"
                   value={plan.price}
-                  onChange={(e) =>
-                    handlePlanChange(plan.id, "price", Number(e.target.value))
-                  }
+                  onChange={(e) => handlePlanChange(plan.id, "price", Number(e.target.value))}
                   placeholder={t("pricePlaceholder")}
-                  className="w-full h-10 rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  className="focus:ring-primary/20 focus:border-primary h-10 w-full rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm text-stone-900 transition-all placeholder:text-stone-400 focus:ring-2 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-stone-500 mb-1">
+                <label className="mb-1 block text-xs font-medium text-stone-500">
                   {t("currency")}
                 </label>
                 <input
                   type="text"
                   value={plan.currency}
-                  onChange={(e) =>
-                    handlePlanChange(plan.id, "currency", e.target.value)
-                  }
+                  onChange={(e) => handlePlanChange(plan.id, "currency", e.target.value)}
                   placeholder={t("currencyPlaceholder")}
-                  className="w-full h-10 rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  className="focus:ring-primary/20 focus:border-primary h-10 w-full rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm text-stone-900 transition-all placeholder:text-stone-400 focus:ring-2 focus:outline-none"
                 />
               </div>
             </div>
 
             {/* Duration dropdown */}
             <div>
-              <label className="block text-xs font-medium text-stone-500 mb-1">
+              <label className="mb-1 block text-xs font-medium text-stone-500">
                 {t("duration")}
               </label>
               <select
                 value={plan.duration}
                 onChange={(e) => handleDurationChange(plan.id, e.target.value)}
-                className="w-full h-10 rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                className="focus:ring-primary/20 focus:border-primary h-10 w-full rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm text-stone-900 transition-all focus:ring-2 focus:outline-none"
               >
                 {DURATION_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -391,19 +375,13 @@ export function PlansManager() {
             {/* Badge row */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-stone-500 mb-1">
+                <label className="mb-1 block text-xs font-medium text-stone-500">
                   {t("badge")}
                 </label>
                 <select
                   value={plan.badge ?? ""}
-                  onChange={(e) =>
-                    handlePlanChange(
-                      plan.id,
-                      "badge",
-                      e.target.value || undefined
-                    )
-                  }
-                  className="w-full h-10 rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  onChange={(e) => handlePlanChange(plan.id, "badge", e.target.value || undefined)}
+                  className="focus:ring-primary/20 focus:border-primary h-10 w-full rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm text-stone-900 transition-all focus:ring-2 focus:outline-none"
                 >
                   <option value="">{t("noBadge")}</option>
                   <option value="Most Popular">{t("badgeMostPopular")}</option>
@@ -411,20 +389,16 @@ export function PlansManager() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-stone-500 mb-1">
+                <label className="mb-1 block text-xs font-medium text-stone-500">
                   {t("badgeAr")}
                 </label>
                 <select
                   value={plan.badgeAr ?? ""}
                   onChange={(e) =>
-                    handlePlanChange(
-                      plan.id,
-                      "badgeAr",
-                      e.target.value || undefined
-                    )
+                    handlePlanChange(plan.id, "badgeAr", e.target.value || undefined)
                   }
                   dir="rtl"
-                  className="w-full h-10 rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  className="focus:ring-primary/20 focus:border-primary h-10 w-full rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm text-stone-900 transition-all focus:ring-2 focus:outline-none"
                 >
                   <option value="">{t("noBadge")}</option>
                   <option value="الأكثر شيوعاً">{t("badgeMostPopularAr")}</option>
@@ -435,7 +409,7 @@ export function PlansManager() {
 
             {/* Features — selectable chips */}
             <div>
-              <label className="block text-xs font-medium text-stone-500 mb-2">
+              <label className="mb-2 block text-xs font-medium text-stone-500">
                 {t("features")}
               </label>
               <div className="flex flex-wrap gap-2">
@@ -472,7 +446,7 @@ export function PlansManager() {
       {plans.length < MAX_PLANS ? (
         <button
           onClick={handleAddPlan}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-stone-200 py-3 text-sm font-medium text-stone-400 hover:border-primary/30 hover:text-primary transition-colors"
+          className="hover:border-primary/30 hover:text-primary flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-stone-200 py-3 text-sm font-medium text-stone-400 transition-colors"
         >
           <Plus className="h-4 w-4" />
           {t("addPlan")}
@@ -483,7 +457,7 @@ export function PlansManager() {
 
       {/* Validation error */}
       {validationError && (
-        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-2">
+        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-600">
           {validationError}
         </p>
       )}

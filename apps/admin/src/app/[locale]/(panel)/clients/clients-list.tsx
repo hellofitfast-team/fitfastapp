@@ -37,13 +37,7 @@ const tierLabels: Record<string, string> = {
   "12_months": "Annual",
 };
 
-function RejectModal({
-  client,
-  onClose,
-}: {
-  client: Client;
-  onClose: () => void;
-}) {
+function RejectModal({ client, onClose }: { client: Client; onClose: () => void }) {
   const rejectClient = useMutation(api.profiles.rejectClient);
   const [reason, setReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -67,7 +61,7 @@ function RejectModal({
     const modal = document.querySelector('[role="dialog"]');
     if (!modal) return;
     const focusable = modal.querySelectorAll<HTMLElement>(
-      'button, textarea, input, [tabindex]:not([tabindex="-1"])'
+      'button, textarea, input, [tabindex]:not([tabindex="-1"])',
     );
     if (focusable.length === 0) return;
     const first = focusable[0];
@@ -75,9 +69,15 @@ function RejectModal({
     const handleTab = (e: KeyboardEvent) => {
       if (e.key !== "Tab") return;
       if (e.shiftKey) {
-        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
       } else {
-        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
       }
     };
     document.addEventListener("keydown", handleTab);
@@ -114,7 +114,9 @@ function RejectModal({
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={() => { if (!isSubmitting) onClose(); }}
+        onClick={() => {
+          if (!isSubmitting) onClose();
+        }}
       />
 
       {/* Modal panel */}
@@ -126,32 +128,32 @@ function RejectModal({
       >
         {/* Close button */}
         <button
-          onClick={() => { if (!isSubmitting) onClose(); }}
-          className="absolute top-4 end-4 rounded-md p-1 text-stone-400 hover:text-stone-600 transition-colors"
+          onClick={() => {
+            if (!isSubmitting) onClose();
+          }}
+          className="absolute end-4 top-4 rounded-md p-1 text-stone-400 transition-colors hover:text-stone-600"
         >
           <X className="h-4 w-4" />
         </button>
 
         {/* Header */}
-        <h2 id="client-modal-title" className="text-lg font-semibold text-stone-900 pe-8">
+        <h2 id="client-modal-title" className="pe-8 text-lg font-semibold text-stone-900">
           Reject {client.fullName ?? "Client"}
         </h2>
-        <p className="text-sm text-stone-500 mt-1">
+        <p className="mt-1 text-sm text-stone-500">
           This will remove the client and send them a rejection email with your reason.
         </p>
 
         {/* Reason input */}
         <div className="mt-4 space-y-1.5">
-          <label className="text-xs font-medium text-stone-500">
-            Rejection Reason
-          </label>
+          <label className="text-xs font-medium text-stone-500">Rejection Reason</label>
           <textarea
             ref={textareaRef}
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="Explain why this client is being rejected..."
             rows={3}
-            className="w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-300 transition-all resize-none"
+            className="w-full resize-none rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-900 transition-all placeholder:text-stone-400 focus:border-red-300 focus:ring-2 focus:ring-red-200 focus:outline-none"
           />
         </div>
 
@@ -160,14 +162,14 @@ function RejectModal({
           <button
             onClick={onClose}
             disabled={isSubmitting}
-            className="rounded-lg border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50 transition-colors disabled:opacity-50"
+            className="rounded-lg border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-600 transition-colors hover:bg-stone-50 disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
             disabled={isSubmitting || !reason.trim()}
-            className="flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-50"
           >
             {isSubmitting ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -191,48 +193,43 @@ export function ClientsList({ clients }: { clients: Client[] }) {
 
   const filtered = clients.filter((c) => {
     const q = search.toLowerCase();
-    return (
-      (c.fullName?.toLowerCase().includes(q) ?? false) ||
-      (c.phone?.includes(q) ?? false)
-    );
+    return (c.fullName?.toLowerCase().includes(q) ?? false) || (c.phone?.includes(q) ?? false);
   });
 
   return (
     <div className="space-y-4">
       {/* Search */}
       <div className="relative">
-        <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
+        <Search className="absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
         <input
           type="text"
           placeholder={t("search")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full h-11 ps-10 pe-4 rounded-xl border border-stone-200 bg-white text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+          className="focus:ring-primary/20 focus:border-primary h-11 w-full rounded-xl border border-stone-200 bg-white ps-10 pe-4 text-sm text-stone-900 transition-all placeholder:text-stone-400 focus:ring-2 focus:outline-none"
         />
       </div>
 
       {filtered.length === 0 ? (
         <div className="rounded-xl border border-stone-200 bg-white p-12 text-center">
-          <Users className="h-12 w-12 mx-auto text-stone-300 mb-4" />
-          <p className="font-medium text-stone-500">
-            {t("noResults")}
-          </p>
+          <Users className="mx-auto mb-4 h-12 w-12 text-stone-300" />
+          <p className="font-medium text-stone-500">{t("noResults")}</p>
         </div>
       ) : (
-        <div className="rounded-xl border border-stone-200 bg-white overflow-hidden">
+        <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
           <table className="w-full">
             <thead>
               <tr className="border-b border-stone-100 bg-stone-50/50">
-                <th className="px-4 py-3 text-start text-xs font-medium text-stone-500 uppercase tracking-wide">
+                <th className="px-4 py-3 text-start text-xs font-medium tracking-wide text-stone-500 uppercase">
                   {t("client")}
                 </th>
-                <th className="px-4 py-3 text-start text-xs font-medium text-stone-500 uppercase tracking-wide">
+                <th className="px-4 py-3 text-start text-xs font-medium tracking-wide text-stone-500 uppercase">
                   {t("plan")}
                 </th>
-                <th className="px-4 py-3 text-start text-xs font-medium text-stone-500 uppercase tracking-wide">
+                <th className="px-4 py-3 text-start text-xs font-medium tracking-wide text-stone-500 uppercase">
                   {t("status")}
                 </th>
-                <th className="px-4 py-3 text-start text-xs font-medium text-stone-500 uppercase tracking-wide">
+                <th className="px-4 py-3 text-start text-xs font-medium tracking-wide text-stone-500 uppercase">
                   {t("date")}
                 </th>
                 <th className="px-4 py-3" />
@@ -242,23 +239,15 @@ export function ClientsList({ clients }: { clients: Client[] }) {
               {filtered.map((client) => (
                 <tr
                   key={client.id}
-                  className="border-b border-stone-100 last:border-0 hover:bg-stone-50/50 transition-colors"
+                  className="border-b border-stone-100 transition-colors last:border-0 hover:bg-stone-50/50"
                 >
                   <td className="px-4 py-4">
-                    <p className="font-medium text-sm text-stone-900">
-                      {client.fullName ?? "---"}
-                    </p>
-                    {client.phone && (
-                      <p className="text-xs text-stone-400">
-                        {client.phone}
-                      </p>
-                    )}
+                    <p className="text-sm font-medium text-stone-900">{client.fullName ?? "---"}</p>
+                    {client.phone && <p className="text-xs text-stone-400">{client.phone}</p>}
                   </td>
                   <td className="px-4 py-4">
-                    <span className="text-xs font-semibold text-primary">
-                      {client.planTier
-                        ? tierLabels[client.planTier] ?? client.planTier
-                        : "---"}
+                    <span className="text-primary text-xs font-semibold">
+                      {client.planTier ? (tierLabels[client.planTier] ?? client.planTier) : "---"}
                     </span>
                   </td>
                   <td className="px-4 py-4">
@@ -271,9 +260,7 @@ export function ClientsList({ clients }: { clients: Client[] }) {
                     </span>
                   </td>
                   <td className="px-4 py-4 text-xs text-stone-500">
-                    {client.planEndDate
-                      ? formatDate(client.planEndDate, locale)
-                      : "---"}
+                    {client.planEndDate ? formatDate(client.planEndDate, locale) : "---"}
                   </td>
                   <td className="px-4 py-4">
                     <div className="flex items-center justify-end gap-2">
@@ -281,14 +268,14 @@ export function ClientsList({ clients }: { clients: Client[] }) {
                         <>
                           <Link
                             href={`/clients/${client.userId}`}
-                            className="flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-xs font-medium text-primary hover:bg-primary/10 transition-colors"
+                            className="border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors"
                           >
                             <Zap className="h-3.5 w-3.5" />
                             {t("activate")}
                           </Link>
                           <button
                             onClick={() => setRejectTarget(client)}
-                            className="flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700 hover:bg-red-100 transition-colors"
+                            className="flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700 transition-colors hover:bg-red-100"
                           >
                             <X className="h-3.5 w-3.5" />
                             {t("reject")}
@@ -297,7 +284,7 @@ export function ClientsList({ clients }: { clients: Client[] }) {
                       )}
                       <Link
                         href={`/clients/${client.userId}`}
-                        className="flex h-11 w-11 items-center justify-center rounded-lg border border-stone-200 text-stone-400 hover:border-primary/30 hover:text-primary transition-colors"
+                        className="hover:border-primary/30 hover:text-primary flex h-11 w-11 items-center justify-center rounded-lg border border-stone-200 text-stone-400 transition-colors"
                       >
                         <ArrowRight className="h-4 w-4 rtl:rotate-180" />
                       </Link>
@@ -311,12 +298,7 @@ export function ClientsList({ clients }: { clients: Client[] }) {
       )}
 
       {/* Rejection modal */}
-      {rejectTarget && (
-        <RejectModal
-          client={rejectTarget}
-          onClose={() => setRejectTarget(null)}
-        />
-      )}
+      {rejectTarget && <RejectModal client={rejectTarget} onClose={() => setRejectTarget(null)} />}
     </div>
   );
 }

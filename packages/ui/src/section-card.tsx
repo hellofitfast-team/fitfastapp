@@ -61,34 +61,30 @@ export function SectionCard({
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-card shadow-card overflow-hidden",
-        className
+        "border-border bg-card shadow-card overflow-hidden rounded-xl border",
+        className,
       )}
     >
       <div
         className={cn(
-          "flex items-center justify-between gap-3 p-4 border-b border-border",
-          styles.headerBg
+          "border-border flex items-center justify-between gap-3 border-b p-4",
+          styles.headerBg,
         )}
       >
-        <div className="flex items-center gap-3 min-w-0">
+        <div className="flex min-w-0 items-center gap-3">
           {Icon && (
             <div
               className={cn(
                 "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border",
-                styles.iconContainer
+                styles.iconContainer,
               )}
             >
               <Icon className={cn("h-[18px] w-[18px]", styles.iconColor)} />
             </div>
           )}
           <div className="min-w-0">
-            <h2 className="font-semibold text-sm">{title}</h2>
-            {description && (
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {description}
-              </p>
-            )}
+            <h2 className="text-sm font-semibold">{title}</h2>
+            {description && <p className="text-muted-foreground mt-0.5 text-xs">{description}</p>}
           </div>
         </div>
         {headerAction && <div className="shrink-0">{headerAction}</div>}

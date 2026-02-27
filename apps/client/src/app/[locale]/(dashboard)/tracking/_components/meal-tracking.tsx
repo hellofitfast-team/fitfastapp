@@ -49,30 +49,35 @@ export function MealTracking({
   };
 
   return (
-    <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
+    <div className="border-border bg-card shadow-card overflow-hidden rounded-xl border">
       <button
         onClick={onToggleExpand}
-        className="w-full p-4 flex items-center justify-between border-b border-border bg-[#10B981]/8 hover:bg-[#10B981]/12 transition-colors"
+        className="border-border flex w-full items-center justify-between border-b bg-[#10B981]/8 p-4 transition-colors hover:bg-[#10B981]/12"
       >
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#10B981]/12">
             <UtensilsCrossed className="h-4 w-4 text-[#10B981]" />
           </div>
           <div className="text-start">
-            <h2 className="font-semibold text-sm">{t("mealTracking")}</h2>
-            <p className="text-xs text-muted-foreground">
-              {mealCompletions.filter((c) => c.completed).length} {t("of")} {todaysMeals.length} {t("mealsCompleted")}
+            <h2 className="text-sm font-semibold">{t("mealTracking")}</h2>
+            <p className="text-muted-foreground text-xs">
+              {mealCompletions.filter((c) => c.completed).length} {t("of")} {todaysMeals.length}{" "}
+              {t("mealsCompleted")}
             </p>
           </div>
         </div>
-        {isMealsExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+        {isMealsExpanded ? (
+          <ChevronUp className="text-muted-foreground h-4 w-4" />
+        ) : (
+          <ChevronDown className="text-muted-foreground h-4 w-4" />
+        )}
       </button>
 
       {isMealsExpanded && (
-        <div className="divide-y divide-border">
+        <div className="divide-border divide-y">
           {todaysMeals.length === 0 ? (
             <div className="p-10 text-center">
-              <UtensilsCrossed className="mx-auto h-10 w-10 text-muted-foreground/30" />
+              <UtensilsCrossed className="text-muted-foreground/30 mx-auto h-10 w-10" />
               <p className="mt-3 text-sm font-medium">{t("noMealsPlanned")}</p>
             </div>
           ) : (
@@ -81,16 +86,20 @@ export function MealTracking({
               const isCompleted = completion?.completed || false;
 
               return (
-                <div key={index} className="p-4 hover:bg-neutral-50 transition-colors animate-slide-up" style={{ animationDelay: `${index * 50}ms` }}>
+                <div
+                  key={index}
+                  className="animate-slide-up p-4 transition-colors hover:bg-neutral-50"
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
                   <div className="flex items-start gap-3">
                     <button
                       onClick={() => onMealToggle(index, isCompleted)}
                       disabled={isTogglingMeal === index}
                       className={cn(
-                        "h-11 w-11 shrink-0 rounded-lg border-2 flex items-center justify-center transition-colors",
+                        "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border-2 transition-colors",
                         isCompleted
                           ? "border-success-500 bg-success-500"
-                          : "border-neutral-300 hover:border-primary"
+                          : "hover:border-primary border-neutral-300",
                       )}
                     >
                       {isTogglingMeal === index ? (
@@ -105,21 +114,29 @@ export function MealTracking({
                     <div className="flex-1 space-y-2">
                       <div>
                         <div className="flex items-center gap-2">
-                          <h4 className={cn("font-medium text-sm", isCompleted && "line-through text-muted-foreground")}>
+                          <h4
+                            className={cn(
+                              "text-sm font-medium",
+                              isCompleted && "text-muted-foreground line-through",
+                            )}
+                          >
                             {meal.name}
                           </h4>
-                          <span className="text-xs text-muted-foreground">{meal.time}</span>
+                          <span className="text-muted-foreground text-xs">{meal.time}</span>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {meal.calories} {tMeals("calories")} • {meal.protein}g {tMeals("protein")} • {meal.carbs}g {tMeals("carbs")} • {meal.fat}g {tMeals("fat")}
+                        <p className="text-muted-foreground mt-0.5 text-xs">
+                          {meal.calories} {tMeals("calories")} • {meal.protein}g {tMeals("protein")}{" "}
+                          • {meal.carbs}g {tMeals("carbs")} • {meal.fat}g {tMeals("fat")}
                         </p>
                       </div>
 
                       <textarea
                         placeholder={t("addNotes")}
                         value={mealNotes[index] || completion?.notes || ""}
-                        onChange={(e) => onMealNotesChange({ ...mealNotes, [index]: e.target.value })}
-                        className="w-full min-h-[50px] p-2.5 rounded-lg border border-input bg-neutral-50 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-colors resize-none"
+                        onChange={(e) =>
+                          onMealNotesChange({ ...mealNotes, [index]: e.target.value })
+                        }
+                        className="border-input placeholder:text-muted-foreground focus:ring-ring min-h-[50px] w-full resize-none rounded-lg border bg-neutral-50 p-2.5 text-xs transition-colors focus:ring-2 focus:outline-none"
                       />
                     </div>
                   </div>

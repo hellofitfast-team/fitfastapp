@@ -3,7 +3,7 @@
 import { useRef, useEffect, useMemo } from "react";
 import { useConvexAuth, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import {
   Users,
   UserPlus,
@@ -59,36 +59,33 @@ function StatCard({
     >
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs font-medium text-stone-500 uppercase tracking-wide">
-            {label}
-          </p>
-          <p
-            className={`mt-2 text-3xl font-bold ${
-              accent ? "text-red-600" : "text-stone-900"
-            }`}
-          >
+          <p className="text-xs font-medium tracking-wide text-stone-500 uppercase">{label}</p>
+          <p className={`mt-2 text-3xl font-bold ${accent ? "text-red-600" : "text-stone-900"}`}>
             {value}
           </p>
         </div>
         <div
           className={`flex h-10 w-10 items-center justify-center rounded-lg ${
-            accent
-              ? "bg-red-100 text-red-600"
-              : "bg-primary/10 text-primary"
+            accent ? "bg-red-100 text-red-600" : "bg-primary/10 text-primary"
           }`}
         >
           <Icon className="h-5 w-5" />
         </div>
       </div>
-      <div className="mt-3 flex items-center gap-1 text-xs font-medium text-stone-400 group-hover:text-primary transition-colors">
+      <div className="group-hover:text-primary mt-3 flex items-center gap-1 text-xs font-medium text-stone-400 transition-colors">
         View <ArrowRight className="h-3 w-3 rtl:rotate-180" />
       </div>
     </Link>
   );
 }
 
-function ClientGrowthChart({ clients }: { clients: Array<{ _creationTime: number; status?: string }> }) {
+function ClientGrowthChart({
+  clients,
+}: {
+  clients: Array<{ _creationTime: number; status?: string }>;
+}) {
   const t = useTranslations("admin");
+  const locale = useLocale();
 
   const chartData = useMemo(() => {
     const now = Date.now();
@@ -101,27 +98,30 @@ function ClientGrowthChart({ clients }: { clients: Array<{ _creationTime: number
       const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59).getTime();
 
       const count = clients.filter(
-        (c) => c._creationTime >= monthStart && c._creationTime <= monthEnd
+        (c) => c._creationTime >= monthStart && c._creationTime <= monthEnd,
       ).length;
 
       months.push({
-        name: d.toLocaleDateString("en-US", { month: "short" }),
+        name: d.toLocaleDateString(locale, { month: "short" }),
         clients: count,
       });
     }
     return months;
-  }, [clients]);
+  }, [clients, locale]);
 
   return (
     <div className="chart-section rounded-xl border border-stone-200 bg-white p-6">
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex items-center justify-between">
         <div>
-          <h2 className="font-semibold text-stone-900" style={{ fontFamily: "var(--font-display)" }}>
+          <h2
+            className="font-semibold text-stone-900"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
             {t("clientGrowth") || "Client Growth"}
           </h2>
-          <p className="text-xs text-stone-500 mt-0.5">{t("lastSixMonths") || "Last 6 months"}</p>
+          <p className="mt-0.5 text-xs text-stone-500">{t("lastSixMonths") || "Last 6 months"}</p>
         </div>
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+        <div className="bg-primary/10 text-primary flex h-8 w-8 items-center justify-center rounded-lg">
           <TrendingUp className="h-4 w-4" />
         </div>
       </div>
@@ -135,7 +135,13 @@ function ClientGrowthChart({ clients }: { clients: Array<{ _creationTime: number
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.muted} />
           <XAxis dataKey="name" stroke="#a3a3a3" fontSize={12} tickLine={false} axisLine={false} />
-          <YAxis stroke="#a3a3a3" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
+          <YAxis
+            stroke="#a3a3a3"
+            fontSize={12}
+            tickLine={false}
+            axisLine={false}
+            allowDecimals={false}
+          />
           <Tooltip
             contentStyle={{
               backgroundColor: "#fff",
@@ -160,7 +166,10 @@ function ClientGrowthChart({ clients }: { clients: Array<{ _creationTime: number
   );
 }
 
-function ActivityChart({ signups, tickets }: {
+function ActivityChart({
+  signups,
+  tickets,
+}: {
   signups: Array<{ _creationTime: number; status?: string }>;
   tickets: Array<{ _creationTime: number; status?: string }>;
 }) {
@@ -176,8 +185,10 @@ function ActivityChart({ signups, tickets }: {
 
       weeks.push({
         name: `W${4 - i}`,
-        signups: signups.filter((s) => s._creationTime >= weekStart && s._creationTime < weekEnd).length,
-        tickets: tickets.filter((t) => t._creationTime >= weekStart && t._creationTime < weekEnd).length,
+        signups: signups.filter((s) => s._creationTime >= weekStart && s._creationTime < weekEnd)
+          .length,
+        tickets: tickets.filter((t) => t._creationTime >= weekStart && t._creationTime < weekEnd)
+          .length,
       });
     }
     return weeks;
@@ -185,12 +196,15 @@ function ActivityChart({ signups, tickets }: {
 
   return (
     <div className="chart-section rounded-xl border border-stone-200 bg-white p-6">
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex items-center justify-between">
         <div>
-          <h2 className="font-semibold text-stone-900" style={{ fontFamily: "var(--font-display)" }}>
+          <h2
+            className="font-semibold text-stone-900"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
             {t("weeklyActivity") || "Weekly Activity"}
           </h2>
-          <p className="text-xs text-stone-500 mt-0.5">{t("lastFourWeeks") || "Last 4 weeks"}</p>
+          <p className="mt-0.5 text-xs text-stone-500">{t("lastFourWeeks") || "Last 4 weeks"}</p>
         </div>
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FF4500]/10 text-[#FF4500]">
           <Activity className="h-4 w-4" />
@@ -200,7 +214,13 @@ function ActivityChart({ signups, tickets }: {
         <BarChart data={chartData} barGap={4}>
           <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.muted} />
           <XAxis dataKey="name" stroke="#a3a3a3" fontSize={12} tickLine={false} axisLine={false} />
-          <YAxis stroke="#a3a3a3" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
+          <YAxis
+            stroke="#a3a3a3"
+            fontSize={12}
+            tickLine={false}
+            axisLine={false}
+            allowDecimals={false}
+          />
           <Tooltip
             contentStyle={{
               backgroundColor: "#fff",
@@ -210,18 +230,30 @@ function ActivityChart({ signups, tickets }: {
               boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
             }}
           />
-          <Bar dataKey="signups" fill={CHART_COLORS.primary} radius={[6, 6, 0, 0]} maxBarSize={32} name="Signups" />
-          <Bar dataKey="tickets" fill={CHART_COLORS.secondary} radius={[6, 6, 0, 0]} maxBarSize={32} name="Tickets" />
+          <Bar
+            dataKey="signups"
+            fill={CHART_COLORS.primary}
+            radius={[6, 6, 0, 0]}
+            maxBarSize={32}
+            name={t("signups")}
+          />
+          <Bar
+            dataKey="tickets"
+            fill={CHART_COLORS.secondary}
+            radius={[6, 6, 0, 0]}
+            maxBarSize={32}
+            name={t("openTickets")}
+          />
         </BarChart>
       </ResponsiveContainer>
-      <div className="flex items-center justify-center gap-6 mt-4">
+      <div className="mt-4 flex items-center justify-center gap-6">
         <div className="flex items-center gap-2 text-xs text-stone-500">
-          <span className="h-2.5 w-2.5 rounded-full bg-primary" />
-          Signups
+          <span className="bg-primary h-2.5 w-2.5 rounded-full" />
+          {t("signups")}
         </div>
         <div className="flex items-center gap-2 text-xs text-stone-500">
           <span className="h-2.5 w-2.5 rounded-full bg-[#FF6633]" />
-          Tickets
+          {t("openTickets")}
         </div>
       </div>
     </div>
@@ -248,7 +280,7 @@ export default function AdminDashboardPage() {
       gsap.fromTo(
         ".page-title",
         { y: 20, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }
+        { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" },
       );
 
       // Stagger stat cards
@@ -263,7 +295,7 @@ export default function AdminDashboardPage() {
           stagger: 0.1,
           ease: "power3.out",
           delay: 0.15,
-        }
+        },
       );
 
       // Charts fade in
@@ -277,7 +309,7 @@ export default function AdminDashboardPage() {
           stagger: 0.15,
           ease: "power3.out",
           delay: 0.4,
-        }
+        },
       );
 
       // Quick action cards
@@ -291,7 +323,7 @@ export default function AdminDashboardPage() {
           stagger: 0.1,
           ease: "power3.out",
           delay: 0.6,
-        }
+        },
       );
     }, containerRef);
 
@@ -301,7 +333,7 @@ export default function AdminDashboardPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="text-primary h-8 w-8 animate-spin" />
       </div>
     );
   }
@@ -315,22 +347,18 @@ export default function AdminDashboardPage() {
     <div ref={containerRef} className="space-y-8">
       {/* Page title */}
       <div className="page-title">
-        <h1 className="text-2xl font-bold tracking-tight text-stone-900" style={{ fontFamily: "var(--font-display)" }}>
+        <h1
+          className="text-2xl font-bold tracking-tight text-stone-900"
+          style={{ fontFamily: "var(--font-display)" }}
+        >
           {t("dashboard")}
         </h1>
-        <p className="text-sm text-stone-500 mt-1">
-          {t("overview")}
-        </p>
+        <p className="mt-1 text-sm text-stone-500">{t("overview")}</p>
       </div>
 
       {/* Stats grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label={t("totalClients")}
-          value={totalClients}
-          icon={Users}
-          href="/clients"
-        />
+        <StatCard label={t("totalClients")} value={totalClients} icon={Users} href="/clients" />
         <StatCard
           label={t("activeClients")}
           value={activeClients}
@@ -363,21 +391,17 @@ export default function AdminDashboardPage() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {/* Pending signups preview */}
         <div className="quick-action rounded-xl border border-stone-200 bg-white p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-stone-900">
-              {t("pendingSignups")}
-            </h2>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-semibold text-stone-900">{t("pendingSignups")}</h2>
             <Link
               href="/signups"
-              className="link-lift text-xs font-medium text-primary hover:text-primary transition-colors"
+              className="link-lift text-primary hover:text-primary text-xs font-medium transition-colors"
             >
               {t("viewAll")}
             </Link>
           </div>
           {pendingSignupsCount === 0 ? (
-            <p className="text-sm text-stone-400">
-              {t("noActivity")}
-            </p>
+            <p className="text-sm text-stone-400">{t("noActivity")}</p>
           ) : (
             <p className="text-sm font-medium text-red-600">
               {pendingSignupsCount} {t("pendingSignups").toLowerCase()}
@@ -387,21 +411,17 @@ export default function AdminDashboardPage() {
 
         {/* Open tickets preview */}
         <div className="quick-action rounded-xl border border-stone-200 bg-white p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-stone-900">
-              {t("openTickets")}
-            </h2>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-semibold text-stone-900">{t("openTickets")}</h2>
             <Link
               href="/tickets"
-              className="link-lift text-xs font-medium text-primary hover:text-primary transition-colors"
+              className="link-lift text-primary hover:text-primary text-xs font-medium transition-colors"
             >
               {t("viewAll")}
             </Link>
           </div>
           {openTicketsCount === 0 ? (
-            <p className="text-sm text-stone-400">
-              {t("noActivity")}
-            </p>
+            <p className="text-sm text-stone-400">{t("noActivity")}</p>
           ) : (
             <p className="text-sm font-medium text-red-600">
               {openTicketsCount} {t("openTickets").toLowerCase()}

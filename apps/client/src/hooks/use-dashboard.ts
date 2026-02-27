@@ -5,10 +5,7 @@ import { api } from "@/convex/_generated/api";
 
 export function useDashboardData() {
   const { isAuthenticated } = useConvexAuth();
-  const data = useQuery(
-    api.dashboard.getDashboardData,
-    isAuthenticated ? {} : "skip",
-  );
+  const data = useQuery(api.dashboard.getDashboardData, isAuthenticated ? {} : "skip");
 
   return {
     dashboardData: data ?? null,

@@ -78,10 +78,10 @@ export const checkInAndGeneratePlans = workflow.define({
     workoutPlanId: Id<"workoutPlans">;
   }> => {
     // Step 1: Persist the check-in record
-    const checkInId = await step.runMutation(
-      internal.checkInWorkflow.submitCheckInInternal,
-      { userId, ...checkInFields },
-    );
+    const checkInId = await step.runMutation(internal.checkInWorkflow.submitCheckInInternal, {
+      userId,
+      ...checkInFields,
+    });
 
     // Steps 2 & 3: Enqueue both AI generations via Workpool (max 5 concurrent)
     const [mealWorkId, workoutWorkId] = await Promise.all([
@@ -101,26 +101,22 @@ export const checkInAndGeneratePlans = workflow.define({
 
     // Steps 4 & 5: Poll workpool until both finish
     // The workflow's built-in step retry handles the polling loop
-    let mealStatus = await step.runQuery(
-      internal.workpoolManager.getWorkStatus,
-      { workId: mealWorkId },
-    );
+    let mealStatus = await step.runQuery(internal.workpoolManager.getWorkStatus, {
+      workId: mealWorkId,
+    });
     while (mealStatus?.state !== "finished") {
-      mealStatus = await step.runQuery(
-        internal.workpoolManager.getWorkStatus,
-        { workId: mealWorkId },
-      );
+      mealStatus = await step.runQuery(internal.workpoolManager.getWorkStatus, {
+        workId: mealWorkId,
+      });
     }
 
-    let workoutStatus = await step.runQuery(
-      internal.workpoolManager.getWorkStatus,
-      { workId: workoutWorkId },
-    );
+    let workoutStatus = await step.runQuery(internal.workpoolManager.getWorkStatus, {
+      workId: workoutWorkId,
+    });
     while (workoutStatus?.state !== "finished") {
-      workoutStatus = await step.runQuery(
-        internal.workpoolManager.getWorkStatus,
-        { workId: workoutWorkId },
-      );
+      workoutStatus = await step.runQuery(internal.workpoolManager.getWorkStatus, {
+        workId: workoutWorkId,
+      });
     }
 
     // Extract plan IDs from workpool results

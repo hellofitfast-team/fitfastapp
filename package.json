@@ -9,7 +9,14 @@
     "dev:marketing": "turbo dev --filter=@fitfast/marketing",
     "build": "turbo build",
     "lint": "turbo lint",
-    "type-check": "turbo type-check"
+    "type-check": "turbo type-check",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "turbo test",
+    "analyze:client": "ANALYZE=true pnpm --filter @fitfast/client build",
+    "analyze:admin": "ANALYZE=true pnpm --filter @fitfast/admin build",
+    "test:e2e": "playwright test",
+    "prepare": "husky"
   },
   "dependencies": {
     "@auth/core": "^0.37.4",
@@ -29,11 +36,25 @@
     "convex": "^1.31.7",
     "lucia": "^3.2.2",
     "pdf-parse": "^2.4.5",
+    "pino": "^9.6.0",
     "resend": "^6.9.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/pdf-parse": "^1.1.5",
-    "turbo": "^2.5.4"
+    "@vitejs/plugin-react": "^5.1.4",
+    "convex-test": "^0.0.41",
+    "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
+    "jsdom": "^28.1.0",
+    "lint-staged": "^16.2.7",
+    "pino-pretty": "^13.0.0",
+    "prettier": "^3.8.1",
+    "prettier-plugin-tailwindcss": "^0.7.2",
+    "turbo": "^2.5.4",
+    "vitest": "^4.0.18"
   },
   "packageManager": "pnpm@10.12.1"
 }

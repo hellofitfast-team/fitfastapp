@@ -48,13 +48,16 @@ completed: 2026-02-15
 ## What Was Built
 
 ### RTL-Aware Progress Bars
+
 - **Linear progress bars** (meal/workout adherence) now use `dir` attribute to control fill direction
 - Added `marginInlineStart: 0, marginInlineEnd: "auto"` to ensure proper fill behavior
 - Progress fills right-to-left in Arabic, left-to-right in English
 - Weight chart wrapped in `dir="ltr"` to keep time-series universal (always left-to-right)
 
 ### Directional Icon Flipping
+
 Applied `rtl:rotate-180` to all directional icons across dashboard and admin:
+
 - **Navigation arrows:** ArrowLeft (back), ArrowRight (next/forward)
 - **List chevrons:** ChevronRight (navigate to detail)
 - **Locations:**
@@ -63,11 +66,13 @@ Applied `rtl:rotate-180` to all directional icons across dashboard and admin:
   - Onboarding: initial assessment submit
 
 ### Physical Property Conversions
+
 - `pr-10` → `pe-10` (select dropdown padding)
 - `ml-1` → `ms-1` (weight unit spacing)
 - All physical directional properties eliminated from dashboard/admin pages
 
 ### Circular Progress Indicator
+
 - Confirmed as direction-neutral (no changes needed)
 - Counterclockwise fill from top is correct for both LTR and RTL
 - Added clarifying comment in code
@@ -75,30 +80,31 @@ Applied `rtl:rotate-180` to all directional icons across dashboard and admin:
 ## Technical Implementation
 
 ### Progress Bar RTL Strategy
+
 ```tsx
 <div className="h-6 border-4 border-black bg-neutral-100" dir={locale === "ar" ? "rtl" : "ltr"}>
   <div
-    className="h-full bg-success-500 transition-all"
+    className="bg-success-500 h-full transition-all"
     style={{
       width: `${adherenceStats.mealAdherence}%`,
       marginInlineStart: 0,
-      marginInlineEnd: "auto"
+      marginInlineEnd: "auto",
     }}
   />
 </div>
 ```
 
 The `dir` attribute changes the inline direction, so `marginInlineStart: 0` means:
+
 - In LTR: margin-left: 0 (fills from left)
 - In RTL: margin-right: 0 (fills from right)
 
 ### Chart LTR Wrapping
+
 ```tsx
 <div dir="ltr">
   <ResponsiveContainer width="100%" height={300}>
-    <LineChart data={weightChartData}>
-      {/* time-series always flows left-to-right */}
-    </LineChart>
+    <LineChart data={weightChartData}>{/* time-series always flows left-to-right */}</LineChart>
   </ResponsiveContainer>
 </div>
 ```
@@ -106,6 +112,7 @@ The `dir` attribute changes the inline direction, so `marginInlineStart: 0` mean
 This prevents the chart from inheriting page-level RTL direction, keeping time progression universal.
 
 ### Icon Flipping Pattern
+
 ```tsx
 <ArrowRight className="h-4 w-4 rtl:rotate-180" />
 ```
@@ -115,47 +122,53 @@ Tailwind's `rtl:` variant applies rotation only when `dir="rtl"` is active on a 
 ## Deviations from Plan
 
 ### Auto-fixed Issues
+
 None - plan executed exactly as written.
 
 ### Discovered During Execution
+
 **Task 1 work already completed:** The progress bar RTL changes were already committed in the previous task (10-03). This occurred because the previous executor made additional improvements beyond the scope of that task. Task 2 proceeded as planned with no conflicts.
 
 ## Files Modified
 
-| File | Changes | Purpose |
-|------|---------|---------|
-| src/components/charts/ProgressCharts.tsx | Added dir attributes, LTR chart wrapper | RTL-aware progress bars and universal time-series |
-| src/app/[locale]/(dashboard)/tracking/_components/date-progress.tsx | Added useLocale import, comment | Document circular progress decision |
-| src/app/[locale]/(dashboard)/tickets/page.tsx | pe-10, rtl:rotate-180 | RTL select dropdown and list chevrons |
-| src/app/[locale]/(dashboard)/tickets/[id]/page.tsx | rtl:rotate-180 × 2 | Flip back button arrows |
-| src/app/[locale]/(dashboard)/settings/page.tsx | pe-10 | RTL language select dropdown |
-| src/app/[locale]/(dashboard)/progress/_components/history-tab.tsx | ms-1 | RTL weight unit spacing |
-| src/app/[locale]/(dashboard)/check-in/_components/step-navigation.tsx | rtl:rotate-180 × 2 | Flip back/next arrows |
-| src/app/[locale]/(admin)/admin/(panel)/page.tsx | rtl:rotate-180 | Flip stat card view arrows |
-| src/app/[locale]/(admin)/admin/(panel)/clients/clients-list.tsx | rtl:rotate-180 | Flip client row arrows |
-| src/app/[locale]/(admin)/admin/(panel)/clients/[id]/page.tsx | rtl:rotate-180 | Flip back button |
+| File                                                                   | Changes                                 | Purpose                                           |
+| ---------------------------------------------------------------------- | --------------------------------------- | ------------------------------------------------- |
+| src/components/charts/ProgressCharts.tsx                               | Added dir attributes, LTR chart wrapper | RTL-aware progress bars and universal time-series |
+| src/app/[locale]/(dashboard)/tracking/\_components/date-progress.tsx   | Added useLocale import, comment         | Document circular progress decision               |
+| src/app/[locale]/(dashboard)/tickets/page.tsx                          | pe-10, rtl:rotate-180                   | RTL select dropdown and list chevrons             |
+| src/app/[locale]/(dashboard)/tickets/[id]/page.tsx                     | rtl:rotate-180 × 2                      | Flip back button arrows                           |
+| src/app/[locale]/(dashboard)/settings/page.tsx                         | pe-10                                   | RTL language select dropdown                      |
+| src/app/[locale]/(dashboard)/progress/\_components/history-tab.tsx     | ms-1                                    | RTL weight unit spacing                           |
+| src/app/[locale]/(dashboard)/check-in/\_components/step-navigation.tsx | rtl:rotate-180 × 2                      | Flip back/next arrows                             |
+| src/app/[locale]/(admin)/admin/(panel)/page.tsx                        | rtl:rotate-180                          | Flip stat card view arrows                        |
+| src/app/[locale]/(admin)/admin/(panel)/clients/clients-list.tsx        | rtl:rotate-180                          | Flip client row arrows                            |
+| src/app/[locale]/(admin)/admin/(panel)/clients/[id]/page.tsx           | rtl:rotate-180                          | Flip back button                                  |
 
 ## Verification Results
 
 ### Type Safety
+
 ```bash
 pnpm tsc --noEmit
 # ✓ No errors
 ```
 
 ### Progress Bar dir Attributes
+
 ```bash
 grep "dir=" src/components/charts/ProgressCharts.tsx
 # ✓ Found 3 instances: LTR chart wrapper, 2 RTL progress bars
 ```
 
 ### Directional Icon Coverage
+
 ```bash
 grep -rn "ArrowRight\|ArrowLeft\|ChevronRight" src/app/ | grep -v "import\|from" | grep -v "rtl:rotate-180"
 # ✓ No matches (all directional icons have rtl:rotate-180)
 ```
 
 ### Physical Properties Eliminated
+
 ```bash
 grep -rn "\bml-\|\bmr-\|\bpr-\|\bpl-" src/app/[locale]/(dashboard)/ src/app/[locale]/(admin)/
 # ✓ No matches (all converted to logical properties)
@@ -174,17 +187,21 @@ grep -rn "\bml-\|\bmr-\|\bpr-\|\bpl-" src/app/[locale]/(dashboard)/ src/app/[loc
 ## Impact
 
 ### User Experience
+
 - **Progress indicators** now feel natural in Arabic (fill right-to-left)
 - **Navigation arrows** point in the reading direction, reducing cognitive load
 - **Time-series charts** remain universally readable (no confusion about time progression)
 
 ### Code Quality
+
 - **Semantic correctness:** Using `dir` attribute is more appropriate than CSS transforms
 - **Maintainability:** Logical properties make future RTL work easier
 - **Consistency:** All directional UI elements now follow the same RTL pattern
 
 ### RTL Completeness
+
 With this plan complete, all major UI components are RTL-aware:
+
 - ✅ Layouts (from 10-01: shadcn migration)
 - ✅ Forms (from 10-01: select dropdowns, inputs)
 - ✅ Charts and progress indicators (this plan)
@@ -194,12 +211,14 @@ With this plan complete, all major UI components are RTL-aware:
 ## Next Steps
 
 Remaining RTL work in Phase 10:
+
 1. **Plan 05:** Number formatting (Eastern Arabic numerals for Arabic locale)
 2. Future consideration: AI-generated plans in user's language (currently English only)
 
 ## Self-Check: PASSED
 
 **Verification:**
+
 ```bash
 # Check progress bar changes exist
 [ -f "src/components/charts/ProgressCharts.tsx" ] && echo "FOUND: ProgressCharts.tsx" || echo "MISSING"

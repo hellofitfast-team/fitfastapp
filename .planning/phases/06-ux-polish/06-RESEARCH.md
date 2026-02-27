@@ -15,27 +15,30 @@ UX polish for a Next.js 14+ App Router PWA requires standardized skeleton loadin
 ## Standard Stack
 
 ### Core
-| Library | Version | Purpose | Why Standard |
-|---------|---------|---------|--------------|
-| React Hook Form | 7.71.1 | Form state management | Industry standard for performant React forms, uncontrolled inputs reduce re-renders |
-| Zod | 4.3.6 | Schema validation | Type-safe validation with TypeScript inference, works natively with React Hook Form via @hookform/resolvers |
-| @hookform/resolvers | 5.2.2 | Integration layer | Official bridge between React Hook Form and schema validators like Zod |
-| Next.js Suspense | Built-in | Loading boundaries | First-class App Router support for streaming and progressive rendering |
-| TailwindCSS | 4.1.18 | Styling including skeletons | Utility-first CSS with animate-pulse for skeleton loading, already in project |
+
+| Library             | Version  | Purpose                     | Why Standard                                                                                                |
+| ------------------- | -------- | --------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| React Hook Form     | 7.71.1   | Form state management       | Industry standard for performant React forms, uncontrolled inputs reduce re-renders                         |
+| Zod                 | 4.3.6    | Schema validation           | Type-safe validation with TypeScript inference, works natively with React Hook Form via @hookform/resolvers |
+| @hookform/resolvers | 5.2.2    | Integration layer           | Official bridge between React Hook Form and schema validators like Zod                                      |
+| Next.js Suspense    | Built-in | Loading boundaries          | First-class App Router support for streaming and progressive rendering                                      |
+| TailwindCSS         | 4.1.18   | Styling including skeletons | Utility-first CSS with animate-pulse for skeleton loading, already in project                               |
 
 ### Supporting
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| lucide-react | 0.563.0 | Icons for empty states | Already in project, provides consistent iconography |
-| ARIA attributes | Native HTML | Screen reader support | Always use for loading states (aria-busy, aria-live) and form errors |
-| next-intl | 4.8.2 | i18n error messages | Already in project, critical for Arabic/English validation messages |
+
+| Library         | Version     | Purpose                | When to Use                                                          |
+| --------------- | ----------- | ---------------------- | -------------------------------------------------------------------- |
+| lucide-react    | 0.563.0     | Icons for empty states | Already in project, provides consistent iconography                  |
+| ARIA attributes | Native HTML | Screen reader support  | Always use for loading states (aria-busy, aria-live) and form errors |
+| next-intl       | 4.8.2       | i18n error messages    | Already in project, critical for Arabic/English validation messages  |
 
 ### Alternatives Considered
-| Instead of | Could Use | Tradeoff |
-|------------|-----------|----------|
-| React Hook Form | Formik | Formik uses controlled inputs (more re-renders), larger bundle size |
-| Zod | Yup | Yup lacks TypeScript-first design, weaker type inference |
-| Custom skeletons | react-loading-skeleton | Adds dependency when Tailwind animate-pulse is sufficient |
+
+| Instead of       | Could Use              | Tradeoff                                                            |
+| ---------------- | ---------------------- | ------------------------------------------------------------------- |
+| React Hook Form  | Formik                 | Formik uses controlled inputs (more re-renders), larger bundle size |
+| Zod              | Yup                    | Yup lacks TypeScript-first design, weaker type inference            |
+| Custom skeletons | react-loading-skeleton | Adds dependency when Tailwind animate-pulse is sufficient           |
 
 **Installation:**
 No new packages required. Stack already includes React Hook Form, Zod, @hookform/resolvers, TailwindCSS, and lucide-react.
@@ -43,6 +46,7 @@ No new packages required. Stack already includes React Hook Form, Zod, @hookform
 ## Architecture Patterns
 
 ### Recommended Project Structure
+
 ```
 src/
 ├── components/
@@ -66,9 +70,11 @@ src/
 ```
 
 ### Pattern 1: Skeleton Loading Component
+
 **What:** Standardized skeleton component matching shadcn/ui implementation
 **When to use:** During any async data fetch (page load, component data fetch)
 **Example:**
+
 ```typescript
 // Source: https://ui.shadcn.com/docs/components/radix/skeleton
 import { cn } from "@/lib/utils"
@@ -96,9 +102,11 @@ export function CardSkeleton() {
 ```
 
 ### Pattern 2: Empty State Component
+
 **What:** Designed placeholder for "no data" scenarios with icon, message, and CTA
 **When to use:** No plans yet, no tickets, no check-in history, search returns no results
 **Example:**
+
 ```typescript
 // Source: Design system best practices from https://www.eleken.co/blog-posts/empty-state-ux
 import { LucideIcon } from "lucide-react"
@@ -138,9 +146,11 @@ export function EmptyState({ icon: Icon, title, description, action }: EmptyStat
 ```
 
 ### Pattern 3: React Hook Form with Zod Inline Validation
+
 **What:** Form fields with onBlur validation and inline error display
 **When to use:** All forms (assessment, tickets, settings, check-in)
 **Example:**
+
 ```typescript
 // Source: https://react-hook-form.com/docs/useform (mode: "onBlur")
 import { useForm } from "react-hook-form"
@@ -190,9 +200,11 @@ function TicketForm() {
 ```
 
 ### Pattern 4: Touch Target Sizing for PWA
+
 **What:** Minimum 48x48px touch targets for all interactive elements
 **When to use:** All buttons, links, form inputs, tabs, icon buttons
 **Example:**
+
 ```typescript
 // Source: Android Material Design 48x48dp guideline
 // Already implemented in button.tsx:
@@ -215,9 +227,11 @@ icon: "h-12 w-12",  // Change from h-10 w-10
 ```
 
 ### Pattern 5: Suspense Boundaries for Granular Loading
+
 **What:** Component-level Suspense for independent data fetching
 **When to use:** Dashboard sections that load data independently (stats, plans, tickets preview)
 **Example:**
+
 ```typescript
 // Source: https://nextjs.org/docs/app/building-your-application/routing/loading-ui-and-streaming
 import { Suspense } from "react"
@@ -248,9 +262,11 @@ export default function DashboardPage() {
 ```
 
 ### Pattern 6: ARIA Live Regions for Loading Announcements
+
 **What:** Screen reader announcements for loading states
 **When to use:** All loading skeletons and dynamic content updates
 **Example:**
+
 ```typescript
 // Source: https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-live
 export function LoadingContainer({ children, isLoading, contentLabel }) {
@@ -273,6 +289,7 @@ export function LoadingContainer({ children, isLoading, contentLabel }) {
 ```
 
 ### Anti-Patterns to Avoid
+
 - **Manual form validation with useState:** Use React Hook Form + Zod instead. Manual validation leads to inconsistent error handling, verbose code, and poor user experience.
 - **Validation on every keystroke (mode: "onChange"):** Causes excessive re-renders and poor UX. Use "onBlur" for initial validation, then "onChange" for re-validation after submit.
 - **Empty div instead of empty state:** Never show blank space when data is empty. Always show designed empty state with guidance.
@@ -282,62 +299,70 @@ export function LoadingContainer({ children, isLoading, contentLabel }) {
 
 ## Don't Hand-Roll
 
-| Problem | Don't Build | Use Instead | Why |
-|---------|-------------|-------------|-----|
-| Form validation | Custom validation logic with useState | React Hook Form + Zod | Edge cases: nested validation, async validation, field dependencies, error focus management, re-validation logic, form reset behavior. RHF handles all this out of the box. |
-| Skeleton animations | Custom CSS animations | TailwindCSS animate-pulse | Tailwind provides GPU-accelerated animation with proper timing (2s cubic-bezier). Custom animations often flicker or perform poorly. |
-| Empty state layouts | Ad-hoc empty divs per page | Reusable EmptyState component | Consistency across app requires design system component. Ad-hoc implementations lead to UX fragmentation. |
-| Loading state management | Manual isLoading state per component | Next.js loading.tsx + Suspense | App Router handles loading states declaratively with streaming. Manual state is error-prone and doesn't support streaming. |
-| Touch target sizing | Manual px values per element | Design system size variants | PWA accessibility requires consistent sizing. Manual values lead to missed targets and poor mobile UX. |
-| ARIA announcements | Custom screen reader text | Standard ARIA attributes (aria-live, aria-busy, role) | Browser accessibility APIs handle screen reader compatibility. Custom implementations miss edge cases. |
+| Problem                  | Don't Build                           | Use Instead                                           | Why                                                                                                                                                                         |
+| ------------------------ | ------------------------------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Form validation          | Custom validation logic with useState | React Hook Form + Zod                                 | Edge cases: nested validation, async validation, field dependencies, error focus management, re-validation logic, form reset behavior. RHF handles all this out of the box. |
+| Skeleton animations      | Custom CSS animations                 | TailwindCSS animate-pulse                             | Tailwind provides GPU-accelerated animation with proper timing (2s cubic-bezier). Custom animations often flicker or perform poorly.                                        |
+| Empty state layouts      | Ad-hoc empty divs per page            | Reusable EmptyState component                         | Consistency across app requires design system component. Ad-hoc implementations lead to UX fragmentation.                                                                   |
+| Loading state management | Manual isLoading state per component  | Next.js loading.tsx + Suspense                        | App Router handles loading states declaratively with streaming. Manual state is error-prone and doesn't support streaming.                                                  |
+| Touch target sizing      | Manual px values per element          | Design system size variants                           | PWA accessibility requires consistent sizing. Manual values lead to missed targets and poor mobile UX.                                                                      |
+| ARIA announcements       | Custom screen reader text             | Standard ARIA attributes (aria-live, aria-busy, role) | Browser accessibility APIs handle screen reader compatibility. Custom implementations miss edge cases.                                                                      |
 
 **Key insight:** Form validation and loading states are deceptively complex. React Hook Form + Zod handle 90% of validation edge cases (async validation, dependent fields, error focus, re-validation strategy). Next.js loading.tsx + Suspense handle streaming, error boundaries, and progressive rendering. Building these from scratch takes weeks and misses edge cases that annoy users.
 
 ## Common Pitfalls
 
 ### Pitfall 1: Validation Mode Mismatch
+
 **What goes wrong:** Using mode: "onBlur" but reValidateMode: "onChange" creates confusing UX where initial blur validation works, but after submit errors don't clear on blur.
 **Why it happens:** React Hook Form separates initial validation strategy (mode) from re-validation strategy (reValidateMode). Defaults don't align for onBlur use case.
 **How to avoid:** Always set both to "onBlur" for consistent behavior: `useForm({ mode: "onBlur", reValidateMode: "onBlur" })`
 **Warning signs:** Users report "error messages don't clear when I fix the field" or "validation feels inconsistent"
 
 ### Pitfall 2: Skeleton Layout Shift (Poor CLS)
+
 **What goes wrong:** Skeleton doesn't match final content dimensions, causing jarring layout shift when content loads.
 **Why it happens:** Skeleton uses generic sizes instead of matching actual content dimensions.
 **How to avoid:** Design skeletons to mimic exact structure of loaded content. Use same padding, borders, spacing as final components. Test by comparing skeleton vs. loaded state side-by-side.
 **Warning signs:** Visible content jump when loading completes, poor Core Web Vitals CLS score.
 
 ### Pitfall 3: Missing Error Display on Nested Objects
+
 **What goes wrong:** Form has nested fields (e.g., `schedule_availability.days`) but errors.schedule_availability is undefined.
 **Why it happens:** React Hook Form only surfaces errors at the path where validation failed. Nested schemas require accessing nested error objects.
 **How to avoid:** Access nested errors via dot notation: `errors?.schedule_availability?.days?.message`. Consider flattening schema for simpler error handling.
 **Warning signs:** Console shows validation errors but UI doesn't display them.
 
 ### Pitfall 4: Empty States Without Guidance
+
 **What goes wrong:** Empty state shows "No tickets yet" but user doesn't know what tickets are or how to create one.
 **Why it happens:** Empty state treated as filler content instead of educational moment.
 **How to avoid:** Every empty state needs: (1) icon/illustration, (2) clear explanation, (3) action CTA when applicable. "No tickets yet" → "No support tickets yet. Having an issue? Submit a ticket and your coach will respond within 24 hours."
 **Warning signs:** User confusion, support questions about empty pages, low feature adoption.
 
 ### Pitfall 5: Touch Targets Too Small on Mobile
+
 **What goes wrong:** Icon buttons, tabs, or small interactive elements are hard to tap on mobile, causing frustration and mis-taps.
 **Why it happens:** Designer uses desktop dimensions (24px icons common) without considering mobile touch accuracy.
 **How to avoid:** Audit all interactive elements for 48x48px minimum. Icon buttons should be h-12 w-12 minimum, not h-8 w-8. Tab bars should have h-12 minimum tap area.
 **Warning signs:** User reports "hard to tap buttons" or analytics show high error rates on mobile interactions.
 
 ### Pitfall 6: Loading State Without ARIA
+
 **What goes wrong:** Screen reader users don't know content is loading, hear stale content, or miss when loading completes.
 **Why it happens:** Developer implements visual loading state but forgets accessibility attributes.
 **How to avoid:** Always add: (1) `role="status"` on loading container, (2) `aria-busy={isLoading}`, (3) `aria-live="polite"` for announcements, (4) `aria-label` describing what's loading.
 **Warning signs:** Accessibility audits flag missing ARIA, screen reader testing shows no feedback during loading.
 
 ### Pitfall 7: RTL Layout Breaking Inline Errors
+
 **What goes wrong:** Error messages in Arabic display on wrong side of input, or error icons don't flip.
 **Why it happens:** Error message layout uses `ml-2` instead of `ms-2` (start instead of left), breaking RTL.
 **How to avoid:** Use logical properties for all spacing: `ms-` (margin-start), `me-` (margin-end), `ps-` (padding-start), `pe-` (padding-end). Test every form in Arabic RTL mode.
 **Warning signs:** Arabic UI looks broken, errors misaligned, icons on wrong side.
 
 ### Pitfall 8: Skeleton Animation Too Fast/Slow
+
 **What goes wrong:** Skeleton pulses too rapidly (nauseating) or too slowly (feels frozen).
 **Why it happens:** Custom animation duration chosen arbitrarily instead of following research-backed timing.
 **How to avoid:** Use TailwindCSS animate-pulse (2s cubic-bezier) or 1.5-2s duration if custom. Research shows slow wave animation (left to right over 2s) is best for perceived duration.
@@ -348,6 +373,7 @@ export function LoadingContainer({ children, isLoading, contentLabel }) {
 Verified patterns from official sources and current codebase:
 
 ### Skeleton Component (shadcn/ui standard)
+
 ```typescript
 // Source: https://ui.shadcn.com/docs/components/radix/skeleton
 "use client"
@@ -388,6 +414,7 @@ export function CardSkeleton() {
 ```
 
 ### Empty State Component
+
 ```typescript
 // Source: Design system patterns from https://www.pencilandpaper.io/articles/empty-states
 import { LucideIcon } from "lucide-react"
@@ -463,6 +490,7 @@ import { Calendar, MessageSquare, TrendingUp } from "lucide-react"
 ```
 
 ### React Hook Form Field with Inline Validation
+
 ```typescript
 // Source: https://react-hook-form.com/docs/useform (formState.errors)
 import { useForm } from "react-hook-form"
@@ -565,6 +593,7 @@ export function ProfileForm() {
 ```
 
 ### Loading Container with ARIA
+
 ```typescript
 // Source: https://eui.elastic.co/docs/components/display/skeleton/
 interface LoadingContainerProps {
@@ -603,6 +632,7 @@ export function LoadingContainer({
 ```
 
 ### Touch-Safe Button Variants
+
 ```typescript
 // Source: Android Material Design 48dp minimum touch target
 // Update to current button.tsx
@@ -620,31 +650,32 @@ const buttonVariants = cva(
         success: "bg-success-500 text-black hover:bg-primary hover:text-white",
       },
       size: {
-        default: "h-12 px-6",       // 48px height ✓
-        sm: "h-12 px-4 text-xs",    // CHANGED: was h-10, now h-12 (48px) ✓
-        lg: "h-14 px-8 text-base",  // 56px height ✓
-        icon: "h-12 w-12",          // CHANGED: was h-10 w-10, now h-12 w-12 (48px) ✓
+        default: "h-12 px-6", // 48px height ✓
+        sm: "h-12 px-4 text-xs", // CHANGED: was h-10, now h-12 (48px) ✓
+        lg: "h-14 px-8 text-base", // 56px height ✓
+        icon: "h-12 w-12", // CHANGED: was h-10 w-10, now h-12 w-12 (48px) ✓
       },
     },
     defaultVariants: {
       variant: "default",
       size: "default",
     },
-  }
-)
+  },
+);
 ```
 
 ## State of the Art
 
-| Old Approach | Current Approach | When Changed | Impact |
-|--------------|------------------|--------------|--------|
-| Spinner-only loading | Skeleton screens | ~2018-2020 | 15-20% reduction in perceived load time, better UX during streaming |
-| Manual form validation | React Hook Form + schema validators | ~2020-2021 | 50% less form code, consistent error handling, better DX |
-| 44px touch targets | 48px minimum (Android Material Design) | 2021-2022 | Touch error rate drops from 3% to ~1%, better PWA mobile UX |
-| Full page loading states | Granular Suspense boundaries | Next.js 13 App Router (2022) | Progressive rendering, faster perceived page loads, better streaming |
-| WCAG 2.1 (44x44px AA) | WCAG 2.2 (24x24px AA minimum) | 2023 | WCAG lowered minimum, but platform guidelines still recommend 44-48px for quality UX |
+| Old Approach             | Current Approach                       | When Changed                 | Impact                                                                               |
+| ------------------------ | -------------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------ |
+| Spinner-only loading     | Skeleton screens                       | ~2018-2020                   | 15-20% reduction in perceived load time, better UX during streaming                  |
+| Manual form validation   | React Hook Form + schema validators    | ~2020-2021                   | 50% less form code, consistent error handling, better DX                             |
+| 44px touch targets       | 48px minimum (Android Material Design) | 2021-2022                    | Touch error rate drops from 3% to ~1%, better PWA mobile UX                          |
+| Full page loading states | Granular Suspense boundaries           | Next.js 13 App Router (2022) | Progressive rendering, faster perceived page loads, better streaming                 |
+| WCAG 2.1 (44x44px AA)    | WCAG 2.2 (24x24px AA minimum)          | 2023                         | WCAG lowered minimum, but platform guidelines still recommend 44-48px for quality UX |
 
 **Deprecated/outdated:**
+
 - **Formik:** Still works but React Hook Form is lighter, faster, and more ergonomic. Formik uses controlled inputs (more re-renders).
 - **Custom skeleton libraries (react-loading-skeleton):** TailwindCSS animate-pulse is sufficient for most cases. Adding dependency is unnecessary.
 - **Client-side only loading states:** Next.js App Router supports server-side streaming with loading.tsx. Client-only state doesn't leverage SSR benefits.
@@ -675,6 +706,7 @@ const buttonVariants = cva(
 ## Sources
 
 ### Primary (HIGH confidence)
+
 - **Next.js Official Docs - loading.js:** https://nextjs.org/docs/app/api-reference/file-conventions/loading
 - **Next.js Learn - Streaming:** https://nextjs.org/learn/dashboard-app/streaming
 - **React Hook Form - useForm API:** https://react-hook-form.com/docs/useform
@@ -683,6 +715,7 @@ const buttonVariants = cva(
 - **MDN ARIA Live Regions:** https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-live
 
 ### Secondary (MEDIUM confidence)
+
 - **LogRocket - Loading, Error, Empty States in React:** https://blog.logrocket.com/ui-design-best-practices-loading-error-empty-state-react/
 - **Smashing Magazine - Accessible Tap Target Sizes:** https://www.smashingmagazine.com/2023/04/accessible-tap-target-sizes-rage-taps-clicks/
 - **Eleken - Empty State UX Rules:** https://www.eleken.co/blog-posts/empty-state-ux
@@ -691,6 +724,7 @@ const buttonVariants = cva(
 - **freeCodeCamp - Next.js 15 Streaming Handbook:** https://www.freecodecamp.org/news/the-nextjs-15-streaming-handbook/
 
 ### Tertiary (LOW confidence - community patterns)
+
 - **Medium - Loading States & Skeletons in Next.js:** https://medium.com/@divyanshsharma0631/no-more-blank-screens-mastering-loading-states-skeletons-with-loading-js-80c62b7747a1
 - **Medium - Suspense and Error Boundaries in Next.js 15:** https://medium.com/@sureshdotariya/leveraging-suspense-and-error-boundaries-in-next-js-034aff10df4f
 - **Pencil & Paper - Empty State Best Practices:** https://www.pencilandpaper.io/articles/empty-states
@@ -698,6 +732,7 @@ const buttonVariants = cva(
 ## Metadata
 
 **Confidence breakdown:**
+
 - **Standard stack:** HIGH - React Hook Form + Zod is industry standard, TailwindCSS animate-pulse verified in official docs, Next.js loading.tsx is first-class API
 - **Architecture patterns:** HIGH - Patterns verified in official React Hook Form docs, Next.js docs, shadcn/ui implementation, WCAG standards
 - **Pitfalls:** MEDIUM-HIGH - Common pitfalls sourced from official docs (RHF validation modes, Suspense boundaries) and design system best practices (empty states, touch targets)
@@ -707,6 +742,7 @@ const buttonVariants = cva(
 **Valid until:** ~60 days (stable ecosystem - React Hook Form, Next.js patterns, WCAG standards change infrequently)
 
 **Key risks:**
+
 - RTL layout testing for error messages and empty states needs manual verification (not fully researchable)
 - Optimal skeleton animation duration may need A/B testing with real users
 - Empty state illustration vs. icon-only decision requires user testing in MENA market

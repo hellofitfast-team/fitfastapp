@@ -51,7 +51,7 @@ Created validation infrastructure for AI-generated plans and reusable error boun
    - **MealPlanSchema**: Matches GeneratedMealPlan interface exactly (weeklyPlan with day records, meals array, dailyTotals, weeklyTotals, notes)
    - **MealSchema**: Individual meal with name, type (enum), time, macros, ingredients, instructions, alternatives
    - **DailyMealPlanSchema**: Single day's meals with daily totals
-   - **cleanAIResponse()**: Strips markdown code block wrappers (```json and ```) before JSON parsing
+   - **cleanAIResponse()**: Strips markdown code block wrappers (`json and `) before JSON parsing
    - **validateMealPlanResponse()**: Full pipeline - clean -> parse JSON -> safeParse -> throw ValidationError with Sentry context
 
 2. **Workout Plan Validation** (`src/lib/validation/workout-plan.ts`):
@@ -79,6 +79,7 @@ Created validation infrastructure for AI-generated plans and reusable error boun
 ## Technical Implementation
 
 **Validation Pipeline Pattern:**
+
 ```typescript
 export function validateMealPlanResponse(rawResponse: string): ValidatedMealPlan {
   // Step 1: Clean markdown wrappers
@@ -106,11 +107,11 @@ export function validateMealPlanResponse(rawResponse: string): ValidatedMealPlan
           errorCount: result.error.issues.length,
           issues: result.error.issues.slice(0, 5),
         },
-      }
+      },
     );
     throw new ValidationError(
-      `Invalid meal plan structure: ${result.error.issues.map(e => e.message).join(", ")}`,
-      result.error
+      `Invalid meal plan structure: ${result.error.issues.map((e) => e.message).join(", ")}`,
+      result.error,
     );
   }
 
@@ -119,6 +120,7 @@ export function validateMealPlanResponse(rawResponse: string): ValidatedMealPlan
 ```
 
 **Schema Structure Example (Meal Plan):**
+
 ```typescript
 export const MealPlanSchema = z.object({
   weeklyPlan: z.record(z.string(), DailyMealPlanSchema),
@@ -136,6 +138,7 @@ export type ValidatedMealPlan = z.infer<typeof MealPlanSchema>;
 ```
 
 **ErrorBoundary Integration:**
+
 ```typescript
 componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
   // Capture to Sentry with React component stack
@@ -153,6 +156,7 @@ componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
 ```
 
 **Sentry Integration Points:**
+
 - **Validation failures**: Two-stage tracking (JSON parse vs. schema validation)
 - **Component errors**: Automatic capture with componentStack in ErrorBoundary
 - **Error context**: Feature tags, stage tags, error counts, and sample issues
@@ -164,6 +168,7 @@ None - plan executed exactly as written.
 ## Usage Examples for Phase 4/5
 
 **Validating AI meal plan response:**
+
 ```typescript
 import { validateMealPlanResponse } from "@/lib/validation";
 
@@ -180,21 +185,21 @@ try {
 ```
 
 **Wrapping route segments with ErrorBoundary:**
+
 ```tsx
 import { ErrorBoundary } from "@/components/errors/ErrorBoundary";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <ErrorBoundary>
-      <DashboardShell>
-        {children}
-      </DashboardShell>
+      <DashboardShell>{children}</DashboardShell>
     </ErrorBoundary>
   );
 }
 ```
 
 **Custom fallback UI:**
+
 ```tsx
 <ErrorBoundary
   fallback={(error, reset) => (
@@ -213,30 +218,35 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
 **TypeScript compilation:** ✓ Zero errors
 **Files created:**
+
 - ✓ src/lib/validation/meal-plan.ts
 - ✓ src/lib/validation/workout-plan.ts
 - ✓ src/lib/validation/index.ts
 - ✓ src/components/errors/ErrorBoundary.tsx
 
 **Schema structure verification:**
+
 - ✓ MealPlanSchema matches GeneratedMealPlan interface
 - ✓ WorkoutPlanSchema matches GeneratedWorkoutPlan interface
 - ✓ All fields have proper types and validation rules
 - ✓ Optional fields marked with `.optional()`
 
 **safeParse usage:**
+
 - ✓ No `.parse()` calls found (only JSON.parse for string parsing)
 - ✓ Both validate helpers use `.safeParse()` for Zod validation
 - ✓ Proper error handling with ValidationError throwing
 
 **ErrorBoundary verification:**
+
 - ✓ "use client" directive present
 - ✓ Sentry.captureException called in componentDidCatch
 - ✓ ComponentStack context passed to Sentry
-- ✓ Default fallback uses standard Tailwind red colors (no semantic error-* classes)
+- ✓ Default fallback uses standard Tailwind red colors (no semantic error-\* classes)
 - ✓ Reset mechanism implemented
 
 **Barrel exports:**
+
 - ✓ All schemas exported from index.ts
 - ✓ All validate helpers exported
 - ✓ All inferred types exported
@@ -245,17 +255,20 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 ## Next Steps
 
 **Phase 4 (Service Layer)** will:
+
 1. Import validation schemas from `@/lib/validation`
 2. Wrap AI API responses with `validateMealPlanResponse()` / `validateWorkoutPlanResponse()`
 3. Catch ValidationError and handle appropriately (retry AI generation, log to coach, etc.)
 4. Use validated types for type-safe database operations
 
 **Phase 5 (API Routes)** will:
+
 1. Use validation helpers before saving AI-generated plans to database
 2. Return structured error responses based on ValidationError details
 3. Log validation failures to Sentry for monitoring AI quality
 
 **Phase 8 (Error Handling UX)** will:
+
 1. Wrap route segments with ErrorBoundary component
 2. Implement custom fallback UIs for specific page types
 3. Add error recovery flows (retry, refresh, navigate home)
@@ -264,6 +277,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 ## Self-Check: PASSED
 
 **Created files verified:**
+
 ```
 FOUND: src/lib/validation/meal-plan.ts
 FOUND: src/lib/validation/workout-plan.ts
@@ -272,19 +286,22 @@ FOUND: src/components/errors/ErrorBoundary.tsx
 ```
 
 **Commits verified:**
+
 ```
 FOUND: 20b8cd0 (Task 1: Validation schemas and helpers)
 FOUND: 58463c4 (Task 2: ErrorBoundary component)
 ```
 
 **Schema exports verified:**
+
 - meal-plan.ts: MealPlanSchema, MealSchema, DailyMealPlanSchema, validateMealPlanResponse, cleanAIResponse ✓
 - workout-plan.ts: WorkoutPlanSchema, WorkoutExerciseSchema, etc., validateWorkoutPlanResponse ✓
 - index.ts: re-exports all schemas, types, and helpers ✓
 
 **Implementation details verified:**
+
 - safeParse used exclusively for Zod validation ✓
 - ValidationError imported from @/lib/errors ✓
 - Sentry.captureException in validation helpers ✓
 - Sentry.captureException in ErrorBoundary.componentDidCatch ✓
-- Standard Tailwind red classes (not semantic error-*) ✓
+- Standard Tailwind red classes (not semantic error-\*) ✓

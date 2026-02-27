@@ -37,10 +37,10 @@ function NavItem({
         href={href}
         onClick={onClick}
         className={cn(
-          "flex items-center gap-3 rounded-lg mx-3 px-3 py-3 text-sm font-medium transition-colors min-h-11",
+          "mx-3 flex min-h-11 items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors",
           isActive
             ? "bg-primary/10 text-primary"
-            : "text-stone-400 hover:bg-white/5 hover:text-stone-200"
+            : "text-stone-400 hover:bg-white/5 hover:text-stone-200",
         )}
       >
         <Icon className="h-[18px] w-[18px] shrink-0" />
@@ -105,12 +105,12 @@ export function AdminSidebar({
           "lg:relative lg:z-auto lg:shrink-0",
           isOpen
             ? "translate-x-0"
-            : "-translate-x-full rtl:translate-x-full lg:translate-x-0 lg:rtl:translate-x-0"
+            : "-translate-x-full lg:translate-x-0 rtl:translate-x-full lg:rtl:translate-x-0",
         )}
       >
         {/* Logo area */}
         <div className="flex h-16 items-center justify-between px-5">
-          <div className="flex items-center gap-3 group">
+          <div className="group flex items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/logo.svg"
@@ -118,16 +118,19 @@ export function AdminSidebar({
               className="h-7 w-7 transition-transform duration-300 group-hover:scale-105"
             />
             <div>
-              <span className="text-[15px] font-black italic tracking-tighter uppercase text-white" style={{ fontFamily: "var(--font-display)" }}>
+              <span
+                className="text-[15px] font-black tracking-tighter text-white uppercase italic"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
                 Fit<span className="text-[#FF4500]">Fast</span>
               </span>
-              <p className="text-[10px] font-medium text-stone-500 -mt-0.5">
-                Coach Panel
+              <p className="-mt-0.5 text-[10px] font-medium text-stone-500">
+                {t("admin.coachPanel")}
               </p>
             </div>
           </div>
           <button
-            className="flex h-11 w-11 items-center justify-center rounded-lg text-stone-500 hover:bg-white/5 hover:text-stone-300 transition-colors lg:hidden"
+            className="flex h-11 w-11 items-center justify-center rounded-lg text-stone-500 transition-colors hover:bg-white/5 hover:text-stone-300 lg:hidden"
             onClick={onClose}
           >
             <X className="h-4 w-4" />
@@ -160,9 +163,7 @@ export function AdminSidebar({
 
         {/* Footer */}
         <div className="border-t border-white/5 px-5 py-4">
-          <p className="text-[10px] font-medium text-stone-600">
-            FitFast Coach Panel v1.0
-          </p>
+          <p className="text-[10px] font-medium text-stone-600">{t("admin.coachPanelVersion")}</p>
         </div>
       </aside>
     </>

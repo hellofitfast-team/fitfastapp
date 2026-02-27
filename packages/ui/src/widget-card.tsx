@@ -59,30 +59,24 @@ export function WidgetCard({
     <Comp
       onClick={onClick}
       className={cn(
-        "rounded-xl border border-border bg-card p-4 text-start shadow-card transition-all duration-200",
+        "border-border bg-card shadow-card rounded-xl border p-4 text-start transition-all duration-200",
         "hover:shadow-lifted",
         onClick && "cursor-pointer active:scale-[0.97]",
-        className
+        className,
       )}
     >
       <div className="flex items-start justify-between">
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium text-muted-foreground truncate">
-            {title}
-          </p>
-          {value !== undefined && (
-            <p className="mt-1 text-2xl font-bold tracking-tight">{value}</p>
-          )}
-          {subtitle && (
-            <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>
-          )}
+        <div className="min-w-0 flex-1">
+          <p className="text-muted-foreground truncate text-xs font-medium">{title}</p>
+          {value !== undefined && <p className="mt-1 text-2xl font-bold tracking-tight">{value}</p>}
+          {subtitle && <p className="text-muted-foreground mt-0.5 text-xs">{subtitle}</p>}
           {trend && (
             <p
               className={cn(
                 "mt-1 text-xs font-medium",
                 trend.direction === "up" && "text-success-600",
                 trend.direction === "down" && "text-error-500",
-                trend.direction === "neutral" && "text-muted-foreground"
+                trend.direction === "neutral" && "text-muted-foreground",
               )}
             >
               {trend.direction === "up" && "\u2191 "}
@@ -96,7 +90,7 @@ export function WidgetCard({
             className={cn(
               "ms-3 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl",
               iconStyles.bg,
-              iconStyles.shadow
+              iconStyles.shadow,
             )}
           >
             <Icon className="h-5 w-5 text-white" />

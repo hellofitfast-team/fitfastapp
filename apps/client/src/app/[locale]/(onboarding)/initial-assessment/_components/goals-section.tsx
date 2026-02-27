@@ -50,30 +50,30 @@ export function GoalsSection({
                 disabled={isLoading}
                 onClick={() => setPrimaryGoal(goal.id)}
                 className={cn(
-                  "w-full flex items-center gap-3 rounded-xl border-2 px-4 py-3.5 text-start transition-all",
+                  "flex w-full items-center gap-3 rounded-xl border-2 px-4 py-3.5 text-start transition-all",
                   isSelected
                     ? "border-primary bg-primary/5"
-                    : "border-stone-200 hover:border-stone-300"
+                    : "border-stone-200 hover:border-stone-300",
                 )}
               >
                 <div
                   className={cn(
                     "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all",
-                    isSelected
-                      ? "border-primary bg-primary"
-                      : "border-stone-300"
+                    isSelected ? "border-primary bg-primary" : "border-stone-300",
                   )}
                 >
                   {isSelected && <Check className="h-3 w-3 text-white" />}
                 </div>
                 <div>
-                  <p className={cn(
-                    "text-sm font-semibold uppercase tracking-wide",
-                    isSelected ? "text-primary" : "text-stone-700"
-                  )}>
+                  <p
+                    className={cn(
+                      "text-sm font-semibold tracking-wide uppercase",
+                      isSelected ? "text-primary" : "text-stone-700",
+                    )}
+                  >
                     {t(`primaryGoals.${goal.id}`)}
                   </p>
-                  <p className="text-xs text-stone-400 mt-0.5">
+                  <p className="mt-0.5 text-xs text-stone-400">
                     {t(`primaryGoals.${goal.id}_desc`)}
                   </p>
                 </div>
@@ -102,12 +102,12 @@ export function GoalsSection({
                   disabled={isLoading || isDisabled}
                   onClick={() => handleToggleSecondary(focus.id)}
                   className={cn(
-                    "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-semibold uppercase tracking-wide transition-all",
+                    "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-semibold tracking-wide uppercase transition-all",
                     isSelected
                       ? "border-primary bg-primary/10 text-primary"
                       : isDisabled
-                        ? "border-stone-100 bg-stone-50 text-stone-300 cursor-not-allowed"
-                        : "border-stone-200 text-stone-500 hover:border-stone-300 hover:text-stone-700"
+                        ? "cursor-not-allowed border-stone-100 bg-stone-50 text-stone-300"
+                        : "border-stone-200 text-stone-500 hover:border-stone-300 hover:text-stone-700",
                   )}
                 >
                   {isSelected && <Check className="h-3 w-3" />}

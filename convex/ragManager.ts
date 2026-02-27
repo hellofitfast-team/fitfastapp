@@ -10,15 +10,14 @@ import { components } from "./_generated/api";
  */
 function createRagClient() {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { createOpenRouter } = require("@openrouter/ai-sdk-provider") as typeof import("@openrouter/ai-sdk-provider");
+  const { createOpenRouter } =
+    require("@openrouter/ai-sdk-provider") as typeof import("@openrouter/ai-sdk-provider");
   const openrouter = createOpenRouter({
     apiKey: process.env.OPENROUTER_API_KEY!,
   });
 
   return new RAG<{ tag: string }>(components.rag, {
-    textEmbeddingModel: openrouter.textEmbeddingModel(
-      "openai/text-embedding-3-small",
-    ),
+    textEmbeddingModel: openrouter.textEmbeddingModel("openai/text-embedding-3-small"),
     embeddingDimension: 1536,
     filterNames: ["tag"],
   });

@@ -19,10 +19,10 @@ export function LanguageSwitcher() {
   }
 
   return (
-    <div className="flex items-center gap-1 bg-white/10 rounded-full p-0.5">
+    <div className="flex items-center gap-1 rounded-full bg-white/10 p-0.5">
       <button
         onClick={() => switchLocale("en")}
-        className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+        className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
           locale === "en"
             ? "bg-white text-[var(--color-primary)]"
             : "text-white/80 hover:text-white"
@@ -32,7 +32,7 @@ export function LanguageSwitcher() {
       </button>
       <button
         onClick={() => switchLocale("ar")}
-        className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+        className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
           locale === "ar"
             ? "bg-white text-[var(--color-primary)]"
             : "text-white/80 hover:text-white"

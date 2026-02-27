@@ -51,6 +51,7 @@ completed: 2026-02-23
 - **Files modified:** 3 (+ pnpm-lock.yaml)
 
 ## Accomplishments
+
 - Redesigned circle-based progress indicator to clean segmented horizontal bar with step labels
 - Added swipe left/right navigation between check-in steps with validation on forward swipe
 - RTL support inverts swipe directions automatically when document.dir is "rtl"
@@ -64,11 +65,13 @@ Each task was committed atomically:
 2. **Task 2: Wire swipe gestures with RTL support** - `8f264b1` (feat)
 
 ## Files Created/Modified
+
 - `apps/client/src/app/[locale]/(dashboard)/check-in/_components/step-progress.tsx` - Segmented progress bar with filled/unfilled segments and step labels
 - `apps/client/src/app/[locale]/(dashboard)/check-in/page.tsx` - Swipeable wizard container with RTL-aware direction handling
 - `apps/client/package.json` - Added react-swipeable dependency
 
 ## Decisions Made
+
 - Used single `bg-primary` color for both completed and current segments (simpler than distinguishing with bg-success-500)
 - RTL detection uses `document.dir` at swipe time rather than a React state/context value -- ensures accuracy with next-intl's dir attribute
 - Photos step disables swipe entirely (both directions) rather than just forward swipe -- simpler and avoids edge cases with drag interactions
@@ -78,15 +81,19 @@ Each task was committed atomically:
 None - plan executed exactly as written.
 
 ## Issues Encountered
+
 None
 
 ## User Setup Required
+
 None - no external service configuration required.
 
 ## Next Phase Readiness
+
 - Swipe wizard foundation ready for Phase 14 plans 02 (onboarding) and 03 (additional wizard polish)
 - RTL swipe behavior should be verified during Phase 15 RTL audit
 
 ---
-*Phase: 14-checkin-wizard-onboarding*
-*Completed: 2026-02-23*
+
+_Phase: 14-checkin-wizard-onboarding_
+_Completed: 2026-02-23_

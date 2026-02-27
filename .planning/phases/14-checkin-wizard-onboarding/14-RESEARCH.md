@@ -15,18 +15,20 @@ Key constraint: CSS-only animations (no framer-motion). The project already has 
 **Primary recommendation:** Install `react-swipeable` (~1.5KB), refactor `StepProgress` to segmented bar style, add `useSwipeable` wrapper around the form content in check-in, and restructure the onboarding assessment into a wizard matching the check-in pattern.
 
 <phase_requirements>
+
 ## Phase Requirements
 
-| ID | Description | Research Support |
-|----|-------------|-----------------|
-| CHECK-01 | Check-in form presents steps one at a time with segmented progress bar | StepProgress component already exists — needs visual redesign from circle-numbers to filled segments. Step rendering (`currentStep === N`) already works. |
-| CHECK-02 | Users can swipe left/right between check-in steps on mobile | `react-swipeable` not yet installed. `useSwipeable({ onSwipedLeft, onSwipedRight, preventScrollOnSwipe: true, trackMouse: true })` wraps form content. RTL inversion: swap left/right handlers when `locale === "ar"`. |
-| CHECK-03 | Review screen shows full summary of all entered data before submission | Current `ReviewStep` shows weight, energy, sleep, adherence, photos count. Missing: measurements (chest/waist/hips/arms/thighs), workout performance text, diet notes, injuries text. Needs expansion. |
-| CHECK-04 | Smart defaults: pre-fill weight from last check-in | `api.checkIns.getLatestCheckIn` query exists and returns last check-in with `weight` field. Hook `useCheckInLock` shows the query pattern. Add a `useLastCheckIn` hook, pass `weight` as `defaultValues` to `useForm`. |
-| CHECK-05 | Steps: Weight, Measurements, Photos, Notes, Review (5 steps match current plan) | Current steps match: Weight+Measurements (step 1), Fitness (step 2), Dietary (step 3), Photos (step 4), Review (step 5). The requirement names differ slightly — "Notes" covers both fitness/dietary notes. Steps 2+3 may need merging or renaming. Roadmap says Weight/Measurements/Photos/Notes/Review. |
-| ONBOARD-01 | Onboarding shows one question per screen | Current onboarding renders all 5 sections simultaneously in one scroll. Needs complete restructuring into a step wizard matching the check-in pattern. |
-| ONBOARD-02 | Large inputs and smooth back/next transitions | Current inputs are standard size. "Large" means prominent, full-width, thumb-friendly. Transitions use CSS `animate-slide-up` / `animate-slide-down` on step change. |
-| ONBOARD-03 | Smooth back/next transitions | CSS keyframe transitions between steps. `key` prop on step container triggers React re-mount and animation replay. No framer-motion. |
+| ID         | Description                                                                     | Research Support                                                                                                                                                                                                                                                                                          |
+| ---------- | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CHECK-01   | Check-in form presents steps one at a time with segmented progress bar          | StepProgress component already exists — needs visual redesign from circle-numbers to filled segments. Step rendering (`currentStep === N`) already works.                                                                                                                                                 |
+| CHECK-02   | Users can swipe left/right between check-in steps on mobile                     | `react-swipeable` not yet installed. `useSwipeable({ onSwipedLeft, onSwipedRight, preventScrollOnSwipe: true, trackMouse: true })` wraps form content. RTL inversion: swap left/right handlers when `locale === "ar"`.                                                                                    |
+| CHECK-03   | Review screen shows full summary of all entered data before submission          | Current `ReviewStep` shows weight, energy, sleep, adherence, photos count. Missing: measurements (chest/waist/hips/arms/thighs), workout performance text, diet notes, injuries text. Needs expansion.                                                                                                    |
+| CHECK-04   | Smart defaults: pre-fill weight from last check-in                              | `api.checkIns.getLatestCheckIn` query exists and returns last check-in with `weight` field. Hook `useCheckInLock` shows the query pattern. Add a `useLastCheckIn` hook, pass `weight` as `defaultValues` to `useForm`.                                                                                    |
+| CHECK-05   | Steps: Weight, Measurements, Photos, Notes, Review (5 steps match current plan) | Current steps match: Weight+Measurements (step 1), Fitness (step 2), Dietary (step 3), Photos (step 4), Review (step 5). The requirement names differ slightly — "Notes" covers both fitness/dietary notes. Steps 2+3 may need merging or renaming. Roadmap says Weight/Measurements/Photos/Notes/Review. |
+| ONBOARD-01 | Onboarding shows one question per screen                                        | Current onboarding renders all 5 sections simultaneously in one scroll. Needs complete restructuring into a step wizard matching the check-in pattern.                                                                                                                                                    |
+| ONBOARD-02 | Large inputs and smooth back/next transitions                                   | Current inputs are standard size. "Large" means prominent, full-width, thumb-friendly. Transitions use CSS `animate-slide-up` / `animate-slide-down` on step change.                                                                                                                                      |
+| ONBOARD-03 | Smooth back/next transitions                                                    | CSS keyframe transitions between steps. `key` prop on step container triggers React re-mount and animation replay. No framer-motion.                                                                                                                                                                      |
+
 </phase_requirements>
 
 ## Existing Code State
@@ -36,6 +38,7 @@ Key constraint: CSS-only animations (no framer-motion). The project already has 
 **File:** `apps/client/src/app/[locale]/(dashboard)/check-in/page.tsx` (276 lines)
 
 Current step structure:
+
 - Step 1: Weight + Measurements (`WeightStep`)
 - Step 2: Fitness Metrics — workout performance text, energy/sleep ratings (`FitnessStep`)
 - Step 3: Dietary — adherence rating, diet notes, injuries (`DietaryStep`)
@@ -43,6 +46,7 @@ Current step structure:
 - Step 5: Review + Notes textarea (`ReviewStep`)
 
 Already implemented:
+
 - `useState(currentStep)` step tracking
 - `handleNext` with per-step field validation via `methods.trigger(fields)`
 - `handleBack` simple decrement
@@ -51,12 +55,14 @@ Already implemented:
 - `CheckInLocked` guard showing lock state
 
 What is NOT yet implemented:
+
 - Swipe gesture handling
 - Segmented bar progress style
 - Full data summary in ReviewStep (missing measurements/notes)
 - Smart default weight from last check-in
 
 **Current `StepProgress` pattern** (circle-number style, needs redesign):
+
 ```tsx
 // apps/client/src/app/[locale]/(dashboard)/check-in/_components/step-progress.tsx
 // Currently: circle with step number → check icon for completed
@@ -64,6 +70,7 @@ What is NOT yet implemented:
 ```
 
 **Current `ReviewStep`** — only shows 5 fields, missing measurements and text fields:
+
 ```tsx
 // Shows: weight, energyLevel, sleepQuality, dietaryAdherence, photos count
 // Missing: chest/waist/hips/arms/thighs, workoutPerformance, dietNotes, newInjuries
@@ -74,6 +81,7 @@ What is NOT yet implemented:
 **File:** `apps/client/src/app/[locale]/(onboarding)/initial-assessment/page.tsx` (244 lines)
 
 Currently renders all sections at once:
+
 - `GoalsSection` — multi-select fitness goals
 - `BasicInfoSection` — weight, height, experience level, equipment
 - `ScheduleSection` — workout days of the week
@@ -83,6 +91,7 @@ Currently renders all sections at once:
 No wizard logic. All form state is `useState` (not `useForm`). Single submit button at bottom.
 
 What needs to change:
+
 - Add `currentStep` state (steps 1-5 or 1-6 depending on breakdown)
 - Render only the current section's content
 - Add `StepProgress` bar (same component as check-in, or shared)
@@ -93,22 +102,26 @@ What needs to change:
 ## Standard Stack
 
 ### Core
-| Library | Version | Purpose | Why Standard |
-|---------|---------|---------|--------------|
-| react-swipeable | ^7.0.2 | Touch/mouse swipe gesture hook | 1.5KB, hook-based, zero DOM dependencies, already chosen in STATE.md |
-| react-hook-form | ^7.71.1 | Form state management | Already in use in check-in form |
-| next-intl | ^4.8.2 | Locale detection for RTL swipe inversion | Already in use |
-| TailwindCSS v4 | ^4.1.18 | Utility classes including animation utilities | Already in use |
+
+| Library         | Version | Purpose                                       | Why Standard                                                         |
+| --------------- | ------- | --------------------------------------------- | -------------------------------------------------------------------- |
+| react-swipeable | ^7.0.2  | Touch/mouse swipe gesture hook                | 1.5KB, hook-based, zero DOM dependencies, already chosen in STATE.md |
+| react-hook-form | ^7.71.1 | Form state management                         | Already in use in check-in form                                      |
+| next-intl       | ^4.8.2  | Locale detection for RTL swipe inversion      | Already in use                                                       |
+| TailwindCSS v4  | ^4.1.18 | Utility classes including animation utilities | Already in use                                                       |
 
 ### No New Dependencies (for onboarding wizard)
+
 The onboarding currently uses plain `useState` for form state. It stays that way — no need to migrate to `react-hook-form` just for the wizard conversion. The step structure and navigation can be layered on top of existing state.
 
 **Installation (one new package):**
+
 ```bash
 pnpm --filter @fitfast/client add react-swipeable
 ```
 
 ### react-swipeable API (v7.0.2)
+
 ```typescript
 import { useSwipeable } from 'react-swipeable';
 
@@ -124,6 +137,7 @@ return <div {...handlers}> ... </div>;
 ```
 
 For RTL (Arabic), swap handlers:
+
 ```typescript
 const isRTL = locale === "ar";
 const handlers = useSwipeable({
@@ -175,7 +189,7 @@ Replace circle-number progress with horizontal filled-segment bar. This is the "
 ```tsx
 // Replacement for step-progress.tsx
 interface StepProgressProps {
-  currentStep: number;  // 1-indexed
+  currentStep: number; // 1-indexed
   totalSteps: number;
 }
 
@@ -237,8 +251,8 @@ Use `key` prop to trigger remount and animation on step change. This is the CSS-
 ```tsx
 // Wrap each step's content with animated container
 <div
-  key={currentStep}  // forces remount when step changes
-  className="animate-slide-up"  // defined in globals.css
+  key={currentStep} // forces remount when step changes
+  className="animate-slide-up" // defined in globals.css
 >
   {currentStep === 1 && <WeightStep />}
   {/* ... */}
@@ -246,6 +260,7 @@ Use `key` prop to trigger remount and animation on step change. This is the CSS-
 ```
 
 The existing animation classes in `globals.css`:
+
 - `animate-fade-in` — opacity 0→1, 200ms
 - `animate-slide-up` — opacity 0→1 + translateY 20px→0, 300ms
 - `animate-scale-in` — opacity 0→1 + scale 0.95→1, 200ms
@@ -263,10 +278,7 @@ import { api } from "@/convex/_generated/api";
 
 export function useLastCheckIn() {
   const { isAuthenticated } = useConvexAuth();
-  const lastCheckIn = useQuery(
-    api.checkIns.getLatestCheckIn,
-    isAuthenticated ? {} : "skip",
-  );
+  const lastCheckIn = useQuery(api.checkIns.getLatestCheckIn, isAuthenticated ? {} : "skip");
   return {
     lastCheckIn: lastCheckIn ?? null,
     isLoading: isAuthenticated && lastCheckIn === undefined,
@@ -275,6 +287,7 @@ export function useLastCheckIn() {
 ```
 
 In `page.tsx`, use the hook before `useForm` initialization:
+
 ```typescript
 const { lastCheckIn } = useLastCheckIn();
 
@@ -325,6 +338,7 @@ const ONBOARDING_STEPS = [
 ```
 
 Per-step validation for onboarding (not using react-hook-form):
+
 ```typescript
 const validateOnboardingStep = (step: number): string | null => {
   switch (step) {
@@ -340,9 +354,12 @@ const validateOnboardingStep = (step: number): string | null => {
     case 3:
       if (selectedDays.length === 0) return tErrors("workoutDaysRequired");
       return null;
-    case 4: return null;  // dietary is optional
-    case 5: return null;  // medical is optional
-    default: return null;
+    case 4:
+      return null; // dietary is optional
+    case 5:
+      return null; // medical is optional
+    default:
+      return null;
   }
 };
 ```
@@ -357,51 +374,63 @@ const validateOnboardingStep = (step: number): string | null => {
 
 ## Don't Hand-Roll
 
-| Problem | Don't Build | Use Instead | Why |
-|---------|-------------|-------------|-----|
-| Swipe gesture detection | Custom `touchstart`/`touchmove`/`touchend` handlers | `react-swipeable` `useSwipeable` | Handles velocity detection, threshold, diagonal swipe rejection, iOS scroll conflicts |
-| Step transition animation | CSS `transition` on `left`/`transform` with absolute positioning | CSS `@keyframes` with `key`-triggered remount | Simpler, no position tracking needed, consistent with project's animation system |
-| Form validation per step | Custom validation function | `react-hook-form`'s `methods.trigger(fields)` | Already used in check-in — triggers only the fields for the current step, preserves all other field state |
-| Progress bar fill calculation | `width: ${(currentStep/totalSteps)*100}%` | Flex-based segments | RTL-safe (flex works correctly in RTL), no width calculation needed |
+| Problem                       | Don't Build                                                      | Use Instead                                   | Why                                                                                                       |
+| ----------------------------- | ---------------------------------------------------------------- | --------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Swipe gesture detection       | Custom `touchstart`/`touchmove`/`touchend` handlers              | `react-swipeable` `useSwipeable`              | Handles velocity detection, threshold, diagonal swipe rejection, iOS scroll conflicts                     |
+| Step transition animation     | CSS `transition` on `left`/`transform` with absolute positioning | CSS `@keyframes` with `key`-triggered remount | Simpler, no position tracking needed, consistent with project's animation system                          |
+| Form validation per step      | Custom validation function                                       | `react-hook-form`'s `methods.trigger(fields)` | Already used in check-in — triggers only the fields for the current step, preserves all other field state |
+| Progress bar fill calculation | `width: ${(currentStep/totalSteps)*100}%`                        | Flex-based segments                           | RTL-safe (flex works correctly in RTL), no width calculation needed                                       |
 
 **Key insight:** The wizard infrastructure (step state, navigation, validation) already exists in the check-in form. Phase 14 adds swipe and redesigns the progress bar visual — it is not building a wizard from scratch.
 
 ## Common Pitfalls
 
 ### Pitfall 1: preventScrollOnSwipe Blocking Input Fields
+
 **What goes wrong:** `preventScrollOnSwipe: true` on a container that wraps number inputs prevents the user from scrolling within number input spinners (or worse, conflicts with iOS scroll-to-zoom behavior on inputs).
 **Why it happens:** `preventScrollOnSwipe` calls `preventDefault()` on `touchmove`, which iOS interprets broadly.
 **How to avoid:** Apply swipe handlers to the step-content container, not to individual input wrappers. The step content already has natural height from its inputs, so scroll within the step is not needed. If a step has very tall content, wrap only the non-scrolling area (e.g., the step header and first field).
 **Warning signs:** User cannot interact with number inputs on step 1 (weight).
 
 ### Pitfall 2: react-hook-form `reset()` Timing
+
 **What goes wrong:** Calling `methods.reset({ weight: lastCheckIn.weight })` inside `useEffect` on the wrong dependency causes infinite re-renders or missed updates.
 **Why it happens:** If `methods.reset` is in the dependency array (it changes identity on each render), the effect fires every render.
 **How to avoid:** Depend only on `lastCheckIn?.weight` (a primitive), not on `methods.reset`:
+
 ```typescript
 useEffect(() => {
   if (lastCheckIn?.weight) {
-    methods.reset({ weight: lastCheckIn.weight, energyLevel: 5, sleepQuality: 5, dietaryAdherence: 5 });
+    methods.reset({
+      weight: lastCheckIn.weight,
+      energyLevel: 5,
+      sleepQuality: 5,
+      dietaryAdherence: 5,
+    });
   }
-}, [lastCheckIn?.weight]);  // NOT [methods, lastCheckIn]
+}, [lastCheckIn?.weight]); // NOT [methods, lastCheckIn]
 ```
 
 ### Pitfall 3: Swipe Conflicts with Scroll on Long Steps
+
 **What goes wrong:** Steps with tall content (e.g., Fitness step with textarea + two rating selectors) require vertical scrolling. If `preventScrollOnSwipe: true`, the user cannot scroll down within the step.
 **Why it happens:** `react-swipeable` v7 with `preventScrollOnSwipe: true` blocks all touchmove while a swipe is being evaluated.
 **How to avoid:** Set swipe delta high enough (e.g., `delta: 50`) so a slow/short horizontal movement is not captured. The default delta is 10px — increase to 50px for form contexts where accidental swipes are common. The user must intentionally swipe to navigate.
 **Warning signs:** Tap-and-drag on textarea causes accidental step skip.
 
 ### Pitfall 4: RTL Direction for Segmented Progress Bar
+
 **What goes wrong:** The segmented bar fills from left-to-right. In RTL, it should fill from right-to-left to feel natural.
 **Why it happens:** The flex container with `flex-row` fills left-to-right in LTR by default.
 **How to avoid:** Tailwind's RTL support handles this automatically — `flex-row` in a `dir="rtl"` container reverses to fill right-to-left. No special RTL handling needed for the bar itself.
 **Warning signs:** In Arabic mode, the progress bar fills from left side instead of right side.
 
 ### Pitfall 5: Onboarding Validation Error Display
+
 **What goes wrong:** The onboarding form uses `setError(string)` at the top level. When converting to a wizard, validation errors for step N are displayed at the top of the next step, not the current step.
 **Why it happens:** `setError` persists across `setCurrentStep` calls.
 **How to avoid:** Clear the error state when advancing to the next step:
+
 ```typescript
 const handleOnboardingNext = () => {
   const validationError = validateOnboardingStep(currentStep);
@@ -409,12 +438,13 @@ const handleOnboardingNext = () => {
     setError(validationError);
     return;
   }
-  setError(null);  // clear before advancing
-  setCurrentStep(s => s + 1);
+  setError(null); // clear before advancing
+  setCurrentStep((s) => s + 1);
 };
 ```
 
 ### Pitfall 6: Step Count Mismatch Between Check-in Steps
+
 **What goes wrong:** The ROADMAP says steps are "Weight, Measurements, Photos, Notes, Review" (5 steps). The current code combines Weight+Measurements in step 1, and splits Fitness/Dietary into steps 2 and 3 (making 5 total). If step 1 is renamed to just "Weight" but measurements are removed, measurement data is lost.
 **Why it happens:** The ROADMAP step names are user-facing labels, not a prescription to split/merge steps.
 **How to avoid:** Keep the current step structure (Weight+Measurements in step 1 is correct). Just update the step name translation key from "Weight & Measurements" to match design intent. The segmented bar does not show labels anyway (only filled/unfilled segments), so this is purely a label issue.
@@ -424,6 +454,7 @@ const handleOnboardingNext = () => {
 Verified from codebase:
 
 ### Current Check-in Page Structure (before Phase 14 changes)
+
 ```tsx
 // Source: apps/client/src/app/[locale]/(dashboard)/check-in/page.tsx
 const [currentStep, setCurrentStep] = useState(1);
@@ -436,21 +467,31 @@ const methods = useForm<CheckInFormData>({
 ```
 
 ### Existing Animation Classes (already in globals.css)
+
 ```css
 /* Source: apps/client/src/app/globals.css */
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .animate-slide-up {
   animation: slideUp 0.3s ease-out;
 }
 @media (prefers-reduced-motion: reduce) {
-  .animate-slide-up { animation: none; }
+  .animate-slide-up {
+    animation: none;
+  }
 }
 ```
 
 ### RTL Detection Pattern (from codebase)
+
 ```tsx
 // Source: apps/client/src/app/[locale]/layout.tsx
 const dir = locale === "ar" ? "rtl" : "ltr";
@@ -461,6 +502,7 @@ const locale = useLocale();
 ```
 
 ### Existing Convex Query: Latest Check-in
+
 ```typescript
 // Source: convex/checkIns.ts
 export const getLatestCheckIn = query({
@@ -479,14 +521,12 @@ export const getLatestCheckIn = query({
 ```
 
 ### Existing Hook Pattern (model for use-last-check-in.ts)
+
 ```typescript
 // Source: apps/client/src/hooks/use-check-in-lock.ts
 export function useCheckInLock() {
   const { isAuthenticated } = useConvexAuth();
-  const lockStatus = useQuery(
-    api.checkIns.getLockStatus,
-    isAuthenticated ? {} : "skip",
-  );
+  const lockStatus = useQuery(api.checkIns.getLockStatus, isAuthenticated ? {} : "skip");
   return {
     isLocked: lockStatus?.isLocked ?? false,
     // ...
@@ -495,26 +535,44 @@ export function useCheckInLock() {
 ```
 
 ### Full ReviewStep Expansion (what CHECK-03 requires)
+
 ```tsx
 // Current ReviewStep only shows 5 fields
 // Expanded version needs:
-{[
-  { label: t("weight"), value: `${watch("weight")} ${tUnits("kg")}` },
-  { label: t("chest"), value: watch("chest") ? `${watch("chest")} ${tUnits("cm")}` : t("notEntered") },
-  { label: t("waist"), value: watch("waist") ? `${watch("waist")} ${tUnits("cm")}` : t("notEntered") },
-  { label: t("hips"), value: watch("hips") ? `${watch("hips")} ${tUnits("cm")}` : t("notEntered") },
-  { label: t("arms"), value: watch("arms") ? `${watch("arms")} ${tUnits("cm")}` : t("notEntered") },
-  { label: t("thighs"), value: watch("thighs") ? `${watch("thighs")} ${tUnits("cm")}` : t("notEntered") },
-  { label: t("energy"), value: `${watch("energyLevel")}/10` },
-  { label: t("sleep"), value: `${watch("sleepQuality")}/10` },
-  { label: t("adherence"), value: `${watch("dietaryAdherence")}/10` },
-  { label: t("photos"), value: `${uploadedPhotosCount} ${t("uploaded")}` },
-].map(item => (
-  <div key={item.label} className="flex justify-between p-4">
-    <span className="text-sm text-muted-foreground">{item.label}</span>
-    <span className="font-semibold text-sm">{item.value}</span>
-  </div>
-))}
+{
+  [
+    { label: t("weight"), value: `${watch("weight")} ${tUnits("kg")}` },
+    {
+      label: t("chest"),
+      value: watch("chest") ? `${watch("chest")} ${tUnits("cm")}` : t("notEntered"),
+    },
+    {
+      label: t("waist"),
+      value: watch("waist") ? `${watch("waist")} ${tUnits("cm")}` : t("notEntered"),
+    },
+    {
+      label: t("hips"),
+      value: watch("hips") ? `${watch("hips")} ${tUnits("cm")}` : t("notEntered"),
+    },
+    {
+      label: t("arms"),
+      value: watch("arms") ? `${watch("arms")} ${tUnits("cm")}` : t("notEntered"),
+    },
+    {
+      label: t("thighs"),
+      value: watch("thighs") ? `${watch("thighs")} ${tUnits("cm")}` : t("notEntered"),
+    },
+    { label: t("energy"), value: `${watch("energyLevel")}/10` },
+    { label: t("sleep"), value: `${watch("sleepQuality")}/10` },
+    { label: t("adherence"), value: `${watch("dietaryAdherence")}/10` },
+    { label: t("photos"), value: `${uploadedPhotosCount} ${t("uploaded")}` },
+  ].map((item) => (
+    <div key={item.label} className="flex justify-between p-4">
+      <span className="text-muted-foreground text-sm">{item.label}</span>
+      <span className="text-sm font-semibold">{item.value}</span>
+    </div>
+  ));
+}
 // Also show workout performance, diet notes, injuries as text blocks if filled
 ```
 
@@ -522,15 +580,16 @@ export function useCheckInLock() {
 
 The onboarding has 5 natural sections that map to 5 wizard steps:
 
-| Step | Section | Key Fields | Optional? |
-|------|---------|-----------|-----------|
-| 1 | Goals | Fitness goal selection | No — required |
-| 2 | Basic Info | Weight, height, experience level, equipment | No — required |
-| 3 | Schedule | Workout days of week | No — required |
-| 4 | Dietary | Food prefs, allergies, restrictions | Yes — optional |
-| 5 | Medical | Medical conditions / injuries notes | Yes — optional |
+| Step | Section    | Key Fields                                  | Optional?      |
+| ---- | ---------- | ------------------------------------------- | -------------- |
+| 1    | Goals      | Fitness goal selection                      | No — required  |
+| 2    | Basic Info | Weight, height, experience level, equipment | No — required  |
+| 3    | Schedule   | Workout days of week                        | No — required  |
+| 4    | Dietary    | Food prefs, allergies, restrictions         | Yes — optional |
+| 5    | Medical    | Medical conditions / injuries notes         | Yes — optional |
 
 Translation keys needed (add to `en.json` and `ar.json` under `onboarding.assessment`):
+
 ```json
 "steps": {
   "goals": "Fitness Goals",
@@ -543,13 +602,13 @@ Translation keys needed (add to `en.json` and `ar.json` under `onboarding.assess
 
 ## State of the Art
 
-| Old Approach | Current Approach | When Changed | Impact |
-|--------------|------------------|--------------|--------|
-| Long scroll form (onboarding) | Per-screen wizard | Phase 14 | 40% lower abandonment rate for stepped forms |
-| Circle-number step progress | Segmented bar progress | Phase 14 | Cleaner visual, more modern (matches iOS/Android style) |
-| Button-only wizard navigation | Button + swipe navigation | Phase 14 | Native mobile feel, expected by PWA users |
-| Static weight default (5) | Pre-filled from last check-in | Phase 14 | Reduces friction on repeat check-ins |
-| Summary without all fields | Full data summary in review | Phase 14 | User confidence before triggering AI plan gen |
+| Old Approach                  | Current Approach              | When Changed | Impact                                                  |
+| ----------------------------- | ----------------------------- | ------------ | ------------------------------------------------------- |
+| Long scroll form (onboarding) | Per-screen wizard             | Phase 14     | 40% lower abandonment rate for stepped forms            |
+| Circle-number step progress   | Segmented bar progress        | Phase 14     | Cleaner visual, more modern (matches iOS/Android style) |
+| Button-only wizard navigation | Button + swipe navigation     | Phase 14     | Native mobile feel, expected by PWA users               |
+| Static weight default (5)     | Pre-filled from last check-in | Phase 14     | Reduces friction on repeat check-ins                    |
+| Summary without all fields    | Full data summary in review   | Phase 14     | User confidence before triggering AI plan gen           |
 
 ## Open Questions
 
@@ -571,6 +630,7 @@ Translation keys needed (add to `en.json` and `ar.json` under `onboarding.assess
 ## Sources
 
 ### Primary (HIGH confidence)
+
 - `apps/client/src/app/[locale]/(dashboard)/check-in/page.tsx` — Direct code reading, complete wizard implementation
 - `apps/client/src/app/[locale]/(dashboard)/check-in/_components/*.tsx` — All 5 step components read
 - `apps/client/src/app/[locale]/(onboarding)/initial-assessment/page.tsx` — Direct code reading, current single-form structure
@@ -581,17 +641,20 @@ Translation keys needed (add to `en.json` and `ar.json` under `onboarding.assess
 - `apps/client/package.json` — react-swipeable not yet installed, confirmed absent
 
 ### Secondary (MEDIUM confidence)
+
 - react-swipeable v7.0.2 API — Verified via official docs and GitHub carousel example: `onSwipedLeft`, `onSwipedRight`, `preventScrollOnSwipe`, `trackMouse`, `swipeDuration` options confirmed
 - `.planning/research/v1.1/FEATURES.md` — RTL swipe inversion pattern and wizard UX research (Section 4: Check-in UX, Section 8: RTL)
 - `.planning/phases/12-design-tokens-primitives/12-RESEARCH.md` — Animation utilities confirmed as CSS-only pattern
 - `.planning/phases/13-page-level-renovation/13-RESEARCH.md` — Design system component availability confirmed
 
 ### Tertiary (LOW confidence)
+
 - none
 
 ## Metadata
 
 **Confidence breakdown:**
+
 - Standard stack: HIGH — react-swipeable already decided in STATE.md, all other libraries confirmed in use
 - Architecture: HIGH — existing code read directly, step structure confirmed
 - Pitfalls: HIGH — based on react-swipeable known issues (preventScrollOnSwipe) and react-hook-form reset() behavior from direct codebase knowledge

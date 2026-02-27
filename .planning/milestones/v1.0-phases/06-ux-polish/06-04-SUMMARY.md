@@ -123,12 +123,14 @@ None - form validation works client-side with existing dependencies.
 - Validation patterns established for future form implementations
 
 ---
-*Phase: 06-ux-polish*
-*Completed: 2026-02-13*
+
+_Phase: 06-ux-polish_
+_Completed: 2026-02-13_
 
 ## Self-Check: PASSED
 
 Verified all files and commits exist:
+
 - FOUND: tickets/page.tsx
 - FOUND: settings/page.tsx
 - FOUND: 35257e3 (Task 1 commit)

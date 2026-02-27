@@ -33,24 +33,24 @@ export function RenewalCheckout() {
   // If user already has a pending renewal, show that state
   if (pendingRenewal) {
     return (
-      <div className="rounded-xl border border-border bg-card p-6 text-center">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-          <Check className="h-6 w-6 text-primary" />
+      <div className="border-border bg-card rounded-xl border p-6 text-center">
+        <div className="bg-primary/10 mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full">
+          <Check className="text-primary h-6 w-6" />
         </div>
-        <h3 className="text-lg font-semibold mb-2">{t("pendingTitle")}</h3>
-        <p className="text-sm text-muted-foreground">{t("alreadyPending")}</p>
+        <h3 className="mb-2 text-lg font-semibold">{t("pendingTitle")}</h3>
+        <p className="text-muted-foreground text-sm">{t("alreadyPending")}</p>
       </div>
     );
   }
 
   if (submitted) {
     return (
-      <div className="rounded-xl border border-border bg-card p-6 text-center">
+      <div className="border-border bg-card rounded-xl border p-6 text-center">
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
           <Check className="h-6 w-6 text-green-600" />
         </div>
-        <h3 className="text-lg font-semibold mb-2">{t("pendingTitle")}</h3>
-        <p className="text-sm text-muted-foreground">{t("pendingMessage")}</p>
+        <h3 className="mb-2 text-lg font-semibold">{t("pendingTitle")}</h3>
+        <p className="text-muted-foreground text-sm">{t("pendingMessage")}</p>
       </div>
     );
   }
@@ -108,9 +108,7 @@ export function RenewalCheckout() {
       {/* Plan Selection */}
       {plans !== undefined && (
         <div>
-          <h3 className="text-sm font-semibold text-muted-foreground mb-3">
-            {t("selectPlan")}
-          </h3>
+          <h3 className="text-muted-foreground mb-3 text-sm font-semibold">{t("selectPlan")}</h3>
           <div className="grid gap-3">
             {(plans ?? []).map((plan) => {
               const isSelected = selectedPlan === plan.id;
@@ -120,36 +118,38 @@ export function RenewalCheckout() {
                   onClick={() => {
                     setSelectedPlan(plan.id);
                     setSelectedTier(
-                      plan.duration.toLowerCase().includes("quarter") || plan.duration.toLowerCase().includes("3")
+                      plan.duration.toLowerCase().includes("quarter") ||
+                        plan.duration.toLowerCase().includes("3")
                         ? "quarterly"
-                        : "monthly"
+                        : "monthly",
                     );
                   }}
                   className={cn(
                     "relative flex flex-col rounded-xl border-2 p-4 text-start transition-all",
                     isSelected
                       ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/40"
+                      : "border-border hover:border-primary/40",
                   )}
                 >
                   {(plan.badge || plan.badgeAr) && (
-                    <span className="absolute top-2 end-2 rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-bold text-white">
+                    <span className="bg-primary absolute end-2 top-2 rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white">
                       {isAr ? plan.badgeAr || plan.badge : plan.badge}
                     </span>
                   )}
-                  <span className="text-base font-bold">
-                    {isAr ? plan.nameAr : plan.name}
-                  </span>
-                  <span className="text-lg font-bold text-primary mt-1">
+                  <span className="text-base font-bold">{isAr ? plan.nameAr : plan.name}</span>
+                  <span className="text-primary mt-1 text-lg font-bold">
                     {plan.price} {plan.currency}
-                    <span className="text-xs font-normal text-muted-foreground ms-1">
+                    <span className="text-muted-foreground ms-1 text-xs font-normal">
                       / {isAr ? plan.durationAr : plan.duration}
                     </span>
                   </span>
                   <ul className="mt-2 space-y-1">
                     {(isAr ? plan.featuresAr : plan.features).map((f, i) => (
-                      <li key={i} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <Check className="h-3 w-3 text-primary shrink-0" />
+                      <li
+                        key={i}
+                        className="text-muted-foreground flex items-center gap-1.5 text-xs"
+                      >
+                        <Check className="text-primary h-3 w-3 shrink-0" />
                         {f}
                       </li>
                     ))}
@@ -164,24 +164,19 @@ export function RenewalCheckout() {
       {/* Payment Methods */}
       {paymentMethods !== undefined && (paymentMethods ?? []).length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+          <h3 className="text-muted-foreground mb-3 flex items-center gap-2 text-sm font-semibold">
             <CreditCard className="h-4 w-4" />
             {t("paymentMethod")}
           </h3>
           <div className="space-y-2">
             {(paymentMethods ?? []).map((pm, i) => (
-              <div
-                key={i}
-                className="rounded-lg border border-border bg-card/50 p-3"
-              >
+              <div key={i} className="border-border bg-card/50 rounded-lg border p-3">
                 <p className="text-sm font-semibold">{pm.type}</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   {pm.accountName} — {pm.accountNumber}
                 </p>
                 {pm.instructions && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {pm.instructions}
-                  </p>
+                  <p className="text-muted-foreground mt-1 text-xs">{pm.instructions}</p>
                 )}
               </div>
             ))}
@@ -191,7 +186,7 @@ export function RenewalCheckout() {
 
       {/* Screenshot Upload */}
       <div>
-        <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+        <h3 className="text-muted-foreground mb-3 flex items-center gap-2 text-sm font-semibold">
           <ImageIcon className="h-4 w-4" />
           {t("uploadScreenshot")}
         </h3>
@@ -206,15 +201,15 @@ export function RenewalCheckout() {
           onClick={() => fileRef.current?.click()}
           disabled={uploading}
           className={cn(
-            "flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border p-4 text-sm text-muted-foreground transition-colors hover:border-primary/40",
-            screenshotId && "border-primary/30 bg-primary/5"
+            "border-border text-muted-foreground hover:border-primary/40 flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed p-4 text-sm transition-colors",
+            screenshotId && "border-primary/30 bg-primary/5",
           )}
         >
           {uploading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : screenshotId ? (
             <>
-              <Check className="h-4 w-4 text-primary" />
+              <Check className="text-primary h-4 w-4" />
               <span className="text-primary font-medium">{screenshotName}</span>
             </>
           ) : (
@@ -227,9 +222,7 @@ export function RenewalCheckout() {
       </div>
 
       {/* Error */}
-      {error && (
-        <p className="text-sm text-red-500 text-center">{error}</p>
-      )}
+      {error && <p className="text-center text-sm text-red-500">{error}</p>}
 
       {/* Submit */}
       <Button
@@ -240,7 +233,7 @@ export function RenewalCheckout() {
       >
         {submitting ? (
           <>
-            <Loader2 className="h-4 w-4 animate-spin me-2" />
+            <Loader2 className="me-2 h-4 w-4 animate-spin" />
             {t("submitting")}
           </>
         ) : (

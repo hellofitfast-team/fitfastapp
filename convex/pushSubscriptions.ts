@@ -76,6 +76,7 @@ export const deactivateSubscription = mutation({
       .unique();
 
     if (existing) {
+      if (existing.userId !== userId) throw new Error("Not authorized");
       await ctx.db.patch(existing._id, {
         isActive: false,
         updatedAt: Date.now(),

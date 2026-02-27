@@ -6,33 +6,38 @@ import { Lock, Calendar } from "lucide-react";
 interface CheckInLockedProps {
   nextCheckInDate: Date;
   daysUntilNextCheckIn: number;
+  frequencyDays?: number;
 }
 
-export function CheckInLocked({ nextCheckInDate, daysUntilNextCheckIn }: CheckInLockedProps) {
+export function CheckInLocked({
+  nextCheckInDate,
+  daysUntilNextCheckIn,
+  frequencyDays = 14,
+}: CheckInLockedProps) {
   const t = useTranslations("checkIn");
   const locale = useLocale();
 
   return (
-    <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
-      <div className="flex items-center gap-3 p-4 border-b border-border bg-primary/5">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-          <Lock className="h-4 w-4 text-primary" />
+    <div className="border-border bg-card shadow-card overflow-hidden rounded-xl border">
+      <div className="border-border bg-primary/5 flex items-center gap-3 border-b p-4">
+        <div className="bg-primary/10 flex h-9 w-9 items-center justify-center rounded-lg">
+          <Lock className="text-primary h-4 w-4" />
         </div>
-        <h2 className="font-semibold text-sm">
+        <h2 className="text-sm font-semibold">
           {t("checkInLocked", { default: "Check-In Locked" })}
         </h2>
       </div>
       <div className="p-8 text-center">
-        <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 mb-5">
-          <Calendar className="h-8 w-8 text-primary" />
+        <div className="bg-primary/10 mb-5 inline-flex h-16 w-16 items-center justify-center rounded-full">
+          <Calendar className="text-primary h-8 w-8" />
         </div>
-        <h3 className="font-bold text-lg">
+        <h3 className="text-lg font-bold">
           {t("nextCheckInAvailable", { default: "Next Check-In Available" })}
         </h3>
-        <p className="mt-3 text-4xl font-bold text-primary">
+        <p className="text-primary mt-3 text-4xl font-bold">
           {daysUntilNextCheckIn} {t("days", { default: "days" })}
         </p>
-        <p className="mt-3 text-sm text-muted-foreground">
+        <p className="text-muted-foreground mt-3 text-sm">
           {nextCheckInDate.toLocaleDateString(locale === "ar" ? "ar-u-nu-latn" : "en-US", {
             weekday: "long",
             year: "numeric",
@@ -40,9 +45,9 @@ export function CheckInLocked({ nextCheckInDate, daysUntilNextCheckIn }: CheckIn
             day: "numeric",
           })}
         </p>
-        <div className="mt-6 p-4 rounded-lg border border-dashed border-border bg-neutral-50">
-          <p className="text-sm text-muted-foreground">
-            {t("lockReason", { default: "Check-ins are scheduled every 14 days to ensure optimal progress tracking and AI plan generation. Use this time to follow your current meal and workout plans." })}
+        <div className="border-border mt-6 rounded-lg border border-dashed bg-neutral-50 p-4">
+          <p className="text-muted-foreground text-sm">
+            {t("lockReason", { days: frequencyDays })}
           </p>
         </div>
       </div>

@@ -47,6 +47,7 @@ Systematically converted physical directional CSS properties to logical properti
 **Files modified:** login, magic-link, set-password, admin-login pages
 
 **Changes:**
+
 - Input field icon positioning: `left-0` → `start-0`, `pl-4/pl-3.5` → `ps-4/ps-3.5`, `border-r-4` → `border-e-4`
 - Input field padding: `pl-16/pl-10` → `ps-16/ps-10`, `pr-4` → `pe-4`
 - ArrowRight icons: Added `rtl:rotate-180` class for proper forward direction in RTL
@@ -63,6 +64,7 @@ Systematically converted physical directional CSS properties to logical properti
 **Files modified:** welcome page, initial-assessment page, basic-info-section, schedule-section
 
 **Changes:**
+
 - Feature grid overlapping: `-ml-1` → `-ms-1`, `sm:-ml-1` → `sm:-ms-1`, `first:ml-0` → `first:ms-0`
 - Gender button dividers: `border-r-4` → `border-e-4`
 - Select dropdown padding: `pr-12` → `pe-12`
@@ -85,6 +87,7 @@ None - plan executed exactly as written.
 **TypeScript compilation:** ✓ Passed (`pnpm tsc --noEmit`)
 
 **Grep verification:** ✓ Confirmed no physical directional properties remain
+
 - Auth pages: No `left-0`, `pl-*`, `pr-*`, or `border-r-4` found
 - Onboarding pages: No `-ml-*`, `border-r-4`, `right-4`, or `pr-12` found
 
@@ -94,6 +97,7 @@ None - plan executed exactly as written.
 ## Technical Notes
 
 **CSS Logical Properties Mapping:**
+
 - `left-0` → `start-0` (inline-start edge)
 - `right-4` → `end-4` (inline-end edge)
 - `pl-*` → `ps-*` (padding-inline-start)
@@ -105,6 +109,7 @@ None - plan executed exactly as written.
 Tailwind's `rtl:` variant applies styles only when the `dir="rtl"` attribute is present on an ancestor element. The `rotate-180` class flips icons 180 degrees, making left arrows point right and right arrows point left in RTL mode.
 
 **Why both arrow directions flip:**
+
 - ArrowRight = forward/submit action → should point in reading direction
 - ArrowLeft = back/return action → should point opposite to reading direction
 - In RTL, reading direction is right-to-left, so arrows flip to maintain semantic meaning
@@ -112,12 +117,14 @@ Tailwind's `rtl:` variant applies styles only when the `dir="rtl"` attribute is 
 ## Files Modified
 
 ### Auth Pages (4 files)
+
 1. `src/app/[locale]/(auth)/login/page.tsx` - Email/password input fields + ArrowRight icon
 2. `src/app/[locale]/(auth)/magic-link/page.tsx` - Email input field + ArrowLeft back buttons
 3. `src/app/[locale]/(auth)/set-password/page.tsx` - Password/confirm input fields + ArrowRight icon
 4. `src/app/[locale]/(admin)/admin/login/page.tsx` - Email/password input fields + ArrowRight icon
 
 ### Onboarding Pages (4 files)
+
 5. `src/app/[locale]/(onboarding)/welcome/page.tsx` - Feature grid margins + ArrowRight icon
 6. `src/app/[locale]/(onboarding)/initial-assessment/page.tsx` - ArrowRight submit icon
 7. `src/app/[locale]/(onboarding)/initial-assessment/_components/basic-info-section.tsx` - Gender buttons, dropdown
@@ -126,12 +133,14 @@ Tailwind's `rtl:` variant applies styles only when the `dir="rtl"` attribute is 
 ## Impact
 
 **User-facing:**
+
 - Auth flow renders correctly in Arabic: login, magic link, password reset, admin login
 - Onboarding flow renders correctly in Arabic: welcome page, initial assessment form
 - All input field icons appear on the correct side in RTL mode
 - Navigation arrows point in the correct direction for the current reading mode
 
 **Developer-facing:**
+
 - Consistent pattern for RTL-aware layouts using CSS logical properties
 - No JavaScript needed for RTL adaptation - pure CSS solution
 - Maintainable approach that scales to future pages
@@ -141,6 +150,7 @@ Tailwind's `rtl:` variant applies styles only when the `dir="rtl"` attribute is 
 **Created files:** N/A - no new files created
 
 **Modified files:**
+
 ```bash
 ✓ src/app/[locale]/(auth)/login/page.tsx exists
 ✓ src/app/[locale]/(auth)/magic-link/page.tsx exists
@@ -153,6 +163,7 @@ Tailwind's `rtl:` variant applies styles only when the `dir="rtl"` attribute is 
 ```
 
 **Commits:**
+
 ```bash
 ✓ 77c2d59 - feat(10-03): convert auth pages to RTL-aware logical properties
 ✓ 001aed8 - feat(10-03): convert onboarding pages to RTL-aware logical properties

@@ -12,6 +12,7 @@ An AI-powered fitness coaching PWA for the Egyptian/MENA market, polished and de
 **Stack:** Next.js 16.1.6, React 19, Supabase SSR 0.8, Tailwind v4, shadcn/ui
 
 **What's working:**
+
 - Client flow: login → onboarding → dashboard → check-in → AI plans → tracking
 - Coach flow: admin login → signups → clients → tickets → settings
 - Arabic/RTL: 490/490 translation keys, logical CSS, locale-aware formatting
@@ -19,6 +20,7 @@ An AI-powered fitness coaching PWA for the Egyptian/MENA market, polished and de
 - UX: Skeleton loading, empty states, inline validation, 48px touch targets, error boundaries
 
 **Known limitations (tech debt from v1.0):**
+
 - AI-generated plans in English only regardless of locale
 - Push notifications in English only
 - Ticket system is single-response (no thread conversations)
@@ -30,22 +32,22 @@ An AI-powered fitness coaching PWA for the Egyptian/MENA market, polished and de
 
 **Design Decisions:**
 
-| Decision | Choice |
-|----------|--------|
-| Style direction | Modern & clean (rounded corners, subtle shadows, soft transitions — like Fitbod/Apple Health) |
-| Color palette | Keep Royal Blue as primary, soften the brutalist black/cream scheme |
-| Typography | Normal case (drop all-uppercase), modern readable fonts |
-| Mobile nav | Pill-shaped floating bottom nav: Home, Meals, Workout, Check-in |
-| Desktop nav | Top navbar (replace current sidebar) |
-| Settings access | Gear icon in header |
-| Secondary pages | Bottom sheet "more menu" for Tracking, Progress, Tickets, FAQ |
-| Home page | Widget-style scrollable cards (stats, today's meals, today's workout, quick actions) |
-| Meal plan | Collapsed cards (tap to expand ingredients/instructions) |
-| Check-in form | Swipe between steps with progress bar at top |
-| Onboarding assessment | Guided wizard (one question per screen, large inputs) |
-| Tickets | Chat bubbles (client right/blue, coach left/gray) |
-| Empty states | SVG illustrations + friendly message + CTA button |
-| Scope | Full renovation: auth + onboarding + all dashboard pages |
+| Decision              | Choice                                                                                        |
+| --------------------- | --------------------------------------------------------------------------------------------- |
+| Style direction       | Modern & clean (rounded corners, subtle shadows, soft transitions — like Fitbod/Apple Health) |
+| Color palette         | Keep Royal Blue as primary, soften the brutalist black/cream scheme                           |
+| Typography            | Normal case (drop all-uppercase), modern readable fonts                                       |
+| Mobile nav            | Pill-shaped floating bottom nav: Home, Meals, Workout, Check-in                               |
+| Desktop nav           | Top navbar (replace current sidebar)                                                          |
+| Settings access       | Gear icon in header                                                                           |
+| Secondary pages       | Bottom sheet "more menu" for Tracking, Progress, Tickets, FAQ                                 |
+| Home page             | Widget-style scrollable cards (stats, today's meals, today's workout, quick actions)          |
+| Meal plan             | Collapsed cards (tap to expand ingredients/instructions)                                      |
+| Check-in form         | Swipe between steps with progress bar at top                                                  |
+| Onboarding assessment | Guided wizard (one question per screen, large inputs)                                         |
+| Tickets               | Chat bubbles (client right/blue, coach left/gray)                                             |
+| Empty states          | SVG illustrations + friendly message + CTA button                                             |
+| Scope                 | Full renovation: auth + onboarding + all dashboard pages                                      |
 
 ## Core Value
 
@@ -81,6 +83,7 @@ Every user flow — from signup to plan generation to coach approval — works r
 ### Active (v1.1 Mobile UI Renovation)
 
 **Navigation & Layout**
+
 - NAV-01: Floating pill-shaped bottom nav bar (Home, Meals, Workout, Check-in, More) — visible below `lg` breakpoint
 - NAV-02: Desktop horizontal top navbar replacing sidebar — visible at `lg+` breakpoint
 - NAV-03: Simplified mobile header (page title + action icons, no hamburger)
@@ -90,14 +93,16 @@ Every user flow — from signup to plan generation to coach approval — works r
 - NAV-07: Hide bottom nav when virtual keyboard is open
 
 **Design System**
+
 - DS-01: Extend @theme tokens — modern rounded corners, soft shadows, spacing scale
 - DS-02: Soften brutalist palette — white background, subtle borders, modern feel
 - DS-03: Typography — normal case (drop uppercase), readable fonts, proper hierarchy
-- DS-04: Safe area handling — iOS notch/home indicator via env(safe-area-inset-*)
+- DS-04: Safe area handling — iOS notch/home indicator via env(safe-area-inset-\*)
 - DS-05: Animation keyframes — fadeIn, slideUp, slideDown, scaleIn (CSS-only, GPU-composited)
 - DS-06: Respect prefers-reduced-motion media query
 
 **Core Primitives**
+
 - PRIM-01: WidgetCard — compact stat/widget card for dashboard grid
 - PRIM-02: PageHeader — consistent page title + breadcrumb component
 - PRIM-03: Skeleton loading variants — home cards, meal cards, workout cards, ticket list
@@ -105,15 +110,18 @@ Every user flow — from signup to plan generation to coach approval — works r
 - PRIM-05: Empty state component — SVG illustration + message + CTA button
 
 **Auth Pages**
+
 - AUTH-01: Login page — modern clean layout, mobile-optimized form
 - AUTH-02: Signup page — matching design, social proof elements
 
 **Onboarding**
+
 - ONBOARD-01: Guided wizard — one question per screen, large inputs, back/next navigation
 - ONBOARD-02: Step progress indicator at top
 - ONBOARD-03: Smooth transitions between steps
 
 **Home / Dashboard**
+
 - HOME-01: Greeting header with time-of-day context ("Good morning, Ahmed")
 - HOME-02: Today's plan at-a-glance card (meal or workout focus)
 - HOME-03: Quick stats widget cards (weight trend, streak, next check-in)
@@ -121,12 +129,14 @@ Every user flow — from signup to plan generation to coach approval — works r
 - HOME-05: Plan cycle countdown ("Day 8 of 14")
 
 **Meal Plan**
+
 - MEAL-01: Horizontal scrollable day selector (1-14) with current day highlighted
 - MEAL-02: Collapsed meal cards (name, calories, ingredient preview) — tap to expand
 - MEAL-03: Daily nutrition summary bar (calories, protein/carbs/fat)
 - MEAL-04: Meal swap indicator surfacing AI alternatives
 
 **Workout Plan**
+
 - WORK-01: Day selector matching meal plan pattern (reuse component)
 - WORK-02: Exercise cards with sets/reps/weight in clean grid
 - WORK-03: Muscle group tags (color-coded pills)
@@ -134,6 +144,7 @@ Every user flow — from signup to plan generation to coach approval — works r
 - WORK-05: Daily workout summary card (type, exercise count, est. duration)
 
 **Check-in**
+
 - CHECK-01: Step-by-step wizard (Weight → Measurements → Photos → Notes → Review)
 - CHECK-02: Swipe between steps via react-swipeable
 - CHECK-03: Segmented progress bar at top
@@ -141,19 +152,23 @@ Every user flow — from signup to plan generation to coach approval — works r
 - CHECK-05: Review summary screen before submit
 
 **Tracking & Progress**
+
 - TRACK-01: Renovated tracking page with modern card layout
 - TRACK-02: Renovated progress charts page
 
 **Tickets**
+
 - TICKET-01: Chat bubble conversation view (client right/blue, coach left/gray)
 - TICKET-02: Ticket list with modern card styling
 
 **Settings & FAQ**
+
 - SET-01: Gear icon access from header
 - SET-02: Settings page with modern form layout
 - FAQ-01: FAQ page with collapsible question cards
 
 **Empty States**
+
 - EMPTY-01: Home — "Coach is preparing your first plan" / "Account under review"
 - EMPTY-02: Meal Plan — "No meal plan yet, complete check-in"
 - EMPTY-03: Workout Plan — "No workout plan yet"
@@ -162,11 +177,13 @@ Every user flow — from signup to plan generation to coach approval — works r
 - EMPTY-06: Tracking/Progress — "Complete check-ins to see data"
 
 **Desktop**
+
 - DESK-01: Top navbar with all nav items visible
 - DESK-02: Content area with max-width constraint and centered layout
 - DESK-03: Responsive card grids (2-3 columns on desktop)
 
 **RTL & Verification**
+
 - RTL-05: All renovated components use logical properties (start/end, not left/right)
 - RTL-06: Swipe directions inverted in Arabic mode
 - RTL-07: Day selector scroll starts from right in RTL
@@ -199,18 +216,19 @@ Every user flow — from signup to plan generation to coach approval — works r
 
 ## Key Decisions
 
-| Decision | Rationale | Outcome |
-|----------|-----------|---------|
-| Royal Blue as primary color | User preference for rebrand | ✓ Good — clean professional look |
-| Polish over new features | Get existing app solid before expanding | ✓ Good — 22/22 requirements met |
-| Both languages equally | MENA market requires Arabic/RTL quality | ✓ Good — 490/490 keys, Playwright verified |
-| Demo-ready as done criteria | Next step is selling to coaches | ✓ Good — all flows functional |
-| Skip test suite for now | Focus on visible UX, not infrastructure | ⚠️ Revisit — consider for v1.1 |
-| Semantic Tailwind classes over hex | Maintainability and theme consistency | ✓ Good — zero hardcoded colors |
-| Zod for all validation | Consistent validation at API boundaries | ✓ Good — 13 endpoints covered |
-| FormProvider pattern for large forms | Avoid prop drilling through 5+ steps | ✓ Good — clean component hierarchy |
-| ar-u-nu-latn for Arabic numbers | Western numerals (0-9) for readability | — Pending user feedback |
-| Error boundaries per route segment | Isolate failures, prevent cascading crashes | ✓ Good — 5 routes protected |
+| Decision                             | Rationale                                   | Outcome                                    |
+| ------------------------------------ | ------------------------------------------- | ------------------------------------------ |
+| Royal Blue as primary color          | User preference for rebrand                 | ✓ Good — clean professional look           |
+| Polish over new features             | Get existing app solid before expanding     | ✓ Good — 22/22 requirements met            |
+| Both languages equally               | MENA market requires Arabic/RTL quality     | ✓ Good — 490/490 keys, Playwright verified |
+| Demo-ready as done criteria          | Next step is selling to coaches             | ✓ Good — all flows functional              |
+| Skip test suite for now              | Focus on visible UX, not infrastructure     | ⚠️ Revisit — consider for v1.1             |
+| Semantic Tailwind classes over hex   | Maintainability and theme consistency       | ✓ Good — zero hardcoded colors             |
+| Zod for all validation               | Consistent validation at API boundaries     | ✓ Good — 13 endpoints covered              |
+| FormProvider pattern for large forms | Avoid prop drilling through 5+ steps        | ✓ Good — clean component hierarchy         |
+| ar-u-nu-latn for Arabic numbers      | Western numerals (0-9) for readability      | — Pending user feedback                    |
+| Error boundaries per route segment   | Isolate failures, prevent cascading crashes | ✓ Good — 5 routes protected                |
 
 ---
-*Last updated: 2026-02-17 — v1.1 requirements defined*
+
+_Last updated: 2026-02-17 — v1.1 requirements defined_

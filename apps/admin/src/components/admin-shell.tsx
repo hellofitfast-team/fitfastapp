@@ -11,16 +11,14 @@ interface AdminShellProps {
   openTickets?: number;
 }
 
-export function AdminShell({
-  children,
-  coachName,
-  pendingSignups,
-  openTickets,
-}: AdminShellProps) {
+export function AdminShell({ children, coachName, pendingSignups, openTickets }: AdminShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-stone-50 text-stone-900" style={{ fontFamily: "var(--font-sans)" }}>
+    <div
+      className="flex min-h-screen bg-stone-50 text-stone-900"
+      style={{ fontFamily: "var(--font-sans)" }}
+    >
       <AdminSidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
@@ -29,10 +27,7 @@ export function AdminShell({
       />
 
       <div className="flex flex-1 flex-col">
-        <AdminHeader
-          onMenuClick={() => setSidebarOpen(true)}
-          coachName={coachName}
-        />
+        <AdminHeader onMenuClick={() => setSidebarOpen(true)} coachName={coachName} />
 
         <main className="flex-1 overflow-y-auto p-4 lg:p-8">{children}</main>
       </div>

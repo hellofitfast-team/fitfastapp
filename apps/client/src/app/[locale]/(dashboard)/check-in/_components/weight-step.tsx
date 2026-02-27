@@ -11,7 +11,10 @@ import type { CheckInFormData } from "../page";
 export function WeightStep() {
   const t = useTranslations("checkIn");
   const tUnits = useTranslations("units");
-  const { register, formState: { errors } } = useFormContext<CheckInFormData>();
+  const {
+    register,
+    formState: { errors },
+  } = useFormContext<CheckInFormData>();
 
   return (
     <div className="space-y-4">
@@ -21,16 +24,20 @@ export function WeightStep() {
             type="number"
             step="0.1"
             placeholder="75.5"
-            className="w-32 text-xl font-bold text-center"
+            className="w-32 text-center text-xl font-bold"
             {...register("weight")}
             error={!!errors.weight}
           />
-          <span className="font-semibold text-muted-foreground">{tUnits("kg")}</span>
+          <span className="text-muted-foreground font-semibold">{tUnits("kg")}</span>
         </div>
-        {errors.weight && <p className="mt-2 text-xs text-error-500">{errors.weight.message}</p>}
+        {errors.weight && <p className="text-error-500 mt-2 text-xs">{errors.weight.message}</p>}
       </SectionCard>
 
-      <SectionCard title={`${t("measurements")} (${t("optional")})`} description={`${t("allIn")} ${tUnits("cm")}`} variant="neutral">
+      <SectionCard
+        title={`${t("measurements")} (${t("optional")})`}
+        description={`${t("allIn")} ${tUnits("cm")}`}
+        variant="neutral"
+      >
         <div className="grid gap-4 sm:grid-cols-2">
           {[
             { key: "chest" as const, label: t("chest") },
@@ -40,12 +47,7 @@ export function WeightStep() {
             { key: "thighs" as const, label: t("thighs") },
           ].map((m) => (
             <FormField key={m.key} label={m.label}>
-              <Input
-                type="number"
-                step="0.5"
-                placeholder="0"
-                {...register(m.key)}
-              />
+              <Input type="number" step="0.5" placeholder="0" {...register(m.key)} />
             </FormField>
           ))}
         </div>

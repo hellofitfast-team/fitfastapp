@@ -102,12 +102,7 @@ export const createSignup = mutation({
     fullName: v.string(),
     phone: v.optional(v.string()),
     planId: v.optional(v.string()),
-    planTier: v.optional(
-      v.union(
-        v.literal("monthly"),
-        v.literal("quarterly"),
-      ),
-    ),
+    planTier: v.optional(v.union(v.literal("monthly"), v.literal("quarterly"))),
     paymentScreenshotId: v.optional(v.id("_storage")),
   },
   handler: async (ctx, args) => {
@@ -152,7 +147,8 @@ export const approveSignup = mutation({
     if (!signup) throw new Error("Signup not found");
 
     // Generate a secure invite token
-    const inviteToken = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
+    const inviteToken =
+      crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
     const inviteExpiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days
 
     await ctx.db.patch(signupId, {
@@ -217,9 +213,7 @@ export const rejectSignup = mutation({
 export const createRenewalSignup = mutation({
   args: {
     planId: v.optional(v.string()),
-    planTier: v.optional(
-      v.union(v.literal("monthly"), v.literal("quarterly")),
-    ),
+    planTier: v.optional(v.union(v.literal("monthly"), v.literal("quarterly"))),
     paymentScreenshotId: v.optional(v.id("_storage")),
   },
   handler: async (ctx, args) => {

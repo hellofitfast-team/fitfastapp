@@ -19,7 +19,7 @@ The color system relies on stark contrasts and clean whitespace to let the Royal
 - Surface Variant `#F8FAFC - Slate 50`: Used to gently separate large sections (e.g. Testimonials or Philosophy) from the pure white background.
 - Borders `#E2E8F0 - Slate 200`: Soft line delineations, replacing harsh dark dividers.
 - Text Primary (#0F172A - Slate 900): Deep, crisp text for primary headings and body paragraphs.
-Text Muted (#64748B - Slate 500): Used for supporting subtitles, descriptions, and metadata.
+  Text Muted (#64748B - Slate 500): Used for supporting subtitles, descriptions, and metadata.
 
 ## 🔤 2. Typography System
 
@@ -64,7 +64,7 @@ SVG Favicon (<svg>):
 /apps/marketing/public/favicon.svg
 Rasterized Image (.png):
 /apps/marketing/public/logo.png
-AI Generated Preset Concept: /brain/<conversation-id>/fitfast_logo_preset_e_*.png
+AI Generated Preset Concept: /brain/<conversation-id>/fitfast*logo_preset_e*\*.png
 Usage Rules:
 
 The logo mark features a subtle linear gradient from `#2F7BEE` to `#0F52BA` with an inner `#DFFF00` lightning bolt mask.

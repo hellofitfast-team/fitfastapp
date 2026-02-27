@@ -9,25 +9,29 @@ interface TrackingHeaderProps {
   workoutDone: boolean;
 }
 
-export function TrackingHeader({ completionPercentage, mealProgress, workoutDone }: TrackingHeaderProps) {
+export function TrackingHeader({
+  completionPercentage,
+  mealProgress,
+  workoutDone,
+}: TrackingHeaderProps) {
   const t = useTranslations("tracking");
   const locale = useLocale();
 
   return (
     <div>
       <h1 className="text-2xl font-bold">{t("title")}</h1>
-      <p className="text-sm text-muted-foreground mt-0.5">
+      <p className="text-muted-foreground mt-0.5 text-sm">
         {formatDateWithWeekday(new Date(), locale)}
       </p>
-      <div className="flex gap-2 mt-3">
-        <span className="rounded-full bg-primary/10 text-primary px-3 py-1 text-xs font-semibold">
+      <div className="mt-3 flex gap-2">
+        <span className="bg-primary/10 text-primary rounded-full px-3 py-1 text-xs font-semibold">
           {completionPercentage}% {t("complete")}
         </span>
-        <span className="rounded-full bg-[#10B981]/10 text-[#10B981] px-3 py-1 text-xs font-semibold">
+        <span className="rounded-full bg-[#10B981]/10 px-3 py-1 text-xs font-semibold text-[#10B981]">
           {mealProgress.completed}/{mealProgress.total} {t("mealsCompleted")}
         </span>
         {workoutDone && (
-          <span className="rounded-full bg-[#F97316]/10 text-[#F97316] px-3 py-1 text-xs font-semibold">
+          <span className="rounded-full bg-[#F97316]/10 px-3 py-1 text-xs font-semibold text-[#F97316]">
             {t("workoutCompleted")}
           </span>
         )}

@@ -5,14 +5,17 @@
 ## Test Framework
 
 **Runner:**
+
 - Vitest 4.0
 - Config: Not yet created (test infrastructure in planning phase)
 - Environment: jsdom
 
 **Assertion Library:**
+
 - Testing Library (via @testing-library/react 16.3)
 
 **Run Commands:**
+
 ```bash
 pnpm test              # Run all tests (when configured)
 pnpm test:watch       # Watch mode (when configured)
@@ -24,14 +27,17 @@ pnpm test:coverage    # Coverage report (when configured)
 ## Test File Organization
 
 **Location:**
+
 - To be determined (typically co-located next to source files)
 - Pattern: `*.test.ts`, `*.test.tsx`, `*.spec.ts`, `*.spec.tsx`
 
 **Naming:**
+
 - Match source filename with `.test` or `.spec` suffix
 - Example: `meal-plan-generator.ts` → `meal-plan-generator.test.ts`
 
 **Structure:**
+
 ```
 src/
 ├── lib/
@@ -79,6 +85,7 @@ describe("MealPlanGenerator", () => {
 ```
 
 **Patterns:**
+
 - Use `describe()` blocks to organize by feature/module
 - Use `it()` for individual test cases
 - Clear test names following "should [action] [expected outcome]"
@@ -90,10 +97,12 @@ describe("MealPlanGenerator", () => {
 **Framework:** Vitest `vi` module
 
 **Special Requirements:**
+
 - **localStorage mock:** Node.js 22+ has built-in localStorage that conflicts with jsdom. Custom mock required in setup.ts
 - **vi.hoisted():** Required when `vi.mock()` factory references variables — mocks are hoisted above imports
 
 **Known Pattern from Memory:**
+
 ```typescript
 // Example: Mocking with hoisted references
 import { vi } from "vitest";
@@ -110,16 +119,19 @@ vi.mock("@/lib/supabase/client", () => ({
 ```
 
 **What to Mock:**
+
 - External APIs (Supabase, OpenRouter, OneSignal)
 - Browser APIs (localStorage, Notification, serviceWorker)
 - Network requests (fetch)
 
 **What NOT to Mock:**
+
 - Utility functions (cn, date formatters)
 - Custom hooks implementation (test their behavior)
 - Component logic (test behavior, not implementation)
 
 **Browser API Testing:**
+
 - Use `"X" in obj` operator to check property existence, not truthiness
 - Always pair with `&& obj.X` for APIs like `Notification`, `serviceWorker`
 - Example: `if ("Notification" in window && window.Notification) { ... }`
@@ -173,17 +185,20 @@ it("should generate plan", () => {
 ```
 
 **Location:**
+
 - `src/__tests__/fixtures/` or co-locate in test files
 - Export factory functions for reuse across test suites
 
 ## Coverage
 
 **Requirements:**
+
 - Not enforced in current setup (MVP phase)
 - Minimum recommendations (for Phase 2): 70% for core business logic, 80% for critical paths
 - AI generation, auth, and plan generation are high-priority for testing
 
 **View Coverage:**
+
 ```bash
 pnpm test:coverage     # When configured
 # Output: coverage/ directory with HTML report
@@ -192,18 +207,21 @@ pnpm test:coverage     # When configured
 ## Test Types
 
 **Unit Tests:**
+
 - Scope: Individual functions, hooks, components in isolation
 - Approach: Test inputs and outputs with mocked dependencies
 - Priority: Utility functions, hooks (useProfile, useMealPlans), API routes
 - Example: Testing `generateMealPlan()` with mocked OpenRouter API
 
 **Integration Tests:**
+
 - Scope: Multiple modules interacting (hooks + components, API route + database)
 - Approach: Mock external services, test data flow
 - Priority: Check-in submission flow, plan generation + saving, authentication
 - Example: Test full meal plan generation and database save
 
 **E2E Tests:**
+
 - Framework: Playwright 1.58 (infrastructure exists in `.playwright-mcp/`)
 - Status: Available but not yet implemented
 - Note: Pages behind Supabase middleware hang in Playwright — use `request.get()` on static assets instead
@@ -212,6 +230,7 @@ pnpm test:coverage     # When configured
 ## Common Patterns
 
 **Async Testing:**
+
 ```typescript
 // Hook with async fetch
 it("should load profile data", async () => {
@@ -235,6 +254,7 @@ it("should generate meal plan", async () => {
 ```
 
 **Error Testing:**
+
 ```typescript
 it("should throw on API failure", async () => {
   vi.mocked(OpenRouterClient.prototype.complete).mockRejectedValueOnce(
@@ -261,6 +281,7 @@ it("should return error response on missing profile", async () => {
 ```
 
 **Supabase Query Testing:**
+
 ```typescript
 // Mock Supabase client
 vi.mock("@/lib/supabase/client");
@@ -292,6 +313,7 @@ it("should fetch meal plans", async () => {
 ```
 
 **Component Testing:**
+
 ```typescript
 it("should render button with correct variant", () => {
   const { getByRole } = render(
@@ -321,24 +343,28 @@ it("should show loading state", () => {
 ## Current Testing Status
 
 **Implemented:**
+
 - ESLint configuration with Next.js defaults
 - TypeScript strict mode (type safety as primary testing)
 - Sentry error tracking (runtime error monitoring)
 - Error boundaries for graceful failure
 
 **Not Yet Implemented:**
+
 - Unit tests (zero test files in src/)
 - Integration test suite
 - E2E test scenarios
 - Coverage tracking
 
 **Testing Infrastructure Available:**
+
 - Vitest 4.0 (installed but not configured)
 - Playwright 1.58 (infrastructure in `.playwright-mcp/`)
 - @testing-library/react 16.3 (installed, ready to use)
 - All necessary dependencies exist in package.json
 
 **Recommended Next Steps for Phase 2:**
+
 1. Create `vitest.config.ts` with jsdom environment and custom localStorage mock
 2. Add `src/__tests__/setup.ts` with localStorage implementation
 3. Create test fixtures in `src/__tests__/fixtures/`
@@ -348,4 +374,4 @@ it("should show loading state", () => {
 
 ---
 
-*Testing analysis: 2026-02-12*
+_Testing analysis: 2026-02-12_

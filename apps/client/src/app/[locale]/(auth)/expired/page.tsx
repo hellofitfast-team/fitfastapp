@@ -16,10 +16,7 @@ export default function ExpiredPage() {
   const { isAuthenticated } = useConvexAuth();
   const { signOut } = useAuthActions();
 
-  const profile = useQuery(
-    api.profiles.getMyProfile,
-    isAuthenticated ? {} : "skip"
-  );
+  const profile = useQuery(api.profiles.getMyProfile, isAuthenticated ? {} : "skip");
 
   // Auto-redirect if account is reactivated (Convex reactive subscription)
   useEffect(() => {
@@ -47,9 +44,9 @@ export default function ExpiredPage() {
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/50">
           <AlertTriangle className="h-7 w-7 text-amber-600 dark:text-amber-400" />
         </div>
-        <h2 className="text-xl font-bold mb-1">{t("title")}</h2>
-        <p className="text-sm text-muted-foreground mb-3">{t("subtitle")}</p>
-        <p className="text-xs text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/40 rounded-lg px-3 py-2 inline-block">
+        <h2 className="mb-1 text-xl font-bold">{t("title")}</h2>
+        <p className="text-muted-foreground mb-3 text-sm">{t("subtitle")}</p>
+        <p className="inline-block rounded-lg bg-amber-100 px-3 py-2 text-xs text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
           {t("dataWarning")}
         </p>
       </div>
@@ -58,14 +55,9 @@ export default function ExpiredPage() {
       <RenewalCheckout />
 
       {/* Logout */}
-      <div className="text-center pt-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleLogout}
-          className="text-muted-foreground"
-        >
-          <LogOut className="h-4 w-4 me-2" />
+      <div className="pt-2 text-center">
+        <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground">
+          <LogOut className="me-2 h-4 w-4" />
           {t("logoutButton")}
         </Button>
       </div>

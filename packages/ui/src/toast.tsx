@@ -53,7 +53,7 @@ const Toast = React.forwardRef<
         variant === "default" && "border-border bg-card text-card-foreground",
         variant !== "default" && "border-transparent",
         variant !== "default" && variant,
-        className
+        className,
       )}
       style={{ ...variantStyles[variant], ...style }}
       {...props}
@@ -69,8 +69,8 @@ const ToastAction = React.forwardRef<
   <ToastPrimitives.Action
     ref={ref}
     className={cn(
-      "inline-flex h-11 shrink-0 items-center justify-center rounded-md border border-border bg-transparent px-3 text-sm font-medium transition-colors hover:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-ring disabled:pointer-events-none disabled:opacity-50 group-[.destructive]:border-white/30 group-[.destructive]:hover:bg-white/20 group-[.destructive]:text-white",
-      className
+      "border-border focus:ring-ring inline-flex h-11 shrink-0 items-center justify-center rounded-md border bg-transparent px-3 text-sm font-medium transition-colors group-[.destructive]:border-white/30 group-[.destructive]:text-white hover:bg-neutral-100 group-[.destructive]:hover:bg-white/20 focus:ring-2 focus:outline-none disabled:pointer-events-none disabled:opacity-50",
+      className,
     )}
     {...props}
   />
@@ -84,8 +84,8 @@ const ToastClose = React.forwardRef<
   <ToastPrimitives.Close
     ref={ref}
     className={cn(
-      "absolute end-2 top-2 rounded-md p-1 text-foreground/50 hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring group-[.destructive]:text-white/70 group-[.destructive]:hover:text-white group-[.success]:text-white/70 group-[.success]:hover:text-white",
-      className
+      "text-foreground/50 hover:text-foreground focus:ring-ring absolute end-2 top-2 rounded-md p-1 transition-colors group-[.destructive]:text-white/70 group-[.success]:text-white/70 group-[.destructive]:hover:text-white group-[.success]:hover:text-white focus:ring-2 focus:outline-none",
+      className,
     )}
     toast-close=""
     {...props}
@@ -99,11 +99,7 @@ const ToastTitle = React.forwardRef<
   React.ElementRef<typeof ToastPrimitives.Title>,
   React.ComponentPropsWithoutRef<typeof ToastPrimitives.Title>
 >(({ className, ...props }, ref) => (
-  <ToastPrimitives.Title
-    ref={ref}
-    className={cn("text-sm font-semibold", className)}
-    {...props}
-  />
+  <ToastPrimitives.Title ref={ref} className={cn("text-sm font-semibold", className)} {...props} />
 ));
 ToastTitle.displayName = ToastPrimitives.Title.displayName;
 
@@ -114,8 +110,8 @@ const ToastDescription = React.forwardRef<
   <ToastPrimitives.Description
     ref={ref}
     className={cn(
-      "text-sm text-muted-foreground group-[.destructive]:text-white/90 group-[.success]:text-white/90",
-      className
+      "text-muted-foreground text-sm group-[.destructive]:text-white/90 group-[.success]:text-white/90",
+      className,
     )}
     {...props}
   />

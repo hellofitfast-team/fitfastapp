@@ -12,18 +12,21 @@
 **Why it happens:** Developers add try-catch "just in case" without thinking through error handling strategy. Empty catch blocks seem harmless during development.
 
 **Consequences:**
+
 - Production bugs invisible until user reports
 - No error context for debugging (which user? what action?)
 - Sentry integration becomes useless
 - Users blame the product, not a fixable bug
 
 **Prevention:**
+
 - ALWAYS log errors with context: `console.error("Operation failed:", { userId, action, error })`
 - ALWAYS send to Sentry: `Sentry.captureException(error, { tags, user })`
 - ALWAYS return error state to UI: `return { error: "User-friendly message" }`
 - Code review checklist: "Does every catch block log and report?"
 
 **Detection:**
+
 - Search codebase for `catch {}` (empty catch)
 - Search for `catch { return null }` (silent failure)
 - Sentry showing zero errors in production = red flag (errors ARE happening, not being reported)
@@ -35,17 +38,20 @@
 **Why it happens:** Natural to write sequential code. Async/await looks synchronous, easy to forget you can parallelize.
 
 **Consequences:**
+
 - 3 queries × 50ms = 150ms vs 50ms parallel (3x slower)
 - Scales linearly with query count (5 queries = 250ms vs 50ms)
 - Mobile users on slow networks wait 500ms+ for API routes
 - Poor Time to First Byte (TTFB) metrics
 
 **Prevention:**
+
 - Use `Promise.all([query1, query2, query3])` for independent queries
 - Code review: "Can these queries run in parallel?"
 - Measure API route latency in development (add timing logs)
 
 **Detection:**
+
 - API routes taking >200ms with multiple Supabase calls
 - Multiple `await supabase.from()` statements in sequence
 - Add timing: `console.time("fetch")` / `console.timeEnd("fetch")`
@@ -57,18 +63,21 @@
 **Why it happens:** TypeScript gives false confidence. Types are compile-time only, disappear at runtime.
 
 **Consequences:**
+
 - AI returns `{ weeklyPlan: null }` instead of proper structure → crashes
 - User sees "Something went wrong" with no recovery
 - Can't debug what AI actually returned
 - Database stores corrupt JSONB data
 
 **Prevention:**
+
 - ALWAYS validate AI responses with Zod before using
 - Log validation failures with full AI response for debugging
 - Use `safeParse()` not `parse()` to avoid throwing in production
 - Prompt engineering: "Return ONLY valid JSON, no markdown"
 
 **Detection:**
+
 - Search for `as MealPlan` or `as any` after AI calls
 - Sentry errors about "Cannot read property 'X' of undefined" in plan rendering
 - Users reporting "plan not loading" (corrupt data in database)
@@ -80,18 +89,21 @@
 **Why it happens:** Natural to await everything. Don't distinguish critical vs nice-to-have operations.
 
 **Consequences:**
+
 - OneSignal timeout (5s) = user waits 5s for API response
 - Third-party service down = entire feature broken
 - Can't ship critical data because waiting for notifications
 - Poor perceived performance (user action → response delay)
 
 **Prevention:**
+
 - Fire-and-forget: `Promise.resolve().then(() => sendNotification())`
 - Don't await notification/analytics/logging operations
 - Return API response immediately after critical operations (save to DB)
 - Separate critical path from side effects
 
 **Detection:**
+
 - API routes with `await` calls to external services after database save
 - Slow API responses when third-party services are down
 - Check if removing notification code speeds up API
@@ -105,6 +117,7 @@
 **Why it happens:** "Indexes make queries fast" → add everywhere. Don't understand query planner.
 
 **Prevention:**
+
 - Run `EXPLAIN ANALYZE` on slow queries FIRST
 - Add indexes only where sequential scans occur
 - Use Supabase index_advisor extension
@@ -117,6 +130,7 @@
 **Why it happens:** Need `useState` somewhere in component → add "use client" at top. Don't think about composition.
 
 **Prevention:**
+
 - Keep Server Components as default
 - Extract interactive parts to separate Client Components
 - Use Server Components for data fetching, layouts
@@ -129,6 +143,7 @@
 **Why it happens:** Old pattern from Pages Router. App Router has new paradigm.
 
 **Prevention:**
+
 - Return error objects: `return { error: "Title required" }`
 - Use `useActionState` hook to handle errors
 - Reserve `throw` for unexpected errors (database down)
@@ -141,6 +156,7 @@
 **Why it happens:** Writing RLS like application code. Forget RLS runs per-row.
 
 **Prevention:**
+
 - Move join logic to SECURITY DEFINER functions
 - Use IN/ANY with arrays instead of joins
 - Mark functions STABLE to enable caching
@@ -159,6 +175,7 @@
 **What goes wrong:** Retry logic with no max attempts. 400 error retries forever.
 
 **Prevention:**
+
 - Set `maxAttempts` (default 3)
 - Check `shouldRetry(error)` - don't retry 4xx errors
 - Add exponential delay cap (`maxDelayMs`)
@@ -171,13 +188,13 @@
 
 ## Phase-Specific Warnings
 
-| Phase Topic | Likely Pitfall | Mitigation |
-|-------------|---------------|------------|
+| Phase Topic              | Likely Pitfall                                | Mitigation                                                             |
+| ------------------------ | --------------------------------------------- | ---------------------------------------------------------------------- |
 | Foundation (Zod schemas) | Schemas too strict, reject valid AI responses | Start permissive (`.optional()`, `.nullable()`), tighten after testing |
-| Service Layer (Retry) | Retrying non-idempotent operations | Only retry safe operations (GET, idempotent POST) |
-| API Routes (Validation) | Validating everything, slow API routes | Validate external inputs only, trust internal data |
-| Component Refactoring | Breaking hooks into too many pieces | Extract hooks for reuse, not for every 20 lines |
-| Database (RLS) | SECURITY DEFINER function security leak | Functions callable from API - don't expose sensitive data |
+| Service Layer (Retry)    | Retrying non-idempotent operations            | Only retry safe operations (GET, idempotent POST)                      |
+| API Routes (Validation)  | Validating everything, slow API routes        | Validate external inputs only, trust internal data                     |
+| Component Refactoring    | Breaking hooks into too many pieces           | Extract hooks for reuse, not for every 20 lines                        |
+| Database (RLS)           | SECURITY DEFINER function security leak       | Functions callable from API - don't expose sensitive data              |
 
 ## Sources
 

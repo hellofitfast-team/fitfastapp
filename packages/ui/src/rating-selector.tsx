@@ -35,16 +35,16 @@ export function RatingSelector({
   return (
     <div>
       {label && (
-        <div className="flex items-center justify-between mb-2.5">
+        <div className="mb-2.5 flex items-center justify-between">
           <label className="text-sm font-medium">{label}</label>
           <span
             className={cn(
-              "text-sm font-bold px-2 py-0.5 rounded-full",
+              "rounded-full px-2 py-0.5 text-sm font-bold",
               value <= 4
                 ? "bg-error-500/10 text-error-500"
                 : value <= 7
                   ? "bg-warning-500/10 text-warning-600"
-                  : "bg-success-500/10 text-success-600"
+                  : "bg-success-500/10 text-success-600",
             )}
           >
             {value}/{max} · {getZoneLabel(value, labels)}
@@ -59,13 +59,13 @@ export function RatingSelector({
             onClick={() => onChange(num)}
             disabled={disabled}
             className={cn(
-              "flex-1 h-11 rounded-lg text-xs font-semibold transition-all flex items-center justify-center",
+              "flex h-11 flex-1 items-center justify-center rounded-lg text-xs font-semibold transition-all",
               getZoneColor(num, value >= num),
-              value === num && "scale-110 ring-2 ring-offset-1 ring-offset-background",
+              value === num && "ring-offset-background scale-110 ring-2 ring-offset-1",
               value === num && num <= 4 && "ring-error-500/30",
               value === num && num > 4 && num <= 7 && "ring-warning-500/30",
               value === num && num > 7 && "ring-success-500/30",
-              disabled && "opacity-50 cursor-not-allowed"
+              disabled && "cursor-not-allowed opacity-50",
             )}
           >
             {num}

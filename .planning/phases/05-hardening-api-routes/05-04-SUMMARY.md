@@ -51,9 +51,11 @@ metrics:
 ## What Was Built
 
 ### Task 1: Hardened Notification Routes
+
 Applied Zod validation and Sentry error logging to 2 notification routes:
 
 **1. Subscription Route** (`src/app/api/notifications/subscription/route.ts`)
+
 - **POST handler:** Validates `onesignal_subscription_id` and `device_type` with `SubscriptionSchema`
   - Replaced manual `if (!onesignal_subscription_id)` check with `validateRequestBody`
   - Returns 400 with field-level errors on validation failure
@@ -65,6 +67,7 @@ Applied Zod validation and Sentry error logging to 2 notification routes:
   - Extra: `{ userId, action: "save-subscription" }`
 
 **2. Reminder Time Route** (`src/app/api/notifications/reminder-time/route.ts`)
+
 - **GET handler:** No validation needed (no body)
 - **PUT handler:** Validates `reminder_time` (HH:MM format) with `ReminderTimeSchema`
   - Replaced manual regex check `!/^\d{2}:\d{2}$/.test(reminder_time)` with Zod validation
@@ -76,9 +79,11 @@ Applied Zod validation and Sentry error logging to 2 notification routes:
 **Result:** All 3 notification route handlers (POST subscription, DELETE subscription, PUT reminder-time) now use type-safe validation. Zero console.error calls remain.
 
 ### Task 2: Plan Generation Failure Feedback (RELY-05)
+
 Implemented user-visible warnings when AI plan generation fails during check-in submission.
 
 **Before (silent failure):**
+
 ```typescript
 try {
   await Promise.all([fetch("/api/plans/meal", ...), fetch("/api/plans/workout", ...)]);
@@ -89,6 +94,7 @@ toast({ title: t("checkInSuccess"), description: t("newPlanGenerated") }); // Al
 ```
 
 **After (RELY-05 compliant):**
+
 ```typescript
 const [mealResponse, workoutResponse] = await Promise.all([
   fetch("/api/plans/meal", ...).catch((err) => {
@@ -109,16 +115,19 @@ if (!mealResponse.ok || !workoutResponse.ok) {
 ```
 
 **Key improvements:**
+
 1. **User feedback:** Clear warning toast when plans fail (not silent)
 2. **Granular logging:** Separate Sentry events for meal vs workout failures with planType tag
 3. **Error context:** userId and checkInId attached to every error
 4. **Bilingual support:** Warning messages in both English and Arabic
 
 **Additional Sentry integrations in check-in page:**
+
 - Check-in lock status fetch errors now logged (was `console.error`)
 - Check-in submission errors now logged with feature tag
 
 **i18n Keys Added:**
+
 - English: `"planGenerationWarning": "Check-in saved! Plan generation is taking longer than expected. You'll see your new plans shortly."`
 - Arabic: `"planGenerationWarning": "تم حفظ التسجيل! جاري إعداد الخطة الخاصة بك. ستراها قريباً."`
 - Also added `planGenerationFailed` (future use)
@@ -126,6 +135,7 @@ if (!mealResponse.ok || !workoutResponse.ok) {
 ## How It Works
 
 **Notification Validation Flow:**
+
 1. User subscribes to push notifications or updates reminder time
 2. Route handler calls `validateRequestBody(body, schema, { userId, feature })`
 3. On validation failure: Sentry logs error + returns 400 with field errors
@@ -133,6 +143,7 @@ if (!mealResponse.ok || !workoutResponse.ok) {
 5. On database error: Sentry logs with structured context
 
 **Plan Generation Feedback Flow:**
+
 1. User submits check-in
 2. Check-in saved to database
 3. Parallel plan generation requests (meal + workout)
@@ -153,10 +164,12 @@ None - plan executed exactly as written.
 ## Integration Points
 
 **Upstream:**
+
 - Uses validation schemas from 05-01-PLAN (SubscriptionSchema, UnsubscribeSchema, ReminderTimeSchema)
 - Uses validateRequestBody helper from 05-01-PLAN
 
 **Downstream:**
+
 - Sentry dashboard will show errors tagged with:
   - `feature: "push-subscription"` / `"push-unsubscribe"` / `"reminder-time"`
   - `feature: "plan-generation"` with `planType: "meal"` or `"workout"`
@@ -164,6 +177,7 @@ None - plan executed exactly as written.
 - User support tickets may decrease due to clearer plan generation feedback
 
 **User-facing impact:**
+
 - Notification settings now reject invalid inputs before database operations
 - Check-in page provides clear feedback when AI systems are slow/failing
 - Arabic-speaking users see localized error messages
@@ -176,6 +190,7 @@ None - plan executed exactly as written.
 - `validateRequestBody` used 5 times across 2 routes (3 in subscription, 2 in reminder-time)
 
 **Manual testing recommended:**
+
 - Submit check-in while plan generation API is down (should show warning toast)
 - Subscribe to push notifications with invalid subscription ID (should return 400 with Zod error)
 - Update reminder time with invalid format like "25:99" (should return 400)
@@ -184,11 +199,13 @@ None - plan executed exactly as written.
 ## Next Steps
 
 **Remaining in Phase 05:**
+
 - Apply validation to ticket routes (if not already done in 05-02 or 05-03)
 - Apply validation to admin routes (OCR, signup approval, broadcast notifications)
 - Verify all 13 API routes have Zod validation
 
 **Future enhancements:**
+
 - Add retry logic for plan generation (exponential backoff)
 - Show separate warnings for meal vs workout failures ("Meal plan ready, workout plan delayed")
 - Add estimated time for plan generation based on historical data
@@ -196,6 +213,7 @@ None - plan executed exactly as written.
 ## Self-Check: PASSED
 
 **Modified files verified:**
+
 ```
 FOUND: src/app/api/notifications/subscription/route.ts
 FOUND: src/app/api/notifications/reminder-time/route.ts
@@ -205,12 +223,14 @@ FOUND: src/messages/ar.json
 ```
 
 **Commits verified:**
+
 ```
 FOUND: c670108 (Task 1 - Notification routes hardened)
 FOUND: 8eb8cab (Task 2 - Plan generation feedback)
 ```
 
 **Verification checks:**
+
 ```
 ✓ Zero console.error in all modified files
 ✓ planGenerationWarning exists in check-in page (1 occurrence)

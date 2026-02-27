@@ -69,6 +69,7 @@ completed: 2026-02-15
 - **Files modified:** 13
 
 ## Accomplishments
+
 - Created locale-aware date/time formatting utilities using ar-u-nu-latn for Arabic with Western numerals
 - Replaced all hardcoded "en-US" date formatting across 12 dashboard and admin pages
 - Arabic users now see Arabic month names (يناير، فبراير، etc.) with Western numerals (0-9)
@@ -92,6 +93,7 @@ Each task was committed atomically:
    - Server component (admin client detail) uses getLocale()
 
 ## Files Created/Modified
+
 - `src/lib/utils/index.ts` - Added formatDateShort, formatDateWithWeekday, formatTime; changed locale to ar-u-nu-latn
 - `src/app/[locale]/(dashboard)/page.tsx` - Dashboard header date with formatDateWithWeekday
 - `src/app/[locale]/(dashboard)/tickets/page.tsx` - Ticket list dates with formatDate
@@ -107,6 +109,7 @@ Each task was committed atomically:
 - `src/app/[locale]/(admin)/admin/(panel)/clients/[id]/page.tsx` - Plan dates and check-ins (server component)
 
 ## Decisions Made
+
 - **Western numerals in Arabic:** Use ar-u-nu-latn instead of ar-EG to display 0-9 numerals in Arabic interface (per research, preferred for coach demo product)
 - **Centralized helpers:** Added formatDateShort, formatDateWithWeekday, formatTime to lib/utils for common patterns
 - **Remove duplicates:** Eliminated local formatDate implementations in tickets/page and tickets/[id]/page in favor of centralized utilities
@@ -133,6 +136,7 @@ None - no external service configuration required.
 ## Self-Check: PASSED
 
 All files exist:
+
 - ✓ src/lib/utils/index.ts
 - ✓ src/app/[locale]/(dashboard)/page.tsx
 - ✓ src/app/[locale]/(dashboard)/tickets/page.tsx
@@ -140,15 +144,18 @@ All files exist:
 - ✓ All 13 modified files present
 
 All commits verified:
+
 - ✓ e78d6be (Task 1: utility functions)
 - ✓ a4ab81b (Task 2: page updates)
 
 Key features verified:
+
 - ✓ ar-u-nu-latn in utils/index.ts
 - ✓ formatDateShort exists
 - ✓ formatDateWithWeekday exists
 - ✓ formatTime exists
 
 ---
-*Phase: 10-rtl-audit*
-*Completed: 2026-02-15*
+
+_Phase: 10-rtl-audit_
+_Completed: 2026-02-15_

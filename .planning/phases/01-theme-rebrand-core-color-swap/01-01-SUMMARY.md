@@ -58,6 +58,7 @@ Royal Blue color system foundation established with semantic Tailwind classes ac
 ## What Was Done
 
 ### Task 1: Update CSS custom properties and PWA theme color
+
 - Added `--color-primary: #4169E1` (Royal Blue) with light/dark variants
 - Added `--color-primary-foreground: #FFFEF5` (cream text on blue)
 - Added `--color-accent: #4169E1` (alias for primary)
@@ -72,9 +73,11 @@ Royal Blue color system foundation established with semantic Tailwind classes ac
 **Commit:** `a2979ba`
 
 ### Task 2: Replace hardcoded hex values in all UI components
+
 Replaced all hardcoded `#FF3B00` and `#00FF94` hex values with semantic Tailwind classes in 11 UI components:
 
 **Color mapping applied:**
+
 - Brand/primary accents: `#FF3B00` → `primary` (Royal Blue)
 - Error/destructive states: `#FF3B00` → `error-500` (preserved semantic meaning)
 - Success/completion indicators: `#00FF94` → `success-500` (preserved semantic meaning)
@@ -82,6 +85,7 @@ Replaced all hardcoded `#FF3B00` and `#00FF94` hex values with semantic Tailwind
 - Cream backgrounds: `#FFFEF5` → `cream`
 
 **Components updated:**
+
 - **button.tsx**: Ring, default variant hover, link variant text, destructive uses error-500
 - **input.tsx**: Background and error border
 - **textarea.tsx**: Background and error border

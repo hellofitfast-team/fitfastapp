@@ -14,7 +14,7 @@ interface ReviewStepProps {
 function ReviewRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between p-4">
-      <span className="text-sm text-muted-foreground">{label}</span>
+      <span className="text-muted-foreground text-sm">{label}</span>
       <span className="text-sm font-semibold">{value}</span>
     </div>
   );
@@ -57,60 +57,35 @@ export function ReviewStep({ uploadedPhotosCount }: ReviewStepProps) {
     <div className="space-y-4">
       {/* Body Section */}
       <SectionCard icon={ClipboardCheck} title={t("reviewBody")}>
-        <div className="-m-5 divide-y divide-border">
-          <ReviewRow
-            label={t("weight")}
-            value={weight ? `${weight} ${tUnits("kg")}` : "—"}
-          />
+        <div className="divide-border -m-5 divide-y">
+          <ReviewRow label={t("weight")} value={weight ? `${weight} ${tUnits("kg")}` : "—"} />
           {measurements.map((m) => (
-            <ReviewRow
-              key={m.label}
-              label={m.label}
-              value={`${m.value} ${tUnits("cm")}`}
-            />
+            <ReviewRow key={m.label} label={m.label} value={`${m.value} ${tUnits("cm")}`} />
           ))}
         </div>
       </SectionCard>
 
       {/* Fitness Section */}
       <SectionCard icon={Dumbbell} title={t("reviewFitness")}>
-        <div className="-m-5 divide-y divide-border">
-          <ReviewRow
-            label={t("performance")}
-            value={truncate(workoutPerformance, 100)}
-          />
-          <ReviewRow
-            label={t("energy")}
-            value={`${energyLevel}/10`}
-          />
-          <ReviewRow
-            label={t("sleep")}
-            value={`${sleepQuality}/10`}
-          />
+        <div className="divide-border -m-5 divide-y">
+          <ReviewRow label={t("performance")} value={truncate(workoutPerformance, 100)} />
+          <ReviewRow label={t("energy")} value={`${energyLevel}/10`} />
+          <ReviewRow label={t("sleep")} value={`${sleepQuality}/10`} />
         </div>
       </SectionCard>
 
       {/* Diet Section */}
       <SectionCard icon={UtensilsCrossed} title={t("reviewDiet")}>
-        <div className="-m-5 divide-y divide-border">
-          <ReviewRow
-            label={t("adherence")}
-            value={`${dietaryAdherence}/10`}
-          />
-          <ReviewRow
-            label={t("dietNotes")}
-            value={truncate(dietNotes, 80)}
-          />
-          <ReviewRow
-            label={t("injuries")}
-            value={truncate(newInjuries, 80)}
-          />
+        <div className="divide-border -m-5 divide-y">
+          <ReviewRow label={t("adherence")} value={`${dietaryAdherence}/10`} />
+          <ReviewRow label={t("dietNotes")} value={truncate(dietNotes, 80)} />
+          <ReviewRow label={t("injuries")} value={truncate(newInjuries, 80)} />
         </div>
       </SectionCard>
 
       {/* Photos Section */}
       <SectionCard icon={Camera} title={t("photos")}>
-        <div className="-m-5 divide-y divide-border">
+        <div className="divide-border -m-5 divide-y">
           <ReviewRow
             label={t("photos")}
             value={

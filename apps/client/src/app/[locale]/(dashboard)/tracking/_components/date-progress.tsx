@@ -9,14 +9,18 @@ interface DateProgressProps {
   completionPercentage: number;
 }
 
-export function DateProgress({ selectedDate, onDateChange, completionPercentage }: DateProgressProps) {
+export function DateProgress({
+  selectedDate,
+  onDateChange,
+  completionPercentage,
+}: DateProgressProps) {
   const t = useTranslations("tracking");
 
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       {/* Date Picker */}
-      <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
-        <div className="flex items-center gap-2 p-3.5 border-b border-border bg-neutral-50">
+      <div className="border-border bg-card shadow-card overflow-hidden rounded-xl border">
+        <div className="border-border flex items-center gap-2 border-b bg-neutral-50 p-3.5">
           <Calendar className="h-4 w-4 text-[#8B5CF6]" />
           <span className="text-sm font-medium">{t("selectDate")}</span>
         </div>
@@ -26,23 +30,36 @@ export function DateProgress({ selectedDate, onDateChange, completionPercentage 
             value={selectedDate}
             onChange={(e) => onDateChange(e.target.value)}
             max={new Date().toISOString().split("T")[0]}
-            className="w-full h-11 px-3.5 rounded-lg border border-input bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-colors"
+            className="border-input bg-card focus:ring-ring h-11 w-full rounded-lg border px-3.5 text-sm transition-colors focus:ring-2 focus:outline-none"
           />
         </div>
       </div>
 
       {/* Completion Progress */}
-      <div className="rounded-xl border border-border bg-primary shadow-card overflow-hidden">
-        <div className="p-5 flex items-center justify-between">
+      <div className="border-border bg-primary shadow-card overflow-hidden rounded-xl border">
+        <div className="flex items-center justify-between p-5">
           <div>
             <p className="text-xs text-white/70">{t("todaysProgress")}</p>
-            <p className="text-4xl font-bold text-white mt-1">{completionPercentage}%</p>
+            <p className="mt-1 text-4xl font-bold text-white">{completionPercentage}%</p>
           </div>
           <div className="relative h-20 w-20">
             <svg className="h-20 w-20 -rotate-90 transform">
-              <circle cx="40" cy="40" r="34" stroke="white" strokeWidth="6" fill="transparent" className="opacity-20" />
               <circle
-                cx="40" cy="40" r="34" stroke="white" strokeWidth="6" fill="transparent"
+                cx="40"
+                cy="40"
+                r="34"
+                stroke="white"
+                strokeWidth="6"
+                fill="transparent"
+                className="opacity-20"
+              />
+              <circle
+                cx="40"
+                cy="40"
+                r="34"
+                stroke="white"
+                strokeWidth="6"
+                fill="transparent"
                 strokeDasharray={`${2 * Math.PI * 34}`}
                 strokeDashoffset={`${2 * Math.PI * 34 * (1 - completionPercentage / 100)}`}
                 strokeLinecap="round"

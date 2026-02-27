@@ -66,19 +66,19 @@ function NavLink({
     <Link
       href={href}
       className={cn(
-        "flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors min-h-11",
+        "flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
         isActive
           ? "bg-primary/10 text-primary"
-          : "text-muted-foreground hover:bg-neutral-100 hover:text-foreground"
+          : "text-muted-foreground hover:text-foreground hover:bg-neutral-100",
       )}
     >
       <span className="relative">
         <Icon className="h-4 w-4 shrink-0" />
         {badge === "dot" && (
-          <span className="absolute -top-0.5 -end-0.5 h-2 w-2 rounded-full bg-error-500" />
+          <span className="bg-error-500 absolute -end-0.5 -top-0.5 h-2 w-2 rounded-full" />
         )}
         {typeof badge === "number" && badge > 0 && (
-          <span className="absolute -top-1 -end-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-error-500 text-[10px] font-bold text-white px-0.5">
+          <span className="bg-error-500 absolute -end-2 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-0.5 text-[10px] font-bold text-white">
             {badge > 9 ? "9+" : badge}
           </span>
         )}
@@ -120,18 +120,12 @@ export function DesktopTopNav({ userName }: DesktopTopNavProps) {
   };
 
   return (
-    <nav className="hidden lg:flex h-[var(--height-desktop-nav)] border-b border-border bg-card items-center justify-between px-4">
+    <nav className="border-border bg-card hidden h-[var(--height-desktop-nav)] items-center justify-between border-b px-4 lg:flex">
       {/* Left: Logo + Nav Links */}
       <div className="flex items-center gap-1">
-        <Link href="/" className="flex items-center gap-2 me-4">
-          <Image
-            src="/logo.svg"
-            alt="FitFast"
-            width={32}
-            height={32}
-            className="h-8 w-8"
-          />
-          <span className="font-bold text-lg tracking-tight">FitFast</span>
+        <Link href="/" className="me-4 flex items-center gap-2">
+          <Image src="/logo.svg" alt="FitFast" width={32} height={32} className="h-8 w-8" />
+          <span className="text-lg font-bold tracking-tight">FitFast</span>
         </Link>
 
         {NAV_ITEMS.map((item) => {
@@ -156,7 +150,7 @@ export function DesktopTopNav({ userName }: DesktopTopNavProps) {
       <div className="flex items-center gap-1.5">
         {/* Language Switcher */}
         <button
-          className="flex h-11 w-11 items-center justify-center rounded-lg text-xs font-semibold text-muted-foreground hover:bg-neutral-100 hover:text-foreground transition-colors"
+          className="text-muted-foreground hover:text-foreground flex h-11 w-11 items-center justify-center rounded-lg text-xs font-semibold transition-colors hover:bg-neutral-100"
           onClick={switchLocale}
           aria-label="Switch language"
         >
@@ -165,7 +159,7 @@ export function DesktopTopNav({ userName }: DesktopTopNavProps) {
 
         {/* Notifications */}
         <button
-          className="flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground hover:bg-neutral-100 hover:text-foreground transition-colors"
+          className="text-muted-foreground hover:text-foreground flex h-11 w-11 items-center justify-center rounded-lg transition-colors hover:bg-neutral-100"
           aria-label="Notifications"
         >
           <Bell className="h-4 w-4" />
@@ -175,23 +169,16 @@ export function DesktopTopNav({ userName }: DesktopTopNavProps) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
-              className="flex items-center gap-2 rounded-lg px-3 h-11 text-muted-foreground hover:bg-neutral-100 hover:text-foreground transition-colors"
+              className="text-muted-foreground hover:text-foreground flex h-11 items-center gap-2 rounded-lg px-3 transition-colors hover:bg-neutral-100"
               aria-label="User menu"
             >
               <User className="h-4 w-4" />
-              {userName && (
-                <span className="text-sm font-medium">
-                  {userName}
-                </span>
-              )}
+              {userName && <span className="text-sm font-medium">{userName}</span>}
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuItem asChild>
-              <Link
-                href="/settings"
-                className="flex items-center gap-2 cursor-pointer"
-              >
+              <Link href="/settings" className="flex cursor-pointer items-center gap-2">
                 <Settings className="h-4 w-4" />
                 {t("nav.settings")}
               </Link>
@@ -199,7 +186,7 @@ export function DesktopTopNav({ userName }: DesktopTopNavProps) {
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={handleLogout}
-              className="flex items-center gap-2 text-error-500 cursor-pointer focus:text-error-500"
+              className="text-error-500 focus:text-error-500 flex cursor-pointer items-center gap-2"
             >
               <LogOut className="h-4 w-4" />
               {t("auth.logout")}

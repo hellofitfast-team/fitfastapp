@@ -21,11 +21,7 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default async function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const h = await headers();
   const locale = h.get("x-next-intl-locale") ?? "en";
   const dir = locale === "ar" ? "rtl" : "ltr";
@@ -41,9 +37,7 @@ export default async function RootLayout({
             rel="stylesheet"
           />
         </head>
-        <body className="min-h-screen bg-background text-foreground antialiased">
-          {children}
-        </body>
+        <body className="bg-background text-foreground min-h-screen antialiased">{children}</body>
       </html>
     </ConvexAuthNextjsServerProvider>
   );

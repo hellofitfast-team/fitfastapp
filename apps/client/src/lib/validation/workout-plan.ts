@@ -7,7 +7,9 @@ import { z } from "zod";
 export const WarmupExerciseSchema = z.object({
   name: z.string().min(1, "Warmup exercise name is required"),
   duration: z.number().positive("Warmup duration must be a positive number (seconds)"),
-  instructions: z.array(z.string().min(1, "Instruction cannot be empty")).min(1, "At least one instruction is required"),
+  instructions: z
+    .array(z.string().min(1, "Instruction cannot be empty"))
+    .min(1, "At least one instruction is required"),
 });
 
 /**
@@ -20,7 +22,9 @@ export const WorkoutExerciseSchema = z.object({
   reps: z.string().min(1, "Reps is required (e.g., '10-12' or '30 seconds')"),
   rest: z.number().nonnegative("Rest period must be non-negative (seconds)"),
   notes: z.string().optional(),
-  targetMuscles: z.array(z.string().min(1, "Target muscle cannot be empty")).min(1, "At least one target muscle is required"),
+  targetMuscles: z
+    .array(z.string().min(1, "Target muscle cannot be empty"))
+    .min(1, "At least one target muscle is required"),
   equipment: z.string().optional(),
 });
 
@@ -31,7 +35,9 @@ export const WorkoutExerciseSchema = z.object({
 export const CooldownExerciseSchema = z.object({
   name: z.string().min(1, "Cooldown exercise name is required"),
   duration: z.number().positive("Cooldown duration must be a positive number (seconds)"),
-  instructions: z.array(z.string().min(1, "Instruction cannot be empty")).min(1, "At least one instruction is required"),
+  instructions: z
+    .array(z.string().min(1, "Instruction cannot be empty"))
+    .min(1, "At least one instruction is required"),
 });
 
 /**
@@ -59,7 +65,9 @@ export const DailyWorkoutSchema = z.object({
 export const WorkoutPlanSchema = z.object({
   weeklyPlan: z.record(z.string(), DailyWorkoutSchema),
   progressionNotes: z.string(),
-  safetyTips: z.array(z.string().min(1, "Safety tip cannot be empty")).min(1, "At least one safety tip is required"),
+  safetyTips: z
+    .array(z.string().min(1, "Safety tip cannot be empty"))
+    .min(1, "At least one safety tip is required"),
 });
 
 /**
@@ -71,4 +79,3 @@ export type ValidatedWorkoutExercise = z.infer<typeof WorkoutExerciseSchema>;
 export type ValidatedCooldownExercise = z.infer<typeof CooldownExerciseSchema>;
 export type ValidatedDailyWorkout = z.infer<typeof DailyWorkoutSchema>;
 export type ValidatedWorkoutPlan = z.infer<typeof WorkoutPlanSchema>;
-

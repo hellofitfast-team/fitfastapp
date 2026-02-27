@@ -57,30 +57,36 @@ metrics:
 Hardened 6 core API routes with input validation and structured error logging:
 
 ### Plan Generation Routes
+
 **Files:** `src/app/api/plans/meal/route.ts`, `src/app/api/plans/workout/route.ts`
 
 **Changes:**
+
 - Added `validateRequestBody` with `GeneratePlanSchema` to validate request bodies
 - Validates `checkInId` (optional UUID) and `planDuration` (7-30 days)
 - Early return on validation failure with 400 response
 - Already had Sentry error tracking from Phase 4 (no changes needed)
 
 **Flow:**
+
 1. Parse request body
 2. Validate with schema → return 400 if invalid
 3. Continue with validated, typed data
 4. Catch block already uses Sentry for errors
 
 ### Ticket Routes
+
 **File:** `src/app/api/tickets/route.ts`
 
 **Changes:**
+
 - Added `validateRequestBody` with `CreateTicketSchema` to POST handler
 - Replaced manual `if (!subject || !category)` check with Zod validation
 - Replaced 4 `console.error` calls with `Sentry.captureException` in both GET and POST
 - Fixed schema bug: Updated ticket categories to match database constraints
 
 **Before:**
+
 ```typescript
 if (!subject || !category) {
   return NextResponse.json({ error: "..." }, { status: 400 });
@@ -89,6 +95,7 @@ console.error("Error fetching tickets:", ticketsError);
 ```
 
 **After:**
+
 ```typescript
 const validation = validateRequestBody(body, CreateTicketSchema, {
   userId: user.id,
@@ -104,22 +111,26 @@ Sentry.captureException(ticketsError, {
 ```
 
 ### Auth Routes
+
 **Files:** `src/app/api/auth/sign-in/route.ts`, `profile/route.ts`, `logout/route.ts`
 
 **Changes:**
 
 **sign-in/route.ts:**
+
 - Added `validateRequestBody` with `SignInSchema` to validate email/locale
 - Replaced manual `if (!email)` check with Zod validation
 - Replaced 2 `console.error` calls with `Sentry.captureException`
 - Used `level: "warning"` for Supabase auth errors (expected for bad emails)
 
 **profile/route.ts:**
+
 - Added `* as Sentry` import
 - Replaced `console.error` with `Sentry.captureException`
 - Added `userId` tracking variable for error context
 
 **logout/route.ts:**
+
 - Added `* as Sentry` import
 - Replaced `console.error` with `Sentry.captureException`
 - No validation needed (POST with no body)
@@ -127,26 +138,29 @@ Sentry.captureException(ticketsError, {
 ## How It Works
 
 **Validation Pattern:**
+
 ```typescript
 const body = await request.json();
 const validation = validateRequestBody(body, Schema, {
-  userId: user.id,  // Optional: for error tracking
+  userId: user.id, // Optional: for error tracking
   feature: "feature-name",
 });
-if (!validation.success) return validation.response;  // 400 with field errors
-const { field1, field2 } = validation.data;  // Fully typed data
+if (!validation.success) return validation.response; // 400 with field errors
+const { field1, field2 } = validation.data; // Fully typed data
 ```
 
 **Error Logging Pattern:**
+
 ```typescript
 Sentry.captureException(error, {
-  level: "error",  // or "warning" for expected failures
+  level: "error", // or "warning" for expected failures
   tags: { feature: "feature-name" },
   extra: { userId, action: "action-name" },
 });
 ```
 
 **Benefits:**
+
 - Type-safe request body access (no `any` types)
 - Field-level error messages for clients
 - Automatic Sentry logging on validation failures (via validateRequestBody)
@@ -158,6 +172,7 @@ Sentry.captureException(error, {
 ### Auto-fixed Issues
 
 **1. [Rule 1 - Bug] Fixed CreateTicketSchema category mismatch**
+
 - **Found during:** Task 1 (TypeScript compilation)
 - **Issue:** Schema defined categories as `['plan', 'payment', 'technical', 'bug_report']` but database constraint expects `['meal_issue', 'workout_issue', 'technical', 'bug_report', 'other']`
 - **Fix:** Updated `src/lib/api-validation/tickets.ts` to match database enum
@@ -168,14 +183,17 @@ Sentry.captureException(error, {
 ## Integration Points
 
 **Upstream:**
+
 - Depends on 05-01 (validateRequestBody helper and all Zod schemas)
 - Uses existing Sentry integration from Phase 3
 
 **Downstream:**
+
 - Plans 05-03 and 05-04 will apply same patterns to remaining routes
 - Validation failures now logged to Sentry for monitoring
 
 **Error Tracking:**
+
 - Validation failures logged with `level: "warning"` and tagged with feature name
 - Service errors logged with `level: "error"`
 - User context attached (userId, email where available)
@@ -184,12 +202,14 @@ Sentry.captureException(error, {
 ## Testing Notes
 
 **Verification Passed:**
+
 - TypeScript compilation: 0 errors (excluding pre-existing Next.js types issue)
 - Zero `console.error` calls in all 6 modified files
 - 8 total uses of `validateRequestBody` across 4 routes (import + usage in each)
 - All Sentry imports present in all files
 
 **Manual Testing Needed:**
+
 - Submit invalid plan generation request (missing checkInId, invalid planDuration)
 - Submit invalid ticket (missing subject, invalid category)
 - Submit invalid sign-in (missing email, invalid locale)
@@ -199,14 +219,17 @@ Sentry.captureException(error, {
 ## Next Steps
 
 **Immediate (Plan 05-03):**
+
 - Apply validation to notification routes (push subscriptions, reminders)
 - Replace console.error with Sentry in notification handlers
 
 **Subsequent (Plan 05-04):**
+
 - Apply validation to admin routes (OCR, approve-signup, send-notification)
 - Replace console.error with Sentry in admin handlers
 
 **Future:**
+
 - Monitor Sentry for validation failure patterns
 - Adjust schema constraints based on real-world invalid inputs
 - Add rate limiting to prevent validation abuse
@@ -214,6 +237,7 @@ Sentry.captureException(error, {
 ## Self-Check: PASSED
 
 **Modified files verified:**
+
 ```
 FOUND: src/app/api/plans/meal/route.ts
 FOUND: src/app/api/plans/workout/route.ts
@@ -225,12 +249,14 @@ FOUND: src/lib/api-validation/tickets.ts
 ```
 
 **Commits verified:**
+
 ```
 FOUND: 14eeb8c (Task 1 - plan and ticket routes)
 FOUND: e4e68ae (Task 2 - auth routes)
 ```
 
 **Validation usage:**
+
 ```
 validateRequestBody in meal/route.ts: 2 occurrences (import + usage)
 validateRequestBody in workout/route.ts: 2 occurrences (import + usage)
@@ -240,12 +266,14 @@ Total: 8 occurrences
 ```
 
 **Console.error cleanup:**
+
 ```
 console.error in all 6 files: 0 occurrences
 All replaced with Sentry.captureException
 ```
 
 **TypeScript errors:**
+
 ```
 Errors excluding Next.js types: 0
 CreateTicketSchema bug fixed

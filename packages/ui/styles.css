@@ -5,18 +5,18 @@
 /* FitFast Modern Clean Theme Configuration */
 @theme inline {
   /* Color Palette */
-  --color-cream: #FFFEF5;
+  --color-cream: #fffef5;
   --color-black: #000000;
-  --color-brand-orange: #FF4500;
-  --color-brand-green: #00FF94;
+  --color-brand-orange: #ff4500;
+  --color-brand-green: #00ff94;
 
   /* Primary Theme - Orange (matching marketing) */
-  --color-primary: #FF4500;
-  --color-primary-foreground: #FFFFFF;
-  --color-primary-light: #FF6833;
-  --color-primary-dark: #CC3700;
-  --color-accent: #FF4500;
-  --color-accent-foreground: #FFFFFF;
+  --color-primary: #ff4500;
+  --color-primary-foreground: #ffffff;
+  --color-primary-light: #ff6833;
+  --color-primary-dark: #cc3700;
+  --color-accent: #ff4500;
+  --color-accent-foreground: #ffffff;
 
   /* Neutral Colors */
   --color-neutral-50: #fafafa;
@@ -40,26 +40,28 @@
   --color-error-600: #dc2626;
 
   /* Feature-Specific Accent Colors */
-  --color-nutrition: #10B981;    /* Emerald — meals, diet */
-  --color-fitness: #F97316;      /* Orange — workouts, energy */
-  --color-streak: #F59E0B;       /* Amber — streaks, achievement */
-  --color-routine: #8B5CF6;      /* Violet — tracking, calendar */
+  --color-nutrition: #10b981; /* Emerald — meals, diet */
+  --color-fitness: #f97316; /* Orange — workouts, energy */
+  --color-streak: #f59e0b; /* Amber — streaks, achievement */
+  --color-routine: #8b5cf6; /* Violet — tracking, calendar */
 
   /* Background/Foreground — Clean White */
-  --color-background: #FFFFFF;
+  --color-background: #ffffff;
   --color-foreground: #111111;
-  --color-card: #FFFFFF;
+  --color-card: #ffffff;
   --color-card-foreground: #111111;
-  --color-popover: #FFFFFF;
+  --color-popover: #ffffff;
   --color-popover-foreground: #111111;
   --color-muted: var(--color-neutral-100);
   --color-muted-foreground: var(--color-neutral-500);
-  --color-border: #E4E4E7;
+  --color-border: #e4e4e7;
   --color-input: #d4d4d4;
-  --color-ring: #FF4500;
+  --color-ring: #ff4500;
 
   /* Fonts */
-  --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-sans:
+    ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+    "Noto Color Emoji";
   --font-arabic: "Cairo", ui-sans-serif, system-ui, sans-serif;
   --font-outfit: "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
@@ -99,45 +101,73 @@
   --animate-slide-in-bottom: slideInFromBottom 0.3s ease-out both;
 
   @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   @keyframes slideUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   @keyframes slideDown {
-    from { opacity: 0; transform: translateY(-16px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(-16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   @keyframes scaleIn {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
   }
 
   @keyframes slideInFromBottom {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }
 
 /* IMPORTANT: Override dark mode - design is always the same */
 @media (prefers-color-scheme: dark) {
   @theme inline {
-    --color-background: #FFFFFF;
+    --color-background: #ffffff;
     --color-foreground: #111111;
-    --color-card: #FFFFFF;
+    --color-card: #ffffff;
     --color-card-foreground: #111111;
-    --color-popover: #FFFFFF;
+    --color-popover: #ffffff;
     --color-popover-foreground: #111111;
     --color-muted: var(--color-neutral-100);
     --color-muted-foreground: var(--color-neutral-500);
-    --color-border: #E4E4E7;
+    --color-border: #e4e4e7;
     --color-input: #d4d4d4;
-    --color-ring: #FF4500;
+    --color-ring: #ff4500;
   }
 }
 
@@ -160,11 +190,15 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  input, textarea, select, button {
+  input,
+  textarea,
+  select,
+  button {
     color: var(--color-foreground);
   }
 
-  input::placeholder, textarea::placeholder {
+  input::placeholder,
+  textarea::placeholder {
     color: var(--color-neutral-400);
   }
 }
@@ -236,18 +270,31 @@
 
 /* Infinite/looping animation keyframes — stay outside @theme (not entrance animations) */
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 @keyframes pulse-soft {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .animate-spin {

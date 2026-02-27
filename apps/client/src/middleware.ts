@@ -25,32 +25,36 @@ function getLocaleFromPath(pathname: string): string {
   return match ? match[1] : "en";
 }
 
-export default convexAuthNextjsMiddleware(
-  async (request, { convexAuth }) => {
-    const { pathname } = request.nextUrl;
+export default convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
+  const requestId = request.headers.get("x-request-id") ?? crypto.randomUUID();
 
-    if (
-      pathname.startsWith("/_next") ||
-      pathname.startsWith("/favicon") ||
-      pathname.includes(".")
-    ) {
-      return NextResponse.next();
-    }
+  const { pathname } = request.nextUrl;
 
-    if (isPublicRoute(pathname)) {
-      return intlMiddleware(request);
-    }
+  if (pathname.startsWith("/_next") || pathname.startsWith("/favicon") || pathname.includes(".")) {
+    const response = NextResponse.next();
+    response.headers.set("x-request-id", requestId);
+    return response;
+  }
 
-    const isAuthenticated = await convexAuth.isAuthenticated();
-    const locale = getLocaleFromPath(pathname);
+  if (isPublicRoute(pathname)) {
+    const response = intlMiddleware(request);
+    response.headers.set("x-request-id", requestId);
+    return response;
+  }
 
-    if (!isAuthenticated) {
-      return nextjsMiddlewareRedirect(request, `/${locale}/login`);
-    }
+  const isAuthenticated = await convexAuth.isAuthenticated();
+  const locale = getLocaleFromPath(pathname);
 
-    return intlMiddleware(request);
-  },
-);
+  if (!isAuthenticated) {
+    const response = nextjsMiddlewareRedirect(request, `/${locale}/login`);
+    response.headers.set("x-request-id", requestId);
+    return response;
+  }
+
+  const response = intlMiddleware(request);
+  response.headers.set("x-request-id", requestId);
+  return response;
+});
 
 export const config = {
   matcher: ["/((?!_next|.*\\..*).*)"],

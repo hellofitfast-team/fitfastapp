@@ -61,11 +61,13 @@ None - plan executed exactly as written.
 ## Technical Implementation
 
 **OneSignalProvider.tsx:**
+
 - Replaced `console.error` with `Sentry.captureException` in catch block
 - Adds tags: `{ feature: "push-notifications", integration: "onesignal" }`
 - Includes context: appId presence, NODE_ENV
 
 **use-notifications.ts:**
+
 - Added `error` state to hook return value
 - Updated 6 catch blocks with Sentry logging:
   - `checkSubscription()`: Sets error state, logs to Sentry
@@ -74,12 +76,14 @@ None - plan executed exactly as written.
   - 3 best-effort OneSignal sync calls: Log at warning level (non-critical)
 
 **settings/page.tsx:**
+
 - Destructured `error: notifError` from `useNotifications()`
 - Added `AlertTriangle` icon import
 - Conditional render: amber warning box OR toggle + reminder time UI
 - Warning box uses consistent brutalist styling (border-4 border-black bg-amber-50)
 
 **i18n:**
+
 - Added `notificationsUnavailableTitle` and `notificationsUnavailableDescription` keys
 - English: "Notifications Unavailable" / "Push notifications could not be initialized..."
 - Arabic: "الإشعارات غير متاحة" / "تعذر تهيئة الإشعارات..."
@@ -87,24 +91,29 @@ None - plan executed exactly as written.
 ## Testing Notes
 
 **Type Safety:**
+
 - `pnpm tsc --noEmit` passes (pre-existing admin settings form errors unrelated)
 - No type errors in modified files
 
 **Code Quality:**
+
 - No remaining `console.error` calls in OneSignalProvider
 - No remaining empty catch blocks (`catch(() => {})`) in use-notifications
 - 1 Sentry call in OneSignalProvider, 6 in use-notifications (verified via grep)
 
 **i18n Coverage:**
+
 - Both `notificationsUnavailableTitle` and `notificationsUnavailableDescription` exist in en.json and ar.json
 - Settings page correctly references new keys via `t("notificationsUnavailableTitle")`
 
 ## Self-Check: PASSED
 
 **Created Files:**
+
 - None (all modifications)
 
 **Modified Files:**
+
 - ✓ src/components/pwa/OneSignalProvider.tsx (exists, Sentry import added, catch block updated)
 - ✓ src/hooks/use-notifications.ts (exists, error state added, 6 Sentry calls added)
 - ✓ src/app/[locale]/(dashboard)/settings/page.tsx (exists, conditional UI added, notifError destructured)
@@ -112,6 +121,7 @@ None - plan executed exactly as written.
 - ✓ src/messages/ar.json (exists, 2 new keys added)
 
 **Commits:**
+
 - ✓ f0a8819: feat(09-01): add OneSignal error tracking with Sentry
 - ✓ d0ce026: feat(09-01): add disabled notification UI for OneSignal errors
 
@@ -120,16 +130,19 @@ All files and commits verified present.
 ## Impact
 
 **User Experience:**
+
 - Users with ad blockers no longer see broken notification toggles
 - Clear explanation of why notifications unavailable (not just "doesn't work")
 - No confusing UI states (hidden instead of disabled)
 
 **Developer Experience:**
+
 - All OneSignal errors tracked in Sentry with feature/operation tags
 - Easy to filter and debug notification issues
 - No silent failures hiding problems
 
 **Observability:**
+
 - Can measure OneSignal initialization failure rate
 - Can correlate failures with ad blocker usage, browser types
 - Warning-level logs for best-effort syncs prevent alert fatigue

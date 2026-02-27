@@ -99,6 +99,7 @@ Each task was committed atomically:
 ### Auto-fixed Issues
 
 **1. [Rule 2 - Missing Consistency] Updated packages/ui/styles.css alongside app globals.css**
+
 - **Found during:** Task 3 (sync to admin and marketing)
 - **Issue:** Plan specified only three app globals.css files; packages/ui/styles.css had the identical old pattern and is exported via `@fitfast/ui/styles` path. Leaving it stale would cause inconsistency if ever imported.
 - **Fix:** Applied identical animation changes to packages/ui/styles.css (moved @keyframes into @theme, removed manual classes, wildcard reduced-motion)
@@ -127,5 +128,6 @@ None - no external service configuration required.
 - No blockers
 
 ---
-*Phase: 12-design-tokens-primitives*
-*Completed: 2026-02-21*
+
+_Phase: 12-design-tokens-primitives_
+_Completed: 2026-02-21_

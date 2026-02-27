@@ -21,29 +21,36 @@ const SPLITS: Record<string, Omit<WorkoutSplit, "dayLabels" | "dayLabelsAr">> = 
     splitType: "full_body",
     splitName: "Full Body",
     splitNameAr: "تمرين الجسم الكامل",
-    splitDescription: "Train all major muscle groups each session. Best for beginners building a foundation.",
-    splitDescriptionAr: "تدريب جميع مجموعات العضلات الرئيسية في كل جلسة. الأفضل للمبتدئين لبناء أساس قوي.",
+    splitDescription:
+      "Train all major muscle groups each session. Best for beginners building a foundation.",
+    splitDescriptionAr:
+      "تدريب جميع مجموعات العضلات الرئيسية في كل جلسة. الأفضل للمبتدئين لبناء أساس قوي.",
   },
   upper_lower: {
     splitType: "upper_lower",
     splitName: "Upper / Lower",
     splitNameAr: "علوي / سفلي",
-    splitDescription: "Alternate between upper body and lower body days. Great balance of volume and recovery.",
+    splitDescription:
+      "Alternate between upper body and lower body days. Great balance of volume and recovery.",
     splitDescriptionAr: "تبديل بين أيام الجزء العلوي والسفلي. توازن ممتاز بين الحجم والاستشفاء.",
   },
   push_pull_legs: {
     splitType: "push_pull_legs",
     splitName: "Push / Pull / Legs",
     splitNameAr: "دفع / سحب / أرجل",
-    splitDescription: "Push muscles one day, pull muscles the next, then legs. Excellent for intermediate to advanced lifters.",
-    splitDescriptionAr: "عضلات الدفع يوم، عضلات السحب اليوم التالي، ثم الأرجل. ممتاز للمتوسطين والمتقدمين.",
+    splitDescription:
+      "Push muscles one day, pull muscles the next, then legs. Excellent for intermediate to advanced lifters.",
+    splitDescriptionAr:
+      "عضلات الدفع يوم، عضلات السحب اليوم التالي، ثم الأرجل. ممتاز للمتوسطين والمتقدمين.",
   },
   ppl_2x: {
     splitType: "ppl_2x",
     splitName: "Push / Pull / Legs (2×)",
     splitNameAr: "دفع / سحب / أرجل (مرتين)",
-    splitDescription: "PPL split repeated twice per week for maximum volume. For advanced lifters with 6 training days.",
-    splitDescriptionAr: "تقسيم دفع/سحب/أرجل مكرر مرتين أسبوعياً لأقصى حجم تدريبي. للمتقدمين مع ٦ أيام تدريب.",
+    splitDescription:
+      "PPL split repeated twice per week for maximum volume. For advanced lifters with 6 training days.",
+    splitDescriptionAr:
+      "تقسيم دفع/سحب/أرجل مكرر مرتين أسبوعياً لأقصى حجم تدريبي. للمتقدمين مع ٦ أيام تدريب.",
   },
 };
 
@@ -65,25 +72,43 @@ function generateDayLabels(splitType: string, totalDays: number): { en: string[]
       case "upper_lower": {
         // 3-day cycle: Upper → Lower → Rest → Upper → Lower → Rest ...
         const pos = i % 3;
-        if (pos === 0) { labels.en.push("Upper"); labels.ar.push("علوي"); }
-        else if (pos === 1) { labels.en.push("Lower"); labels.ar.push("سفلي"); }
-        else { labels.en.push("Rest"); labels.ar.push("راحة"); }
+        if (pos === 0) {
+          labels.en.push("Upper");
+          labels.ar.push("علوي");
+        } else if (pos === 1) {
+          labels.en.push("Lower");
+          labels.ar.push("سفلي");
+        } else {
+          labels.en.push("Rest");
+          labels.ar.push("راحة");
+        }
         break;
       }
       case "push_pull_legs": {
         // 3-day rotation with rest every 3rd-4th day
         const cycle = i % 4;
-        if (cycle === 0) { labels.en.push("Push"); labels.ar.push("دفع"); }
-        else if (cycle === 1) { labels.en.push("Pull"); labels.ar.push("سحب"); }
-        else if (cycle === 2) { labels.en.push("Legs"); labels.ar.push("أرجل"); }
-        else { labels.en.push("Rest"); labels.ar.push("راحة"); }
+        if (cycle === 0) {
+          labels.en.push("Push");
+          labels.ar.push("دفع");
+        } else if (cycle === 1) {
+          labels.en.push("Pull");
+          labels.ar.push("سحب");
+        } else if (cycle === 2) {
+          labels.en.push("Legs");
+          labels.ar.push("أرجل");
+        } else {
+          labels.en.push("Rest");
+          labels.ar.push("راحة");
+        }
         break;
       }
       case "ppl_2x": {
         // 6 on, 1 rest: Push → Pull → Legs → Push → Pull → Legs → Rest
         const pos6 = i % 7;
-        if (pos6 === 6) { labels.en.push("Rest"); labels.ar.push("راحة"); }
-        else {
+        if (pos6 === 6) {
+          labels.en.push("Rest");
+          labels.ar.push("راحة");
+        } else {
           const ppl = ["Push", "Pull", "Legs"];
           const pplAr = ["دفع", "سحب", "أرجل"];
           labels.en.push(ppl[pos6 % 3]!);

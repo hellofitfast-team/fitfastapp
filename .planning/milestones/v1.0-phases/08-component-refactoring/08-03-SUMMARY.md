@@ -51,6 +51,7 @@ Extracted 6 tracking sections (header, date/progress, meals, workouts, reflectio
 **Goal:** Extract 6 major sections into focused, reusable components
 
 **Files Created:**
+
 - `tracking-header.tsx` (26 lines) - Black header with Target icon, title, subtitle
 - `date-progress.tsx` (72 lines) - Date picker + circular progress ring with SVG
 - `meal-tracking.tsx` (135 lines) - Collapsible meal list with completion toggles and notes
@@ -59,6 +60,7 @@ Extracted 6 tracking sections (header, date/progress, meals, workouts, reflectio
 - `tracking-skeleton.tsx` (78 lines) - Full-page loading skeleton for all sections
 
 **Key Patterns:**
+
 - Each component uses `"use client"` with its own i18n translations
 - MealTracking and WorkoutTracking own their `getMealCompletion`/`getWorkoutCompletion` helpers
 - DailyReflection manages its own useForm instance for encapsulation
@@ -71,12 +73,14 @@ Extracted 6 tracking sections (header, date/progress, meals, workouts, reflectio
 **Goal:** Reduce page.tsx to state management and component composition only
 
 **Changes:**
+
 - Reduced from 547 to 178 lines (67% reduction, 369 lines removed)
 - Removed all inline JSX for sections (skeleton, header, date picker, meals, workouts, reflection)
 - Kept: hooks, state, handlers, computed values (completionPercentage, dayName, todaysMeals, todaysWorkout)
 - Replaced 400+ lines of JSX with 6 component imports and props passing
 
 **Loading Pattern:**
+
 ```tsx
 if (mealPlanLoading || workoutPlanLoading || trackingLoading) {
   return <TrackingSkeleton />;
@@ -84,6 +88,7 @@ if (mealPlanLoading || workoutPlanLoading || trackingLoading) {
 ```
 
 **Empty State Pattern:**
+
 ```tsx
 if (!mealPlan && !workoutPlan) {
   return (
@@ -96,6 +101,7 @@ if (!mealPlan && !workoutPlan) {
 ```
 
 **Main View Pattern:**
+
 ```tsx
 return (
   <>
@@ -115,6 +121,7 @@ return (
 ### Auto-fixed Issues
 
 **1. [Rule 1 - Bug] Fixed Supabase type inference in ticket reply API**
+
 - **Found during:** Task 2 - Build verification
 - **Issue:** Ticket select query inferred as `never` type, blocking property access for `ticket.status` and `ticket.description`
 - **Fix:** Added explicit type annotation `.single<{ id: string; status: string; description: string }>()` to ticket query
@@ -123,6 +130,7 @@ return (
 - **Rationale:** Build was failing due to TypeScript errors. Following existing pattern from same file (line 64 uses `as never`). This is a known Supabase type system limitation requiring manual type hints.
 
 **2. [Rule 1 - Bug] Fixed notes type compatibility in sub-components**
+
 - **Found during:** Task 2 - TypeScript checking
 - **Issue:** Supabase returns `notes: string | null` but component interfaces defined `notes?: string` causing type mismatch
 - **Fix:** Updated MealCompletion and WorkoutCompletion interfaces to `notes?: string | null`
@@ -140,12 +148,14 @@ return (
 - [x] Functionality preserved (date selection, meal/workout toggling, reflection saving)
 
 **Line Count Verification:**
+
 ```bash
 $ wc -l tracking/page.tsx
      178 tracking/page.tsx
 ```
 
 **Build Verification:**
+
 ```bash
 $ pnpm build
 ✓ Compiled successfully
@@ -155,16 +165,19 @@ $ pnpm build
 ## Impact
 
 **Maintainability:**
+
 - Each section now independently maintainable
 - Changes to meal tracking don't risk breaking workout tracking
 - Skeleton loading state reusable across app
 
 **Code Organization:**
+
 - tracking/page.tsx is now pure orchestration (no UI implementation)
 - Clear separation: page handles state/logic, components handle presentation
 - Easy to add new sections (progress photos, hydration tracking) without bloating main file
 
 **Developer Experience:**
+
 - 178-line page file easy to navigate and understand
 - Component props serve as clear interface contracts
 - Sub-components can be tested in isolation
@@ -172,18 +185,21 @@ $ pnpm build
 ## Self-Check
 
 **Created Files:**
-- [x] FOUND: src/app/[locale]/(dashboard)/tracking/_components/tracking-header.tsx
-- [x] FOUND: src/app/[locale]/(dashboard)/tracking/_components/date-progress.tsx
-- [x] FOUND: src/app/[locale]/(dashboard)/tracking/_components/meal-tracking.tsx
-- [x] FOUND: src/app/[locale]/(dashboard)/tracking/_components/workout-tracking.tsx
-- [x] FOUND: src/app/[locale]/(dashboard)/tracking/_components/daily-reflection.tsx
-- [x] FOUND: src/app/[locale]/(dashboard)/tracking/_components/tracking-skeleton.tsx
+
+- [x] FOUND: src/app/[locale]/(dashboard)/tracking/\_components/tracking-header.tsx
+- [x] FOUND: src/app/[locale]/(dashboard)/tracking/\_components/date-progress.tsx
+- [x] FOUND: src/app/[locale]/(dashboard)/tracking/\_components/meal-tracking.tsx
+- [x] FOUND: src/app/[locale]/(dashboard)/tracking/\_components/workout-tracking.tsx
+- [x] FOUND: src/app/[locale]/(dashboard)/tracking/\_components/daily-reflection.tsx
+- [x] FOUND: src/app/[locale]/(dashboard)/tracking/\_components/tracking-skeleton.tsx
 
 **Modified Files:**
+
 - [x] FOUND: src/app/[locale]/(dashboard)/tracking/page.tsx (refactored)
 - [x] FOUND: src/app/api/tickets/[id]/reply/route.ts (type fix)
 
 **Commits:**
+
 - [x] FOUND: 3f12892 (Task 1: Create tracking sub-components)
 - [x] FOUND: 5a0dd2f (Task 2: Refactor page to orchestration pattern)
 

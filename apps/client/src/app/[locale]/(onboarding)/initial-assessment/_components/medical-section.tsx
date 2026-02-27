@@ -10,11 +10,7 @@ interface MedicalSectionProps {
   isLoading: boolean;
 }
 
-export function MedicalSection({
-  medicalNotes,
-  setMedicalNotes,
-  isLoading,
-}: MedicalSectionProps) {
+export function MedicalSection({ medicalNotes, setMedicalNotes, isLoading }: MedicalSectionProps) {
   return (
     <SectionCard
       icon={Stethoscope}

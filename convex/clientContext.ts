@@ -165,20 +165,13 @@ export function formatContextForPrompt(ctx: ClientContext): string {
   if (allCheckIns.length > 1) {
     const trend = allCheckIns
       .reverse()
-      .map(
-        (c) =>
-          `${new Date(c._creationTime).toISOString().split("T")[0]}: ${c.weight}kg`,
-      );
+      .map((c) => `${new Date(c._creationTime).toISOString().split("T")[0]}: ${c.weight}kg`);
     parts.push(`\nWEIGHT TREND: ${trend.join(" → ")}`);
   }
 
   // ── Averages from check-in history ──
-  const energyVals = allCheckIns
-    .filter((c) => c.energyLevel != null)
-    .map((c) => c.energyLevel!);
-  const sleepVals = allCheckIns
-    .filter((c) => c.sleepQuality != null)
-    .map((c) => c.sleepQuality!);
+  const energyVals = allCheckIns.filter((c) => c.energyLevel != null).map((c) => c.energyLevel!);
+  const sleepVals = allCheckIns.filter((c) => c.sleepQuality != null).map((c) => c.sleepQuality!);
   if (energyVals.length > 0) {
     const avg = (arr: number[]) =>
       Math.round((arr.reduce((a, b) => a + b, 0) / arr.length) * 10) / 10;

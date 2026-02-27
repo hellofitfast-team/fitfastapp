@@ -5,6 +5,7 @@
 **Phases completed:** 10 phases, 32 plans, 21 tasks
 
 **Key accomplishments:**
+
 - Royal Blue rebrand with WCAG AA compliance — all hardcoded colors replaced with semantic classes
 - Error hardening pipeline — custom error classes, retry logic, Zod validation on all 13 API endpoints, Sentry everywhere
 - AI reliability — OpenRouter retry with timeout, validated AI output, user-visible plan generation warnings
@@ -25,13 +26,13 @@
 
 ### Phases
 
-| Phase | Name | Requirements | Plans |
-|-------|------|-------------|-------|
-| 11 | Foundation — Shell and Navigation | NAV-01..07, DS-04, DS-05, DESK-01 | 4 |
-| 12 | Design Tokens and Core Primitives | DS-01..03, DS-06, PRIM-01..05 | 3 |
-| 13 | Page-Level Renovation | HOME-01..05, MEAL-01..04, WORK-01..05, TRACK-01..02, TICKET-01..02, SET-01..02, FAQ-01, EMPTY-01..06, AUTH-01..02, DESK-02..03 | 7 |
-| 14 | Check-in Wizard and Onboarding | CHECK-01..05, ONBOARD-01..03 | 3 |
-| 15 | RTL Audit and Polish | RTL-05..08, VERIFY-01..03 | 3 |
+| Phase | Name                              | Requirements                                                                                                                   | Plans |
+| ----- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ----- |
+| 11    | Foundation — Shell and Navigation | NAV-01..07, DS-04, DS-05, DESK-01                                                                                              | 4     |
+| 12    | Design Tokens and Core Primitives | DS-01..03, DS-06, PRIM-01..05                                                                                                  | 3     |
+| 13    | Page-Level Renovation             | HOME-01..05, MEAL-01..04, WORK-01..05, TRACK-01..02, TICKET-01..02, SET-01..02, FAQ-01, EMPTY-01..06, AUTH-01..02, DESK-02..03 | 7     |
+| 14    | Check-in Wizard and Onboarding    | CHECK-01..05, ONBOARD-01..03                                                                                                   | 3     |
+| 15    | RTL Audit and Polish              | RTL-05..08, VERIFY-01..03                                                                                                      | 3     |
 
 **Totals:** 5 phases, 20 plans, 65 requirements
 

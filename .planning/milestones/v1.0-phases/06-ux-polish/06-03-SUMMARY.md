@@ -58,6 +58,7 @@ completed: 2026-02-13
 - **Files modified:** 3
 
 ## Accomplishments
+
 - Replaced ad-hoc empty states in tickets page with EmptyState component and CTA to scroll to form
 - Replaced ad-hoc empty states in progress photos tab with EmptyState component
 - Replaced ad-hoc empty states in progress history tab with EmptyState component and check-in CTA
@@ -72,6 +73,7 @@ Each task was committed atomically:
 2. **Task 2: Add EmptyState to tracking page for no-plan scenario** - `96c93e2` (feat)
 
 ## Files Created/Modified
+
 - `src/app/[locale]/(dashboard)/tickets/page.tsx` - EmptyState for no tickets with CTA to scroll to form
 - `src/app/[locale]/(dashboard)/progress/page.tsx` - EmptyState for no photos and no check-in history
 - `src/app/[locale]/(dashboard)/tracking/page.tsx` - EmptyState for no tracking data with check-in CTA
@@ -103,12 +105,14 @@ None - no external service configuration required.
 - Ready for Plan 04 (loading states) and Plan 05 (skeleton screens)
 
 ---
-*Phase: 06-ux-polish*
-*Completed: 2026-02-13*
+
+_Phase: 06-ux-polish_
+_Completed: 2026-02-13_
 
 ## Self-Check: PASSED
 
 Verified all files and commits exist:
+
 - FOUND: src/app/[locale]/(dashboard)/tickets/page.tsx
 - FOUND: src/app/[locale]/(dashboard)/progress/page.tsx
 - FOUND: src/app/[locale]/(dashboard)/tracking/page.tsx

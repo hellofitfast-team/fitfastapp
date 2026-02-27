@@ -9,12 +9,8 @@ export default function AdminSignupsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-stone-900">
-          {t("signups")}
-        </h1>
-        <p className="text-sm text-stone-500 mt-1">
-          {t("pendingSignups")}
-        </p>
+        <h1 className="text-2xl font-bold tracking-tight text-stone-900">{t("signups")}</h1>
+        <p className="mt-1 text-sm text-stone-500">{t("pendingSignups")}</p>
       </div>
 
       <SignupsTable />

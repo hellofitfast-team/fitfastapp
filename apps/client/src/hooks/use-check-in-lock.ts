@@ -5,14 +5,9 @@ import { api } from "@/convex/_generated/api";
 
 export function useCheckInLock() {
   const { isAuthenticated } = useConvexAuth();
-  const lockStatus = useQuery(
-    api.checkIns.getLockStatus,
-    isAuthenticated ? {} : "skip",
-  );
+  const lockStatus = useQuery(api.checkIns.getLockStatus, isAuthenticated ? {} : "skip");
 
-  const nextCheckInDate = lockStatus?.nextCheckInDate
-    ? new Date(lockStatus.nextCheckInDate)
-    : null;
+  const nextCheckInDate = lockStatus?.nextCheckInDate ? new Date(lockStatus.nextCheckInDate) : null;
 
   let daysUntilNextCheckIn = 0;
   if (lockStatus?.isLocked && nextCheckInDate) {
@@ -25,6 +20,7 @@ export function useCheckInLock() {
     isLocked: lockStatus?.isLocked ?? false,
     nextCheckInDate,
     daysUntilNextCheckIn,
+    frequencyDays: lockStatus?.frequencyDays ?? 14,
     isLoadingLockStatus: isAuthenticated && lockStatus === undefined,
   };
 }

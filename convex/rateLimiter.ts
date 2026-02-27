@@ -1,4 +1,4 @@
-import { RateLimiter, DAY } from "@convex-dev/rate-limiter";
+import { RateLimiter, DAY, HOUR } from "@convex-dev/rate-limiter";
 import { components } from "./_generated/api";
 
 /**
@@ -16,4 +16,8 @@ export const rateLimiter = new RateLimiter(components.rateLimiter, {
     rate: 3,
     period: DAY,
   },
+  // Signup creation: 5 per hour per email (prevent spam signups)
+  createSignup: { kind: "fixed window", rate: 5, period: HOUR },
+  // Marketing upload URL: 10 per hour per IP (unauthenticated endpoint)
+  marketingUpload: { kind: "fixed window", rate: 10, period: HOUR },
 });

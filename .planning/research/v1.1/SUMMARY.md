@@ -20,10 +20,12 @@ The top risks are performance on budget Android devices (common in Egypt), virtu
 The existing stack (Next.js 16.1.6, React 19, Tailwind v4, shadcn/ui) requires no changes. Only two packages are added.
 
 **New dependencies (total ~5-7KB gzipped):**
+
 - **Vaul** (via `shadcn/ui Drawer`): Bottom sheet/drawer component with native touch gestures and snap points. The canonical choice in the shadcn ecosystem. ~3-5KB.
 - **react-swipeable**: Swipe gesture detection for check-in wizard step navigation. Hook-based, zero dependencies. ~1.5KB.
 
 **Explicitly rejected:**
+
 - `motion` / `framer-motion` -- CSS transitions + Tailwind v4 cover all needed animations. 34KB for features not in scope.
 - `@use-gesture/react` -- 8KB when react-swipeable does the same at 1.5KB.
 - `tailwindcss-animate` -- Tailwind v4 has native animation support; this plugin is for v3.
@@ -34,6 +36,7 @@ The existing stack (Next.js 16.1.6, React 19, Tailwind v4, shadcn/ui) requires n
 ### Expected Features
 
 **Must have (table stakes for mobile fitness PWA):**
+
 - Bottom navigation bar (floating pill, 4-5 items) -- replaces hamburger menu
 - Home screen with greeting, today's plan card, streak indicator, quick-action CTA
 - Horizontal day selector for meal/workout plans with collapsible cards
@@ -45,6 +48,7 @@ The existing stack (Next.js 16.1.6, React 19, Tailwind v4, shadcn/ui) requires n
 - Safe area handling for iOS notch/home indicator
 
 **Should have (polish, include if time permits):**
+
 - Coach message banner on home screen ("Your coach replied")
 - Meal/exercise swap indicators (surface AI alternatives)
 - Chat-style ticket conversation bubbles
@@ -53,6 +57,7 @@ The existing stack (Next.js 16.1.6, React 19, Tailwind v4, shadcn/ui) requires n
 - Badge indicators on nav items (check-in due, unread coach message)
 
 **Defer to v1.2+:**
+
 - Grocery list aggregation view
 - Pose guide camera overlay
 - Exercise illustration icons
@@ -61,6 +66,7 @@ The existing stack (Next.js 16.1.6, React 19, Tailwind v4, shadcn/ui) requires n
 - Hide-nav-on-scroll behavior
 
 **Anti-features (explicitly avoid):**
+
 - Social feed / community features
 - Calorie logging / food diary
 - Real-time activity tracking
@@ -72,6 +78,7 @@ The existing stack (Next.js 16.1.6, React 19, Tailwind v4, shadcn/ui) requires n
 Single responsive layout with breakpoint switching at `lg` (1024px). Mobile gets bottom nav + compact header; desktop gets horizontal top navbar. The sidebar is fully deprecated. Content components are shared across breakpoints. New components are built in parallel (`dashboard-shell-v2.tsx`) and swapped with a single import change, providing zero-risk rollback.
 
 **Major components:**
+
 1. **DashboardShell (renovated)** -- Responsive container: mobile header + bottom nav below `lg`, desktop top nav at `lg+`
 2. **BottomNav** -- Fixed bottom navigation, 5 items, safe-area-aware, hidden when keyboard open
 3. **DesktopTopNav** -- Horizontal navbar replacing the 272px sidebar
@@ -96,6 +103,7 @@ Single responsive layout with breakpoint switching at `lg` (1024px). Mobile gets
 ## Implications for Roadmap
 
 ### Phase 1: Foundation -- Shell and Navigation
+
 **Rationale:** Everything else depends on the navigation structure. The bottom nav, mobile header, and desktop top nav form the container that all page content sits inside. Build this first so all subsequent page renovations render inside the new shell.
 **Delivers:** New responsive layout shell with bottom nav (mobile) and top nav (desktop). Sidebar deprecated. Safe area handling. Keyboard-aware nav hiding.
 **Addresses:** Bottom navigation bar, safe area handling, floating pill shape, active state animation, badge indicators
@@ -103,12 +111,14 @@ Single responsive layout with breakpoint switching at `lg` (1024px). Mobile gets
 **Installs:** Vaul (via shadcn drawer) for the "More" menu bottom sheet
 
 ### Phase 2: Design Tokens and Core Primitives
+
 **Rationale:** Before renovating individual pages, the design token vocabulary and reusable primitives must exist. This phase creates the building blocks; subsequent phases consume them.
 **Delivers:** Extended `@theme` tokens (spacing, shadow, z-index, safe-area), new UI primitives (WidgetCard, PageHeader, skeleton components), animation keyframes in globals.css
 **Addresses:** Skeleton loading system, button press feedback, consistent page headers
 **Avoids:** Pitfall #4 (animation jank) by establishing GPU-only animation rules upfront
 
 ### Phase 3: Page-Level Renovation
+
 **Rationale:** With shell and primitives ready, renovate each page screen. This is the largest phase and can be parallelized across pages since they are independent.
 **Delivers:** Renovated home screen (widget cards, greeting, today's plan), meal plan display (day selector, collapsible cards), workout plan display (matching pattern), tracking/progress pages, ticket conversation view, settings page
 **Addresses:** All "must have" features -- home screen widgets, day selectors, collapsed cards, empty states, pull-to-refresh, coach message banner
@@ -116,6 +126,7 @@ Single responsive layout with breakpoint switching at `lg` (1024px). Mobile gets
 **Sub-phases recommended:** Home -> Meals -> Workouts -> Tickets -> Tracking/Progress -> Settings
 
 ### Phase 4: Check-in Wizard and Specialized Features
+
 **Rationale:** The check-in wizard is the most complex renovation (multi-step form with swipe, photo upload, React Hook Form integration). It depends on Phase 2 primitives (StepWizard) and Phase 1 shell. Do it last to benefit from lessons learned on simpler pages.
 **Delivers:** Step-by-step check-in wizard with swipe navigation, onboarding flow renovation, chat-style ticket bubbles, floating action button
 **Addresses:** Check-in wizard, step progress indicator, swipe gestures, haptic feedback, motivational micro-copy
@@ -123,6 +134,7 @@ Single responsive layout with breakpoint switching at `lg` (1024px). Mobile gets
 **Installs:** react-swipeable for swipe gesture detection
 
 ### Phase 5: RTL Audit and Polish
+
 **Rationale:** RTL must be verified after ALL component renovations are complete, not piecemeal. A dedicated pass ensures nothing was missed and provides the final quality gate.
 **Delivers:** Full RTL verification, reduced-motion support, touch target audit (44px minimum), PWA standalone mode testing, stale cache mitigation
 **Addresses:** RTL swipe direction handling, Arabic typography verification, prefers-reduced-motion
@@ -139,22 +151,24 @@ Single responsive layout with breakpoint switching at `lg` (1024px). Mobile gets
 ### Research Flags
 
 Phases likely needing deeper research during planning:
+
 - **Phase 1 (Shell/Nav):** Needs research on keyboard detection edge cases across iOS/Android versions. The `visualViewport` API behavior varies.
 - **Phase 4 (Check-in Wizard):** Needs research on react-swipeable + React Hook Form integration patterns, and RTL swipe direction inversion.
 
 Phases with standard patterns (skip phase-level research):
+
 - **Phase 2 (Tokens/Primitives):** Pure Tailwind CSS work. Well-documented, zero unknowns.
 - **Phase 3 (Page Renovation):** Straightforward component restructuring using established primitives.
 - **Phase 5 (RTL Audit):** Follows the same audit pattern used in v1.0 Phase 10. Documented process exists.
 
 ## Confidence Assessment
 
-| Area | Confidence | Notes |
-|------|------------|-------|
-| Stack | HIGH | Only 2 small, well-established packages added. All recommendations verified against official docs and bundle size analysis. |
-| Features | MEDIUM-HIGH | Patterns well-established across fitness apps (Hevy, Fitbod, MFP). Implementation specifics verified. Minor uncertainty on which "should have" features fit in timeline. |
-| Architecture | HIGH | Based on direct analysis of existing codebase. Parallel build + swap strategy is proven. Tailwind v4 @theme is the official pattern. |
-| Pitfalls | HIGH | All pitfalls verified against official MDN/Next.js/Motion docs. Real-world failure modes, not theoretical. |
+| Area         | Confidence  | Notes                                                                                                                                                                    |
+| ------------ | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Stack        | HIGH        | Only 2 small, well-established packages added. All recommendations verified against official docs and bundle size analysis.                                              |
+| Features     | MEDIUM-HIGH | Patterns well-established across fitness apps (Hevy, Fitbod, MFP). Implementation specifics verified. Minor uncertainty on which "should have" features fit in timeline. |
+| Architecture | HIGH        | Based on direct analysis of existing codebase. Parallel build + swap strategy is proven. Tailwind v4 @theme is the official pattern.                                     |
+| Pitfalls     | HIGH        | All pitfalls verified against official MDN/Next.js/Motion docs. Real-world failure modes, not theoretical.                                                               |
 
 **Overall confidence:** HIGH
 
@@ -168,6 +182,7 @@ Phases with standard patterns (skip phase-level research):
 ## Sources
 
 ### Primary (HIGH confidence)
+
 - [Tailwind CSS v4 Theme Variables](https://tailwindcss.com/docs/theme) -- design token system
 - [shadcn/ui Drawer (Vaul)](https://ui.shadcn.com/docs/components/radix/drawer) -- bottom sheet component
 - [Vaul GitHub](https://github.com/emilkowalski/vaul) -- drawer implementation details
@@ -179,6 +194,7 @@ Phases with standard patterns (skip phase-level research):
 - [Material Design: Bidirectionality](https://m1.material.io/usability/bidirectionality.html) -- RTL patterns
 
 ### Secondary (MEDIUM confidence)
+
 - [Fitness App UX Best Practices -- Stormotion](https://stormotion.io/blog/fitness-app-ux/) -- feature patterns
 - [Bottom Navigation Bar Guide -- AppMySite](https://blog.appmysite.com/bottom-navigation-bar-in-mobile-apps-heres-all-you-need-to-know/) -- nav design
 - [Ahmad Shadeed: Virtual Keyboard API](https://ishadeed.com/article/virtual-keyboard-api/) -- iOS keyboard behavior
@@ -186,8 +202,10 @@ Phases with standard patterns (skip phase-level research):
 - [unDraw](https://undraw.co/) -- free SVG illustrations for empty states
 
 ### Tertiary (LOW confidence)
+
 - [Next.js viewTransition](https://nextjs.org/docs/app/api-reference/config/next-config-js/viewTransition) -- experimental, deferred to future version
 
 ---
-*Research completed: 2026-02-17*
-*Ready for roadmap: yes*
+
+_Research completed: 2026-02-17_
+_Ready for roadmap: yes_

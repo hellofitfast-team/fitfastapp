@@ -120,7 +120,12 @@
     "verificationRequired": "Verification code is required",
     "passwordRequirements": "Password must be at least 8 characters",
     "passwordComplexity": "Password must contain at least one uppercase letter, one lowercase letter, and one number",
-    "passwordStrength": { "weak": "Weak", "medium": "Medium", "strong": "Strong", "label": "Strength" },
+    "passwordStrength": {
+      "weak": "Weak",
+      "medium": "Medium",
+      "strong": "Strong",
+      "label": "Strength"
+    },
     "emailNotFound": "Email not found. Please start the password reset process again.",
     "unexpectedError": "An unexpected error occurred. Please try again.",
     "loginMessages": {

@@ -17,6 +17,8 @@ interface BasicInfoSectionProps {
   setAge: (value: string) => void;
   gender: string;
   setGender: (value: string) => void;
+  activityLevel: string;
+  setActivityLevel: (value: string) => void;
   experienceLevel: string;
   setExperienceLevel: (value: string) => void;
   equipment: string;
@@ -35,6 +37,8 @@ export function BasicInfoSection({
   setAge,
   gender,
   setGender,
+  activityLevel,
+  setActivityLevel,
   experienceLevel,
   setExperienceLevel,
   equipment,
@@ -43,6 +47,7 @@ export function BasicInfoSection({
   setEquipmentOther,
   isLoading,
 }: BasicInfoSectionProps) {
+  const t = useTranslations("onboarding.assessment");
   const tUnits = useTranslations("units");
 
   return (
@@ -60,7 +65,7 @@ export function BasicInfoSection({
                 onChange={(e) => setCurrentWeight(e.target.value)}
                 disabled={isLoading}
               />
-              <span className="font-semibold text-sm text-muted-foreground">{tUnits("kg")}</span>
+              <span className="text-muted-foreground text-sm font-semibold">{tUnits("kg")}</span>
             </div>
           </FormField>
           <FormField label="Height">
@@ -72,7 +77,7 @@ export function BasicInfoSection({
                 onChange={(e) => setHeight(e.target.value)}
                 disabled={isLoading}
               />
-              <span className="font-semibold text-sm text-muted-foreground">{tUnits("cm")}</span>
+              <span className="text-muted-foreground text-sm font-semibold">{tUnits("cm")}</span>
             </div>
           </FormField>
           <FormField label="Age">
@@ -95,11 +100,13 @@ export function BasicInfoSection({
                   onClick={() => setGender(option.id)}
                   disabled={isLoading}
                   className={cn(
-                    "flex-1 p-2.5 rounded-lg border text-sm font-medium transition-colors",
+                    "flex-1 rounded-lg border p-2.5 text-sm font-medium transition-colors",
                     gender === option.id
                       ? "border-[#F97316]/30 bg-[#F97316]/8 text-[#F97316]"
                       : "border-border bg-card hover:bg-neutral-50",
-                    isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer active:scale-[0.97]"
+                    isLoading
+                      ? "cursor-not-allowed opacity-50"
+                      : "cursor-pointer active:scale-[0.97]",
                   )}
                 >
                   {option.label}
@@ -110,41 +117,102 @@ export function BasicInfoSection({
         </div>
       </SectionCard>
 
+      {/* Activity Level */}
+      <SectionCard icon={User} title={t("activityLevelTitle")}>
+        <p className="text-muted-foreground mb-3 text-xs">{t("activityLevelDesc")}</p>
+        <div className="flex flex-col gap-2">
+          {(
+            [
+              { id: "sedentary", emoji: "1" },
+              { id: "lightly_active", emoji: "2" },
+              { id: "moderately_active", emoji: "3" },
+              { id: "very_active", emoji: "4" },
+            ] as const
+          ).map((level) => (
+            <button
+              key={level.id}
+              type="button"
+              onClick={() => setActivityLevel(level.id)}
+              disabled={isLoading}
+              className={cn(
+                "flex items-center gap-3 rounded-lg border p-3.5 text-start transition-colors",
+                activityLevel === level.id
+                  ? "border-[#F97316]/30 bg-[#F97316]/8"
+                  : "border-border bg-card hover:bg-neutral-50",
+                isLoading ? "cursor-not-allowed opacity-50" : "cursor-pointer active:scale-[0.97]",
+              )}
+            >
+              <div
+                className={cn(
+                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-xs font-bold",
+                  activityLevel === level.id
+                    ? "border-[#F97316]/30 bg-[#F97316]/12 text-[#F97316]"
+                    : "border-border text-muted-foreground bg-neutral-50",
+                )}
+              >
+                {level.emoji}
+              </div>
+              <div>
+                <span
+                  className={cn(
+                    "block text-sm font-semibold",
+                    activityLevel === level.id && "text-[#F97316]",
+                  )}
+                >
+                  {t(`activityLevels.${level.id}`)}
+                </span>
+                <span className="text-muted-foreground block text-xs">
+                  {t(`activityLevels.${level.id}_desc`)}
+                </span>
+              </div>
+            </button>
+          ))}
+        </div>
+      </SectionCard>
+
       {/* Experience Level */}
       <SectionCard icon={Dumbbell} title="Experience Level" variant="fitness">
         <div className="flex flex-col gap-2">
-          {([
-            { id: "beginner", label: "Beginner", desc: "New to fitness" },
-            { id: "intermediate", label: "Intermediate", desc: "1-2 years" },
-            { id: "advanced", label: "Advanced", desc: "3+ years" },
-          ] as const).map((level) => (
+          {(
+            [
+              { id: "beginner", label: "Beginner", desc: "New to fitness" },
+              { id: "intermediate", label: "Intermediate", desc: "1-2 years" },
+              { id: "advanced", label: "Advanced", desc: "3+ years" },
+            ] as const
+          ).map((level) => (
             <button
               key={level.id}
               type="button"
               onClick={() => setExperienceLevel(level.id)}
               disabled={isLoading}
               className={cn(
-                "flex items-center gap-3 p-3.5 rounded-lg border transition-colors text-start",
+                "flex items-center gap-3 rounded-lg border p-3.5 text-start transition-colors",
                 experienceLevel === level.id
                   ? "border-[#F97316]/30 bg-[#F97316]/8"
                   : "border-border bg-card hover:bg-neutral-50",
-                isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer active:scale-[0.97]"
+                isLoading ? "cursor-not-allowed opacity-50" : "cursor-pointer active:scale-[0.97]",
               )}
             >
-              <div className={cn(
-                "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-xs font-bold",
-                experienceLevel === level.id
-                  ? "border-[#F97316]/30 bg-[#F97316]/12 text-[#F97316]"
-                  : "border-border bg-neutral-50 text-muted-foreground"
-              )}>
+              <div
+                className={cn(
+                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-xs font-bold",
+                  experienceLevel === level.id
+                    ? "border-[#F97316]/30 bg-[#F97316]/12 text-[#F97316]"
+                    : "border-border text-muted-foreground bg-neutral-50",
+                )}
+              >
                 {level.id === "beginner" ? "1" : level.id === "intermediate" ? "2" : "3"}
               </div>
               <div>
-                <span className={cn(
-                  "block font-semibold text-sm",
-                  experienceLevel === level.id && "text-[#F97316]"
-                )}>{level.label}</span>
-                <span className="block text-xs text-muted-foreground">{level.desc}</span>
+                <span
+                  className={cn(
+                    "block text-sm font-semibold",
+                    experienceLevel === level.id && "text-[#F97316]",
+                  )}
+                >
+                  {level.label}
+                </span>
+                <span className="text-muted-foreground block text-xs">{level.desc}</span>
               </div>
             </button>
           ))}
@@ -162,25 +230,30 @@ export function BasicInfoSection({
                 onClick={() => setEquipment(option.id)}
                 disabled={isLoading}
                 className={cn(
-                  "flex items-center gap-3 p-3.5 rounded-lg border transition-colors text-start",
+                  "flex items-center gap-3 rounded-lg border p-3.5 text-start transition-colors",
                   equipment === option.id
                     ? "border-[#F97316]/30 bg-[#F97316]/8"
                     : "border-border bg-card hover:bg-neutral-50",
-                  isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer active:scale-[0.97]"
+                  isLoading
+                    ? "cursor-not-allowed opacity-50"
+                    : "cursor-pointer active:scale-[0.97]",
                 )}
               >
-                <div className={cn(
-                  "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs",
-                  equipment === option.id
-                    ? "border-[#F97316]/30 bg-[#F97316]/12 text-[#F97316]"
-                    : "border-border bg-neutral-50 text-muted-foreground"
-                )}>
+                <div
+                  className={cn(
+                    "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs",
+                    equipment === option.id
+                      ? "border-[#F97316]/30 bg-[#F97316]/12 text-[#F97316]"
+                      : "border-border text-muted-foreground bg-neutral-50",
+                  )}
+                >
                   {equipment === option.id ? "✓" : ""}
                 </div>
-                <span className={cn(
-                  "text-sm font-medium",
-                  equipment === option.id && "text-[#F97316]"
-                )}>{option.label}</span>
+                <span
+                  className={cn("text-sm font-medium", equipment === option.id && "text-[#F97316]")}
+                >
+                  {option.label}
+                </span>
               </button>
             ))}
           </div>

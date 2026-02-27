@@ -10,7 +10,12 @@ import type { CheckInFormData } from "../page";
 
 export function FitnessStep() {
   const t = useTranslations("checkIn");
-  const { register, formState: { errors }, watch, setValue } = useFormContext<CheckInFormData>();
+  const {
+    register,
+    formState: { errors },
+    watch,
+    setValue,
+  } = useFormContext<CheckInFormData>();
 
   const energyLevel = watch("energyLevel");
   const sleepQuality = watch("sleepQuality");
@@ -23,7 +28,9 @@ export function FitnessStep() {
           className="min-h-[120px]"
           {...register("workoutPerformance")}
         />
-        {errors.workoutPerformance && <p className="mt-2 text-xs text-error-500">{errors.workoutPerformance.message}</p>}
+        {errors.workoutPerformance && (
+          <p className="text-error-500 mt-2 text-xs">{errors.workoutPerformance.message}</p>
+        )}
       </SectionCard>
 
       <SectionCard title={t("wellbeingMetrics")} variant="fitness">

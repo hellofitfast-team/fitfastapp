@@ -5,6 +5,7 @@
 ## Naming Patterns
 
 **Files:**
+
 - Page files: kebab-case (e.g., `meal-plan/page.tsx`, `workout-plan/page.tsx`)
 - Component files: PascalCase (e.g., `Header.tsx`, `InstallPrompt.tsx`)
 - Hook files: kebab-case with `use-` prefix (e.g., `use-profile.ts`, `use-dashboard.ts`)
@@ -12,6 +13,7 @@
 - Type definition files: camelCase (e.g., `database.ts`)
 
 **Functions and Variables:**
+
 - camelCase for all function and variable names
 - Prefix hook functions with `use` (e.g., `useProfile()`, `useDashboardData()`)
 - Constants in UPPER_SNAKE_CASE (e.g., `TOAST_LIMIT`, `OPENROUTER_API_URL`, `MODEL`)
@@ -19,6 +21,7 @@
 - Callback/state update functions use descriptive verbs (e.g., `switchLocale()`, `genId()`)
 
 **Types and Interfaces:**
+
 - PascalCase for all type and interface names (e.g., `Profile`, `MealPlan`, `GeneratedMealPlan`, `HeaderProps`)
 - Suffix interface names with `Props` for component props (e.g., `ButtonProps`, `HeaderProps`)
 - Generic type parameters are single uppercase letters (e.g., `T`, `K`, `V`)
@@ -26,11 +29,13 @@
 ## Code Style
 
 **Formatting:**
+
 - Configured via ESLint with Next.js defaults (eslint-config-next/core-web-vitals, eslint-config-next/typescript)
 - No explicit Prettier config — uses ESLint's formatting rules
 - Default is standard JavaScript/TypeScript formatting: 2-space indentation, semicolons required
 
 **Linting:**
+
 - Uses Next.js ESLint config: `eslint-config-next` v16.1.6
 - Config file: `eslint.config.mjs`
 - Enforces Core Web Vitals and TypeScript best practices
@@ -38,6 +43,7 @@
 - Note: `pnpm lint` has a known issue reporting invalid project directory
 
 **Project Setup:**
+
 - TypeScript with strict mode enabled (`strict: true`)
 - Module resolution: `bundler`
 - Target: ES2017
@@ -46,11 +52,13 @@
 ## Import Organization
 
 **Order:**
+
 1. External library imports (React, Next.js, Supabase, etc.)
 2. Absolute imports with `@/` alias
 3. Relative imports (rarely used)
 
 **Examples:**
+
 ```typescript
 // Page component
 import { useTranslations, useLocale } from "next-intl";
@@ -78,18 +86,21 @@ import { cn } from "@/lib/utils";
 ```
 
 **Path Aliases:**
+
 - `@/*` maps to `./src/*` (configured in tsconfig.json)
 - All imports use absolute `@/` paths, never relative imports
 
 ## Error Handling
 
 **Patterns:**
+
 - Synchronous errors: `try/catch` blocks with console.error logging
 - Async/API errors: Destructure Supabase response into `{ data, error }` pairs
 - Route handlers: Return NextResponse with appropriate status codes
 - Never silently fail — always return error response or log context
 
 **Examples:**
+
 ```typescript
 // Route handler pattern
 try {
@@ -122,6 +133,7 @@ try {
 ```
 
 **Error Tracking:**
+
 - Sentry integration captures exceptions automatically
 - Use `Sentry.captureException(error)` in Error Boundary components
 - Error boundaries implemented for locale-specific pages (`src/app/[locale]/error.tsx`)
@@ -132,12 +144,14 @@ try {
 **Framework:** Native `console` object (no custom logging library)
 
 **Patterns:**
+
 - `console.error()` for error conditions with context
 - `console.warn()` for configuration warnings (e.g., missing API keys)
 - Avoid `console.log()` in production code — use only for debugging
 - Always log operation context (user_id, request_id, action name)
 
 **Examples:**
+
 ```typescript
 console.error("Sign-in error:", error);
 console.error("Error saving meal plan:", saveError);
@@ -148,6 +162,7 @@ console.warn("OpenRouter API key not configured");
 ## Comments
 
 **When to Comment:**
+
 - Document why (intent) not what (code is self-explanatory)
 - Add comments for non-obvious business logic
 - Document API contracts and data structures
@@ -155,11 +170,13 @@ console.warn("OpenRouter API key not configured");
 - Keep comments close to relevant code
 
 **JSDoc/TSDoc:**
+
 - Use for public functions and exports
 - Include parameter descriptions and return types
 - Optional for internal/private functions
 
 **Examples:**
+
 ```typescript
 /**
  * Hook to fetch and cache the current user's profile
@@ -182,21 +199,25 @@ async complete(prompt: string, systemPrompt?: string, ...) { ... }
 ## Function Design
 
 **Size:**
+
 - Keep functions under 50 lines for readability
 - Larger functions (like page components) acceptable for UI layout logic
 - Extract helper functions for reusable logic
 
 **Parameters:**
+
 - Use destructuring for object parameters
 - Pass interface types for multiple related parameters
 - Keep parameter count <= 3 (use objects for more)
 
 **Return Values:**
+
 - Always specify return types explicitly (TypeScript)
 - Use unions for multiple return shapes
 - Export type definitions for return interfaces
 
 **Examples:**
+
 ```typescript
 // Hook with destructured return
 export function useProfile() {
@@ -230,16 +251,19 @@ export async function POST(request: Request) {
 ## Module Design
 
 **Exports:**
+
 - Named exports for functions, types, hooks, components
 - Default exports only for page components (Next.js convention)
 - Export types alongside implementations
 
 **Barrel Files:**
+
 - Used sparingly in layout components: `src/components/layouts/index.ts`
 - Syntax: `export { Header } from "./header";`
 - Avoid circular dependencies
 
 **Examples:**
+
 ```typescript
 // src/lib/supabase/server.ts
 export async function createClient() { ... }
@@ -261,12 +285,14 @@ export function useCanAccessDashboard() { ... }
 ## Language and i18n Conventions
 
 **Multilingual String Handling:**
+
 - All UI strings use `useTranslations()` from next-intl
 - Structure: `t("namespace.key")` (e.g., `t("dashboard.welcome")`, `t("nav.settings")`)
 - Labels: Use `.toUpperCase()` for English labels (design choice)
 - Arabic: Fully RTL-aware, handle with `useLocale()` to detect "ar"
 
 **Examples:**
+
 ```typescript
 const t = useTranslations();
 const locale = useLocale();
@@ -278,4 +304,4 @@ const locale = useLocale();
 
 ---
 
-*Convention analysis: 2026-02-12*
+_Convention analysis: 2026-02-12_

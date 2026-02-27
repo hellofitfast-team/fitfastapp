@@ -8,16 +8,16 @@
 
 These stay exactly as-is:
 
-| Technology | Version | Role |
-|------------|---------|------|
-| Next.js | 16.1.6 | Framework (App Router) |
-| React | 19.2.3 | UI library |
-| Tailwind CSS | 4.1.18 | Styling |
-| shadcn/ui | (copy-paste) | Component primitives |
-| next-intl | 4.8.2 | i18n (EN + AR/RTL) |
-| SWR / Zustand | 2.4 / latest | State management |
-| Radix UI | various | Accessible primitives |
-| lucide-react | 0.563 | Icons |
+| Technology    | Version      | Role                   |
+| ------------- | ------------ | ---------------------- |
+| Next.js       | 16.1.6       | Framework (App Router) |
+| React         | 19.2.3       | UI library             |
+| Tailwind CSS  | 4.1.18       | Styling                |
+| shadcn/ui     | (copy-paste) | Component primitives   |
+| next-intl     | 4.8.2        | i18n (EN + AR/RTL)     |
+| SWR / Zustand | 2.4 / latest | State management       |
+| Radix UI      | various      | Accessible primitives  |
+| lucide-react  | 0.563        | Icons                  |
 
 ## Recommended Additions
 
@@ -26,12 +26,14 @@ These stay exactly as-is:
 **Recommendation:** Use CSS transitions, CSS animations, and Tailwind v4's built-in animation utilities. Do NOT add `motion` (formerly framer-motion).
 
 **Rationale:**
+
 - The renovation needs page transitions (fade/slide), card entrance animations, and micro-interactions (button press, tab switch). These are all achievable with CSS transitions + `@keyframes`.
 - `motion` (the renamed framer-motion) adds ~34KB min+gzip for the full bundle, or ~4.6KB with LazyMotion. Even 4.6KB is unnecessary weight for what CSS handles natively.
 - The project already has `animate-fade-in` and `animate-slide-in` CSS keyframes in `globals.css`. Extend this pattern.
 - React 19's `<ViewTransition>` component is available (experimental in Next.js 16.1.6 via `experimental: { viewTransition: true }`). This provides native page-level transitions with zero JS bundle cost. It is marked experimental but works for same-document transitions in Chrome, Edge, and Safari 18+.
 
 **What to use instead:**
+
 ```css
 /* In globals.css - extend existing pattern */
 @keyframes slideUp { ... }
@@ -41,8 +43,9 @@ These stay exactly as-is:
 ```
 
 Plus Tailwind v4 utilities:
+
 ```html
-<div class="transition-all duration-300 ease-out">
+<div class="transition-all duration-300 ease-out"></div>
 ```
 
 **Confidence:** HIGH. CSS animations cover 100% of the needed transitions for this renovation. Motion library is overkill.
@@ -56,6 +59,7 @@ Plus Tailwind v4 utilities:
 **Recommendation:** Install the shadcn/ui Drawer component, which wraps [Vaul](https://github.com/emilkowalski/vaul) by Emil Kowalski.
 
 **Rationale:**
+
 - shadcn/ui already has a [Drawer component](https://ui.shadcn.com/docs/components/radix/drawer) built on Vaul. Since FitFast already uses shadcn/ui primitives, this is the natural choice.
 - Vaul is purpose-built for mobile bottom sheets with native-feeling touch/drag gestures, snap points, and physics-based animations.
 - Bundle size: ~3-5KB gzip (Vaul itself is lightweight; the only dependency is Radix Dialog which FitFast already has installed).
@@ -63,6 +67,7 @@ Plus Tailwind v4 utilities:
 - Active maintenance by Emil Kowalski (shadcn ecosystem).
 
 **Installation:**
+
 ```bash
 npx shadcn@latest add drawer
 ```
@@ -70,6 +75,7 @@ npx shadcn@latest add drawer
 This copies the Drawer component into `src/components/ui/drawer.tsx` and adds `vaul` as a dependency. No other changes needed.
 
 **Use cases in renovation:**
+
 - Check-in detail view on mobile
 - Meal/workout plan day detail
 - Quick-action menus
@@ -84,6 +90,7 @@ This copies the Drawer component into `src/components/ui/drawer.tsx` and adds `v
 **Recommendation:** Use [react-swipeable](https://github.com/FormidableLabs/react-swipeable) for the check-in form step navigation.
 
 **Rationale:**
+
 - ~1.5KB gzip, zero dependencies, hook-based API.
 - Only need swipe left/right detection for the multi-step check-in form. This is all react-swipeable does -- it is laser-focused on swipe detection.
 - Alternative `@use-gesture/react` (~8KB gzip) is more powerful but handles pinch, drag, scroll, wheel, move, and hover -- all unnecessary for this use case.
@@ -91,6 +98,7 @@ This copies the Drawer component into `src/components/ui/drawer.tsx` and adds `v
 - Actively maintained by NearForm (formerly Formidable Labs).
 
 **Usage pattern:**
+
 ```typescript
 import { useSwipeable } from 'react-swipeable';
 
@@ -105,6 +113,7 @@ return <div {...handlers}>{/* step content */}</div>;
 ```
 
 **Installation:**
+
 ```bash
 pnpm add react-swipeable
 ```
@@ -118,24 +127,24 @@ pnpm add react-swipeable
 **Recommendation:** Build the floating pill-shaped bottom nav as a custom component using Tailwind CSS classes. No library needed.
 
 **Rationale:**
+
 - A bottom nav bar is a `fixed bottom-4` div with `rounded-full` (after we update the radius tokens), `backdrop-blur`, and flex layout. This is 20-30 lines of Tailwind.
 - No library exists that would meaningfully simplify this. Navigation bar libraries tend to be opinionated about routing, which conflicts with Next.js App Router.
 - The pill shape with active indicator is a styling concern, not a behavior concern.
 
 **Implementation approach:**
+
 ```tsx
 // src/components/navigation/bottom-nav.tsx
-<nav className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50
-  bg-white/80 backdrop-blur-xl rounded-full shadow-lg
-  border border-neutral-200 px-2 py-1
-  flex items-center gap-1">
-  {items.map(item => (
+<nav className="fixed bottom-4 left-1/2 z-50 flex -translate-x-1/2 items-center gap-1 rounded-full border border-neutral-200 bg-white/80 px-2 py-1 shadow-lg backdrop-blur-xl">
+  {items.map((item) => (
     <NavItem key={item.href} active={isActive} {...item} />
   ))}
 </nav>
 ```
 
 **Key Tailwind classes:**
+
 - `rounded-full` -- pill shape (requires updating radius tokens for nav only, use inline override)
 - `backdrop-blur-xl` -- frosted glass effect
 - `fixed bottom-4 inset-x-4` -- floating position
@@ -150,6 +159,7 @@ pnpm add react-swipeable
 **Recommendation:** Use hand-picked SVG illustrations from [unDraw](https://undraw.co/) (free, MIT license). Download 5-8 fitness/health themed SVGs, customize colors to match the new theme, and store as static assets.
 
 **Rationale:**
+
 - DO NOT install an illustration library. They are massive (hundreds of SVGs bundled) and you only need 5-8 specific ones.
 - unDraw has fitness, health, and wellness themed illustrations. Download the specific SVGs needed:
   - Empty dashboard (person with chart)
@@ -162,6 +172,7 @@ pnpm add react-swipeable
 - Alternative: [Humaaans](https://www.humaaans.com/) for mix-and-match people illustrations (also free).
 
 **Implementation:**
+
 ```tsx
 // In empty-state.tsx
 <Image
@@ -182,19 +193,21 @@ pnpm add react-swipeable
 **Recommendation:** Restructure the existing `@theme` block in `globals.css` to support the new modern design system. No new tooling needed -- Tailwind v4's CSS-first `@theme` directive is the design token system.
 
 **Rationale:**
+
 - FitFast already uses `@theme inline { ... }` in `globals.css`. This is the correct Tailwind v4 pattern.
 - The renovation needs to change token VALUES (not the system): rounded corners instead of 0, softer shadows instead of brutalist offsets, new color palette.
 - All tokens defined in `@theme` are automatically available as CSS custom properties at runtime, enabling dynamic theming if needed later.
 
 **Token changes for the renovation:**
+
 ```css
 @theme inline {
   /* NEW: Modern rounded corners (replacing brutalist 0px) */
-  --radius-sm: 0.375rem;   /* 6px */
-  --radius-md: 0.5rem;     /* 8px */
-  --radius-lg: 0.75rem;    /* 12px */
-  --radius-xl: 1rem;       /* 16px */
-  --radius-2xl: 1.5rem;    /* 24px */
+  --radius-sm: 0.375rem; /* 6px */
+  --radius-md: 0.5rem; /* 8px */
+  --radius-lg: 0.75rem; /* 12px */
+  --radius-xl: 1rem; /* 16px */
+  --radius-2xl: 1.5rem; /* 24px */
   --radius-full: 9999px;
 
   /* NEW: Soft shadows (replacing 8px black offset) */
@@ -203,10 +216,10 @@ pnpm add react-swipeable
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
 
   /* NEW: Modern color palette (replacing brutalist) */
-  --color-background: #FFFFFF;
-  --color-foreground: #1A1A2E;
-  --color-card: #FFFFFF;
-  --color-border: #E5E7EB;
+  --color-background: #ffffff;
+  --color-foreground: #1a1a2e;
+  --color-card: #ffffff;
+  --color-border: #e5e7eb;
   /* ... etc */
 }
 ```
@@ -220,12 +233,14 @@ pnpm add react-swipeable
 **Recommendation:** Use Tailwind's built-in responsive prefixes with a mobile-first approach. No new tooling.
 
 **Approach:**
+
 - Default styles = mobile (no prefix)
 - `md:` prefix = tablet/desktop overrides
 - Hide bottom nav on `md:` and show top navbar instead
 - Use CSS Container Queries (native in Tailwind v4 via `@container`) for component-level responsiveness where needed
 
 **Key patterns:**
+
 ```tsx
 {/* Bottom nav: visible on mobile, hidden on desktop */}
 <BottomNav className="md:hidden" />
@@ -238,6 +253,7 @@ pnpm add react-swipeable
 ```
 
 **Safe area handling for PWA:**
+
 ```css
 /* In globals.css */
 @supports (padding: env(safe-area-inset-bottom)) {
@@ -248,6 +264,7 @@ pnpm add react-swipeable
 ```
 
 Add to `<meta name="viewport">`:
+
 ```
 viewport-fit=cover
 ```
@@ -258,30 +275,30 @@ viewport-fit=cover
 
 ## Summary: What to Install
 
-| Package | Size (gzip) | Purpose | Confidence |
-|---------|-------------|---------|------------|
-| `vaul` (via shadcn drawer) | ~3-5KB | Bottom sheet/drawer | HIGH |
-| `react-swipeable` | ~1.5KB | Swipe gestures for check-in steps | HIGH |
+| Package                    | Size (gzip) | Purpose                           | Confidence |
+| -------------------------- | ----------- | --------------------------------- | ---------- |
+| `vaul` (via shadcn drawer) | ~3-5KB      | Bottom sheet/drawer               | HIGH       |
+| `react-swipeable`          | ~1.5KB      | Swipe gestures for check-in steps | HIGH       |
 
 **Total new JS added: ~5-7KB gzip**
 
 ## What NOT to Install
 
-| Package | Why Not |
-|---------|---------|
-| `motion` / `framer-motion` | CSS transitions + Tailwind cover all needed animations. 34KB for features we do not need. |
-| `@use-gesture/react` | 8KB when react-swipeable does the same job at 1.5KB. |
-| `react-spring-bottom-sheet` | Unmaintained since 2022. Vaul is the successor. |
-| `@radix-ui/react-navigation-menu` | Designed for dropdown nav menus, not bottom tab bars. |
-| Any illustration library | Download specific SVGs instead of bundling hundreds. |
-| `tailwindcss-animate` | Tailwind v4 has native animation support. This plugin is for v3. |
-| CSS-in-JS (styled-components, emotion) | Already committed to Tailwind. Adding CSS-in-JS would be architectural confusion. |
+| Package                                | Why Not                                                                                   |
+| -------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `motion` / `framer-motion`             | CSS transitions + Tailwind cover all needed animations. 34KB for features we do not need. |
+| `@use-gesture/react`                   | 8KB when react-swipeable does the same job at 1.5KB.                                      |
+| `react-spring-bottom-sheet`            | Unmaintained since 2022. Vaul is the successor.                                           |
+| `@radix-ui/react-navigation-menu`      | Designed for dropdown nav menus, not bottom tab bars.                                     |
+| Any illustration library               | Download specific SVGs instead of bundling hundreds.                                      |
+| `tailwindcss-animate`                  | Tailwind v4 has native animation support. This plugin is for v3.                          |
+| CSS-in-JS (styled-components, emotion) | Already committed to Tailwind. Adding CSS-in-JS would be architectural confusion.         |
 
 ## Optional Future Consideration
 
-| Package | When to Consider |
-|---------|-----------------|
-| `motion` (LazyMotion) | If v1.2+ needs drag-to-reorder workout exercises, shared layout animations, or spring physics. Not needed for v1.1. |
+| Package                  | When to Consider                                                                                                            |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| `motion` (LazyMotion)    | If v1.2+ needs drag-to-reorder workout exercises, shared layout animations, or spring physics. Not needed for v1.1.         |
 | Next.js `viewTransition` | When it exits experimental status. Currently works but officially "not recommended for production." Monitor for Next.js 17. |
 
 ## Installation Commands

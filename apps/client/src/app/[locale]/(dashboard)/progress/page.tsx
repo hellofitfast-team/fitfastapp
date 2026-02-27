@@ -13,26 +13,23 @@ import { ProgressSkeleton } from "./_components/progress-skeleton";
 import { formatDateShort, formatDate } from "@/lib/utils";
 import { cn } from "@fitfast/ui/cn";
 
-const ProgressCharts = dynamic(
-  () => import("@/components/charts/ProgressCharts"),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="space-y-4">
-        <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
-          <div className="p-4 border-b border-border bg-primary/5 h-14 animate-pulse" />
-          <div className="p-6">
-            <div className="h-[300px] rounded-lg bg-neutral-100 animate-pulse" />
-          </div>
-        </div>
-        <div className="grid gap-3 md:grid-cols-2">
-          <div className="rounded-xl border border-border bg-card shadow-card h-[200px] animate-pulse" />
-          <div className="rounded-xl border border-border bg-card shadow-card h-[200px] animate-pulse" />
+const ProgressCharts = dynamic(() => import("@/components/charts/ProgressCharts"), {
+  ssr: false,
+  loading: () => (
+    <div className="space-y-4">
+      <div className="border-border bg-card shadow-card overflow-hidden rounded-xl border">
+        <div className="border-border bg-primary/5 h-14 animate-pulse border-b p-4" />
+        <div className="p-6">
+          <div className="h-[300px] animate-pulse rounded-lg bg-neutral-100" />
         </div>
       </div>
-    ),
-  }
-);
+      <div className="grid gap-3 md:grid-cols-2">
+        <div className="border-border bg-card shadow-card h-[200px] animate-pulse rounded-xl border" />
+        <div className="border-border bg-card shadow-card h-[200px] animate-pulse rounded-xl border" />
+      </div>
+    </div>
+  ),
+});
 
 type DateRange = "30" | "90" | "all";
 
@@ -94,9 +91,8 @@ export default function ProgressPage() {
 
   const firstCheckIn = filteredCheckIns[0];
   const latestCheckIn = filteredCheckIns[filteredCheckIns.length - 1];
-  const weightChange = latestCheckIn?.weight && firstCheckIn?.weight
-    ? latestCheckIn.weight - firstCheckIn.weight
-    : 0;
+  const weightChange =
+    latestCheckIn?.weight && firstCheckIn?.weight ? latestCheckIn.weight - firstCheckIn.weight : 0;
   const weightChangePercent = firstCheckIn?.weight
     ? ((weightChange / firstCheckIn.weight) * 100).toFixed(1)
     : "0";
@@ -108,7 +104,7 @@ export default function ProgressPage() {
         (checkIn.progressPhotoIds || []).map((storageId) => ({
           url: storageId, // Will need to resolve via getFileUrl
           date: formatDate(new Date(checkIn._creationTime).toISOString(), locale),
-        }))
+        })),
       );
   }, [filteredCheckIns, locale]);
 
@@ -123,12 +119,12 @@ export default function ProgressPage() {
   ];
 
   return (
-    <div className="px-4 py-6 space-y-5 max-w-5xl mx-auto lg:px-6">
+    <div className="mx-auto max-w-5xl space-y-5 px-4 py-6 lg:px-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold">{t("title")}</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{t("description")}</p>
+          <p className="text-muted-foreground mt-0.5 text-sm">{t("description")}</p>
         </div>
         <div className="flex rounded-lg bg-neutral-100 p-1">
           {(["30", "90", "all"] as const).map((range) => (
@@ -136,10 +132,10 @@ export default function ProgressPage() {
               key={range}
               onClick={() => setDateRange(range)}
               className={cn(
-                "px-3 py-1.5 rounded-md text-xs font-semibold transition-colors",
+                "rounded-md px-3 py-1.5 text-xs font-semibold transition-colors",
                 dateRange === range
                   ? "bg-card text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               {range === "30" ? t("days30") : range === "90" ? t("days90") : t("all")}
@@ -164,10 +160,10 @@ export default function ProgressPage() {
             key={key}
             onClick={() => setActiveTab(key)}
             className={cn(
-              "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-medium transition-colors",
+              "flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-sm font-medium transition-colors",
               activeTab === key
                 ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+                : "text-muted-foreground hover:text-foreground",
             )}
           >
             <Icon className="h-4 w-4" />

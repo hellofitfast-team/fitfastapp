@@ -35,9 +35,12 @@ export function useNotifications() {
       } catch (err) {
         setIsSubscribed(Notification.permission === "granted");
         setError("onesignal_unavailable");
-        Sentry.captureException(err instanceof Error ? err : new Error("OneSignal subscription check failed"), {
-          tags: { feature: "push-notifications", operation: "check-subscription" },
-        });
+        Sentry.captureException(
+          err instanceof Error ? err : new Error("OneSignal subscription check failed"),
+          {
+            tags: { feature: "push-notifications", operation: "check-subscription" },
+          },
+        );
       } finally {
         setLoading(false);
       }
@@ -113,13 +116,24 @@ export function useNotifications() {
         }
       }
     } catch (err) {
-      Sentry.captureException(err instanceof Error ? err : new Error("Toggle subscription failed"), {
-        tags: { feature: "push-notifications", operation: "toggle-subscription" },
-      });
+      Sentry.captureException(
+        err instanceof Error ? err : new Error("Toggle subscription failed"),
+        {
+          tags: { feature: "push-notifications", operation: "toggle-subscription" },
+        },
+      );
     } finally {
       setLoading(false);
     }
   }, [isSupported, isSubscribed]);
 
-  return { isSupported, permission, isSubscribed, requestPermission, toggleSubscription, loading, error };
+  return {
+    isSupported,
+    permission,
+    isSubscribed,
+    requestPermission,
+    toggleSubscription,
+    loading,
+    error,
+  };
 }

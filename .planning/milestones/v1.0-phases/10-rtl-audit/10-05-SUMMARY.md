@@ -4,7 +4,13 @@ plan: 05
 subsystem: ui-rtl-qa
 tags: [rtl, audit, verification, playwright, testing, quality-assurance]
 dependency_graph:
-  requires: [10-01-shadcn-rtl-migration, 10-02-locale-date-formatting, 10-03-auth-onboarding-rtl, 10-04-progress-bars-icons]
+  requires:
+    [
+      10-01-shadcn-rtl-migration,
+      10-02-locale-date-formatting,
+      10-03-auth-onboarding-rtl,
+      10-04-progress-bars-icons,
+    ]
   provides: [rtl-audit-complete, rtl-qa-verified, playwright-visual-testing]
   affects: [phase-complete, deployment-ready]
 tech_stack:
@@ -70,11 +76,13 @@ Executed 7 comprehensive automated checks to verify RTL completeness across the 
 Implemented automated visual testing to verify RTL rendering across all user flows:
 
 **Test Coverage:**
+
 - **Auth pages:** /login, /magic-link, /set-password, /admin/login
 - **Public pages:** All pages tested in both /en and /ar locales
 - **Auth-protected pages:** Verified server response (no crashes) for dashboard, admin routes
 
 **Test Results:**
+
 - **21/25 tests passed**
 - **4 false positives:** "A overlaps BUTTON" - Forgot-password link positioned near submit button by design
 - **Screenshots captured:** Visual evidence of correct RTL mirroring in all pages
@@ -82,6 +90,7 @@ Implemented automated visual testing to verify RTL rendering across all user flo
 - **Proper RTL mirroring:** Input icons on right side, arrows point correctly, text flows right-to-left
 
 **Verification Confirmed:**
+
 - Input icon positions correct (right side in RTL)
 - Back arrows point right (RTL backward direction)
 - Submit buttons properly positioned
@@ -95,6 +104,7 @@ Implemented automated visual testing to verify RTL rendering across all user flo
 ### Auto-fixed Issues
 
 **1. [Rule 1 - Bug] Missing RTL icon flips in shadcn components**
+
 - **Found during:** Task 1 (Directional icon sweep)
 - **Issue:** ChevronLeft/ChevronRight in pagination.tsx and dropdown-menu.tsx missing `rtl:rotate-180`
 - **Fix:** Added `rtl:rotate-180` to all chevron icons in both components
@@ -118,14 +128,15 @@ Each task was committed atomically:
 
 ## Files Modified
 
-| File | Changes | Purpose |
-|------|---------|---------|
-| src/components/ui/dropdown-menu.tsx | Added rtl:rotate-180 to ChevronRight | Fix missing RTL icon flip in dropdown sub-menu trigger |
-| src/components/ui/pagination.tsx | Added rtl:rotate-180 to ChevronLeft/Right | Fix missing RTL icon flips in pagination arrows |
+| File                                | Changes                                   | Purpose                                                |
+| ----------------------------------- | ----------------------------------------- | ------------------------------------------------------ |
+| src/components/ui/dropdown-menu.tsx | Added rtl:rotate-180 to ChevronRight      | Fix missing RTL icon flip in dropdown sub-menu trigger |
+| src/components/ui/pagination.tsx    | Added rtl:rotate-180 to ChevronLeft/Right | Fix missing RTL icon flips in pagination arrows        |
 
 ## Verification Results
 
 ### Automated Code Sweeps (Task 1)
+
 ```bash
 # TypeScript check
 pnpm tsc --noEmit
@@ -157,6 +168,7 @@ pnpm build
 ```
 
 ### Visual Testing (Task 2)
+
 ```bash
 # Playwright test execution
 npx playwright test rtl-audit.spec.ts
@@ -193,6 +205,7 @@ From Phase 10 must-haves:
 ## Impact
 
 ### Code Quality
+
 - **Zero physical directional properties** remaining in app code
 - **100% translation key parity** between English and Arabic
 - **All directional icons** flip correctly in RTL
@@ -200,12 +213,14 @@ From Phase 10 must-haves:
 - **Production-ready** - build passes
 
 ### User Experience
+
 - **Polished RTL experience** - Arabic users see properly mirrored layouts
 - **Natural navigation** - arrows and icons point in the reading direction
 - **Locale-aware formatting** - dates display in user's language format
 - **No visual regressions** - both languages work equally well
 
 ### Quality Assurance
+
 - **Automated auditing** - code sweeps catch future RTL regressions
 - **Visual testing** - Playwright confirms rendering correctness
 - **Reproducible verification** - tests can be re-run before each deployment
@@ -214,15 +229,16 @@ From Phase 10 must-haves:
 
 Phase 10 (RTL Audit) is now complete. All RTL work verified across 5 plans:
 
-| Plan | Focus | Status |
-|------|-------|--------|
+| Plan  | Focus                                  | Status      |
+| ----- | -------------------------------------- | ----------- |
 | 10-01 | shadcn/ui RTL migration (9 components) | ✅ Complete |
-| 10-02 | Locale-aware date formatting | ✅ Complete |
-| 10-03 | Auth & onboarding RTL conversion | ✅ Complete |
-| 10-04 | Progress bars & directional icons | ✅ Complete |
-| 10-05 | Automated audit & verification | ✅ Complete |
+| 10-02 | Locale-aware date formatting           | ✅ Complete |
+| 10-03 | Auth & onboarding RTL conversion       | ✅ Complete |
+| 10-04 | Progress bars & directional icons      | ✅ Complete |
+| 10-05 | Automated audit & verification         | ✅ Complete |
 
 **Final RTL Coverage:**
+
 - ✅ All UI components converted to logical properties
 - ✅ All dates use locale-aware formatting
 - ✅ All directional icons flip in RTL
@@ -237,23 +253,24 @@ Phase 10 (RTL Audit) is now complete. All RTL work verified across 5 plans:
 From STATE.md pending todos (out of scope for this phase):
 
 1. **AI-generated content in English only:** Meal/workout plans, progress notes, safety tips currently generated in English regardless of user locale
-   - *Impact:* Arabic users receive plans in English
-   - *Future work:* Update AI prompts to generate content in user's language
+   - _Impact:_ Arabic users receive plans in English
+   - _Future work:_ Update AI prompts to generate content in user's language
 
 2. **Eastern Arabic numerals not used:** Arabic view displays Western numerals (0-9) instead of Eastern Arabic (٠-٩)
-   - *Impact:* Number formatting not fully localized
-   - *Current behavior:* Intentional (ar-u-nu-latn locale setting)
-   - *Future work:* Consider adding option for Eastern Arabic numerals
+   - _Impact:_ Number formatting not fully localized
+   - _Current behavior:_ Intentional (ar-u-nu-latn locale setting)
+   - _Future work:_ Consider adding option for Eastern Arabic numerals
 
 3. **Push notifications in English:** Notifications sent in English only
-   - *Impact:* Arabic users receive notifications in English
-   - *Future work:* Send bilingual notifications based on user locale
+   - _Impact:_ Arabic users receive notifications in English
+   - _Future work:_ Send bilingual notifications based on user locale
 
 ## Next Phase Readiness
 
 **Phase 10 Complete!** All 10 phases of the project roadmap are now finished.
 
 **Deployment readiness:**
+
 - ✅ RTL/Arabic support fully implemented
 - ✅ All user flows work in both languages
 - ✅ Visual polish complete
@@ -262,6 +279,7 @@ From STATE.md pending todos (out of scope for this phase):
 - ✅ Type-safe codebase
 
 **Remaining work before coach handoff:**
+
 - UAT (User Acceptance Testing) - validate all flows end-to-end
 - Performance testing under load (500-1000 clients)
 - Coach documentation (deployment, configuration, common tasks)
@@ -270,6 +288,7 @@ From STATE.md pending todos (out of scope for this phase):
 ## Self-Check: PASSED
 
 **Verification:**
+
 ```bash
 # Check modified files exist
 [ -f "src/components/ui/dropdown-menu.tsx" ] && echo "FOUND: dropdown-menu.tsx" || echo "MISSING"
@@ -286,5 +305,6 @@ git log --oneline --all | grep -q "042f46e" && echo "FOUND: 042f46e" || echo "MI
 All claimed files and commits verified present.
 
 ---
-*Phase: 10-rtl-audit*
-*Completed: 2026-02-15*
+
+_Phase: 10-rtl-audit_
+_Completed: 2026-02-15_

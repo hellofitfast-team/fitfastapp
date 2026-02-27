@@ -1,5 +1,11 @@
 {
   "name": "@fitfast/config",
   "version": "0.0.0",
-  "private": true
+  "private": true,
+  "dependencies": {
+    "pino": "^9.6.0"
+  },
+  "devDependencies": {
+    "pino-pretty": "^13.0.0"
+  }
 }

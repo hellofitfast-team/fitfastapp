@@ -36,6 +36,7 @@ Real-time badge indicators on navigation via Convex query aggregating check-in d
 ## What was done
 
 ### Task 1: Convex navBadges query and client hook
+
 - Created `convex/navBadges.ts` with `getNavBadges` query returning `{ checkInDue: boolean, unreadTicketCount: number }`
 - `checkInDue` logic: if no check-in exists OR current time >= next check-in date (using `getCheckInFrequencyDays`)
 - `unreadTicketCount`: count of tickets with status "coach_responded" for the authenticated user
@@ -43,6 +44,7 @@ Real-time badge indicators on navigation via Convex query aggregating check-in d
 - Updated `convex/_generated/api.d.ts` to include the new module
 
 ### Task 2: Badge indicators and pill shape
+
 - **Bottom nav pill shape**: Replaced full-width bar with `rounded-2xl mx-3 mb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-lg`
 - **Check-in FAB badge**: Red dot (`h-3 w-3 bg-error-500`) on FAB circle when `checkInDue` is true
 - **More button badge**: Count badge (`bg-error-500`) showing unread ticket replies (capped at "9+")
@@ -54,10 +56,10 @@ Real-time badge indicators on navigation via Convex query aggregating check-in d
 
 ## Commits
 
-| Task | Commit | Description |
-|------|--------|-------------|
-| 1 | 54a7eec | feat(11-01): add navBadges Convex query and useNavBadges hook |
-| 2 | d031ae7 | feat(11-01): add badge indicators to nav + pill-shaped bottom nav |
+| Task | Commit  | Description                                                       |
+| ---- | ------- | ----------------------------------------------------------------- |
+| 1    | 54a7eec | feat(11-01): add navBadges Convex query and useNavBadges hook     |
+| 2    | d031ae7 | feat(11-01): add badge indicators to nav + pill-shaped bottom nav |
 
 ## Deviations from Plan
 

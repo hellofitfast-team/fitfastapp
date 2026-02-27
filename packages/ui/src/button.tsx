@@ -10,20 +10,14 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default:
-          "bg-primary text-primary-foreground rounded-lg hover:bg-primary-dark shadow-sm",
-        destructive:
-          "bg-error-500 text-white rounded-lg hover:bg-error-600 shadow-sm",
-        outline:
-          "border border-border bg-card text-foreground rounded-lg hover:bg-neutral-50",
-        secondary:
-          "bg-neutral-100 text-foreground rounded-lg hover:bg-neutral-200",
+        default: "bg-primary text-primary-foreground rounded-lg hover:bg-primary-dark shadow-sm",
+        destructive: "bg-error-500 text-white rounded-lg hover:bg-error-600 shadow-sm",
+        outline: "border border-border bg-card text-foreground rounded-lg hover:bg-neutral-50",
+        secondary: "bg-neutral-100 text-foreground rounded-lg hover:bg-neutral-200",
         ghost: "text-foreground rounded-lg hover:bg-neutral-100",
         link: "text-primary underline-offset-4 hover:underline",
-        success:
-          "bg-success-500 text-white rounded-lg hover:bg-success-600 shadow-sm",
-        gradient:
-          "text-white rounded-xl disabled:bg-primary/50",
+        success: "bg-success-500 text-white rounded-lg hover:bg-success-600 shadow-sm",
+        gradient: "text-white rounded-xl disabled:bg-primary/50",
       },
       size: {
         default: "h-11 px-5",
@@ -36,7 +30,7 @@ const buttonVariants = cva(
       variant: "default",
       size: "default",
     },
-  }
+  },
 );
 
 // Gradient style applied via inline style to avoid Tailwind v4 JIT issues
@@ -47,16 +41,25 @@ const gradientStyle: React.CSSProperties = {
 };
 
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
   asChild?: boolean;
   loading?: boolean;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   (
-    { className, variant, size, style, asChild = false, loading = false, children, disabled, ...props },
-    ref
+    {
+      className,
+      variant,
+      size,
+      style,
+      asChild = false,
+      loading = false,
+      children,
+      disabled,
+      ...props
+    },
+    ref,
   ) => {
     const Comp = asChild ? Slot : "button";
     return (
@@ -64,13 +67,15 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
         disabled={disabled || loading}
-        style={variant === "gradient" && !(disabled || loading) ? { ...gradientStyle, ...style } : style}
+        style={
+          variant === "gradient" && !(disabled || loading) ? { ...gradientStyle, ...style } : style
+        }
         {...props}
       >
         {loading ? (
           <>
             <svg
-              className="animate-spin -ms-1 me-2 h-4 w-4"
+              className="-ms-1 me-2 h-4 w-4 animate-spin"
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
@@ -96,7 +101,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         )}
       </Comp>
     );
-  }
+  },
 );
 Button.displayName = "Button";
 

@@ -32,7 +32,15 @@ key_files:
       exports: ["BrutalistMultiSelect", "BrutalistMultiSelectProps"]
     - path: "src/app/[locale]/(onboarding)/initial-assessment/_components/constants.ts"
       purpose: "Form option constants (FITNESS_GOALS, EQUIPMENT_OPTIONS, etc.)"
-      exports: ["FITNESS_GOALS", "FOOD_PREFERENCES", "COMMON_ALLERGIES", "DIETARY_RESTRICTIONS", "EQUIPMENT_OPTIONS", "DAYS"]
+      exports:
+        [
+          "FITNESS_GOALS",
+          "FOOD_PREFERENCES",
+          "COMMON_ALLERGIES",
+          "DIETARY_RESTRICTIONS",
+          "EQUIPMENT_OPTIONS",
+          "DAYS",
+        ]
     - path: "src/app/[locale]/(onboarding)/initial-assessment/_components/goals-section.tsx"
       purpose: "Fitness goals form section"
       exports: ["GoalsSection"]
@@ -83,6 +91,7 @@ Successfully refactored the initial assessment form by:
 **Duration:** ~3 minutes
 
 **Implementation:**
+
 - Created `src/components/ui/brutalist-multi-select.tsx` with exported props interface
 - Created `_components/constants.ts` for all form option arrays
 - Created 5 section components in `_components/`:
@@ -95,15 +104,17 @@ Successfully refactored the initial assessment form by:
 All components preserve exact Tailwind classes and functionality from the original implementation.
 
 **Files Created:** 7
+
 - src/components/ui/brutalist-multi-select.tsx (95 lines)
-- src/app/[locale]/(onboarding)/initial-assessment/_components/constants.ts (65 lines)
-- src/app/[locale]/(onboarding)/initial-assessment/_components/goals-section.tsx (38 lines)
-- src/app/[locale]/(onboarding)/initial-assessment/_components/basic-info-section.tsx (145 lines)
-- src/app/[locale]/(onboarding)/initial-assessment/_components/schedule-section.tsx (53 lines)
-- src/app/[locale]/(onboarding)/initial-assessment/_components/dietary-section.tsx (87 lines)
-- src/app/[locale]/(onboarding)/initial-assessment/_components/medical-section.tsx (28 lines)
+- src/app/[locale]/(onboarding)/initial-assessment/\_components/constants.ts (65 lines)
+- src/app/[locale]/(onboarding)/initial-assessment/\_components/goals-section.tsx (38 lines)
+- src/app/[locale]/(onboarding)/initial-assessment/\_components/basic-info-section.tsx (145 lines)
+- src/app/[locale]/(onboarding)/initial-assessment/\_components/schedule-section.tsx (53 lines)
+- src/app/[locale]/(onboarding)/initial-assessment/\_components/dietary-section.tsx (87 lines)
+- src/app/[locale]/(onboarding)/initial-assessment/\_components/medical-section.tsx (28 lines)
 
 **Verification:**
+
 ```bash
 $ ls src/components/ui/brutalist-multi-select.tsx
 src/components/ui/brutalist-multi-select.tsx
@@ -120,6 +131,7 @@ constants.ts             goals-section.tsx        schedule-section.tsx
 **Duration:** ~3 minutes
 
 **Implementation:**
+
 - Removed BrutalistMultiSelect definition (now imported from shared UI)
 - Removed all constant arrays (now in constants.ts)
 - Removed all section JSX (now delegated to section components)
@@ -128,11 +140,13 @@ constants.ts             goals-section.tsx        schedule-section.tsx
 - Imported and rendered 5 section components with props
 
 **Line Count Reduction:**
+
 - Before: 594 lines
 - After: 254 lines
 - Reduction: 340 lines (57% reduction)
 
 **Verification:**
+
 ```bash
 $ wc -l src/app/[locale]/(onboarding)/initial-assessment/page.tsx
      254 src/app/[locale]/(onboarding)/initial-assessment/page.tsx
@@ -154,6 +168,7 @@ None - plan executed exactly as written.
 **Context:** Plan specified 5 section components. BasicInfoSection combines weight/height/experience/equipment, DietarySection combines food prefs/allergies/restrictions.
 
 **Rationale:**
+
 - These sections are logically related (personal fitness profile, dietary profile)
 - Each individual section would be too small (20-30 lines)
 - Combining keeps component count manageable while maintaining clear separation of concerns
@@ -165,6 +180,7 @@ None - plan executed exactly as written.
 ## Testing
 
 ### Manual Testing
+
 - ✅ Dev server compiles without errors
 - ✅ TypeScript type checking passes for refactored files
 - ✅ All section components created successfully
@@ -172,12 +188,14 @@ None - plan executed exactly as written.
 - ✅ Line count reduced from 594 to 254
 
 ### Known Issues
+
 - Production build fails due to Next.js 16 Turbopack cache bug (unrelated to refactor)
 - Pre-existing TypeScript errors in other files (check-in, progress, tracking pages)
 
 ## Self-Check: PASSED
 
 **Created files verified:**
+
 ```bash
 ✓ src/components/ui/brutalist-multi-select.tsx exists
 ✓ src/app/[locale]/(onboarding)/initial-assessment/_components/constants.ts exists
@@ -189,12 +207,14 @@ None - plan executed exactly as written.
 ```
 
 **Commits verified:**
+
 ```bash
 ✓ 869ea69 exists: refactor(08-02): extract BrutalistMultiSelect and assessment sub-components
 ✓ 09ab687 exists: refactor(08-02): reduce initial-assessment page.tsx from 594 to 254 lines
 ```
 
 **Line count verified:**
+
 ```bash
 ✓ page.tsx is 254 lines (target: < 400 lines, achieved 57% reduction)
 ```
@@ -202,17 +222,20 @@ None - plan executed exactly as written.
 ## Impact
 
 ### Code Organization
+
 - **Main page reduced by 57%** - From 594 to 254 lines (340 lines removed)
 - **7 new files created** - Improved separation of concerns
 - **Reusable component extracted** - BrutalistMultiSelect now available for future forms
 
 ### Maintainability
+
 - **Focused components** - Each section component has single responsibility
 - **Clear props interfaces** - Explicit state and setter props for each section
 - **Shared constants** - Form options centralized in one file
 - **Easier testing** - Section components can be tested in isolation
 
 ### Reusability
+
 - **BrutalistMultiSelect** - Can be used in any future form (admin panel, settings, etc.)
 - **Pattern established** - Section component pattern can be applied to other large forms
 

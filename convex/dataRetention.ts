@@ -90,8 +90,10 @@ export const cascadeDeleteUser = internalMutation({
 export const runRetentionCleanup = internalAction({
   args: {},
   handler: async (ctx): Promise<void> => {
-    const expiredUsers: { userId: string; profileId: Id<"profiles"> }[] =
-      await ctx.runQuery(internal.dataRetention.findExpiredUsers, {});
+    const expiredUsers: { userId: string; profileId: Id<"profiles"> }[] = await ctx.runQuery(
+      internal.dataRetention.findExpiredUsers,
+      {},
+    );
 
     const failures: string[] = [];
     for (const { userId, profileId } of expiredUsers) {
@@ -107,7 +109,10 @@ export const runRetentionCleanup = internalAction({
       }
     }
     if (failures.length > 0) {
-      console.error(`[DataRetention] ${failures.length}/${expiredUsers.length} deletions failed:\n${failures.join("\n")}`);
+      console.error(
+        `[DataRetention:runRetentionCleanup] ${failures.length}/${expiredUsers.length} deletions failed`,
+        { failures },
+      );
     }
   },
 });

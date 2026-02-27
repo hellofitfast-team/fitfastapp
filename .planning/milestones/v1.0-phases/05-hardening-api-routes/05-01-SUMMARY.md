@@ -78,17 +78,20 @@ All schemas include exported TypeScript types (e.g., `GeneratePlanInput`) for us
 ## How It Works
 
 **Validation Flow:**
+
 1. API route receives request
 2. Calls `validateRequestBody(body, schema, { userId, feature })`
 3. On success: returns `{ success: true, data }` with properly typed data
 4. On failure: logs to Sentry and returns `{ success: false, response }` with 400 error
 
 **Type Safety:**
+
 - Schemas use `z.infer<typeof Schema>` to generate TypeScript types
 - Route handlers get full autocomplete for validated request bodies
 - Discriminated union ensures exhaustive handling of success/failure cases
 
 **Database Alignment:**
+
 - All string constraints match database column lengths
 - UUID validation for foreign keys
 - Enum validation for categorical fields
@@ -101,10 +104,12 @@ None - plan executed exactly as written.
 ## Integration Points
 
 **Downstream:**
+
 - Plans 05-02, 05-03, 05-04 will integrate these schemas into actual API routes
 - All 13 API routes will use `validateRequestBody` for input validation
 
 **Sentry:**
+
 - Validation failures logged with structured context
 - Enables monitoring of invalid request patterns
 - userId tracking for user-specific issues
@@ -120,17 +125,20 @@ None - plan executed exactly as written.
 ## Next Steps
 
 **Immediate (Plan 05-02):**
+
 - Apply validation to check-in and plan generation routes
 - Replace manual `await request.json()` calls with `validateRequestBody`
 - Test error handling with invalid payloads
 
 **Subsequent Plans:**
+
 - 05-03: Apply validation to ticket and notification routes
 - 05-04: Apply validation to admin routes
 
 ## Self-Check: PASSED
 
 **Created files verified:**
+
 ```
 FOUND: src/lib/api-validation/index.ts
 FOUND: src/lib/api-validation/plans.ts
@@ -141,12 +149,14 @@ FOUND: src/lib/api-validation/auth.ts
 ```
 
 **Commits verified:**
+
 ```
 FOUND: 4c21e64 (Task 1 - validateRequestBody helper)
 FOUND: e2ddf89 (Task 2 - Zod validation schemas)
 ```
 
 **TypeScript errors in api-validation files:**
+
 ```
 None (0 errors)
 ```

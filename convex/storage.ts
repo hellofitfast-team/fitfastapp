@@ -76,9 +76,7 @@ export const getFileUrl = query({
 export const runOrphanedStorageCleanup = internalAction({
   args: {},
   handler: async (ctx) => {
-    const orphans: string[] = await ctx.runQuery(
-      internal.storage.findOrphanedFiles,
-    );
+    const orphans: string[] = await ctx.runQuery(internal.storage.findOrphanedFiles);
 
     for (const metaId of orphans) {
       await ctx.runMutation(internal.storage.deleteOrphanedFile, {
@@ -106,9 +104,7 @@ export const findOrphanedFiles = internalQuery({
     const allCheckIns = await ctx.db.query("checkIns").collect();
 
     for (const meta of oldMeta) {
-      const usedInPhotos = allCheckIns.some(
-        (ci) => ci.progressPhotoIds?.includes(meta.storageId),
-      );
+      const usedInPhotos = allCheckIns.some((ci) => ci.progressPhotoIds?.includes(meta.storageId));
 
       const usedInTicket = await ctx.db
         .query("tickets")

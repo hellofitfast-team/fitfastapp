@@ -34,9 +34,10 @@ export default function InitialAssessmentPage() {
 
   // Fetch admin-configured cycle duration for initial plan generation
   const frequencyConfig = useQuery(api.systemConfig.getConfig, { key: "check_in_frequency_days" });
-  const planDuration = typeof frequencyConfig?.value === "number"
-    ? frequencyConfig.value
-    : Number(frequencyConfig?.value) || 14;
+  const planDuration =
+    typeof frequencyConfig?.value === "number"
+      ? frequencyConfig.value
+      : Number(frequencyConfig?.value) || 14;
 
   // Step labels from translations
   const STEP_LABELS = [
@@ -54,6 +55,7 @@ export default function InitialAssessmentPage() {
   const [height, setHeight] = useState("");
   const [age, setAge] = useState("");
   const [gender, setGender] = useState("");
+  const [activityLevel, setActivityLevel] = useState("");
   const [experienceLevel, setExperienceLevel] = useState("");
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [sessionDuration, setSessionDuration] = useState("");
@@ -63,9 +65,7 @@ export default function InitialAssessmentPage() {
   const [foodPrefsOther, setFoodPrefsOther] = useState("");
   const [selectedAllergies, setSelectedAllergies] = useState<string[]>([]);
   const [allergiesOther, setAllergiesOther] = useState("");
-  const [selectedRestrictions, setSelectedRestrictions] = useState<string[]>(
-    []
-  );
+  const [selectedRestrictions, setSelectedRestrictions] = useState<string[]>([]);
   const [restrictionsOther, setRestrictionsOther] = useState("");
   const [equipment, setEquipment] = useState("");
   const [equipmentOther, setEquipmentOther] = useState("");
@@ -91,14 +91,12 @@ export default function InitialAssessmentPage() {
         if (!age || !gender) return tErrors("ageGenderRequired");
         if (!experienceLevel) return tErrors("experienceLevelRequired");
         if (!equipment) return tErrors("equipmentRequired");
-        if (equipment === "other" && !equipmentOther.trim())
-          return tErrors("equipmentSpecify");
+        if (equipment === "other" && !equipmentOther.trim()) return tErrors("equipmentSpecify");
         return null;
       }
       case 3: {
         const limits = getDayLimits(primaryGoal, experienceLevel);
-        if (selectedDays.length < limits.min)
-          return tErrors("workoutDaysMin", { min: limits.min });
+        if (selectedDays.length < limits.min) return tErrors("workoutDaysMin", { min: limits.min });
         if (!sessionDuration) return tErrors("sessionDurationRequired");
         return null;
       }
@@ -128,7 +126,9 @@ export default function InitialAssessmentPage() {
     if (currentStep < TOTAL_STEPS) {
       if (currentStep + 1 === TOTAL_STEPS) {
         justAdvancedToFinal.current = true;
-        setTimeout(() => { justAdvancedToFinal.current = false; }, 300);
+        setTimeout(() => {
+          justAdvancedToFinal.current = false;
+        }, 300);
       }
       setCurrentStep(currentStep + 1);
     }
@@ -197,12 +197,8 @@ export default function InitialAssessmentPage() {
       const finalGoals = [primaryGoal, ...secondaryFocuses];
       const finalFoodPrefs = getFinalValues(selectedFoodPrefs, foodPrefsOther);
       const finalAllergies = getFinalValues(selectedAllergies, allergiesOther);
-      const finalRestrictions = getFinalValues(
-        selectedRestrictions,
-        restrictionsOther
-      );
-      const finalEquipment =
-        equipment === "other" ? equipmentOther.trim() : equipment;
+      const finalRestrictions = getFinalValues(selectedRestrictions, restrictionsOther);
+      const finalEquipment = equipment === "other" ? equipmentOther.trim() : equipment;
 
       const language = (profile.language || "en") as "en" | "ar";
 
@@ -212,24 +208,25 @@ export default function InitialAssessmentPage() {
         height: parseFloat(height),
         age: parseInt(age),
         gender,
-        experienceLevel: experienceLevel as
-          | "beginner"
-          | "intermediate"
-          | "advanced",
+        activityLevel: activityLevel
+          ? (activityLevel as "sedentary" | "lightly_active" | "moderately_active" | "very_active")
+          : undefined,
+        experienceLevel: experienceLevel as "beginner" | "intermediate" | "advanced",
         scheduleAvailability: {
           days: selectedDays,
           sessionDuration: sessionDuration ? parseInt(sessionDuration) : undefined,
           preferredTime: trainingTime || undefined,
         },
-        foodPreferences:
-          finalFoodPrefs.length > 0 ? finalFoodPrefs : undefined,
+        foodPreferences: finalFoodPrefs.length > 0 ? finalFoodPrefs : undefined,
         allergies: finalAllergies.length > 0 ? finalAllergies : undefined,
-        dietaryRestrictions:
-          finalRestrictions.length > 0 ? finalRestrictions : undefined,
+        dietaryRestrictions: finalRestrictions.length > 0 ? finalRestrictions : undefined,
         medicalConditions: medicalNotes ? [medicalNotes] : undefined,
         exerciseHistory: finalEquipment,
         measurements: {},
-        lifestyleHabits: { equipment: finalEquipment, mealsPerDay: mealsPerDay ? parseInt(mealsPerDay) : undefined },
+        lifestyleHabits: {
+          equipment: finalEquipment,
+          mealsPerDay: mealsPerDay ? parseInt(mealsPerDay) : undefined,
+        },
         // Schedule server-side plan generation (survives client navigation)
         generatePlans: { language, planDuration },
       });
@@ -245,9 +242,7 @@ export default function InitialAssessmentPage() {
       router.push("/");
     } catch (err) {
       console.error("Assessment error:", err);
-      setError(
-        err instanceof Error ? err.message : tErrors("unexpectedError")
-      );
+      setError(err instanceof Error ? err.message : tErrors("unexpectedError"));
     } finally {
       setIsLoading(false);
     }
@@ -257,30 +252,26 @@ export default function InitialAssessmentPage() {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">
-            {tCommon("loading")}
-          </p>
+          <Loader2 className="text-primary h-8 w-8 animate-spin" />
+          <p className="text-muted-foreground text-sm">{tCommon("loading")}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="relative max-w-3xl mx-auto space-y-6 pb-12">
+    <div className="relative mx-auto max-w-3xl space-y-6 pb-12">
       {/* Full-screen generating overlay */}
       {isLoading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-          <div className="flex flex-col items-center gap-4 text-center px-6">
+        <div className="bg-background/80 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-4 px-6 text-center">
             <div className="relative">
-              <div className="h-16 w-16 rounded-full border-4 border-primary/20" />
-              <div className="absolute inset-0 h-16 w-16 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+              <div className="border-primary/20 h-16 w-16 rounded-full border-4" />
+              <div className="border-primary absolute inset-0 h-16 w-16 animate-spin rounded-full border-4 border-t-transparent" />
             </div>
             <div className="space-y-1.5">
               <p className="text-lg font-semibold">{t("submitting")}</p>
-              <p className="text-sm text-muted-foreground max-w-xs">
-                {t("generatingDescription")}
-              </p>
+              <p className="text-muted-foreground max-w-xs text-sm">{t("generatingDescription")}</p>
             </div>
           </div>
         </div>
@@ -289,7 +280,7 @@ export default function InitialAssessmentPage() {
       {/* Header */}
       <div className="text-center">
         <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{t("subtitle")}</p>
+        <p className="text-muted-foreground mt-2 text-sm">{t("subtitle")}</p>
       </div>
 
       {/* Progress Bar */}
@@ -301,8 +292,8 @@ export default function InitialAssessmentPage() {
 
       <form onSubmit={onSubmit} className="space-y-6">
         {error && (
-          <div className="rounded-lg border border-error-500/30 bg-error-500/10 p-4">
-            <p className="text-sm font-medium text-error-500">{error}</p>
+          <div className="border-error-500/30 bg-error-500/10 rounded-lg border p-4">
+            <p className="text-error-500 text-sm font-medium">{error}</p>
           </div>
         )}
 
@@ -330,6 +321,8 @@ export default function InitialAssessmentPage() {
                 setAge={setAge}
                 gender={gender}
                 setGender={setGender}
+                activityLevel={activityLevel}
+                setActivityLevel={setActivityLevel}
                 experienceLevel={experienceLevel}
                 setExperienceLevel={setExperienceLevel}
                 equipment={equipment}
@@ -400,12 +393,7 @@ export default function InitialAssessmentPage() {
           </Button>
 
           {currentStep < TOTAL_STEPS ? (
-            <Button
-              type="button"
-              variant="gradient"
-              onClick={handleNext}
-              disabled={isLoading}
-            >
+            <Button type="button" variant="gradient" onClick={handleNext} disabled={isLoading}>
               {tCommon("next")}
               <ArrowRight className="h-5 w-5 rtl:rotate-180" />
             </Button>

@@ -21,9 +21,7 @@ export default function TrackingPage() {
   const tEmpty = useTranslations("emptyStates");
   const router = useRouter();
 
-  const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().split("T")[0]
-  );
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split("T")[0]);
   const [isMealsExpanded, setIsMealsExpanded] = useState(true);
   const [isWorkoutsExpanded, setIsWorkoutsExpanded] = useState(true);
   const [mealNotes, setMealNotes] = useState<{ [key: number]: string }>({});
@@ -44,7 +42,9 @@ export default function TrackingPage() {
   // Map a calendar date to the plan's "day1", "day2", etc. key
   const getDayKey = (date: string, planStartDate?: string): string => {
     if (!planStartDate) return "day1";
-    const start = new Date(planStartDate.includes("T") ? planStartDate : planStartDate + "T00:00:00Z");
+    const start = new Date(
+      planStartDate.includes("T") ? planStartDate : planStartDate + "T00:00:00Z",
+    );
     const current = new Date(date.includes("T") ? date : date + "T00:00:00Z");
     const diffDays = Math.round((current.getTime() - start.getTime()) / 86400000);
     return `day${Math.max(1, diffDays + 1)}`;
@@ -123,8 +123,12 @@ export default function TrackingPage() {
   // Show empty state if no plans exist
   if (!mealPlan && !workoutPlan) {
     return (
-      <div className="px-4 py-6 space-y-5 max-w-5xl mx-auto lg:px-6">
-        <TrackingHeader completionPercentage={0} mealProgress={{ completed: 0, total: 0 }} workoutDone={false} />
+      <div className="mx-auto max-w-5xl space-y-5 px-4 py-6 lg:px-6">
+        <TrackingHeader
+          completionPercentage={0}
+          mealProgress={{ completed: 0, total: 0 }}
+          workoutDone={false}
+        />
         <EmptyState
           icon={Target}
           title={tEmpty("noTrackingData.title")}
@@ -139,8 +143,12 @@ export default function TrackingPage() {
   }
 
   return (
-    <div className="px-4 py-6 space-y-5 max-w-5xl mx-auto lg:px-6">
-      <TrackingHeader completionPercentage={completionPercentage} mealProgress={mealProgress} workoutDone={!!todaysWorkout && trackingData.workoutCompletions.some((c) => c.completed)} />
+    <div className="mx-auto max-w-5xl space-y-5 px-4 py-6 lg:px-6">
+      <TrackingHeader
+        completionPercentage={completionPercentage}
+        mealProgress={mealProgress}
+        workoutDone={!!todaysWorkout && trackingData.workoutCompletions.some((c) => c.completed)}
+      />
 
       <DateProgress
         selectedDate={selectedDate}
@@ -173,7 +181,11 @@ export default function TrackingPage() {
       </div>
 
       <DailyReflection
-        defaultReflection={typeof trackingData.reflection === "object" ? trackingData.reflection?.reflection || "" : trackingData.reflection || ""}
+        defaultReflection={
+          typeof trackingData.reflection === "object"
+            ? trackingData.reflection?.reflection || ""
+            : trackingData.reflection || ""
+        }
         onSubmit={onReflectionSubmit}
       />
     </div>

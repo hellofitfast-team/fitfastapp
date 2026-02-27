@@ -10,26 +10,13 @@ export const metadata: Metadata = {
   },
   description:
     "Personalized meal plans and workout routines powered by AI. Track your progress and achieve your fitness goals.",
-  keywords: [
-    "fitness",
-    "coaching",
-    "meal plan",
-    "workout",
-    "AI",
-    "health",
-    "Egypt",
-    "MENA",
-  ],
+  keywords: ["fitness", "coaching", "meal plan", "workout", "AI", "health", "Egypt", "MENA"],
   authors: [{ name: "FitFast" }],
   creator: "FitFast",
   manifest: "/manifest.json",
   icons: {
-    icon: [
-      { url: "/favicon.png", sizes: "32x32", type: "image/png" },
-    ],
-    apple: [
-      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
-    ],
+    icon: [{ url: "/favicon.png", sizes: "32x32", type: "image/png" }],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
   appleWebApp: {
     capable: true,
@@ -58,16 +45,10 @@ export const viewport: Viewport = {
   themeColor: "#FF4500",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   viewportFit: "cover",
 };
 
-export default async function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const h = await headers();
   const locale = h.get("x-next-intl-locale") ?? "en";
   const dir = locale === "ar" ? "rtl" : "ltr";
@@ -83,9 +64,7 @@ export default async function RootLayout({
             rel="stylesheet"
           />
         </head>
-        <body className="min-h-dvh bg-background text-foreground antialiased">
-          {children}
-        </body>
+        <body className="bg-background text-foreground min-h-dvh antialiased">{children}</body>
       </html>
     </ConvexAuthNextjsServerProvider>
   );

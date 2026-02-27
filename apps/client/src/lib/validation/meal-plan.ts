@@ -14,8 +14,12 @@ export const MealSchema = z.object({
   protein: z.number().nonnegative("Protein must be non-negative"),
   carbs: z.number().nonnegative("Carbs must be non-negative"),
   fat: z.number().nonnegative("Fat must be non-negative"),
-  ingredients: z.array(z.string().min(1, "Ingredient cannot be empty")).min(1, "At least one ingredient is required"),
-  instructions: z.array(z.string().min(1, "Instruction cannot be empty")).min(1, "At least one instruction is required"),
+  ingredients: z
+    .array(z.string().min(1, "Ingredient cannot be empty"))
+    .min(1, "At least one ingredient is required"),
+  instructions: z
+    .array(z.string().min(1, "Instruction cannot be empty"))
+    .min(1, "At least one instruction is required"),
   alternatives: z.array(z.string()).optional(),
 });
 
@@ -60,4 +64,3 @@ export const MealPlanSchema = z.object({
 export type ValidatedMeal = z.infer<typeof MealSchema>;
 export type ValidatedDailyMealPlan = z.infer<typeof DailyMealPlanSchema>;
 export type ValidatedMealPlan = z.infer<typeof MealPlanSchema>;
-

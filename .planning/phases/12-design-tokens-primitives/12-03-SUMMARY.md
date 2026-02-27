@@ -121,6 +121,7 @@ Each task was committed atomically:
 ### Auto-fixed Issues
 
 **1. [Rule 1 - Bug] Fixed active:scale-95 in bottom-nav FAB**
+
 - **Found during:** Task 1 (codebase-wide active:scale audit per plan instructions)
 - **Issue:** Bottom nav check-in FAB used Tailwind preset `active:scale-95` (equivalent to 0.95) instead of the standardized 0.97
 - **Fix:** Changed to `active:scale-[0.97]` and `transition-all` (was `transition-transform`)
@@ -129,6 +130,7 @@ Each task was committed atomically:
 - **Committed in:** d81fd54 (Task 1 commit)
 
 **2. [Rule 1 - Bug] Fixed active:scale-[0.99] in tickets page link**
+
 - **Found during:** Task 1 (codebase-wide active:scale audit per plan instructions)
 - **Issue:** Ticket list Link used 0.99 (barely perceptible) instead of the standardized 0.97
 - **Fix:** Changed to `active:scale-[0.97]` and `transition-all` (was `transition-colors` which doesn't handle transforms)
@@ -156,8 +158,9 @@ None — no external service configuration required.
 - No blockers
 
 ---
-*Phase: 12-design-tokens-primitives*
-*Completed: 2026-02-21*
+
+_Phase: 12-design-tokens-primitives_
+_Completed: 2026-02-21_
 
 ## Self-Check: PASSED
 

@@ -12,42 +12,38 @@ export default async function ConfirmationPage({ params }: ConfirmationPageProps
   const t = await getTranslations("confirmation");
 
   return (
-    <main className="min-h-screen bg-[var(--color-background)] flex items-center justify-center px-4 py-16">
+    <main className="flex min-h-screen items-center justify-center bg-[var(--color-background)] px-4 py-16">
       <div className="w-full max-w-md">
         <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] p-8 text-center shadow-sm">
           {/* Checkmark icon */}
-          <div className="flex justify-center mb-6">
-            <div className="w-16 h-16 rounded-full bg-[var(--color-primary)]/10 flex items-center justify-center">
-              <CheckCircle2 className="w-9 h-9 text-[var(--color-primary)]" />
+          <div className="mb-6 flex justify-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--color-primary)]/10">
+              <CheckCircle2 className="h-9 w-9 text-[var(--color-primary)]" />
             </div>
           </div>
 
           {/* Title */}
-          <h1 className="text-2xl font-bold text-[var(--color-foreground)] mb-2">
-            {t("title")}
-          </h1>
+          <h1 className="mb-2 text-2xl font-bold text-[var(--color-foreground)]">{t("title")}</h1>
 
           {/* Subtitle */}
-          <p className="text-base font-medium text-[var(--color-foreground)] mb-4">
+          <p className="mb-4 text-base font-medium text-[var(--color-foreground)]">
             {t("subtitle")}
           </p>
 
           {/* Explanation */}
-          <p className="text-sm text-[var(--color-muted-foreground)] mb-4 leading-relaxed">
+          <p className="mb-4 text-sm leading-relaxed text-[var(--color-muted-foreground)]">
             {t("explanation")}
           </p>
 
           {/* Timeline */}
-          <div className="rounded-xl bg-[var(--color-primary)]/5 border border-[var(--color-primary)]/20 px-4 py-3 mb-8">
-            <p className="text-sm text-[var(--color-primary)] font-medium">
-              {t("timeline")}
-            </p>
+          <div className="mb-8 rounded-xl border border-[var(--color-primary)]/20 bg-[var(--color-primary)]/5 px-4 py-3">
+            <p className="text-sm font-medium text-[var(--color-primary)]">{t("timeline")}</p>
           </div>
 
           {/* Back to home */}
           <Link
             href="/"
-            className="inline-flex items-center justify-center w-full h-11 rounded-xl bg-[var(--color-primary)] text-white font-semibold text-sm hover:bg-[var(--color-primary)]/90 transition-colors"
+            className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-[var(--color-primary)] text-sm font-semibold text-white transition-colors hover:bg-[var(--color-primary)]/90"
           >
             {t("backToHome")}
           </Link>

@@ -3,19 +3,8 @@
 import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
 import { Link } from "@fitfast/i18n/navigation";
-import {
-  CalendarCheck,
-  TrendingUp,
-  MessageSquare,
-  HelpCircle,
-  LucideIcon,
-} from "lucide-react";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-} from "@fitfast/ui/drawer";
+import { CalendarCheck, TrendingUp, MessageSquare, HelpCircle, LucideIcon } from "lucide-react";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@fitfast/ui/drawer";
 import { cn } from "@fitfast/ui/cn";
 
 interface MoreMenuItemConfig {
@@ -52,8 +41,7 @@ export function MoreMenu({ open, onOpenChange }: MoreMenuProps) {
             {MORE_ITEMS.map((item) => {
               const Icon = item.icon;
               const isActive =
-                pathWithoutLocale === item.href ||
-                pathWithoutLocale.startsWith(item.href);
+                pathWithoutLocale === item.href || pathWithoutLocale.startsWith(item.href);
 
               return (
                 <Link
@@ -61,16 +49,14 @@ export function MoreMenu({ open, onOpenChange }: MoreMenuProps) {
                   href={item.href}
                   onClick={() => onOpenChange(false)}
                   className={cn(
-                    "flex items-center gap-3 rounded-xl border p-4 transition-all min-h-[60px] active:scale-[0.97]",
+                    "flex min-h-[60px] items-center gap-3 rounded-xl border p-4 transition-all active:scale-[0.97]",
                     isActive
                       ? "border-primary bg-primary/10 text-primary"
-                      : "border-border bg-card hover:bg-neutral-50"
+                      : "border-border bg-card hover:bg-neutral-50",
                   )}
                 >
                   <Icon className="h-5 w-5 shrink-0" />
-                  <span className="font-medium text-sm">
-                    {t(item.labelKey)}
-                  </span>
+                  <span className="text-sm font-medium">{t(item.labelKey)}</span>
                 </Link>
               );
             })}

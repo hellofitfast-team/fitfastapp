@@ -17,26 +17,30 @@ The codebase already has strong foundations: Sentry integrated with context logg
 ## Standard Stack
 
 ### Core (Already Installed)
-| Library | Version | Purpose | Why Standard |
-|---------|---------|---------|--------------|
-| @sentry/nextjs | 10.38.0 | Error logging with context | Production-grade error tracking, already integrated with tags/extra pattern |
-| @radix-ui/react-toast | 1.2.15 | Toast notifications | Accessible, customizable toast primitives, already implemented in codebase |
-| react-onesignal | 3.4.6 | OneSignal Web SDK wrapper | Official React wrapper for OneSignal, promise-based initialization |
-| next-intl | 4.8.2 | i18n for error messages | Already used for routeErrors namespace, bilingual support |
+
+| Library               | Version | Purpose                    | Why Standard                                                                |
+| --------------------- | ------- | -------------------------- | --------------------------------------------------------------------------- |
+| @sentry/nextjs        | 10.38.0 | Error logging with context | Production-grade error tracking, already integrated with tags/extra pattern |
+| @radix-ui/react-toast | 1.2.15  | Toast notifications        | Accessible, customizable toast primitives, already implemented in codebase  |
+| react-onesignal       | 3.4.6   | OneSignal Web SDK wrapper  | Official React wrapper for OneSignal, promise-based initialization          |
+| next-intl             | 4.8.2   | i18n for error messages    | Already used for routeErrors namespace, bilingual support                   |
 
 ### Supporting
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
+
+| Library      | Version | Purpose     | When to Use                                                |
+| ------------ | ------- | ----------- | ---------------------------------------------------------- |
 | lucide-react | 0.563.0 | Error icons | Already in use for UI icons (AlertTriangle, XCircle, etc.) |
 
 ### Alternatives Considered
-| Instead of | Could Use | Tradeoff |
-|------------|-----------|----------|
-| Radix Toast | sonner | sonner is more opinionated but project already uses Radix UI ecosystem |
+
+| Instead of            | Could Use                    | Tradeoff                                                                 |
+| --------------------- | ---------------------------- | ------------------------------------------------------------------------ |
+| Radix Toast           | sonner                       | sonner is more opinionated but project already uses Radix UI ecosystem   |
 | Custom error boundary | React Error Boundary library | Custom implementation already exists in codebase with Sentry integration |
-| OneSignal state | Global context | Local state simpler for single-component usage (no prop drilling needed) |
+| OneSignal state       | Global context               | Local state simpler for single-component usage (no prop drilling needed) |
 
 **Installation:**
+
 ```bash
 # No new dependencies required - all packages already installed
 ```
@@ -44,6 +48,7 @@ The codebase already has strong foundations: Sentry integrated with context logg
 ## Architecture Patterns
 
 ### Recommended Project Structure
+
 ```
 src/app/[locale]/(admin)/admin/
 ├── (panel)/
@@ -72,9 +77,11 @@ src/messages/
 ```
 
 ### Pattern 1: Route Segment Error Boundaries for Admin
+
 **What:** Each critical admin route has an error.tsx file that catches rendering errors and displays localized fallback UI
 **When to use:** All admin routes that fetch data or perform critical operations (settings, signups, tickets)
 **Example:**
+
 ```typescript
 // Source: Existing dashboard error boundaries (settings/error.tsx, check-in/error.tsx)
 "use client";
@@ -137,9 +144,11 @@ export default function AdminSettingsError({
 ```
 
 ### Pattern 2: OneSignal Graceful Degradation
+
 **What:** OneSignal initialization wrapped in try-catch with state management to disable notification UI when initialization fails
 **When to use:** In OneSignalProvider component and use-notifications hook
 **Example:**
+
 ```typescript
 // Source: OneSignal troubleshooting guide + React error handling patterns
 "use client";
@@ -194,6 +203,7 @@ export function OneSignalProvider() {
 ```
 
 **UI State Management:**
+
 ```typescript
 // In notification settings component
 export function NotificationSettings() {
@@ -227,9 +237,11 @@ export function NotificationSettings() {
 ```
 
 ### Pattern 3: Settings Form Error Handling with Toast
+
 **What:** Supabase update operations wrapped in try-catch with toast notifications for success/error feedback
 **When to use:** AdminSettingsForm component and any form that updates system_config
 **Example:**
+
 ```typescript
 // Source: Existing use-toast hook + Radix UI Toast implementation
 "use client";
@@ -318,9 +330,11 @@ export function AdminSettingsForm({ config }: AdminSettingsFormProps) {
 ```
 
 ### Pattern 4: Toast Variants for Error/Success States
+
 **What:** Extended toast hook with variant support for error/success/warning states
 **When to use:** All toast notifications that need visual differentiation
 **Example:**
+
 ```typescript
 // Source: shadcn/ui toast patterns + Radix UI Toast documentation
 // Extend existing toast component with variants
@@ -340,7 +354,7 @@ const toastVariants = cva(
     defaultVariants: {
       variant: "default",
     },
-  }
+  },
 );
 
 // Usage
@@ -359,23 +373,25 @@ toast({
 
 ## Don't Hand-Roll
 
-| Problem | Don't Build | Use Instead | Why |
-|---------|-------------|-------------|-----|
-| OneSignal initialization tracking | Custom promise queue, manual state sync | Promise-based .then()/.catch() with useState | OneSignal.init() returns a promise, native promise handling is simpler and more reliable |
-| Toast notification system | Custom notification queue, setTimeout management | @radix-ui/react-toast (already installed) | Radix handles viewport management, animations, accessibility, and dismissal logic |
-| Error boundary with Sentry | Manual componentDidCatch wrapper | Existing ErrorBoundary component + error.tsx | Codebase already has error boundary with Sentry integration, reuse pattern |
-| User-facing error messages | Generic "something went wrong" | next-intl with routeErrors namespace | Already established pattern for localized error messages in both languages |
+| Problem                           | Don't Build                                      | Use Instead                                  | Why                                                                                      |
+| --------------------------------- | ------------------------------------------------ | -------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| OneSignal initialization tracking | Custom promise queue, manual state sync          | Promise-based .then()/.catch() with useState | OneSignal.init() returns a promise, native promise handling is simpler and more reliable |
+| Toast notification system         | Custom notification queue, setTimeout management | @radix-ui/react-toast (already installed)    | Radix handles viewport management, animations, accessibility, and dismissal logic        |
+| Error boundary with Sentry        | Manual componentDidCatch wrapper                 | Existing ErrorBoundary component + error.tsx | Codebase already has error boundary with Sentry integration, reuse pattern               |
+| User-facing error messages        | Generic "something went wrong"                   | next-intl with routeErrors namespace         | Already established pattern for localized error messages in both languages               |
 
 **Key insight:** The codebase already has production-ready patterns for all requirements. Phase 9 is about **applying existing patterns to new locations** (admin panel), not building new infrastructure.
 
 ## Common Pitfalls
 
 ### Pitfall 1: OneSignal Double Initialization in React StrictMode
+
 **What goes wrong:** React 19 StrictMode renders components twice in development, causing "already initialized" errors
 **Why it happens:** OneSignal.init() is not idempotent—calling it twice throws an error
 **How to avoid:** Use useRef to track initialization status and filter out "already initialized" errors in catch block
 **Warning signs:** Console errors "OneSignal already initialized" in development only
 **Example:**
+
 ```typescript
 // BAD: No guard against double initialization
 useEffect(() => {
@@ -396,11 +412,13 @@ useEffect(() => {
 ```
 
 ### Pitfall 2: Silent Supabase Errors in Settings Form
+
 **What goes wrong:** Supabase queries return `{ data, error }` objects—checking only data without verifying error leads to silent failures
 **Why it happens:** Current code awaits Promise.all but never checks the error field in results
 **How to avoid:** Always check error field in Supabase responses, throw if present to trigger catch block
 **Warning signs:** Form appears to succeed but data doesn't update, no feedback to user
 **Example:**
+
 ```typescript
 // BAD: Silently ignores errors
 await Promise.all([
@@ -420,11 +438,13 @@ if (errors.length > 0) {
 ```
 
 ### Pitfall 3: Missing Sentry Context in Error Logs
+
 **What goes wrong:** Errors logged without tags or context make debugging difficult in production—can't filter by feature or route
 **Why it happens:** Developers use console.error or basic Sentry.captureException without metadata
 **How to avoid:** Always include tags (feature, route, panel) and extra context (userId, operation) in Sentry calls
 **Warning signs:** Sentry dashboard shows errors but can't group by feature or filter by admin panel
 **Example:**
+
 ```typescript
 // BAD: No context
 Sentry.captureException(error);
@@ -445,11 +465,13 @@ Sentry.captureException(error, {
 ```
 
 ### Pitfall 4: Toast Not Visible Due to Missing Toaster Component
+
 **What goes wrong:** Calling toast() function has no visible effect—notifications don't appear
 **Why it happens:** <Toaster /> component must be rendered in layout to create the toast viewport
 **How to avoid:** Verify <Toaster /> is present in admin layout (likely in AdminShell component)
 **Warning signs:** toast() calls in code but no UI appears, no console errors
 **Example:**
+
 ```tsx
 // Check admin layout or AdminShell component
 import { Toaster } from "@/components/ui/toaster";
@@ -467,11 +489,13 @@ export function AdminShell({ children }) {
 ```
 
 ### Pitfall 5: Error Boundaries Don't Catch Async Errors
+
 **What goes wrong:** Errors in async functions (handleSave, fetch calls) don't trigger error.tsx boundaries
 **Why it happens:** Error boundaries only catch errors during render phase—async/event handler errors happen outside render
 **How to avoid:** Use try-catch in async functions with toast/local state for feedback, error boundaries only catch rendering errors
 **Warning signs:** Form submissions fail but error.tsx never appears, console shows uncaught promise rejection
 **Example:**
+
 ```typescript
 // ERROR BOUNDARY CATCHES:
 const Component = () => {
@@ -506,6 +530,7 @@ const Component = () => {
 Verified patterns from codebase:
 
 ### Example 1: Sentry Context Logging in API Routes
+
 ```typescript
 // Source: /Users/ziadadel/Desktop/fitfast/src/app/api/admin/notifications/send/route.ts
 // Already implemented pattern for admin API error logging
@@ -518,14 +543,12 @@ try {
     tags: { feature: "send-notification" },
     extra: { coachId: user.id, send_to_all },
   });
-  return NextResponse.json(
-    { error: "Failed to send notification" },
-    { status: 500 }
-  );
+  return NextResponse.json({ error: "Failed to send notification" }, { status: 500 });
 }
 ```
 
 ### Example 2: Route Error Boundary with Brutalist Styling
+
 ```typescript
 // Source: /Users/ziadadel/Desktop/fitfast/src/app/[locale]/(dashboard)/settings/error.tsx
 // Template for admin route error boundaries
@@ -586,6 +609,7 @@ export default function SettingsError({
 ```
 
 ### Example 3: Toast Hook Usage
+
 ```typescript
 // Source: /Users/ziadadel/Desktop/fitfast/src/hooks/use-toast.ts
 // How to trigger toasts from components
@@ -606,14 +630,15 @@ toast({
 ```
 
 ### Example 4: API Validation Error Logging Pattern
+
 ```typescript
 // Source: /Users/ziadadel/Desktop/fitfast/src/lib/api-validation/index.ts
 // Pattern for validation failure logging with context
-Sentry.captureException(new Error('Request validation failed'), {
-  level: 'warning',
+Sentry.captureException(new Error("Request validation failed"), {
+  level: "warning",
   tags: {
     feature: context.feature,
-    validation: 'request-body',
+    validation: "request-body",
   },
   extra: {
     userId: context.userId,
@@ -625,17 +650,19 @@ Sentry.captureException(new Error('Request validation failed'), {
 
 ## State of the Art
 
-| Old Approach | Current Approach | When Changed | Impact |
-|--------------|------------------|--------------|--------|
-| console.error for all errors | Sentry.captureException with tags/extra | Phase 3-5 (Hardening) | Structured error tracking enables filtering by feature/route in production |
-| Generic error messages | Localized routeErrors namespace | Phase 6 (UX Polish) | Bilingual error messages for MENA market |
-| Global error boundary only | Route segment error.tsx files | Phase 8 (Component Refactoring) | Granular error handling per route with specific messaging |
-| Brutalist error UI | Brutalist error UI (maintained) | Phase 1 (Theme Rebrand) | Consistent brand identity across error states |
+| Old Approach                 | Current Approach                        | When Changed                    | Impact                                                                     |
+| ---------------------------- | --------------------------------------- | ------------------------------- | -------------------------------------------------------------------------- |
+| console.error for all errors | Sentry.captureException with tags/extra | Phase 3-5 (Hardening)           | Structured error tracking enables filtering by feature/route in production |
+| Generic error messages       | Localized routeErrors namespace         | Phase 6 (UX Polish)             | Bilingual error messages for MENA market                                   |
+| Global error boundary only   | Route segment error.tsx files           | Phase 8 (Component Refactoring) | Granular error handling per route with specific messaging                  |
+| Brutalist error UI           | Brutalist error UI (maintained)         | Phase 1 (Theme Rebrand)         | Consistent brand identity across error states                              |
 
 **Deprecated/outdated:**
+
 - None—all patterns are current as of Phase 9
 
 **Recent additions:**
+
 - Route-level error boundaries with brutalist styling (Phase 8)
 - Sentry tags for feature/route filtering (Phase 5)
 - Radix UI Toast with variant system (existing, needs extension for success/error)
@@ -660,6 +687,7 @@ Sentry.captureException(new Error('Request validation failed'), {
 ## Sources
 
 ### Primary (HIGH confidence)
+
 - Existing codebase error boundaries: `/Users/ziadadel/Desktop/fitfast/src/app/[locale]/(dashboard)/settings/error.tsx`
 - Existing Sentry patterns: `/Users/ziadadel/Desktop/fitfast/src/app/api/admin/notifications/send/route.ts`
 - Existing toast implementation: `/Users/ziadadel/Desktop/fitfast/src/hooks/use-toast.ts`
@@ -668,6 +696,7 @@ Sentry.captureException(new Error('Request validation failed'), {
 - Phase 8 research (component patterns): `/Users/ziadadel/Desktop/fitfast/.planning/phases/08-component-refactoring/08-RESEARCH.md`
 
 ### Secondary (MEDIUM confidence)
+
 - [React 19 Error Boundaries](https://oneuptime.com/blog/post/2026-01-15-react-error-boundaries/view) - React 19 error hooks (onUncaughtError, onCaughtError)
 - [Next.js Error Handling](https://nextjs.org/docs/app/getting-started/error-handling) - error.tsx convention and Error Boundary patterns
 - [Sentry React Error Boundary](https://docs.sentry.io/platforms/javascript/guides/react/features/error-boundary/) - Best practices for Sentry integration
@@ -675,12 +704,14 @@ Sentry.captureException(new Error('Request validation failed'), {
 - [OneSignal Web SDK Troubleshooting](https://onesignal.mintlify.app/docs/en/troubleshooting-web-push) - Initialization verification and common errors
 
 ### Tertiary (LOW confidence)
+
 - OneSignal GitHub issues (initialization problems in React) - Community workarounds for double initialization
 - Supabase error handling examples - General patterns for error checking in queries
 
 ## Metadata
 
 **Confidence breakdown:**
+
 - Error boundary patterns: HIGH - Codebase has established patterns in dashboard routes
 - Toast implementation: HIGH - Radix UI Toast already installed and configured
 - Sentry logging: HIGH - API routes demonstrate tag/extra context pattern

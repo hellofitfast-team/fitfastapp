@@ -5,10 +5,7 @@ import { api } from "@/convex/_generated/api";
 
 export function useProfile() {
   const { isAuthenticated, isLoading: authLoading } = useConvexAuth();
-  const profile = useQuery(
-    api.profiles.getMyProfile,
-    isAuthenticated ? {} : "skip",
-  );
+  const profile = useQuery(api.profiles.getMyProfile, isAuthenticated ? {} : "skip");
 
   return {
     profile: profile ?? null,

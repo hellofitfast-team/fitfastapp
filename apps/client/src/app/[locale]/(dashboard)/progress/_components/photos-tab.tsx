@@ -20,13 +20,17 @@ export function PhotosTab({ photos }: PhotosTabProps) {
 
   return (
     <>
-      <SectionCard icon={Camera} title={t("progressPhotos")} description={t("progressPhotosDescription")}>
+      <SectionCard
+        icon={Camera}
+        title={t("progressPhotos")}
+        description={t("progressPhotosDescription")}
+      >
         {photos.length > 0 ? (
-          <div className="grid gap-3 grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
             {photos.map((photo, index) => (
               <div
                 key={index}
-                className="group relative cursor-pointer rounded-xl border border-border overflow-hidden transition-transform hover:scale-[1.02]"
+                className="group border-border relative cursor-pointer overflow-hidden rounded-xl border transition-transform hover:scale-[1.02]"
                 onClick={() => setSelectedPhoto(photo.url)}
               >
                 <div className="relative aspect-[3/4] bg-neutral-100">
@@ -38,7 +42,7 @@ export function PhotosTab({ photos }: PhotosTabProps) {
                     className="object-cover"
                   />
                 </div>
-                <div className="absolute bottom-0 inset-x-0 bg-black/60 backdrop-blur-sm p-2">
+                <div className="absolute inset-x-0 bottom-0 bg-black/60 p-2 backdrop-blur-sm">
                   <p className="text-xs font-medium text-white">{photo.date}</p>
                 </div>
               </div>
@@ -59,18 +63,30 @@ export function PhotosTab({ photos }: PhotosTabProps) {
 
       {/* Photo Modal */}
       {selectedPhoto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setSelectedPhoto(null)}>
-          <div className="relative max-w-3xl w-full rounded-2xl bg-card overflow-hidden shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-3 border-b border-border">
-              <span className="font-semibold text-sm">{t("progressPhoto")}</span>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setSelectedPhoto(null)}
+        >
+          <div
+            className="bg-card relative w-full max-w-3xl overflow-hidden rounded-2xl shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="border-border flex items-center justify-between border-b p-3">
+              <span className="text-sm font-semibold">{t("progressPhoto")}</span>
               <button
                 onClick={() => setSelectedPhoto(null)}
-                className="h-11 w-11 rounded-lg flex items-center justify-center hover:bg-neutral-100 transition-colors"
+                className="flex h-11 w-11 items-center justify-center rounded-lg transition-colors hover:bg-neutral-100"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <Image src={selectedPhoto} alt="Progress photo" width={800} height={600} className="w-full h-auto" />
+            <Image
+              src={selectedPhoto}
+              alt="Progress photo"
+              width={800}
+              height={600}
+              className="h-auto w-full"
+            />
           </div>
         </div>
       )}

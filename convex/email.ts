@@ -5,7 +5,11 @@ import { internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 
 function escapeHtml(str: string): string {
-  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 // ---------------------------------------------------------------------------
@@ -35,13 +39,15 @@ function getWelcomeEmail(fullName: string, language: "en" | "ar") {
     html: `
       <div dir="${isAr ? "rtl" : "ltr"}" style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
         <h1 style="color:#10B981">${isAr ? `أهلاً ${safeName}!` : `Hey ${safeName}!`}</h1>
-        <p>${isAr
-          ? "تمت الموافقة على حسابك. يمكنك الآن تسجيل الدخول وبدء رحلتك في اللياقة البدنية."
-          : "Your account has been approved. You can now sign in and start your fitness journey."
+        <p>${
+          isAr
+            ? "تمت الموافقة على حسابك. يمكنك الآن تسجيل الدخول وبدء رحلتك في اللياقة البدنية."
+            : "Your account has been approved. You can now sign in and start your fitness journey."
         }</p>
-        <p>${isAr
-          ? "أكمل التقييم الأولي للحصول على خطة وجباتك وتمارينك المخصصة."
-          : "Complete your initial assessment to get your personalized meal and workout plans."
+        <p>${
+          isAr
+            ? "أكمل التقييم الأولي للحصول على خطة وجباتك وتمارينك المخصصة."
+            : "Complete your initial assessment to get your personalized meal and workout plans."
         }</p>
         <p style="color:#6b7280;font-size:12px;margin-top:32px">— FitFast</p>
       </div>`,
@@ -56,20 +62,25 @@ function getPlanReadyEmail(fullName: string, language: "en" | "ar") {
     html: `
       <div dir="${isAr ? "rtl" : "ltr"}" style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
         <h1 style="color:#10B981">${isAr ? `${safeName}، خططك جاهزة!` : `${safeName}, your plans are ready!`}</h1>
-        <p>${isAr
-          ? "تم إنشاء خطة الوجبات وخطة التمارين الجديدة بنجاح بناءً على آخر تسجيل متابعة."
-          : "Your new meal plan and workout plan have been generated based on your latest check-in."
+        <p>${
+          isAr
+            ? "تم إنشاء خطة الوجبات وخطة التمارين الجديدة بنجاح بناءً على آخر تسجيل متابعة."
+            : "Your new meal plan and workout plan have been generated based on your latest check-in."
         }</p>
-        <p>${isAr
-          ? "افتح التطبيق لعرض خططك المحدثة."
-          : "Open the app to view your updated plans."
+        <p>${
+          isAr ? "افتح التطبيق لعرض خططك المحدثة." : "Open the app to view your updated plans."
         }</p>
         <p style="color:#6b7280;font-size:12px;margin-top:32px">— FitFast</p>
       </div>`,
   };
 }
 
-function getTicketReplyEmail(fullName: string, ticketSubject: string, coachMessage: string, language: "en" | "ar") {
+function getTicketReplyEmail(
+  fullName: string,
+  ticketSubject: string,
+  coachMessage: string,
+  language: "en" | "ar",
+) {
   const isAr = language === "ar";
   const safeName = escapeHtml(fullName);
   const safeSubject = escapeHtml(ticketSubject);
@@ -83,9 +94,10 @@ function getTicketReplyEmail(fullName: string, ticketSubject: string, coachMessa
         <div style="background:#f5f5f5;border-radius:8px;padding:16px;margin:16px 0">
           <p style="margin:0">${safeMessage}</p>
         </div>
-        <p>${isAr
-          ? "افتح التطبيق للرد أو عرض المحادثة الكاملة."
-          : "Open the app to reply or view the full conversation."
+        <p>${
+          isAr
+            ? "افتح التطبيق للرد أو عرض المحادثة الكاملة."
+            : "Open the app to reply or view the full conversation."
         }</p>
         <p style="color:#6b7280;font-size:12px;margin-top:32px">— FitFast</p>
       </div>`,
@@ -100,9 +112,10 @@ function getReminderEmail(fullName: string, language: "en" | "ar") {
     html: `
       <div dir="${isAr ? "rtl" : "ltr"}" style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
         <h1 style="color:#10B981">${isAr ? `${safeName}، حان وقت المتابعة` : `${safeName}, it's check-in time`}</h1>
-        <p>${isAr
-          ? "سجّل تقدمك اليوم حتى يتمكن مدربك من تحديث خططك."
-          : "Track your progress today so your coach can update your plans."
+        <p>${
+          isAr
+            ? "سجّل تقدمك اليوم حتى يتمكن مدربك من تحديث خططك."
+            : "Track your progress today so your coach can update your plans."
         }</p>
         <p style="color:#6b7280;font-size:12px;margin-top:32px">— FitFast</p>
       </div>`,
@@ -114,25 +127,29 @@ function getRejectionEmail(fullName: string, rejectionReason: string, language: 
   const safeName = escapeHtml(fullName);
   const safeReason = escapeHtml(rejectionReason);
   return {
-    subject: isAr
-      ? "تحديث على طلبك في فيت فاست"
-      : "Your FitFast Application Update",
+    subject: isAr ? "تحديث على طلبك في فيت فاست" : "Your FitFast Application Update",
     html: `
       <div dir="${isAr ? "rtl" : "ltr"}" style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
         <h1 style="color:#374151">${isAr ? `${safeName}، شكرًا لاهتمامك` : `Hi ${safeName},`}</h1>
-        <p>${isAr
-          ? "شكرًا لتقديمك للانضمام إلى فيت فاست. بعد مراجعة طلبك، لم نتمكن من الموافقة عليه في هذا الوقت."
-          : "Thank you for applying to join FitFast. After reviewing your application, we're unable to approve it at this time."
+        <p>${
+          isAr
+            ? "شكرًا لتقديمك للانضمام إلى فيت فاست. بعد مراجعة طلبك، لم نتمكن من الموافقة عليه في هذا الوقت."
+            : "Thank you for applying to join FitFast. After reviewing your application, we're unable to approve it at this time."
         }</p>
-        ${safeReason ? `
+        ${
+          safeReason
+            ? `
         <div style="background:#f9fafb;border-left:4px solid #d1d5db;border-radius:4px;padding:16px;margin:16px 0">
           <p style="margin:0;font-weight:600;color:#374151">${isAr ? "السبب:" : "Reason:"}</p>
           <p style="margin:8px 0 0;color:#6b7280">${safeReason}</p>
         </div>
-        ` : ""}
-        <p>${isAr
-          ? "يمكنك إعادة التقديم في المستقبل. إذا كان لديك أي أسئلة، يُرجى التواصل معنا."
-          : "You're welcome to reapply in the future. If you have any questions, please reach out."
+        `
+            : ""
+        }
+        <p>${
+          isAr
+            ? "يمكنك إعادة التقديم في المستقبل. إذا كان لديك أي أسئلة، يُرجى التواصل معنا."
+            : "You're welcome to reapply in the future. If you have any questions, please reach out."
         }</p>
         <p style="color:#6b7280;font-size:12px;margin-top:32px">— FitFast</p>
       </div>`,
@@ -153,18 +170,18 @@ function getInvitationEmail(fullName: string, inviteToken: string, language: "en
     html: `
       <div dir="${isAr ? "rtl" : "ltr"}" style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
         <h1 style="color:#FF4500">${isAr ? `أهلاً ${safeName}!` : `Hey ${safeName}!`}</h1>
-        <p>${isAr
-          ? "تمت الموافقة على طلبك للانضمام إلى فيت فاست. اضغط على الزر أدناه لإنشاء حسابك وبدء رحلتك."
-          : "Your application to join FitFast has been approved. Click the button below to create your account and start your fitness journey."
+        <p>${
+          isAr
+            ? "تمت الموافقة على طلبك للانضمام إلى فيت فاست. اضغط على الزر أدناه لإنشاء حسابك وبدء رحلتك."
+            : "Your application to join FitFast has been approved. Click the button below to create your account and start your fitness journey."
         }</p>
         <div style="text-align:center;margin:32px 0">
           <a href="${acceptLink}" style="background:#FF4500;color:#fff;padding:14px 32px;border-radius:12px;text-decoration:none;font-weight:600;display:inline-block">
             ${isAr ? "أنشئ حسابك" : "Create Your Account"}
           </a>
         </div>
-        <p style="color:#6b7280;font-size:13px">${isAr
-          ? "هذا الرابط صالح لمدة 7 أيام."
-          : "This link is valid for 7 days."
+        <p style="color:#6b7280;font-size:13px">${
+          isAr ? "هذا الرابط صالح لمدة 7 أيام." : "This link is valid for 7 days."
         }</p>
         <p style="color:#6b7280;font-size:12px;margin-top:32px">— FitFast</p>
       </div>`,
@@ -204,19 +221,15 @@ export const sendPlanReadyEmail = internalAction({
   args: { userId: v.string() },
   handler: async (ctx, { userId }): Promise<void> => {
     // Skip email if user has active push subscription
-    const subscription = await ctx.runQuery(
-      internal.pushSubscriptions.getSubscriptionByUserId,
-      { userId },
-    );
+    const subscription = await ctx.runQuery(internal.pushSubscriptions.getSubscriptionByUserId, {
+      userId,
+    });
     if (subscription?.isActive) return;
 
     const profile = await ctx.runQuery(internal.helpers.getProfileInternal, { userId });
     if (!profile?.email) return;
 
-    const { subject, html } = getPlanReadyEmail(
-      profile.fullName ?? "there",
-      profile.language,
-    );
+    const { subject, html } = getPlanReadyEmail(profile.fullName ?? "there", profile.language);
     await sendEmail(profile.email, subject, html);
   },
 });
@@ -249,19 +262,15 @@ export const sendReminderEmail = internalAction({
   args: { userId: v.string() },
   handler: async (ctx, { userId }): Promise<void> => {
     // Skip email if user has active push subscription
-    const subscription = await ctx.runQuery(
-      internal.pushSubscriptions.getSubscriptionByUserId,
-      { userId },
-    );
+    const subscription = await ctx.runQuery(internal.pushSubscriptions.getSubscriptionByUserId, {
+      userId,
+    });
     if (subscription?.isActive) return;
 
     const profile = await ctx.runQuery(internal.helpers.getProfileInternal, { userId });
     if (!profile?.email) return;
 
-    const { subject, html } = getReminderEmail(
-      profile.fullName ?? "there",
-      profile.language,
-    );
+    const { subject, html } = getReminderEmail(profile.fullName ?? "there", profile.language);
     await sendEmail(profile.email, subject, html);
   },
 });

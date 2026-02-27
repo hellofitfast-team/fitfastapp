@@ -53,7 +53,7 @@ export interface GeneratedMealPlan {
 }
 
 export async function generateMealPlan(
-  params: MealPlanGenerationParams
+  params: MealPlanGenerationParams,
 ): Promise<ValidatedMealPlan> {
   const { profile, assessment, checkIn, language, planDuration = 7 } = params;
 
@@ -67,7 +67,9 @@ IMPORTANT GUIDELINES:
 3. Provide realistic, achievable meal plans with locally available ingredients
 4. Include specific measurements and clear instructions
 5. Suggest alternatives for flexibility
-${isArabic ? `
+${
+  isArabic
+    ? `
 ARABIC LANGUAGE REQUIREMENTS:
 - ALL text content MUST be in Arabic language
 - Meal names MUST be in Arabic (e.g., "بيض مخفوق بالسبانخ" not "Scrambled Eggs with Spinach")
@@ -75,7 +77,9 @@ ARABIC LANGUAGE REQUIREMENTS:
 - Instructions MUST be in Arabic
 - Notes MUST be in Arabic
 - Focus on Egyptian/Middle Eastern cuisine and locally available ingredients
-- Use Arabic numerals or spelled-out Arabic numbers` : ""}`;
+- Use Arabic numerals or spelled-out Arabic numbers`
+    : ""
+}`;
 
   const userPrompt = `Create a ${planDuration}-day meal plan ${isArabic ? "ENTIRELY IN ARABIC LANGUAGE" : "in English"} for a user with the following profile:
 
@@ -89,14 +93,18 @@ DIETARY PREFERENCES:
 - Allergies: ${assessment.allergies?.join(", ") || "None"}
 - Dietary Restrictions: ${assessment.dietaryRestrictions?.join(", ") || "None"}
 
-${checkIn ? `
+${
+  checkIn
+    ? `
 RECENT CHECK-IN DATA:
 - Current Weight: ${checkIn.weight}kg
 - Energy Level: ${checkIn.energyLevel}/10
 - Sleep Quality: ${checkIn.sleepQuality}/10
 - Dietary Adherence: ${checkIn.dietaryAdherence}/10
 - Notes: ${checkIn.notes || "None"}
-` : ""}`;
+`
+    : ""
+}`;
 
   try {
     const { object, usage } = await generateObject({
@@ -139,7 +147,7 @@ RECENT CHECK-IN DATA:
     throw new AIGenerationError(
       `Failed to generate meal plan: ${error instanceof Error ? error.message : String(error)}`,
       "openrouter",
-      error instanceof Error ? error : undefined
+      error instanceof Error ? error : undefined,
     );
   }
 }

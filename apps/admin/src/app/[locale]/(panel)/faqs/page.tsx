@@ -9,12 +9,8 @@ export default function AdminFaqsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-stone-900">
-          {t("faqs")}
-        </h1>
-        <p className="text-sm text-stone-500 mt-1">
-          Manage frequently asked questions
-        </p>
+        <h1 className="text-2xl font-bold tracking-tight text-stone-900">{t("faqs")}</h1>
+        <p className="mt-1 text-sm text-stone-500">Manage frequently asked questions</p>
       </div>
 
       <FaqManager />

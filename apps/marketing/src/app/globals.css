@@ -1,24 +1,24 @@
 @import "tailwindcss";
 
 @theme {
-  --color-accent: #FF4500;
-  --color-accent-dark: #CC3700;
-  --color-background: #FFFFFF;
+  --color-accent: #ff4500;
+  --color-accent-dark: #cc3700;
+  --color-background: #ffffff;
   --color-foreground: #111111;
-  --color-surface: #F4F4F5;
-  --color-surface-light: #E4E4E7;
+  --color-surface: #f4f4f5;
+  --color-surface-light: #e4e4e7;
 
   /* Kept from old theme for checkout/drawer components */
-  --color-primary: #FF4500;
-  --color-primary-foreground: #FFFFFF;
-  --color-card: #FFFFFF;
+  --color-primary: #ff4500;
+  --color-primary-foreground: #ffffff;
+  --color-card: #ffffff;
   --color-card-foreground: #111111;
-  --color-muted: #F4F4F5;
+  --color-muted: #f4f4f5;
   --color-muted-foreground: #737373;
-  --color-border: #E4E4E7;
+  --color-border: #e4e4e7;
   --color-input: #d4d4d4;
-  --color-ring: #FF4500;
-  --color-popover: #FFFFFF;
+  --color-ring: #ff4500;
+  --color-popover: #ffffff;
   --color-popover-foreground: #111111;
 
   /* Fonts */

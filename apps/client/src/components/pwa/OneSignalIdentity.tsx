@@ -4,6 +4,9 @@ import { useEffect, useRef } from "react";
 import { useConvexAuth, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/hooks/use-auth";
+import { createLogger } from "@fitfast/config/logger";
+
+const log = createLogger("onesignal-identity");
 
 /**
  * Invisible component that links Convex user identity to OneSignal.
@@ -17,6 +20,7 @@ import { useAuth } from "@/hooks/use-auth";
 export function OneSignalIdentity() {
   const { profile } = useAuth();
   const linkedRef = useRef(false);
+  const handlerRef = useRef<((event: any) => void) | null>(null);
   const saveSubscription = useMutation(api.pushSubscriptions.saveSubscription);
   const deactivateSubscription = useMutation(api.pushSubscriptions.deactivateSubscription);
 
@@ -39,20 +43,20 @@ export function OneSignalIdentity() {
           syncSubscription(subscriptionId, true);
         }
 
-        // Listen for future subscription changes
-        OneSignal.User.PushSubscription.addEventListener(
-          "change",
-          handleSubscriptionChange
-        );
-      } catch (err) {
-        console.error("OneSignal identity link failed:", err);
-      }
-    }
+        // Assign handler to ref before adding listener to avoid stale closure
+        handlerRef.current = function handleSubscriptionChange(event: {
+          current: { id?: string | null; optedIn?: boolean };
+        }) {
+          const { id, optedIn } = event.current;
+          if (id) {
+            syncSubscription(id, optedIn ?? false);
+          }
+        };
 
-    function handleSubscriptionChange(event: { current: { id?: string | null; optedIn?: boolean } }) {
-      const { id, optedIn } = event.current;
-      if (id) {
-        syncSubscription(id, optedIn ?? false);
+        // Listen for future subscription changes
+        OneSignal.User.PushSubscription.addEventListener("change", handlerRef.current);
+      } catch (err) {
+        log.error({ err, userId: profile?._id }, "OneSignal identity link failed");
       }
     }
 
@@ -61,14 +65,12 @@ export function OneSignalIdentity() {
         saveSubscription({
           onesignalSubscriptionId: subscriptionId,
           deviceType: "web",
-        }).catch((err) =>
-          console.error("Failed to sync subscription:", err)
-        );
+        }).catch((err) => log.error({ err, subscriptionId }, "Failed to sync push subscription"));
       } else {
         deactivateSubscription({
           onesignalSubscriptionId: subscriptionId,
         }).catch((err) =>
-          console.error("Failed to deactivate subscription:", err)
+          log.error({ err, subscriptionId }, "Failed to deactivate push subscription"),
         );
       }
     }
@@ -76,13 +78,11 @@ export function OneSignalIdentity() {
     linkIdentity();
 
     return () => {
-      // Cleanup listener on unmount
+      // Cleanup listener on unmount using the stable ref
+      if (!handlerRef.current) return;
       import("react-onesignal")
         .then(({ default: OneSignal }) => {
-          OneSignal.User.PushSubscription.removeEventListener(
-            "change",
-            handleSubscriptionChange
-          );
+          OneSignal.User.PushSubscription.removeEventListener("change", handlerRef.current!);
         })
         .catch(() => {});
     };

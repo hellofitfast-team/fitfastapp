@@ -67,33 +67,39 @@ export function CheckoutForm({ selectedPlan, onSuccess }: CheckoutFormProps) {
     resolver: zodResolver(checkoutSchema),
   });
 
-  const handleFile = useCallback((file: File) => {
-    setFileError(null);
+  const handleFile = useCallback(
+    (file: File) => {
+      setFileError(null);
 
-    if (!file.type.startsWith("image/")) {
-      setFileError(t("invalidFileType"));
-      return;
-    }
+      if (!file.type.startsWith("image/")) {
+        setFileError(t("invalidFileType"));
+        return;
+      }
 
-    if (file.size > MAX_FILE_SIZE) {
-      setFileError(t("fileTooLarge"));
-      return;
-    }
+      if (file.size > MAX_FILE_SIZE) {
+        setFileError(t("fileTooLarge"));
+        return;
+      }
 
-    setScreenshotFile(file);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setScreenshotPreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-  }, [t]);
+      setScreenshotFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setScreenshotPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    },
+    [t],
+  );
 
-  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file) handleFile(file);
-  }, [handleFile]);
+  const handleDrop = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      setIsDragging(false);
+      const file = e.dataTransfer.files[0];
+      if (file) handleFile(file);
+    },
+    [handleFile],
+  );
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -137,7 +143,7 @@ export function CheckoutForm({ selectedPlan, onSuccess }: CheckoutFormProps) {
           throw new Error(`Failed to get upload URL: ${urlResponse.statusText}`);
         }
 
-        const { uploadUrl } = await urlResponse.json() as { uploadUrl: string };
+        const { uploadUrl } = (await urlResponse.json()) as { uploadUrl: string };
         if (!uploadUrl || typeof uploadUrl !== "string") throw new Error("Invalid upload response");
 
         // Upload file directly to Convex storage
@@ -153,9 +159,10 @@ export function CheckoutForm({ selectedPlan, onSuccess }: CheckoutFormProps) {
           throw new Error(`Upload failed: ${uploadResponse.statusText}`);
         }
 
-        const uploadResult = await uploadResponse.json() as { storageId: string };
+        const uploadResult = (await uploadResponse.json()) as { storageId: string };
         const { storageId: resolvedStorageId } = uploadResult;
-        if (!resolvedStorageId || typeof resolvedStorageId !== "string") throw new Error("Invalid storage response");
+        if (!resolvedStorageId || typeof resolvedStorageId !== "string")
+          throw new Error("Invalid storage response");
         storageId = resolvedStorageId;
       }
 
@@ -196,9 +203,7 @@ export function CheckoutForm({ selectedPlan, onSuccess }: CheckoutFormProps) {
           className={cn(errors.fullName && "border-red-500 focus-visible:ring-red-500")}
           disabled={isSubmitting}
         />
-        {errors.fullName && (
-          <p className="text-xs text-red-500">{errors.fullName.message}</p>
-        )}
+        {errors.fullName && <p className="text-xs text-red-500">{errors.fullName.message}</p>}
       </div>
 
       {/* Email */}
@@ -214,9 +219,7 @@ export function CheckoutForm({ selectedPlan, onSuccess }: CheckoutFormProps) {
           className={cn(errors.email && "border-red-500 focus-visible:ring-red-500")}
           disabled={isSubmitting}
         />
-        {errors.email && (
-          <p className="text-xs text-red-500">{errors.email.message}</p>
-        )}
+        {errors.email && <p className="text-xs text-red-500">{errors.email.message}</p>}
       </div>
 
       {/* Phone */}
@@ -232,9 +235,7 @@ export function CheckoutForm({ selectedPlan, onSuccess }: CheckoutFormProps) {
           className={cn(errors.phone && "border-red-500 focus-visible:ring-red-500")}
           disabled={isSubmitting}
         />
-        {errors.phone && (
-          <p className="text-xs text-red-500">{errors.phone.message}</p>
-        )}
+        {errors.phone && <p className="text-xs text-red-500">{errors.phone.message}</p>}
       </div>
 
       {/* Payment Instructions */}
@@ -244,26 +245,26 @@ export function CheckoutForm({ selectedPlan, onSuccess }: CheckoutFormProps) {
       <div className="space-y-1.5">
         <Label className="text-sm font-medium text-[var(--color-foreground)]">
           {t("uploadScreenshot")}
-          <span className="ms-1 text-[var(--color-muted-foreground)] font-normal">
+          <span className="ms-1 font-normal text-[var(--color-muted-foreground)]">
             ({t("optional")})
           </span>
         </Label>
 
         {screenshotPreview ? (
-          <div className="relative rounded-xl overflow-hidden border border-[var(--color-border)]">
+          <div className="relative overflow-hidden rounded-xl border border-[var(--color-border)]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={screenshotPreview}
               alt="Payment screenshot preview"
-              className="w-full max-h-48 object-contain bg-[var(--color-card)]"
+              className="max-h-48 w-full bg-[var(--color-card)] object-contain"
             />
             <button
               type="button"
               onClick={removeScreenshot}
-              className="absolute top-2 end-2 w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 transition-colors"
+              className="absolute end-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80"
               aria-label="Remove screenshot"
             >
-              <X className="w-4 h-4" />
+              <X className="h-4 w-4" />
             </button>
           </div>
         ) : (
@@ -273,17 +274,17 @@ export function CheckoutForm({ selectedPlan, onSuccess }: CheckoutFormProps) {
             onDragLeave={handleDragLeave}
             onClick={() => fileInputRef.current?.click()}
             className={cn(
-              "flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-6 cursor-pointer transition-colors",
+              "flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-6 transition-colors",
               isDragging
                 ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5"
-                : "border-[var(--color-border)] bg-[var(--color-card)] hover:border-[var(--color-primary)]/60 hover:bg-[var(--color-primary)]/3"
+                : "border-[var(--color-border)] bg-[var(--color-card)] hover:border-[var(--color-primary)]/60 hover:bg-[var(--color-primary)]/3",
             )}
           >
-            <div className="w-10 h-10 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--color-primary)]/10">
               {isDragging ? (
-                <ImageIcon className="w-5 h-5 text-[var(--color-primary)]" />
+                <ImageIcon className="h-5 w-5 text-[var(--color-primary)]" />
               ) : (
-                <Upload className="w-5 h-5 text-[var(--color-primary)]" />
+                <Upload className="h-5 w-5 text-[var(--color-primary)]" />
               )}
             </div>
             <div className="text-center">
@@ -291,7 +292,7 @@ export function CheckoutForm({ selectedPlan, onSuccess }: CheckoutFormProps) {
                 <span className="hidden sm:inline">{t("dragDrop")}</span>
                 <span className="sm:hidden">{t("tapUpload")}</span>
               </p>
-              <p className="text-xs text-[var(--color-muted-foreground)] mt-0.5">
+              <p className="mt-0.5 text-xs text-[var(--color-muted-foreground)]">
                 {t("uploadHint")}
               </p>
             </div>
@@ -307,14 +308,12 @@ export function CheckoutForm({ selectedPlan, onSuccess }: CheckoutFormProps) {
           aria-hidden="true"
         />
 
-        {fileError && (
-          <p className="text-xs text-red-500">{fileError}</p>
-        )}
+        {fileError && <p className="text-xs text-red-500">{fileError}</p>}
       </div>
 
       {/* Submit Error */}
       {submitError && (
-        <div className="rounded-xl bg-red-50 border border-red-200 p-3">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-3">
           <p className="text-sm text-red-600">{submitError}</p>
         </div>
       )}
@@ -323,11 +322,11 @@ export function CheckoutForm({ selectedPlan, onSuccess }: CheckoutFormProps) {
       <Button
         type="submit"
         disabled={isSubmitting}
-        className="w-full bg-[var(--color-primary)] hover:bg-[var(--color-primary)]/90 text-white font-semibold h-12 rounded-xl"
+        className="h-12 w-full rounded-xl bg-[var(--color-primary)] font-semibold text-white hover:bg-[var(--color-primary)]/90"
       >
         {isSubmitting ? (
           <span className="flex items-center gap-2">
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" />
             {t("submitting")}
           </span>
         ) : (

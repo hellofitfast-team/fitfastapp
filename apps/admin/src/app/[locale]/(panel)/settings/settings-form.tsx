@@ -17,9 +17,14 @@ export function AdminSettingsForm() {
   const { isAuthenticated } = useConvexAuth();
   const setConfig = useMutation(api.systemConfig.setConfig);
 
-  const checkInConfig = useQuery(api.systemConfig.getConfig, isAuthenticated ? {
-    key: "check_in_frequency_days",
-  } : "skip");
+  const checkInConfig = useQuery(
+    api.systemConfig.getConfig,
+    isAuthenticated
+      ? {
+          key: "check_in_frequency_days",
+        }
+      : "skip",
+  );
 
   const [checkInDays, setCheckInDays] = useState<string | null>(null);
 
@@ -51,18 +56,16 @@ export function AdminSettingsForm() {
   };
 
   return (
-    <div className="space-y-8 max-w-3xl">
+    <div className="max-w-3xl space-y-8">
       {/* ===== General Settings ===== */}
       <div className="space-y-6">
         {/* Check-in frequency */}
         <div className="rounded-xl border border-stone-200 bg-white p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <div className="mb-4 flex items-center gap-2">
+            <div className="bg-primary/10 text-primary flex h-8 w-8 items-center justify-center rounded-lg">
               <Calendar className="h-4 w-4" />
             </div>
-            <h2 className="font-semibold text-sm text-stone-900">
-              Check-in Frequency
-            </h2>
+            <h2 className="text-sm font-semibold text-stone-900">{t("checkInFrequency")}</h2>
           </div>
           <div className="flex items-center gap-3">
             <input
@@ -71,37 +74,27 @@ export function AdminSettingsForm() {
               max="30"
               value={effectiveCheckInDays}
               onChange={(e) => setCheckInDays(e.target.value)}
-              className="w-24 h-11 rounded-xl border border-stone-200 bg-stone-50 px-3 text-lg font-bold text-primary text-center focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              className="text-primary focus:ring-primary/20 focus:border-primary h-11 w-24 rounded-xl border border-stone-200 bg-stone-50 px-3 text-center text-lg font-bold transition-all focus:ring-2 focus:outline-none"
             />
-            <span className="text-sm text-stone-500">
-              days between check-ins
-            </span>
+            <span className="text-sm text-stone-500">{t("daysBetweenCheckIns")}</span>
           </div>
         </div>
 
         {/* Save general settings */}
         <div className="flex justify-end">
-          <SaveButton
-            onSave={handleSave}
-            label={t("save")}
-            savingLabel={t("saving")}
-          />
+          <SaveButton onSave={handleSave} label={t("save")} savingLabel={t("saving")} />
         </div>
       </div>
 
       {/* ===== Pricing Plans ===== */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <div className="bg-primary/10 text-primary flex h-8 w-8 items-center justify-center rounded-lg">
             <DollarSign className="h-4 w-4" />
           </div>
           <div>
-            <h2 className="font-semibold text-sm text-stone-900">
-              {tSettings("pricingPlans")}
-            </h2>
-            <p className="text-xs text-stone-400 mt-0.5">
-              Configure up to 4 pricing plans shown on the marketing page.
-            </p>
+            <h2 className="text-sm font-semibold text-stone-900">{tSettings("pricingPlans")}</h2>
+            <p className="mt-0.5 text-xs text-stone-400">{t("configurePlans")}</p>
           </div>
         </div>
         <PlansManager />
@@ -110,16 +103,12 @@ export function AdminSettingsForm() {
       {/* ===== Payment Methods ===== */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <div className="bg-primary/10 text-primary flex h-8 w-8 items-center justify-center rounded-lg">
             <Wallet className="h-4 w-4" />
           </div>
           <div>
-            <h2 className="font-semibold text-sm text-stone-900">
-              {tSettings("paymentMethods")}
-            </h2>
-            <p className="text-xs text-stone-400 mt-0.5">
-              Configure the payment accounts shown to prospects during checkout.
-            </p>
+            <h2 className="text-sm font-semibold text-stone-900">{tSettings("paymentMethods")}</h2>
+            <p className="mt-0.5 text-xs text-stone-400">{t("configurePayments")}</p>
           </div>
         </div>
         <PaymentMethodsManager />
@@ -128,16 +117,12 @@ export function AdminSettingsForm() {
       {/* ===== Social Links ===== */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <div className="bg-primary/10 text-primary flex h-8 w-8 items-center justify-center rounded-lg">
             <Share2 className="h-4 w-4" />
           </div>
           <div>
-            <h2 className="font-semibold text-sm text-stone-900">
-              {tSettings("socialLinks")}
-            </h2>
-            <p className="text-xs text-stone-400 mt-0.5">
-              {tSettings("socialLinksDesc")}
-            </p>
+            <h2 className="text-sm font-semibold text-stone-900">{tSettings("socialLinks")}</h2>
+            <p className="mt-0.5 text-xs text-stone-400">{tSettings("socialLinksDesc")}</p>
           </div>
         </div>
         <SocialLinksManager />

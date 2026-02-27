@@ -17,13 +17,13 @@ export const extractPaymentData = internalAction({
   handler: async (ctx, { signupId, storageId }): Promise<void> => {
     const imageUrl = await ctx.storage.getUrl(storageId);
     if (!imageUrl) {
-      console.error("OCR: Could not resolve storage URL for", storageId);
+      console.error("[OCR:extractPaymentData] Could not resolve storage URL", { storageId });
       return;
     }
 
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
-      console.error("OCR: OPENROUTER_API_KEY not set");
+      console.error("[OCR:extractPaymentData] OPENROUTER_API_KEY not set");
       return;
     }
 
@@ -62,7 +62,10 @@ Respond with ONLY the JSON object, no markdown or explanation.`,
       });
 
       // Parse the JSON response
-      const cleaned = text.replace(/```(?:json)?\s*/g, "").replace(/```/g, "").trim();
+      const cleaned = text
+        .replace(/```(?:json)?\s*/g, "")
+        .replace(/```/g, "")
+        .trim();
       const parsed = JSON.parse(cleaned);
 
       // Filter out null/undefined values
@@ -80,7 +83,10 @@ Respond with ONLY the JSON object, no markdown or explanation.`,
         });
       }
     } catch (err) {
-      console.error("OCR extraction failed:", err);
+      console.error("[OCR:extractPaymentData] Extraction failed", {
+        signupId,
+        error: err instanceof Error ? err.message : String(err),
+      });
       // Non-critical — don't throw. The signup still exists without OCR data.
     }
   },

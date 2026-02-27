@@ -20,12 +20,7 @@ class OneSignalClient {
   }
 
   /** Send a push notification to a single user by Convex user ID */
-  async sendToUser(
-    userId: string,
-    title: string,
-    message: string,
-    options?: SendOptions
-  ) {
+  async sendToUser(userId: string, title: string, message: string, options?: SendOptions) {
     return this.send({
       include_aliases: { external_id: [userId] },
       target_channel: "push",
@@ -37,12 +32,7 @@ class OneSignalClient {
   }
 
   /** Send a push notification to multiple users by Convex user IDs */
-  async sendToUsers(
-    userIds: string[],
-    title: string,
-    message: string,
-    options?: SendOptions
-  ) {
+  async sendToUsers(userIds: string[], title: string, message: string, options?: SendOptions) {
     return this.send({
       include_aliases: { external_id: userIds },
       target_channel: "push",
@@ -54,11 +44,7 @@ class OneSignalClient {
   }
 
   /** Send a push notification to all subscribed users */
-  async sendToAll(
-    title: string,
-    message: string,
-    options?: SendOptions
-  ) {
+  async sendToAll(title: string, message: string, options?: SendOptions) {
     return this.send({
       included_segments: ["Subscribed Users"],
       headings: { en: title },
@@ -101,7 +87,7 @@ export function getOneSignalClient(): OneSignalClient {
 
   if (!appId || !restApiKey) {
     throw new Error(
-      "Missing OneSignal configuration: NEXT_PUBLIC_ONESIGNAL_APP_ID and ONESIGNAL_REST_API_KEY are required"
+      "Missing OneSignal configuration: NEXT_PUBLIC_ONESIGNAL_APP_ID and ONESIGNAL_REST_API_KEY are required",
     );
   }
 

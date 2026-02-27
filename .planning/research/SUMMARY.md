@@ -22,6 +22,7 @@ Hardening focuses on adding production-critical error handling, validation, and 
 **Hardening:** Add Zod ^3.23+ for runtime validation (only new dependency). Custom retry utility is ~50 lines with zero dependencies. Sentry ^10.38 already integrated, just enhance with structured error contexts. All other work uses existing stack (Next.js 16, React 19, Supabase, OpenRouter).
 
 **Core technologies:**
+
 - **Zod ^3.23+**: Runtime validation for AI responses and API inputs — type-safe schemas, safeParse for error handling, integrates with TypeScript inference
 - **Custom retry utility**: Exponential backoff for OpenRouter API calls — zero dependencies, full control, lightweight (~50 lines)
 - **Sentry (existing)**: Production error tracking — already integrated, enhance with user context and tags
@@ -30,11 +31,13 @@ Hardening focuses on adding production-critical error handling, validation, and 
 ### Expected Features
 
 **Theme Rebrand — Must Have:**
+
 - Core color swap (orange → Royal Blue in 3 CSS variables) — users expect consistent branding
 - Component visual audit (all shadcn/ui components render correctly) — prevents broken UI
 - Accessibility verification (WCAG AA contrast with cream background) — legal/usability requirement
 
 **Hardening — Must Have (Table Stakes):**
+
 - API routes validate inputs with Zod — prevents crashes from malformed requests
 - AI responses validated before database save — prevents corrupt JSONB data
 - Errors logged with context (userId, action, timestamp) — production debugging impossible without it
@@ -42,12 +45,14 @@ Hardening focuses on adding production-critical error handling, validation, and 
 - Database queries parallelized — slow queries = poor UX at scale (3 queries × 50ms = 150ms vs 50ms)
 
 **Hardening — Should Have (Competitive):**
+
 - Error boundaries at route segment level — isolates errors, prevents full app crashes
 - Custom hooks extracted from large components (600+ lines) — maintainability and testability
 - Fire-and-forget non-critical operations (notifications) — don't block API responses on OneSignal timeout
 - Comprehensive Sentry error context — debug production issues without user reproduction
 
 **Defer (v2+ / Out of Scope):**
+
 - Caching layer (Redis) — premature optimization for 1K users, defer until 10K+
 - Circuit breaker pattern — overkill for current scale, simple retry sufficient
 - Automated error recovery — too complex, manual intervention sufficient
@@ -60,6 +65,7 @@ Hardening focuses on adding production-critical error handling, validation, and 
 **Hardening:** Structured error handling hierarchy with validation at entry points, retry at service layer, and error boundaries at UI layer. API routes follow pattern: (1) Zod input validation, (2) parallel Supabase queries with `Promise.all()`, (3) OpenRouter call with retry wrapper, (4) Zod AI response validation, (5) database save, (6) fire-and-forget notifications, (7) typed JSON response. Large Client Components refactored to Server Components (data fetching) with small Client Components (interactivity only). Custom hooks extract state management and business logic for reusability.
 
 **Major components (refactoring order):**
+
 1. **Foundation Layer** — Zod schemas for AI/API, retry utility, error types, error boundaries (no dependencies)
 2. **Service Layer** — Wrap OpenRouter in retry, validate AI with Zod, extract Supabase queries to reusable functions (depends on Foundation)
 3. **API Route Layer** — Add input validation, parallelize queries, comprehensive error handling, fire-and-forget side effects (depends on Service Layer)
@@ -69,11 +75,13 @@ Hardening focuses on adding production-critical error handling, validation, and 
 ### Critical Pitfalls
 
 **Theme Rebrand:**
+
 1. **Missing `--color-` prefix in `@theme` directive** — Tailwind won't generate utility classes (bg-primary won't work). Always use `--color-primary: ...` not `--primary: ...` in `@theme` block.
 2. **Forgetting HSL wrapper** — `--color-primary: 225 73% 57%` breaks opacity modifiers and color pickers. Must use `--color-primary: hsl(225 73% 57%)` for proper behavior.
 3. **Hardcoded orange colors in components** — Grep for `#FF3B00`, `bg-orange-500`, SVG fills before declaring rebrand complete. Semantic variables only work if components use them.
 
 **Hardening:**
+
 1. **Silent error swallowing** — `try { ... } catch {}` or `catch { return null }` makes production bugs invisible. ALWAYS log with context, send to Sentry, return error state to UI. Code review checklist: "Does every catch block log and report?"
 2. **Sequential database queries (waterfall)** — `await query1; await query2; await query3` multiplies latency (3x slower). Use `Promise.all([query1, query2, query3])` for independent queries. Measure API latency with `console.time()` to detect.
 3. **Validating AI with TypeScript only** — `as MealPlan` gives false confidence, types disappear at runtime. AI can return malformed JSON that crashes. ALWAYS validate with Zod `safeParse()` before using data.
@@ -85,101 +93,115 @@ Hardening focuses on adding production-critical error handling, validation, and 
 Based on research, suggested phase structure:
 
 ### Phase 1: Theme Rebrand — Core Color Swap
+
 **Rationale:** Theme changes are fastest win, enable visual testing, independent of hardening work
 **Delivers:** Royal Blue primary color across entire app, accessible contrast ratios
 **Addresses:**
+
 - Core color swap (3 CSS variables: primary, primary-foreground, ring)
 - Secondary color references (scrollbar hover, focus animations)
 - Component testing in English and Arabic modes
-**Avoids:**
+  **Avoids:**
 - Pitfall: Missing `--color-` prefix or HSL wrapper (breaks utilities)
 - Pitfall: Hardcoded colors in components (grep for #FF3B00 first)
-**Estimated complexity:** LOW (2-4 hours)
-**Research needs:** None (straightforward CSS changes, well-documented)
+  **Estimated complexity:** LOW (2-4 hours)
+  **Research needs:** None (straightforward CSS changes, well-documented)
 
 ### Phase 2: Theme Rebrand — Visual Audit & Accessibility
+
 **Rationale:** Must verify all components render correctly and meet WCAG AA before hardening changes
 **Delivers:** Verified component library, accessibility compliance, visual regression baseline
 **Addresses:**
+
 - All shadcn/ui components tested (Button, Input, Alert, Card, etc.)
 - Focus states, hover states, disabled states verified
 - Contrast ratios tested with cream background (#FFFEF5)
 - Cross-browser testing (Chrome, Safari, Firefox)
-**Avoids:**
+  **Avoids:**
 - Pitfall: Semantic color confusion (primary used for error, etc.)
 - Pitfall: Insufficient contrast (Royal Blue vs cream needs verification)
-**Estimated complexity:** LOW-MEDIUM (4-8 hours)
-**Research needs:** May need deeper research if custom components use unexpected color patterns
+  **Estimated complexity:** LOW-MEDIUM (4-8 hours)
+  **Research needs:** May need deeper research if custom components use unexpected color patterns
 
 ### Phase 3: Hardening — Foundation (Zod + Retry + Error Patterns)
+
 **Rationale:** All hardening work depends on validation schemas, retry utility, and error types
 **Delivers:** Reusable Zod schemas, exponential backoff utility, error boundaries, custom error types
 **Addresses:**
+
 - Zod schemas for meal plan, workout plan, API inputs
 - Retry utility with exponential backoff + jitter
 - Error boundary wrapper component
 - Custom error types for domain errors
-**Avoids:**
+  **Avoids:**
 - Pitfall: Schemas too strict (use `.optional()`, tighten after testing)
 - Pitfall: Infinite retry loops (max attempts, check shouldRetry)
-**Estimated complexity:** MEDIUM (6-10 hours)
-**Research needs:** None (patterns well-documented in ARCHITECTURE.md)
+  **Estimated complexity:** MEDIUM (6-10 hours)
+  **Research needs:** None (patterns well-documented in ARCHITECTURE.md)
 
 ### Phase 4: Hardening — Service Layer (OpenRouter + Supabase)
+
 **Rationale:** Depends on retry utility and Zod schemas from Phase 3
 **Delivers:** Reliable AI generation, validated responses, reusable query functions
 **Addresses:**
+
 - Wrap OpenRouter client in retry logic
 - Add Zod validation to meal/workout generators
 - Extract Supabase queries to `lib/supabase/queries/` folder
-**Avoids:**
+  **Avoids:**
 - Pitfall: Validating AI with TypeScript only (always use Zod safeParse)
 - Pitfall: Retrying non-idempotent operations (only retry safe calls)
-**Estimated complexity:** MEDIUM (8-12 hours)
-**Research needs:** None (standard retry patterns)
+  **Estimated complexity:** MEDIUM (8-12 hours)
+  **Research needs:** None (standard retry patterns)
 
 ### Phase 5: Hardening — API Routes (Validation + Parallelization)
+
 **Rationale:** Depends on Zod schemas and query functions from Phases 3-4
 **Delivers:** Fast, validated API routes with comprehensive error handling
 **Addresses:**
+
 - Add Zod input validation to all API routes
 - Parallelize Supabase queries with `Promise.all()`
 - Fire-and-forget notifications (non-blocking)
 - Comprehensive error logging with Sentry context
-**Avoids:**
+  **Avoids:**
 - Pitfall: Sequential queries (waterfall latency)
 - Pitfall: Blocking on non-critical operations (notifications)
 - Pitfall: Silent error swallowing (always log + report)
-**Estimated complexity:** HIGH (12-16 hours, touches many routes)
-**Research needs:** Unlikely (patterns already established)
+  **Estimated complexity:** HIGH (12-16 hours, touches many routes)
+  **Research needs:** Unlikely (patterns already established)
 
 ### Phase 6: Hardening — Component Refactoring
+
 **Rationale:** Depends on stable API routes from Phase 5
 **Delivers:** Maintainable components, extracted hooks, Server Component data fetching
 **Addresses:**
+
 - Extract custom hooks from large components (e.g., `use-check-in-form.ts`)
 - Split large components into smaller pieces (`_components/` folders)
 - Move data fetching to Server Components where possible
 - Add error boundaries at route segment level
-**Avoids:**
+  **Avoids:**
 - Pitfall: Large "use client" components (keep Server Components as default)
 - Pitfall: Breaking hooks into too many pieces (extract for reuse, not every 20 lines)
-**Estimated complexity:** MEDIUM-HIGH (10-14 hours)
-**Research needs:** None (React refactoring best practices)
+  **Estimated complexity:** MEDIUM-HIGH (10-14 hours)
+  **Research needs:** None (React refactoring best practices)
 
 ### Phase 7: Hardening — Database Optimization (Optional)
+
 **Rationale:** Only needed if admin panel shows RLS performance issues (defer until confirmed)
 **Delivers:** Optimized RLS policies, database indexes based on profiling
 **Addresses:**
+
 - SECURITY DEFINER functions for complex RLS checks
 - Database indexes from EXPLAIN ANALYZE results
 - Updated RLS policies to use new functions
-**Avoids:**
+  **Avoids:**
 - Pitfall: RLS policies with joins (runs join per-row, extremely slow)
 - Pitfall: Over-indexing without analysis (slows writes, wastes storage)
 - Pitfall: SECURITY DEFINER security leak (functions callable from API)
-**Estimated complexity:** MEDIUM (6-10 hours if needed)
-**Research needs:** Standard Supabase optimization patterns, no research needed
+  **Estimated complexity:** MEDIUM (6-10 hours if needed)
+  **Research needs:** Standard Supabase optimization patterns, no research needed
 
 ### Phase Ordering Rationale
 
@@ -190,6 +212,7 @@ Based on research, suggested phase structure:
 **Database optimization last (Phase 7):** Can run parallel to other phases, only needed if RLS performance issues confirmed. Most apps don't need SECURITY DEFINER functions at 1K users.
 
 **Parallelization opportunities:**
+
 - Phase 1 and Phase 3 can run parallel (theme and foundation independent)
 - Phase 7 can start during Phase 5-6 if RLS issues confirmed early
 - Do NOT parallelize Phases 3-6 (strict dependency chain)
@@ -197,6 +220,7 @@ Based on research, suggested phase structure:
 ### Research Flags
 
 **Phases unlikely needing deeper research:**
+
 - **Phase 1 (Theme Core):** Straightforward CSS variable changes, well-documented in Tailwind v4 docs
 - **Phase 2 (Theme Audit):** Standard component testing, may need grep for hardcoded colors (not research, just codebase search)
 - **Phase 3 (Foundation):** Zod and retry patterns already documented in ARCHITECTURE.md
@@ -206,6 +230,7 @@ Based on research, suggested phase structure:
 - **Phase 7 (Database):** Standard Supabase optimization, official docs available
 
 **Phases with well-documented patterns (skip `/gsd:research-phase`):**
+
 - All phases 1-7 have established patterns and official documentation
 - ARCHITECTURE.md already provides code examples for all hardening patterns
 - THEME_REBRAND_SUMMARY.md verified current Tailwind v4 implementation is optimal
@@ -214,18 +239,19 @@ Based on research, suggested phase structure:
 
 ## Confidence Assessment
 
-| Area | Confidence | Notes |
-|------|------------|-------|
-| Stack (Theme) | HIGH | Tailwind v4 official docs, current `globals.css` implementation audited and verified optimal |
-| Stack (Hardening) | HIGH | Zod official docs, Next.js 16 error handling docs, custom retry pattern researched from multiple sources |
-| Features | HIGH | Component inventory based on existing shadcn/ui installation, hardening features from Next.js best practices |
-| Architecture (Theme) | HIGH | CSS-first theming is standard v4 pattern, no custom config needed |
-| Architecture (Hardening) | HIGH | Next.js 16 App Router patterns, Supabase RLS optimization from official guides, exponential backoff from industry sources |
-| Pitfalls | HIGH | Tailwind v4 upgrade guide, shadcn/ui migration docs, Supabase RLS performance docs, community GitHub discussions verified |
+| Area                     | Confidence | Notes                                                                                                                     |
+| ------------------------ | ---------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Stack (Theme)            | HIGH       | Tailwind v4 official docs, current `globals.css` implementation audited and verified optimal                              |
+| Stack (Hardening)        | HIGH       | Zod official docs, Next.js 16 error handling docs, custom retry pattern researched from multiple sources                  |
+| Features                 | HIGH       | Component inventory based on existing shadcn/ui installation, hardening features from Next.js best practices              |
+| Architecture (Theme)     | HIGH       | CSS-first theming is standard v4 pattern, no custom config needed                                                         |
+| Architecture (Hardening) | HIGH       | Next.js 16 App Router patterns, Supabase RLS optimization from official guides, exponential backoff from industry sources |
+| Pitfalls                 | HIGH       | Tailwind v4 upgrade guide, shadcn/ui migration docs, Supabase RLS performance docs, community GitHub discussions verified |
 
 **Overall confidence:** HIGH
 
 **Confidence drivers:**
+
 - Official documentation verified for all technologies (Tailwind v4, Next.js 16, Zod, Supabase)
 - Direct inspection of FitFast's current implementation (verified Tailwind v4 pattern, audited `globals.css`)
 - Multiple community sources confirming patterns (Shadcnblocks, GitHub, blog posts)
@@ -233,6 +259,7 @@ Based on research, suggested phase structure:
 - Research aligned with project memory (performance patterns, architecture notes)
 
 **Uncertainty resolved during research:**
+
 - ✅ Tailwind v4 theming pattern confirmed optimal (no refactor needed)
 - ✅ RTL impact of color changes verified as zero
 - ✅ Royal Blue HSL values researched (hsl(225 73% 57%))
@@ -242,6 +269,7 @@ Based on research, suggested phase structure:
 ### Gaps to Address
 
 **Gaps resolved during research:**
+
 - ✅ Tailwind v4 color configuration verified in current `globals.css`
 - ✅ shadcn/ui v4 compatibility confirmed
 - ✅ RTL/Arabic support independence from color changes verified
@@ -252,27 +280,32 @@ Based on research, suggested phase structure:
 **Remaining gaps (to resolve during implementation):**
 
 **1. Custom component color audit** (Phase 2 task)
+
 - Need to grep codebase for `#FF3B00`, `#00FF94`, `bg-orange`, `text-orange`, `border-orange`
 - Identify any hardcoded colors in React components, SVGs, or custom CSS
 - Cannot predict extent until search is run
 - **Resolution:** Run grep before starting Phase 1, add findings to phase plan
 
 **2. Royal Blue shade palette** (Optional enhancement, defer to v2+)
+
 - Research provided single Royal Blue value (hsl(225 73% 57%))
 - Full 50-900 shade palette generation can use Tailwind defaults or manual creation
 - **Resolution:** Use Tailwind's default blue scale, override 500 shade only for MVP
 
 **3. Accessibility contrast verification** (Phase 2 task)
+
 - Research provided theoretical contrast ratios for Royal Blue on white
 - Need actual testing with FitFast's cream background (#FFFEF5) vs white
 - **Resolution:** Chrome DevTools contrast checker during Phase 2 testing
 
 **4. Current component sizes** (Phase 6 planning)
+
 - Research assumes 600+ line components exist (common in fitness apps)
 - Need to verify actual component sizes in FitFast codebase
 - **Resolution:** Run `cloc` or manual inspection during Phase 6 planning
 
 **5. Existing error logging patterns** (Phase 3-5 execution)
+
 - Unknown how many existing try-catch blocks exist and their current error handling
 - **Resolution:** Grep for `try {` and `catch` during Phase 3, audit before refactoring
 
@@ -283,6 +316,7 @@ Based on research, suggested phase structure:
 ### Primary (HIGH confidence)
 
 **Theme Rebrand:**
+
 - [Tailwind CSS v4 Theme Variables](https://tailwindcss.com/docs/theme) — CSS-first theming, @theme directive
 - [Tailwind CSS v4.0 Release Notes](https://tailwindcss.com/blog/tailwindcss-v4) — v4 migration patterns
 - [Tailwind v4 Upgrade Guide](https://tailwindcss.com/docs/upgrade-guide) — breaking changes, config removal
@@ -291,6 +325,7 @@ Based on research, suggested phase structure:
 - [shadcn/ui Color Palette Reference](https://ui.shadcn.com/colors) — color token standards
 
 **Hardening:**
+
 - [Zod Official Documentation](https://zod.dev/) — validation schemas, safeParse, error handling
 - [Zod Basics](https://zod.dev/basics) — schema definition patterns
 - [Zod Error Customization](https://zod.dev/error-customization) — custom error messages
@@ -305,12 +340,14 @@ Based on research, suggested phase structure:
 ### Secondary (MEDIUM confidence)
 
 **Theme Rebrand:**
+
 - [Shadcnblocks: Tailwind 4 Theming Guide](https://www.shadcnblocks.com/blog/tailwind4-shadcn-themeing/) — practical v4 examples
 - [Tailwind v4 vs v3 Comparison](https://frontend-hero.com/tailwind-v4-vs-v3) — migration considerations
 - [Tailwind CSS v4 Complete Guide 2026](https://devtoolbox.dedyn.io/blog/tailwind-css-v4-complete-guide) — theming best practices
 - [Frontend Tools: Best Practices 2025-2026](https://www.frontendtools.tech/blog/tailwind-css-best-practices-design-system-patterns) — design system patterns
 
 **Hardening:**
+
 - [Next.js 15 Error Handling Best Practices](https://devanddeliver.com/blog/frontend/next-js-15-error-handling-best-practices-for-code-and-routes) — error hierarchy patterns
 - [Next.js Error Boundary Best Practices](https://www.dhiwise.com/post/nextjs-error-boundary-best-practices) — error boundary implementation
 - [Exponential Backoff Pattern Research](https://advancedweb.hu/how-to-implement-an-exponential-backoff-retry-strategy-in-javascript/) — retry algorithm
@@ -331,5 +368,6 @@ Based on research, suggested phase structure:
 - `/Users/ziadadel/.claude/projects/-Users-ziadadel-Desktop-fitfast/memory/MEMORY.md` — aligned with existing performance patterns, middleware notes, Supabase type workarounds
 
 ---
-*Research completed: 2026-02-12*
-*Ready for roadmap: yes*
+
+_Research completed: 2026-02-12_
+_Ready for roadmap: yes_

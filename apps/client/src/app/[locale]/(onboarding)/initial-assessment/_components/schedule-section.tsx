@@ -61,8 +61,8 @@ export function ScheduleSection({
       >
         <div className="space-y-3">
           {/* Recommendation hint */}
-          <div className="flex items-start gap-2 rounded-lg bg-primary/5 border border-primary/10 px-3 py-2.5">
-            <Info className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+          <div className="bg-primary/5 border-primary/10 flex items-start gap-2 rounded-lg border px-3 py-2.5">
+            <Info className="text-primary mt-0.5 h-4 w-4 shrink-0" />
             <p className="text-xs text-stone-600">
               {t("scheduleHint", {
                 min: limits.min,
@@ -84,12 +84,12 @@ export function ScheduleSection({
                   onClick={() => handleToggleDay(day.id)}
                   disabled={isDisabled}
                   className={cn(
-                    "flex-1 h-12 flex items-center justify-center rounded-lg text-sm font-semibold transition-all",
+                    "flex h-12 flex-1 items-center justify-center rounded-lg text-sm font-semibold transition-all",
                     isSelected
                       ? "bg-[#8B5CF6] text-white"
                       : isDisabled
-                        ? "bg-neutral-50 text-stone-300 cursor-not-allowed"
-                        : "bg-neutral-100 text-muted-foreground hover:bg-neutral-200 cursor-pointer active:scale-[0.97]"
+                        ? "cursor-not-allowed bg-neutral-50 text-stone-300"
+                        : "text-muted-foreground cursor-pointer bg-neutral-100 hover:bg-neutral-200 active:scale-[0.97]",
                   )}
                 >
                   {day.label}
@@ -97,21 +97,23 @@ export function ScheduleSection({
               );
             })}
           </div>
-          <div className="flex justify-between px-1 text-[10px] text-muted-foreground">
+          <div className="text-muted-foreground flex justify-between px-1 text-[10px]">
             {DAYS.map((day) => (
               <span key={day.id}>{t(`days.${day.id}`)}</span>
             ))}
           </div>
 
           {/* Counter */}
-          <p className={cn(
-            "text-xs font-medium text-center",
-            belowMin && selectedDays.length > 0
-              ? "text-amber-600"
-              : atMax
-                ? "text-stone-400"
-                : "text-stone-500"
-          )}>
+          <p
+            className={cn(
+              "text-center text-xs font-medium",
+              belowMin && selectedDays.length > 0
+                ? "text-amber-600"
+                : atMax
+                  ? "text-stone-400"
+                  : "text-stone-500",
+            )}
+          >
             {t("daysSelected", { count: selectedDays.length, min: limits.min, max: limits.max })}
           </p>
         </div>
@@ -134,10 +136,10 @@ export function ScheduleSection({
                 onClick={() => setSessionDuration(option.id)}
                 disabled={isLoading}
                 className={cn(
-                  "flex items-center justify-center rounded-xl border-2 px-3 py-3 text-xs font-semibold uppercase tracking-wide transition-all",
+                  "flex items-center justify-center rounded-xl border-2 px-3 py-3 text-xs font-semibold tracking-wide uppercase transition-all",
                   isSelected
                     ? "border-[#8B5CF6] bg-[#8B5CF6]/5 text-[#8B5CF6]"
-                    : "border-stone-200 text-stone-500 hover:border-stone-300"
+                    : "border-stone-200 text-stone-500 hover:border-stone-300",
                 )}
               >
                 {t(`sessionDurations.${option.id}`)}
@@ -164,10 +166,10 @@ export function ScheduleSection({
                 onClick={() => setTrainingTime(isSelected ? "" : option.id)}
                 disabled={isLoading}
                 className={cn(
-                  "flex items-center justify-center rounded-xl border-2 px-3 py-3 text-xs font-semibold uppercase tracking-wide transition-all",
+                  "flex items-center justify-center rounded-xl border-2 px-3 py-3 text-xs font-semibold tracking-wide uppercase transition-all",
                   isSelected
                     ? "border-[#8B5CF6] bg-[#8B5CF6]/5 text-[#8B5CF6]"
-                    : "border-stone-200 text-stone-500 hover:border-stone-300"
+                    : "border-stone-200 text-stone-500 hover:border-stone-300",
                 )}
               >
                 {t(`trainingTimes.${option.id}`)}

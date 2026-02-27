@@ -62,6 +62,7 @@ completed: 2026-02-21
 - **Files modified:** 3
 
 ## Accomplishments
+
 - Changed `--color-background` from cream (#FFFEF5) to near-white (#FAFAFA) in all three apps — main and dark-mode override blocks
 - Changed `--color-border` from #e5e5e5 to #E8EAED in all three apps — more subtle against white background
 - Added `--color-surface-elevated: #FFFFFF` for elevated surfaces (modals, bottom sheets, headers that need to pop)
@@ -79,14 +80,16 @@ Each task was committed atomically:
 2. **Task 3: Sync admin and marketing globals.css** - `4a0e523` (feat)
 
 ## Files Created/Modified
+
 - `apps/client/src/app/globals.css` - Updated background, border, added surface-elevated, spacing scale, typography comment
 - `apps/admin/src/app/globals.css` - Mirror of client token changes (without Clerk @layer)
 - `apps/marketing/src/app/globals.css` - Mirror of client token changes (without Clerk @layer)
 
 ## Decisions Made
+
 - Background changed from cream #FFFEF5 to near-white #FAFAFA: reads as white, slightly warmer than harsh #FFFFFF, already present in the neutral scale
 - Border changed from #e5e5e5 to #E8EAED: slightly cooler/lighter, better contrast against near-white without being invisible
-- Typography documented as CSS comment (not custom properties): Tailwind's built-in text-* and font-* utilities already handle sizing; the comment serves as a reference guide for Phase 13
+- Typography documented as CSS comment (not custom properties): Tailwind's built-in text-_ and font-_ utilities already handle sizing; the comment serves as a reference guide for Phase 13
 
 ## Deviations from Plan
 
@@ -101,11 +104,13 @@ None.
 None - no external service configuration required.
 
 ## Next Phase Readiness
+
 - All three apps share a consistent, documented token foundation
 - Phase 13 (page-level renovation) has a spacing scale and typography hierarchy to follow
 - The `--color-surface-elevated` token is available for bottom sheets and modals
 - No visual regressions — existing pages look the same or better on near-white background
 
 ---
-*Phase: 12-design-tokens-primitives*
-*Completed: 2026-02-21*
+
+_Phase: 12-design-tokens-primitives_
+_Completed: 2026-02-21_

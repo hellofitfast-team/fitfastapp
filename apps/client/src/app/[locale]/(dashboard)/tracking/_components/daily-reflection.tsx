@@ -26,24 +26,27 @@ export function DailyReflection({ defaultReflection, onSubmit }: DailyReflection
   }, [defaultReflection, reset]);
 
   return (
-    <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden animate-slide-up" style={{ animationDelay: "100ms" }}>
-      <div className="flex items-center gap-2 p-4 border-b border-border bg-[#8B5CF6]/8">
+    <div
+      className="border-border bg-card shadow-card animate-slide-up overflow-hidden rounded-xl border"
+      style={{ animationDelay: "100ms" }}
+    >
+      <div className="border-border flex items-center gap-2 border-b bg-[#8B5CF6]/8 p-4">
         <BookOpen className="h-4 w-4 text-[#8B5CF6]" />
         <div>
-          <h2 className="font-semibold text-sm">{t("dailyReflection")}</h2>
-          <p className="text-xs text-muted-foreground">{t("howWasYourDay")}</p>
+          <h2 className="text-sm font-semibold">{t("dailyReflection")}</h2>
+          <p className="text-muted-foreground text-xs">{t("howWasYourDay")}</p>
         </div>
       </div>
-      <form onSubmit={handleSubmit(onSubmit)} className="p-4 space-y-3">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 p-4">
         <textarea
           {...register("reflection")}
           placeholder={t("writeReflection")}
-          className="w-full min-h-[100px] p-3 rounded-lg border border-input bg-neutral-50 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-colors resize-none"
+          className="border-input placeholder:text-muted-foreground focus:ring-ring min-h-[100px] w-full resize-none rounded-lg border bg-neutral-50 p-3 text-sm transition-colors focus:ring-2 focus:outline-none"
         />
         <button
           type="submit"
           disabled={formState.isSubmitting}
-          className="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-50 transition-all active:scale-[0.97]"
+          className="bg-primary hover:bg-primary/90 rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition-all active:scale-[0.97] disabled:opacity-50"
         >
           {formState.isSubmitting ? t("saving") : t("saveReflection")}
         </button>

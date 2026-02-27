@@ -14,8 +14,7 @@ interface BeforeInstallPromptEvent extends Event {
 
 export function InstallPrompt() {
   const t = useTranslations("pwa");
-  const [deferredPrompt, setDeferredPrompt] =
-    useState<BeforeInstallPromptEvent | null>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showIos, setShowIos] = useState(false);
   const [dismissed, setDismissed] = useState(true); // hidden by default until check
 
@@ -70,10 +69,10 @@ export function InstallPrompt() {
   if (dismissed || (!deferredPrompt && !showIos)) return null;
 
   return (
-    <div className="relative z-0 flex items-center gap-3 border-b border-primary/10 bg-primary/5 px-4 py-2.5 lg:hidden">
+    <div className="border-primary/10 bg-primary/5 relative z-0 flex items-center gap-3 border-b px-4 py-2.5 lg:hidden">
       {/* App icon */}
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-        <Download className="h-4 w-4 text-primary" />
+      <div className="bg-primary/10 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg">
+        <Download className="text-primary h-4 w-4" />
       </div>
 
       {/* Text */}
@@ -83,11 +82,7 @@ export function InstallPrompt() {
 
       {/* Install button (not shown on iOS — they use share sheet) */}
       {!showIos && (
-        <Button
-          onClick={handleInstall}
-          size="sm"
-          className="h-8 shrink-0 px-3 text-xs"
-        >
+        <Button onClick={handleInstall} size="sm" className="h-8 shrink-0 px-3 text-xs">
           {t("installButton")}
         </Button>
       )}
@@ -95,10 +90,10 @@ export function InstallPrompt() {
       {/* Dismiss (session only) */}
       <button
         onClick={dismiss}
-        className="shrink-0 rounded-md p-1 hover:bg-primary/10 transition-colors"
+        className="hover:bg-primary/10 shrink-0 rounded-md p-1 transition-colors"
         aria-label="Dismiss"
       >
-        <X className="h-3.5 w-3.5 text-muted-foreground" />
+        <X className="text-muted-foreground h-3.5 w-3.5" />
       </button>
     </div>
   );

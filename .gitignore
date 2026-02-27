@@ -15,6 +15,8 @@ package-lock.json
 /coverage
 /test-results
 /.playwright-mcp
+playwright-report/
+blob-report/
 
 # next.js
 .next/
@@ -55,12 +57,9 @@ next-env.d.ts
 .claude/
 CLAUDE.md
 
-# Development-only (tests, scripts, docs)
-/e2e/
+# Development scripts and docs
 /scripts/
 /docs/
-playwright.config.ts
-vitest.config.ts
 
 # temporary screenshots/test artifacts
 screenshots-for-fix/
@@ -68,3 +67,6 @@ testing-instapay-screenshot.png
 
 # Turbo cache
 .turbo/
+
+# AI agent skills
+.agents/

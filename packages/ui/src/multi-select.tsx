@@ -85,7 +85,8 @@ export function MultiSelect({
       <div className="flex flex-wrap gap-2">
         {allOptions.map((option) => {
           const isSelected = selected.includes(option.id);
-          const isDisabledByNone = hasNoneOption && selected.includes("none") && option.id !== "none";
+          const isDisabledByNone =
+            hasNoneOption && selected.includes("none") && option.id !== "none";
           return (
             <button
               key={option.id}
@@ -93,18 +94,16 @@ export function MultiSelect({
               onClick={() => toggle(option.id)}
               disabled={disabled || isDisabledByNone}
               className={cn(
-                "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-medium transition-all whitespace-nowrap",
+                "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-medium whitespace-nowrap transition-all",
                 isSelected
                   ? styles.selected
                   : "border-border bg-card text-foreground hover:bg-neutral-50",
-                (disabled || isDisabledByNone)
-                  ? "opacity-50 cursor-not-allowed"
-                  : "cursor-pointer active:scale-[0.97]"
+                disabled || isDisabledByNone
+                  ? "cursor-not-allowed opacity-50"
+                  : "cursor-pointer active:scale-[0.97]",
               )}
             >
-              {isSelected && (
-                <Check className={cn("h-3.5 w-3.5", styles.check)} strokeWidth={3} />
-              )}
+              {isSelected && <Check className={cn("h-3.5 w-3.5", styles.check)} strokeWidth={3} />}
               {option.label}
             </button>
           );
@@ -122,7 +121,7 @@ export function MultiSelect({
             }
           }}
           disabled={disabled}
-          className="w-full h-11 px-3 rounded-lg border border-input bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 transition-colors"
+          className="border-input bg-card placeholder:text-muted-foreground focus:ring-ring h-11 w-full rounded-lg border px-3 text-sm transition-colors focus:ring-2 focus:ring-offset-1 focus:outline-none"
         />
       )}
     </div>

@@ -53,14 +53,14 @@ Error Handling Layers (Top to Bottom):
 
 ### Component Responsibilities
 
-| Component | Responsibility | Typical Implementation |
-|-----------|----------------|------------------------|
-| Server Components | Data fetching, composition, auth checks | Direct Supabase queries, parallel data loading |
-| Client Components (Leaf) | User interaction, browser APIs, local state | Forms, modals, interactive widgets (keep small) |
-| API Route Handlers | Validation, orchestration, external API calls | Zod validation → business logic → response |
-| Custom Hooks | Extract reusable logic from large components | State management, form handling, data fetching |
-| Service Layer | External API calls with retry logic | OpenRouter, Supabase, third-party services |
-| Error Boundaries | Catch rendering errors, display fallback UI | Per-route error.tsx files with Sentry logging |
+| Component                | Responsibility                                | Typical Implementation                          |
+| ------------------------ | --------------------------------------------- | ----------------------------------------------- |
+| Server Components        | Data fetching, composition, auth checks       | Direct Supabase queries, parallel data loading  |
+| Client Components (Leaf) | User interaction, browser APIs, local state   | Forms, modals, interactive widgets (keep small) |
+| API Route Handlers       | Validation, orchestration, external API calls | Zod validation → business logic → response      |
+| Custom Hooks             | Extract reusable logic from large components  | State management, form handling, data fetching  |
+| Service Layer            | External API calls with retry logic           | OpenRouter, Supabase, third-party services      |
+| Error Boundaries         | Catch rendering errors, display fallback UI   | Per-route error.tsx files with Sentry logging   |
 
 ## Recommended Project Structure
 
@@ -125,6 +125,7 @@ src/
 **Trade-offs:** Adds boilerplate but prevents silent failures and improves debugging.
 
 **Example:**
+
 ```typescript
 // src/app/api/plans/meal/route.ts
 import { NextRequest, NextResponse } from "next/server";
@@ -149,9 +150,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: "Invalid request",
-          details: validationResult.error.flatten()
+          details: validationResult.error.flatten(),
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -159,13 +160,13 @@ export async function POST(request: NextRequest) {
 
     // 3. Check authentication
     const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // 4. Fetch dependencies in parallel (OPTIMIZATION)
@@ -178,17 +179,11 @@ export async function POST(request: NextRequest) {
     ]);
 
     if (profileResult.error || !profileResult.data) {
-      return NextResponse.json(
-        { error: "Profile not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
 
     if (assessmentResult.error || !assessmentResult.data) {
-      return NextResponse.json(
-        { error: "Assessment not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Assessment not found" }, { status: 404 });
     }
 
     // 5. Call external service with retry (handled in service layer)
@@ -207,7 +202,7 @@ export async function POST(request: NextRequest) {
       console.error("AI response validation failed:", planValidation.error);
       return NextResponse.json(
         { error: "Generated plan is invalid. Please try again." },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -220,19 +215,14 @@ export async function POST(request: NextRequest) {
         plan_data: planValidation.data as any,
         language: (profileResult.data as any).language,
         start_date: new Date().toISOString().split("T")[0],
-        end_date: new Date(Date.now() + planDuration * 86400000)
-          .toISOString()
-          .split("T")[0],
+        end_date: new Date(Date.now() + planDuration * 86400000).toISOString().split("T")[0],
       } as any)
       .select()
       .single();
 
     if (saveError) {
       console.error("Error saving meal plan:", saveError);
-      return NextResponse.json(
-        { error: "Failed to save meal plan" },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Failed to save meal plan" }, { status: 500 });
     }
 
     // 8. Fire-and-forget non-critical operations (notifications)
@@ -244,7 +234,7 @@ export async function POST(request: NextRequest) {
           user.id,
           "Meal Plan Ready!",
           "Your new meal plan is ready. Check it out!",
-          { url: "/meal-plan" }
+          { url: "/meal-plan" },
         );
       } catch (error) {
         console.error("Notification failed (non-blocking):", error);
@@ -256,7 +246,6 @@ export async function POST(request: NextRequest) {
       success: true,
       mealPlan: savedPlan,
     });
-
   } catch (error) {
     // 10. Log error with context
     console.error("Meal plan generation error:", {
@@ -265,10 +254,7 @@ export async function POST(request: NextRequest) {
     });
 
     // 11. Return generic error to client
-    return NextResponse.json(
-      { error: "Failed to generate meal plan" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to generate meal plan" }, { status: 500 });
   }
 }
 ```
@@ -282,6 +268,7 @@ export async function POST(request: NextRequest) {
 **Trade-offs:** Increases latency on failures but improves reliability. Don't use for user actions (form submissions).
 
 **Example:**
+
 ```typescript
 // src/lib/utils/retry.ts
 export interface RetryOptions {
@@ -298,7 +285,7 @@ export interface RetryOptions {
  */
 export async function retryWithBackoff<T>(
   fn: () => Promise<T>,
-  options: RetryOptions = {}
+  options: RetryOptions = {},
 ): Promise<T> {
   const {
     maxAttempts = 3,
@@ -365,6 +352,7 @@ export function isRetryableError(error: unknown): boolean {
 ```
 
 **Integration with OpenRouter:**
+
 ```typescript
 // src/lib/ai/openrouter.ts (REFACTORED)
 import { retryWithBackoff, isRetryableError } from "@/lib/utils/retry";
@@ -376,13 +364,9 @@ export class OpenRouterClient {
       temperature?: number;
       max_tokens?: number;
       model?: string;
-    } = {}
+    } = {},
   ): Promise<string> {
-    const {
-      temperature = 0.7,
-      max_tokens = 4000,
-      model = MODEL,
-    } = options;
+    const { temperature = 0.7, max_tokens = 4000, model = MODEL } = options;
 
     // Wrap fetch in retry logic
     return retryWithBackoff(
@@ -426,7 +410,7 @@ export class OpenRouterClient {
         onRetry: (attempt, error) => {
           console.warn(`OpenRouter retry attempt ${attempt}:`, error);
         },
-      }
+      },
     );
   }
 }
@@ -441,6 +425,7 @@ export class OpenRouterClient {
 **Trade-offs:** Adds validation overhead but prevents corrupt data and helps debug AI issues.
 
 **Example:**
+
 ```typescript
 // src/lib/ai/schemas/meal-plan.schema.ts
 import { z } from "zod";
@@ -472,16 +457,8 @@ const DayPlanSchema = z.object({
 
 export const MealPlanResponseSchema = z.object({
   weeklyPlan: z.record(
-    z.enum([
-      "monday",
-      "tuesday",
-      "wednesday",
-      "thursday",
-      "friday",
-      "saturday",
-      "sunday",
-    ]),
-    DayPlanSchema
+    z.enum(["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]),
+    DayPlanSchema,
   ),
   weeklyTotals: DailyTotalsSchema,
   notes: z.string(),
@@ -494,12 +471,13 @@ export type DayPlan = z.infer<typeof DayPlanSchema>;
 ```
 
 **Usage in generator:**
-```typescript
+
+````typescript
 // src/lib/ai/meal-plan-generator.ts (REFACTORED)
 import { MealPlanResponseSchema, type MealPlanResponse } from "./schemas/meal-plan.schema";
 
 export async function generateMealPlan(
-  params: MealPlanGenerationParams
+  params: MealPlanGenerationParams,
 ): Promise<MealPlanResponse> {
   const client = getOpenRouterClient();
 
@@ -534,13 +512,13 @@ export async function generateMealPlan(
       response: cleanedResponse,
     });
     throw new Error(
-      `AI returned invalid meal plan structure: ${validationResult.error.issues[0].message}`
+      `AI returned invalid meal plan structure: ${validationResult.error.issues[0].message}`,
     );
   }
 
   return validationResult.data;
 }
-```
+````
 
 ### Pattern 4: Parallel Supabase Queries
 
@@ -551,10 +529,15 @@ export async function generateMealPlan(
 **Trade-offs:** Reduces latency but all queries must complete (one failure fails all). Use `Promise.allSettled()` if some can fail.
 
 **Example:**
+
 ```typescript
 // BEFORE (Sequential - 3x round trips)
 const { data: profile } = await supabase.from("profiles").select("*").eq("id", userId).single();
-const { data: assessment } = await supabase.from("initial_assessments").select("*").eq("user_id", userId).single();
+const { data: assessment } = await supabase
+  .from("initial_assessments")
+  .select("*")
+  .eq("user_id", userId)
+  .single();
 const { data: checkIn } = await supabase.from("check_ins").select("*").eq("id", checkInId).single();
 
 // AFTER (Parallel - 1x round trip for all 3)
@@ -567,17 +550,34 @@ const [profileResult, assessmentResult, checkInResult] = await Promise.all([
 ]);
 
 // Handle errors after all queries complete
-if (profileResult.error) { /* handle */ }
-if (assessmentResult.error) { /* handle */ }
+if (profileResult.error) {
+  /* handle */
+}
+if (assessmentResult.error) {
+  /* handle */
+}
 ```
 
 **With partial failure tolerance:**
+
 ```typescript
 // Use Promise.allSettled when some queries are optional
 const results = await Promise.allSettled([
   supabase.from("profiles").select("*").eq("id", userId).single(),
-  supabase.from("meal_plans").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(1).single(),
-  supabase.from("workout_plans").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(1).single(),
+  supabase
+    .from("meal_plans")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .single(),
+  supabase
+    .from("workout_plans")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .single(),
 ]);
 
 const profile = results[0].status === "fulfilled" ? results[0].value.data : null;
@@ -599,6 +599,7 @@ if (!profile) {
 **Trade-offs:** Adds abstraction layer but improves testability and component readability.
 
 **Example:**
+
 ```typescript
 // src/hooks/use-check-in-form.ts
 import { useState } from "react";
@@ -627,10 +628,7 @@ export function useCheckInForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const updateField = <K extends keyof CheckInFormData>(
-    field: K,
-    value: CheckInFormData[K]
-  ) => {
+  const updateField = <K extends keyof CheckInFormData>(field: K, value: CheckInFormData[K]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -719,6 +717,7 @@ export function useCheckInForm() {
 ```
 
 **Refactored component (much smaller):**
+
 ```typescript
 // src/app/[locale]/(dashboard)/check-in/page.tsx (REFACTORED)
 "use client";
@@ -778,6 +777,7 @@ export default function CheckInPage() {
 **Trade-offs:** Requires SQL migration but dramatically improves query performance (10-100x faster).
 
 **Example:**
+
 ```sql
 -- supabase/migrations/XXX_optimize_rls_with_security_definer.sql
 
@@ -828,6 +828,7 @@ USING (
 **Trade-offs:** More verbose than throwing but provides better UX (partial page renders).
 
 **Example:**
+
 ```typescript
 // src/app/[locale]/(dashboard)/layout.tsx (Server Component)
 import { createClient } from "@/lib/supabase/server";
@@ -895,6 +896,7 @@ export default async function DashboardLayout({
 **Trade-offs:** Requires error boundary wrapper but prevents full page crashes.
 
 **Example:**
+
 ```typescript
 // src/components/ui/error-boundary.tsx
 "use client";
@@ -951,6 +953,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
 ```
 
 **Usage:**
+
 ```typescript
 // Wrap complex interactive components
 <ErrorBoundary fallback={<div>Failed to load form</div>}>
@@ -1019,7 +1022,7 @@ export async function createPost(data: FormData) {
 }
 
 // GOOD
-"use server";
+("use server");
 export async function createPost(prevState: any, formData: FormData) {
   const title = formData.get("title");
 
@@ -1145,43 +1148,48 @@ API Route Handler (validation with Zod)
 Refactor in this order to avoid breaking changes:
 
 ### Phase 1: Foundation (No Dependencies)
+
 1. **Create Zod schemas** for AI responses (`schemas/meal-plan.schema.ts`, `schemas/workout-plan.schema.ts`)
 2. **Create retry utility** (`lib/utils/retry.ts`) with tests
 3. **Create error types** (`lib/utils/errors.ts`) for consistent error handling
 4. **Add error boundaries** around existing Client Components
 
 ### Phase 2: Service Layer (Depends on Phase 1)
+
 5. **Refactor OpenRouter client** to use retry wrapper
 6. **Add Zod validation** to AI generators (`meal-plan-generator.ts`, `workout-plan-generator.ts`)
 7. **Extract Supabase queries** into reusable functions (`lib/supabase/queries/`)
 
 ### Phase 3: API Routes (Depends on Phase 2)
+
 8. **Add input validation** to API routes with Zod request schemas
 9. **Parallelize Supabase queries** in API routes (replace sequential with `Promise.all`)
 10. **Add comprehensive error handling** with logging and typed responses
 11. **Convert blocking operations** to fire-and-forget (notifications)
 
 ### Phase 4: Components (Depends on Phase 3)
+
 12. **Extract custom hooks** from large components (`use-check-in-form.ts`)
 13. **Split large components** into smaller components (`_components/` folders)
 14. **Move data fetching** to Server Components where possible
 15. **Add error boundaries** at route segment level
 
 ### Phase 5: Database Optimization (Can Run Parallel)
+
 16. **Create SECURITY DEFINER functions** for RLS optimization
 17. **Add database indexes** based on `EXPLAIN ANALYZE` results
 18. **Update RLS policies** to use new functions
 
 ## Scaling Considerations
 
-| Concern | At 100 users | At 1,000 users (Current Target) | At 10,000 users (Future) |
-|---------|--------------|----------------------------------|---------------------------|
-| **AI Cost** | ~$20/month | ~$200/month | ~$2,000/month (needs batching) |
-| **Database Queries** | N+1 acceptable | Must parallelize | Need caching layer (Redis) |
-| **Error Monitoring** | Console logs OK | Sentry required | Sentry + custom dashboard |
-| **Retry Logic** | 3 attempts OK | 3 attempts + jitter | Need backpressure + circuit breaker |
-| **Component Size** | 600+ lines OK | Extract to <200 lines | Need design system |
-| **RLS Performance** | Direct policies OK | SECURITY DEFINER functions | Indexed + materialized views |
+| Concern              | At 100 users       | At 1,000 users (Current Target) | At 10,000 users (Future)            |
+| -------------------- | ------------------ | ------------------------------- | ----------------------------------- |
+| **AI Cost**          | ~$20/month         | ~$200/month                     | ~$2,000/month (needs batching)      |
+| **Database Queries** | N+1 acceptable     | Must parallelize                | Need caching layer (Redis)          |
+| **Error Monitoring** | Console logs OK    | Sentry required                 | Sentry + custom dashboard           |
+| **Retry Logic**      | 3 attempts OK      | 3 attempts + jitter             | Need backpressure + circuit breaker |
+| **Component Size**   | 600+ lines OK      | Extract to <200 lines           | Need design system                  |
+| **RLS Performance**  | Direct policies OK | SECURITY DEFINER functions      | Indexed + materialized views        |
 
 ### Scaling Priorities
 
@@ -1220,5 +1228,6 @@ Refactor in this order to avoid breaking changes:
 - [Error Handling in Next.js API Routes](https://www.geeksforgeeks.org/nextjs/error-handling-in-next-js-api-routes-with-try-catch/)
 
 ---
-*Architecture research for: FitFast PWA Hardening Milestone*
-*Researched: 2026-02-12*
+
+_Architecture research for: FitFast PWA Hardening Milestone_
+_Researched: 2026-02-12_

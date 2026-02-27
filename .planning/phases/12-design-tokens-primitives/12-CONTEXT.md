@@ -14,13 +14,13 @@ Extend and refine the existing design vocabulary — softened palette, typograph
 
 ### Animation & Micro-interactions
 
-| Element | Decision | Notes |
-|---------|----------|-------|
-| Button press | `active:scale-[0.97]` subtle scale-down | Keep current behavior — feels native iOS-like |
-| Card lift | Shadow lift on tap/hover for ALL cards | Not just clickable ones — gives depth and tactile feedback |
-| Staggered entrance | Yes — list items and cards cascade in | ~50ms delay between each item |
-| Page transitions | Claude's discretion | Pick what feels best for mobile-native feel |
-| Animation approach | CSS-only (no framer-motion) | Key Decision from v1.1 research — saves 34KB |
+| Element            | Decision                                | Notes                                                      |
+| ------------------ | --------------------------------------- | ---------------------------------------------------------- |
+| Button press       | `active:scale-[0.97]` subtle scale-down | Keep current behavior — feels native iOS-like              |
+| Card lift          | Shadow lift on tap/hover for ALL cards  | Not just clickable ones — gives depth and tactile feedback |
+| Staggered entrance | Yes — list items and cards cascade in   | ~50ms delay between each item                              |
+| Page transitions   | Claude's discretion                     | Pick what feels best for mobile-native feel                |
+| Animation approach | CSS-only (no framer-motion)             | Key Decision from v1.1 research — saves 34KB               |
 
 ### Color Refinement (Claude's Discretion)
 

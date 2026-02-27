@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@convex-dev/auth": "^0.0.90",
@@ -29,6 +31,7 @@
   },
   "devDependencies": {
     "@fitfast/config": "workspace:*",
+    "@next/bundle-analyzer": "^16.1.6",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/node": "^20.19.31",
     "@types/react": "^19.2.13",

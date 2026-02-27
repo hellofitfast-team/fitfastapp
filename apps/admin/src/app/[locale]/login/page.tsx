@@ -31,26 +31,46 @@ export default function AdminLoginPage() {
 
   const { isAuthenticated: isConvexAuth } = useConvexAuth();
   const profile = useQuery(api.profiles.getMyProfile, isConvexAuth ? {} : "skip");
+  const isSigningOut = useRef(false);
 
   useEffect(() => {
     const errorParam = searchParams.get("error");
     if (errorParam === "not_coach") {
+      // Auto-clear stale client session if still authenticated
+      if (isConvexAuth && !isSigningOut.current) {
+        isSigningOut.current = true;
+        void signOut().then(() => {
+          isSigningOut.current = false;
+        });
+      }
       setError(t("notAuthorized"));
     }
-  }, [searchParams, t]);
+  }, [searchParams, t, isConvexAuth, signOut]);
 
   // Redirect if authenticated as coach (covers both fresh login and revisiting login page)
   useEffect(() => {
-    if (!isConvexAuth || profile === undefined) return;
+    if (!isConvexAuth || profile === undefined || isSigningOut.current) return;
 
     if (profile?.isCoach) {
       router.replace("/");
+    } else if (isConvexAuth && profile && !profile.isCoach) {
+      // Client session on admin app (shared cookie collision) — auto-clear it
+      isSigningOut.current = true;
+      void signOut().then(() => {
+        isSigningOut.current = false;
+        setError(t("notAuthorized"));
+        setSignInComplete(false);
+        setIsLoading(false);
+      });
     } else if (signInComplete) {
       // Signed in but not a coach — sign out and show error
-      void signOut().catch(() => {});
-      setError(t("notAuthorized"));
-      setSignInComplete(false);
-      setIsLoading(false);
+      isSigningOut.current = true;
+      void signOut().then(() => {
+        isSigningOut.current = false;
+        setError(t("notAuthorized"));
+        setSignInComplete(false);
+        setIsLoading(false);
+      });
     }
   }, [isConvexAuth, profile, signInComplete, router, signOut, t]);
 
@@ -61,7 +81,7 @@ export default function AdminLoginPage() {
       gsap.fromTo(
         cardRef.current,
         { y: 40, opacity: 0, scale: 0.96 },
-        { y: 0, opacity: 1, scale: 1, duration: 0.7, ease: "power3.out" }
+        { y: 0, opacity: 1, scale: 1, duration: 0.7, ease: "power3.out" },
       );
     }, cardRef);
     return () => ctx.revert();
@@ -88,9 +108,9 @@ export default function AdminLoginPage() {
       if (result.signingIn) {
         setSignInComplete(true);
       }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : t("invalidCredentials");
-      setError(message);
+    } catch {
+      // Never expose raw server errors to the user — always show friendly message
+      setError(t("invalidCredentials"));
       setIsLoading(false);
     }
   };
@@ -100,23 +120,26 @@ export default function AdminLoginPage() {
       className="flex min-h-screen items-center justify-center bg-stone-50 p-4"
       style={{ fontFamily: "var(--font-sans)" }}
     >
-      <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, #FF4500 1px, transparent 0)", backgroundSize: "32px 32px" }} />
+      <div
+        className="absolute inset-0 opacity-[0.03]"
+        style={{
+          backgroundImage: "radial-gradient(circle at 1px 1px, #FF4500 1px, transparent 0)",
+          backgroundSize: "32px 32px",
+        }}
+      />
 
       <div ref={cardRef} className="relative w-full max-w-md">
         <div className="rounded-2xl border border-stone-200 bg-white shadow-xl shadow-stone-200/50">
           <div className="px-8 pt-10 pb-2 text-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/logo.svg"
-              alt="FitFast"
-              className="mx-auto h-14 w-14 mb-5"
-            />
-            <h1 className="text-2xl font-black italic tracking-tighter uppercase text-stone-900" style={{ fontFamily: "var(--font-display)" }}>
+            <img src="/logo.svg" alt="FitFast" className="mx-auto mb-5 h-14 w-14" />
+            <h1
+              className="text-2xl font-black tracking-tighter text-stone-900 uppercase italic"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
               Fit<span className="text-[#FF4500]">Fast</span>
             </h1>
-            <p className="text-sm text-stone-500 mt-1.5">
-              {t("signInDescription")}
-            </p>
+            <p className="mt-1.5 text-sm text-stone-500">{t("signInDescription")}</p>
           </div>
 
           <div className="px-8 pt-6 pb-8">
@@ -128,18 +151,18 @@ export default function AdminLoginPage() {
               )}
 
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-stone-700 mb-1.5">
+                <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-stone-700">
                   {t("email")}
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 start-0 flex items-center ps-3.5 pointer-events-none">
+                  <div className="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3.5">
                     <Mail className="h-4 w-4 text-stone-400" />
                   </div>
                   <input
                     id="email"
                     type="email"
                     placeholder="coach@fitfast.app"
-                    className="w-full h-11 ps-10 pe-4 rounded-xl border border-stone-200 bg-stone-50 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    className="focus:ring-primary/20 focus:border-primary h-11 w-full rounded-xl border border-stone-200 bg-stone-50 ps-10 pe-4 text-sm text-stone-900 transition-all placeholder:text-stone-400 focus:ring-2 focus:outline-none"
                     {...register("email")}
                     disabled={isLoading}
                   />
@@ -150,18 +173,21 @@ export default function AdminLoginPage() {
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-stone-700 mb-1.5">
+                <label
+                  htmlFor="password"
+                  className="mb-1.5 block text-sm font-medium text-stone-700"
+                >
                   {t("password")}
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 start-0 flex items-center ps-3.5 pointer-events-none">
+                  <div className="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3.5">
                     <Lock className="h-4 w-4 text-stone-400" />
                   </div>
                   <input
                     id="password"
                     type="password"
                     placeholder="••••••••"
-                    className="w-full h-11 ps-10 pe-4 rounded-xl border border-stone-200 bg-stone-50 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    className="focus:ring-primary/20 focus:border-primary h-11 w-full rounded-xl border border-stone-200 bg-stone-50 ps-10 pe-4 text-sm text-stone-900 transition-all placeholder:text-stone-400 focus:ring-2 focus:outline-none"
                     {...register("password")}
                     disabled={isLoading}
                   />
@@ -174,7 +200,7 @@ export default function AdminLoginPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="btn-magnetic w-full h-11 rounded-xl bg-[#FF4500] text-white font-semibold text-sm hover:bg-[#CC3700] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 shadow-lg shadow-[#FF4500]/20"
+                className="btn-magnetic flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#FF4500] text-sm font-semibold text-white shadow-lg shadow-[#FF4500]/20 transition-colors hover:bg-[#CC3700] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isLoading ? (
                   <span className="animate-pulse">{t("signingIn")}...</span>
@@ -189,7 +215,7 @@ export default function AdminLoginPage() {
           </div>
         </div>
 
-        <p className="text-center text-xs text-stone-400 mt-6">
+        <p className="mt-6 text-center text-xs text-stone-400">
           Coach Panel &middot; Authorized Access Only
         </p>
       </div>

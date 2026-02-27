@@ -24,16 +24,7 @@ export const metadata: Metadata = {
   },
   description:
     "Personalized meal plans and workout routines powered by AI. Track your progress and achieve your fitness goals.",
-  keywords: [
-    "fitness",
-    "coaching",
-    "meal plan",
-    "workout",
-    "AI",
-    "health",
-    "Egypt",
-    "MENA",
-  ],
+  keywords: ["fitness", "coaching", "meal plan", "workout", "AI", "health", "Egypt", "MENA"],
   authors: [{ name: "FitFast" }],
   creator: "FitFast",
   icons: {
@@ -61,17 +52,23 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html suppressHydrationWarning lang="en" dir="ltr" className={`${inter.variable} ${spaceGrotesk.variable} ${alexandria.variable}`}>
-      <body className="min-h-screen bg-[var(--color-background)] text-[var(--color-foreground)] antialiased font-sans">
+    <html
+      suppressHydrationWarning
+      lang="en"
+      dir="ltr"
+      className={`${inter.variable} ${spaceGrotesk.variable} ${alexandria.variable}`}
+    >
+      <body className="min-h-screen bg-[var(--color-background)] font-sans text-[var(--color-foreground)] antialiased">
         <svg className="noise-overlay" xmlns="http://www.w3.org/2000/svg">
           <filter id="noiseFilter">
-            <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch" />
+            <feTurbulence
+              type="fractalNoise"
+              baseFrequency="0.8"
+              numOctaves="3"
+              stitchTiles="stitch"
+            />
           </filter>
           <rect width="100%" height="100%" filter="url(#noiseFilter)" />
         </svg>

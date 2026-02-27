@@ -11,13 +11,7 @@ import {
   PaginationNext,
   PaginationEllipsis,
 } from "@fitfast/ui/pagination";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@fitfast/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@fitfast/ui/select";
 
 interface PaginationControlsProps {
   currentPage: number;
@@ -90,7 +84,7 @@ export function PaginationControls({
   const endItem = Math.min(currentPage * pageSize, totalCount);
 
   return (
-    <div className="flex items-center justify-between gap-4 border-t border-stone-200 bg-white px-4 py-4 rounded-b-xl">
+    <div className="flex items-center justify-between gap-4 rounded-b-xl border-t border-stone-200 bg-white px-4 py-4">
       {/* Left: Page size selector */}
       <div className="flex items-center gap-2">
         <Select value={pageSize.toString()} onValueChange={updatePageSize}>
@@ -112,11 +106,7 @@ export function PaginationControls({
           <PaginationItem>
             <PaginationPrevious
               onClick={() => currentPage > 1 && updatePage(currentPage - 1)}
-              className={
-                currentPage === 1
-                  ? "pointer-events-none opacity-50"
-                  : "cursor-pointer"
-              }
+              className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
             >
               {t("previous")}
             </PaginationPrevious>
@@ -140,13 +130,9 @@ export function PaginationControls({
 
           <PaginationItem>
             <PaginationNext
-              onClick={() =>
-                currentPage < totalPages && updatePage(currentPage + 1)
-              }
+              onClick={() => currentPage < totalPages && updatePage(currentPage + 1)}
               className={
-                currentPage >= totalPages
-                  ? "pointer-events-none opacity-50"
-                  : "cursor-pointer"
+                currentPage >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"
               }
             >
               {t("next")}

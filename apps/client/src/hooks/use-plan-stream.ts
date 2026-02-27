@@ -15,8 +15,6 @@ export function usePlanStream(streamId: string | undefined) {
   return {
     streamedText: streamBody?.text ?? "",
     status: streamBody?.status ?? "pending",
-    isStreaming:
-      streamBody?.status === "streaming" ||
-      streamBody?.status === "pending",
+    isStreaming: streamBody?.status === "streaming" || streamBody?.status === "pending",
   };
 }

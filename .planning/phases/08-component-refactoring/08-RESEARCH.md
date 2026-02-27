@@ -10,37 +10,41 @@ Component refactoring in Next.js 14 App Router requires understanding the Server
 
 1. **668-line check-in page** and **594-line initial-assessment page** exceed the 400-line threshold
 2. Multiple useState hooks (8+ in check-in page) indicate extractable logic
-3. No _components subdirectories exist yet for page-specific components
+3. No \_components subdirectories exist yet for page-specific components
 4. Error boundaries only at root level (global-error.tsx, [locale]/error.tsx), not at route segment level
 
 The codebase already demonstrates good patterns: custom hooks in `/src/hooks/`, React Hook Form + Zod validation, and Sentry integration. Refactoring should preserve these strengths while splitting large components into focused, maintainable pieces.
 
-**Primary recommendation:** Use FormProvider for multi-section forms, extract lock-checking and photo-upload logic into custom hooks, split forms into _components/ subdirectories with compound component patterns, and add error.tsx at critical route segments (check-in, settings, tickets).
+**Primary recommendation:** Use FormProvider for multi-section forms, extract lock-checking and photo-upload logic into custom hooks, split forms into \_components/ subdirectories with compound component patterns, and add error.tsx at critical route segments (check-in, settings, tickets).
 
 ## Standard Stack
 
 ### Core
-| Library | Version | Purpose | Why Standard |
-|---------|---------|---------|--------------|
-| React | 19 | UI framework | Latest stable with useActionState, useFormStatus for form handling |
-| Next.js | 16.1.6 | Framework | App Router architecture with Server/Client Components |
-| React Hook Form | Latest | Form state | Already in use, supports FormProvider for split forms |
-| Zod | Latest | Validation | Already in use, pairs with React Hook Form |
-| Sentry | 10.38 | Error tracking | Already integrated, captures errors from error boundaries |
+
+| Library         | Version | Purpose        | Why Standard                                                       |
+| --------------- | ------- | -------------- | ------------------------------------------------------------------ |
+| React           | 19      | UI framework   | Latest stable with useActionState, useFormStatus for form handling |
+| Next.js         | 16.1.6  | Framework      | App Router architecture with Server/Client Components              |
+| React Hook Form | Latest  | Form state     | Already in use, supports FormProvider for split forms              |
+| Zod             | Latest  | Validation     | Already in use, pairs with React Hook Form                         |
+| Sentry          | 10.38   | Error tracking | Already integrated, captures errors from error boundaries          |
 
 ### Supporting
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| server-only | Latest | Prevent client imports | Mark server-only utilities (optional but recommended) |
-| client-only | Latest | Prevent server imports | Mark browser-only code (optional) |
+
+| Library     | Version | Purpose                | When to Use                                           |
+| ----------- | ------- | ---------------------- | ----------------------------------------------------- |
+| server-only | Latest  | Prevent client imports | Mark server-only utilities (optional but recommended) |
+| client-only | Latest  | Prevent server imports | Mark browser-only code (optional)                     |
 
 ### Alternatives Considered
-| Instead of | Could Use | Tradeoff |
-|------------|-----------|----------|
+
+| Instead of      | Could Use                 | Tradeoff                                                                                                                |
+| --------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | React Hook Form | useActionState (React 19) | useActionState is simpler for basic forms but lacks advanced validation features; keep RHF for complex multi-step forms |
-| Custom hooks | Inline logic | Inline is faster for one-off use but violates DRY for duplicated patterns |
+| Custom hooks    | Inline logic              | Inline is faster for one-off use but violates DRY for duplicated patterns                                               |
 
 **Installation:**
+
 ```bash
 # Optional packages for environment safety
 pnpm install server-only client-only
@@ -49,6 +53,7 @@ pnpm install server-only client-only
 ## Architecture Patterns
 
 ### Recommended Project Structure
+
 ```
 src/app/[locale]/(dashboard)/
 ├── check-in/
@@ -77,6 +82,7 @@ src/app/[locale]/(dashboard)/
 ```
 
 **Key principles:**
+
 - Use `_components/` prefix to make folders private (not routable per [Next.js docs](https://nextjs.org/docs/app/getting-started/project-structure))
 - Each route segment can have its own `error.tsx` for isolated error recovery
 - Page components orchestrate, child components implement details
@@ -88,6 +94,7 @@ src/app/[locale]/(dashboard)/
 **When to use:** Forms split into multiple components (multi-step forms, tabbed forms, complex layouts).
 
 **Example:**
+
 ```typescript
 // Source: React Hook Form Advanced Usage + verified pattern
 // app/[locale]/(dashboard)/check-in/page.tsx
@@ -145,6 +152,7 @@ export function WeightMeasurements() {
 **When to use:** Duplicated useState + useEffect patterns, complex side effects, or logic that would otherwise make a component >400 lines.
 
 **Example:**
+
 ```typescript
 // Source: React official docs + verified pattern
 // hooks/use-check-in-lock.ts
@@ -192,6 +200,7 @@ export function useCheckInLock(userId: string | undefined) {
 **When to use:** Pages that need both data fetching AND client-side state/event handlers.
 
 **Example:**
+
 ```typescript
 // Source: Next.js official docs (Server/Client Components)
 // app/[locale]/(dashboard)/tickets/page.tsx (Server Component)
@@ -239,6 +248,7 @@ export function TicketsList({ initialTickets }) {
 **When to use:** Critical user flows (check-in, settings, tickets, payment-sensitive areas).
 
 **Example:**
+
 ```typescript
 // Source: Next.js official error handling docs
 // app/[locale]/(dashboard)/check-in/error.tsx
@@ -276,6 +286,7 @@ export default function CheckInError({
 ```
 
 **Important:** Error boundaries do NOT catch:
+
 - Errors in event handlers (use try-catch + useState)
 - Async code outside useEffect
 - Errors in `layout.tsx` of the same segment (requires parent segment's error.tsx)
@@ -287,6 +298,7 @@ export default function CheckInError({
 **When to use:** Related components that share state (modals, tabs, accordions, multi-step forms).
 
 **Example:**
+
 ```typescript
 // Source: Patterns.dev + FreeCodeCamp compound components guide
 // components/check-in/check-in-form.tsx
@@ -345,13 +357,13 @@ CheckInForm.Navigation = function Navigation() {
 
 ## Don't Hand-Roll
 
-| Problem | Don't Build | Use Instead | Why |
-|---------|-------------|-------------|-----|
-| Form state management | Custom useState + validation logic | React Hook Form + Zod | RHF handles validation, error states, field registration, touched/dirty tracking — already integrated |
-| Error boundaries | Custom try-catch wrappers everywhere | Next.js error.tsx files | Built-in, automatic Sentry integration, supports reset() |
-| Multi-step form state | Complex switch statements + multiple useState | FormProvider + step components | Context-based, cleaner separation, easier testing |
-| File upload with preview | Custom FileReader logic | Extract into usePhotoUpload hook | Already implemented pattern in codebase (check-in page) |
-| Server/Client boundary markers | Manual checks | server-only / client-only packages | Compile-time errors prevent accidents |
+| Problem                        | Don't Build                                   | Use Instead                        | Why                                                                                                   |
+| ------------------------------ | --------------------------------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Form state management          | Custom useState + validation logic            | React Hook Form + Zod              | RHF handles validation, error states, field registration, touched/dirty tracking — already integrated |
+| Error boundaries               | Custom try-catch wrappers everywhere          | Next.js error.tsx files            | Built-in, automatic Sentry integration, supports reset()                                              |
+| Multi-step form state          | Complex switch statements + multiple useState | FormProvider + step components     | Context-based, cleaner separation, easier testing                                                     |
+| File upload with preview       | Custom FileReader logic                       | Extract into usePhotoUpload hook   | Already implemented pattern in codebase (check-in page)                                               |
+| Server/Client boundary markers | Manual checks                                 | server-only / client-only packages | Compile-time errors prevent accidents                                                                 |
 
 **Key insight:** Next.js App Router and React 19 provide native solutions for most component organization problems. Don't recreate what the framework already handles (error boundaries, form actions, suspense).
 
@@ -364,6 +376,7 @@ CheckInForm.Navigation = function Navigation() {
 **Why it happens:** Misunderstanding the Server/Client boundary. Server Components cannot use hooks, event handlers, or browser APIs.
 
 **How to avoid:**
+
 - Start with: "Does this need useState, useEffect, onClick, or browser APIs?" → If YES, it's a Client Component.
 - Use composition: Server Component fetches data, passes to Client Component for interactivity.
 - Minimize "use client" scope: only the interactive parts need it.
@@ -377,6 +390,7 @@ CheckInForm.Navigation = function Navigation() {
 **Why it happens:** Following "DRY" blindly without considering readability tradeoffs.
 
 **How to avoid:**
+
 - Wait until you see the same pattern 2-3 times before extracting.
 - Don't extract trivial hooks like `useFormInput()` for a single `useState([React docs](https://react.dev/learn/reusing-logic-with-custom-hooks)).
 - Extract when there's complex logic (multiple hooks coordinating) or duplicated effects.
@@ -390,6 +404,7 @@ CheckInForm.Navigation = function Navigation() {
 **Why it happens:** Misunderstanding the error boundary hierarchy ([Next.js error handling docs](https://nextjs.org/docs/app/getting-started/error-handling)).
 
 **How to avoid:**
+
 - `error.tsx` catches errors from `page.tsx` and nested components in that segment.
 - To catch layout errors, place `error.tsx` in the parent segment.
 - Use `global-error.tsx` at root for catastrophic failures.
@@ -403,6 +418,7 @@ CheckInForm.Navigation = function Navigation() {
 **Why it happens:** Not understanding FormProvider eliminates prop drilling.
 
 **How to avoid:**
+
 - Parent: `<FormProvider {...methods}><form>...</form></FormProvider>`
 - Child: `const { register, formState } = useFormContext()`
 - Don't pass register/errors as props — useFormContext retrieves them.
@@ -416,6 +432,7 @@ CheckInForm.Navigation = function Navigation() {
 **Why it happens:** Treating line count as hard rule instead of code smell indicator.
 
 **How to avoid:**
+
 - 400 lines is a guideline, not a law. A 420-line component that's cohesive beats 3 poorly-separated 140-line components.
 - Split by concern (form sections, feature areas), not by line count.
 - Measure: Can a new developer understand this component in 5 minutes? If no → refactor.
@@ -427,6 +444,7 @@ CheckInForm.Navigation = function Navigation() {
 Verified patterns from official sources:
 
 ### Example 1: Multi-Step Form with FormProvider
+
 ```typescript
 // Source: React Hook Form official docs + Next.js patterns
 // Parent: orchestrates steps
@@ -479,6 +497,7 @@ export function WeightStep() {
 ```
 
 ### Example 2: Extracting Complex Effect Hook
+
 ```typescript
 // Source: React official docs (Reusing Logic with Custom Hooks)
 // Before: 100+ lines in component
@@ -581,6 +600,7 @@ export default function CheckInPage() {
 ```
 
 ### Example 3: Server Component Data + Client Component Interactivity
+
 ```typescript
 // Source: Next.js Server/Client Components docs
 // app/[locale]/(dashboard)/tickets/page.tsx (Server Component - NO "use client")
@@ -636,6 +656,7 @@ export function TicketsList({ initialTickets }: { initialTickets: Ticket[] }) {
 ```
 
 ### Example 4: Route Segment Error Boundary
+
 ```typescript
 // Source: Next.js error handling docs
 // app/[locale]/(dashboard)/check-in/error.tsx
@@ -696,18 +717,19 @@ export default function CheckInError({
 
 ## State of the Art
 
-| Old Approach | Current Approach | When Changed | Impact |
-|--------------|------------------|--------------|--------|
-| Class components with lifecycle methods | Function components with hooks | React 16.8 (2019) | Standard practice; all new code uses functions |
-| useEffect for form submission | useActionState (React 19) | React 19 (Dec 2024) | Simpler form handling, but RHF still better for complex forms |
-| forwardRef for ref forwarding | ref as prop | React 19 (Dec 2024) | Less boilerplate; only needed for legacy interop |
-| Pages Router | App Router | Next.js 13 (2022), stable in 14 | Server Components, nested layouts, better data fetching |
-| getServerSideProps | async Server Components | Next.js 13+ | Fetch data directly in components, no props wrapper |
-| error.js without useEffect | error.js with Sentry in useEffect | Sentry best practice | Automatic error tracking |
+| Old Approach                            | Current Approach                  | When Changed                    | Impact                                                        |
+| --------------------------------------- | --------------------------------- | ------------------------------- | ------------------------------------------------------------- |
+| Class components with lifecycle methods | Function components with hooks    | React 16.8 (2019)               | Standard practice; all new code uses functions                |
+| useEffect for form submission           | useActionState (React 19)         | React 19 (Dec 2024)             | Simpler form handling, but RHF still better for complex forms |
+| forwardRef for ref forwarding           | ref as prop                       | React 19 (Dec 2024)             | Less boilerplate; only needed for legacy interop              |
+| Pages Router                            | App Router                        | Next.js 13 (2022), stable in 14 | Server Components, nested layouts, better data fetching       |
+| getServerSideProps                      | async Server Components           | Next.js 13+                     | Fetch data directly in components, no props wrapper           |
+| error.js without useEffect              | error.js with Sentry in useEffect | Sentry best practice            | Automatic error tracking                                      |
 
 **Deprecated/outdated:**
+
 - **Class-based error boundaries:** Still work but function components with error.tsx are Next.js standard
-- **_app.js error handling:** App Router uses error.tsx hierarchy instead
+- **\_app.js error handling:** App Router uses error.tsx hierarchy instead
 - **getInitialProps:** Use Server Components or API routes
 - **Massive 1000+ line components:** Industry consensus is 200-400 lines ([Microsoft/Google code review studies](https://group107.com/blog/code-review-best-practices/))
 
@@ -731,12 +753,14 @@ export default function CheckInError({
 ## Sources
 
 ### Primary (HIGH confidence)
+
 - [Next.js Error Handling](https://nextjs.org/docs/app/getting-started/error-handling) - Error boundary patterns, global-error.js, hierarchy
 - [Next.js Server and Client Components](https://nextjs.org/docs/app/getting-started/server-and-client-components) - When to use each, composition patterns, "use client" boundary
 - [React Reusing Logic with Custom Hooks](https://react.dev/learn/reusing-logic-with-custom-hooks) - When to extract, naming conventions, what NOT to extract
-- [Next.js Project Structure](https://nextjs.org/docs/app/getting-started/project-structure) - _components private folder pattern
+- [Next.js Project Structure](https://nextjs.org/docs/app/getting-started/project-structure) - \_components private folder pattern
 
 ### Secondary (MEDIUM confidence)
+
 - [React Hook Form Advanced Usage](https://www.react-hook-form.com/advanced-usage/) - FormProvider pattern (verified in codebase)
 - [Patterns.dev Compound Components](https://www.patterns.dev/react/compound-pattern/) - Compound component pattern for related components
 - [FreeCodeCamp Compound Components Guide](https://www.freecodecamp.org/news/compound-components-pattern-in-react/) - Implementation details
@@ -744,6 +768,7 @@ export default function CheckInError({
 - [MakerKit Multi-Step Forms](https://makerkit.dev/blog/tutorials/multi-step-forms-reactjs) - Multi-step form patterns updated Feb 2026
 
 ### Tertiary (LOW confidence - context only)
+
 - [React 19 Features](https://react.dev/blog/2024/12/05/react-19) - useActionState, useFormStatus (not prioritized for this phase since RHF already in use)
 - [Telerik React Design Patterns 2025](https://www.telerik.com/blogs/react-design-patterns-best-practices) - General patterns overview
 - [Medium: React 19 and TypeScript Best Practices](https://medium.com/@CodersWorld99/react-19-typescript-best-practices-the-new-rules-every-developer-must-follow-in-2025-3a74f63a0baf) - General guidance
@@ -751,6 +776,7 @@ export default function CheckInError({
 ## Metadata
 
 **Confidence breakdown:**
+
 - Standard stack: HIGH - All libraries already in use and verified in package.json
 - Architecture patterns: HIGH - Official Next.js and React docs, verified with codebase structure
 - Pitfalls: MEDIUM-HIGH - Based on official docs + community consensus, not all tested in this specific codebase
@@ -761,8 +787,9 @@ export default function CheckInError({
 **Valid until:** 2026-03-15 (30 days - stable stack, Next.js 16.x and React 19 are current stable)
 
 **Codebase-specific findings:**
+
 - Current largest files: check-in/page.tsx (668 lines), initial-assessment/page.tsx (594 lines)
 - Existing hooks: 9 custom hooks in /src/hooks/ (good pattern already established)
-- No _components directories exist yet (opportunity to introduce pattern)
+- No \_components directories exist yet (opportunity to introduce pattern)
 - Error boundaries: Only at root level, not at route segments (gap to address)
 - React Hook Form + Zod: Already integrated and working well (preserve this)

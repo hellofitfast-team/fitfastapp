@@ -24,16 +24,25 @@ export function StatsOverview({
   const t = useTranslations("progress");
   const locale = useLocale();
 
-  const trendDirection = weightChange < 0 ? "down" as const : weightChange > 0 ? "up" as const : "neutral" as const;
+  const trendDirection =
+    weightChange < 0
+      ? ("down" as const)
+      : weightChange > 0
+        ? ("up" as const)
+        : ("neutral" as const);
 
   return (
-    <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       <div className="animate-slide-up" style={{ animationDelay: "0ms" }}>
         <WidgetCard
           icon={Weight}
           title={t("startWeight")}
           value={firstCheckIn?.weight ? `${firstCheckIn.weight}` : "-"}
-          subtitle={firstCheckIn ? formatDate(new Date(firstCheckIn._creationTime).toISOString(), locale) : "-"}
+          subtitle={
+            firstCheckIn
+              ? formatDate(new Date(firstCheckIn._creationTime).toISOString(), locale)
+              : "-"
+          }
           featureColor="primary"
         />
       </div>
@@ -43,7 +52,11 @@ export function StatsOverview({
           icon={Weight}
           title={t("currentWeight")}
           value={latestCheckIn?.weight ? `${latestCheckIn.weight}` : "-"}
-          subtitle={latestCheckIn ? formatDate(new Date(latestCheckIn._creationTime).toISOString(), locale) : "-"}
+          subtitle={
+            latestCheckIn
+              ? formatDate(new Date(latestCheckIn._creationTime).toISOString(), locale)
+              : "-"
+          }
           featureColor="nutrition"
         />
       </div>
@@ -52,8 +65,17 @@ export function StatsOverview({
         <WidgetCard
           icon={weightChange < 0 ? TrendingDown : TrendingUp}
           title={t("totalChange")}
-          value={weightChange !== 0 ? `${weightChange > 0 ? "+" : ""}${weightChange.toFixed(1)}` : "-"}
-          trend={weightChange !== 0 ? { direction: trendDirection, label: `${weightChange > 0 ? "+" : ""}${weightChangePercent}%` } : undefined}
+          value={
+            weightChange !== 0 ? `${weightChange > 0 ? "+" : ""}${weightChange.toFixed(1)}` : "-"
+          }
+          trend={
+            weightChange !== 0
+              ? {
+                  direction: trendDirection,
+                  label: `${weightChange > 0 ? "+" : ""}${weightChangePercent}%`,
+                }
+              : undefined
+          }
           featureColor="fitness"
         />
       </div>

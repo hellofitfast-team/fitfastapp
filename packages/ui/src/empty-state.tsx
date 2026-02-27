@@ -39,14 +39,14 @@ export function EmptyState({
   const styles = ICON_VARIANTS[variant];
 
   return (
-    <div className={cn("rounded-xl border border-border bg-card p-10 text-center", className)}>
-      <div className={cn("flex h-16 w-16 items-center justify-center mx-auto rounded-2xl", styles.bg)}>
+    <div className={cn("border-border bg-card rounded-xl border p-10 text-center", className)}>
+      <div
+        className={cn("mx-auto flex h-16 w-16 items-center justify-center rounded-2xl", styles.bg)}
+      >
         <Icon className={cn("h-8 w-8", styles.icon)} />
       </div>
-      <h3 className="mt-5 font-semibold text-lg">{title}</h3>
-      <p className="mt-2 text-sm text-muted-foreground max-w-sm mx-auto">
-        {description}
-      </p>
+      <h3 className="mt-5 text-lg font-semibold">{title}</h3>
+      <p className="text-muted-foreground mx-auto mt-2 max-w-sm text-sm">{description}</p>
       {action && (
         <Button onClick={action.onClick} className="mt-5">
           {action.label}

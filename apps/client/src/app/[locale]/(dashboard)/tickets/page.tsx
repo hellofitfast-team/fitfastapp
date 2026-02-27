@@ -2,7 +2,16 @@
 
 import { useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
-import { MessageSquarePlus, Clock, CheckCircle2, MessageSquare, ChevronRight, Upload, Send, Loader2 } from "lucide-react";
+import {
+  MessageSquarePlus,
+  Clock,
+  CheckCircle2,
+  MessageSquare,
+  ChevronRight,
+  Upload,
+  Send,
+  Loader2,
+} from "lucide-react";
 import { useTickets } from "@/hooks/use-tickets";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -16,7 +25,10 @@ import { z } from "zod";
 import { cn } from "@fitfast/ui/cn";
 
 const ticketSchema = z.object({
-  subject: z.string().min(3, "Subject must be at least 3 characters").max(100, "Subject must be under 100 characters"),
+  subject: z
+    .string()
+    .min(3, "Subject must be at least 3 characters")
+    .max(100, "Subject must be under 100 characters"),
   category: z.enum(["meal_issue", "workout_issue", "technical", "bug_report", "other"]),
   description: z.string().optional(),
 });
@@ -43,18 +55,25 @@ function getTimeAgo(timestamp: number, locale: string): string {
   }
 
   return date.toLocaleDateString(locale === "ar" ? "ar-u-nu-latn" : "en-US", {
-    month: "short", day: "numeric",
+    month: "short",
+    day: "numeric",
   });
 }
 
 export default function TicketsPage() {
   const t = useTranslations("tickets");
   const tEmpty = useTranslations("emptyStates");
+  const tCheckIn = useTranslations("checkIn");
   const locale = useLocale();
   const { tickets, isLoading, error, createTicket } = useTickets();
   const generateUploadUrl = useMutation(api.storage.generateUploadUrl);
 
-  const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<TicketFormData>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    reset,
+  } = useForm<TicketFormData>({
     resolver: zodResolver(ticketSchema),
     mode: "onBlur",
     reValidateMode: "onBlur",
@@ -102,69 +121,77 @@ export default function TicketsPage() {
 
   const getStatusStyle = (status: string) => {
     switch (status) {
-      case "open": return "bg-success-500/10 text-success-500";
-      case "coach_responded": return "bg-[#F59E0B]/10 text-[#F59E0B]";
-      case "closed": return "bg-neutral-100 text-muted-foreground";
-      default: return "";
+      case "open":
+        return "bg-success-500/10 text-success-500";
+      case "coach_responded":
+        return "bg-[#F59E0B]/10 text-[#F59E0B]";
+      case "closed":
+        return "bg-neutral-100 text-muted-foreground";
+      default:
+        return "";
     }
   };
 
   const getCategoryIcon = (status: string) => {
     switch (status) {
-      case "open": return <Clock className="h-4 w-4" />;
-      case "coach_responded": return <MessageSquare className="h-4 w-4" />;
-      case "closed": return <CheckCircle2 className="h-4 w-4" />;
-      default: return null;
+      case "open":
+        return <Clock className="h-4 w-4" />;
+      case "coach_responded":
+        return <MessageSquare className="h-4 w-4" />;
+      case "closed":
+        return <CheckCircle2 className="h-4 w-4" />;
+      default:
+        return null;
     }
   };
 
   return (
-    <div className="px-4 py-6 space-y-6 max-w-3xl mx-auto lg:px-6">
+    <div className="mx-auto max-w-3xl space-y-6 px-4 py-6 lg:px-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold">{t("title")}</h1>
-        <p className="text-sm text-muted-foreground mt-1">{t("myTickets")}</p>
+        <p className="text-muted-foreground mt-1 text-sm">{t("myTickets")}</p>
       </div>
 
       {/* Success Message */}
       {submitSuccess && (
-        <div className="rounded-lg bg-success-500/10 border border-success-500/20 p-3 text-center animate-slide-up">
-          <p className="text-sm font-medium text-success-500">
-            {locale === "ar" ? "تم إرسال التذكرة بنجاح!" : "Ticket submitted successfully!"}
-          </p>
+        <div className="bg-success-500/10 border-success-500/20 animate-slide-up rounded-lg border p-3 text-center">
+          <p className="text-success-500 text-sm font-medium">{t("ticketSubmitted")}</p>
         </div>
       )}
 
       {/* New Ticket Form */}
-      <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
-        <div className="flex items-center gap-2 p-4 border-b border-border bg-primary/5">
-          <MessageSquarePlus className="h-4 w-4 text-primary" />
-          <h2 className="font-semibold text-sm">{t("newTicket")}</h2>
+      <div className="border-border bg-card shadow-card overflow-hidden rounded-xl border">
+        <div className="border-border bg-primary/5 flex items-center gap-2 border-b p-4">
+          <MessageSquarePlus className="text-primary h-4 w-4" />
+          <h2 className="text-sm font-semibold">{t("newTicket")}</h2>
         </div>
-        <form onSubmit={handleSubmit(onSubmit)} className="p-4 space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-4">
           <div>
-            <label className="block text-sm font-medium mb-1.5">{t("subject")}</label>
+            <label className="mb-1.5 block text-sm font-medium">{t("subject")}</label>
             <input
               type="text"
               {...register("subject")}
               placeholder={t("subjectPlaceholder")}
               className={cn(
-                "w-full h-11 px-3.5 rounded-lg border bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-colors",
-                errors.subject ? "border-error-500" : "border-input"
+                "bg-card placeholder:text-muted-foreground focus:ring-ring h-11 w-full rounded-lg border px-3.5 text-sm transition-colors focus:ring-2 focus:outline-none",
+                errors.subject ? "border-error-500" : "border-input",
               )}
               aria-invalid={errors.subject ? "true" : "false"}
               disabled={isSubmitting}
             />
             {errors.subject && (
-              <p className="mt-1 text-xs text-error-500" role="alert">{errors.subject.message}</p>
+              <p className="text-error-500 mt-1 text-xs" role="alert">
+                {errors.subject.message}
+              </p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1.5">{t("category")}</label>
+            <label className="mb-1.5 block text-sm font-medium">{t("category")}</label>
             <select
               {...register("category")}
-              className="w-full h-11 px-3.5 rounded-lg border border-input bg-card text-sm appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring transition-colors"
+              className="border-input bg-card focus:ring-ring h-11 w-full cursor-pointer appearance-none rounded-lg border px-3.5 text-sm transition-colors focus:ring-2 focus:outline-none"
               disabled={isSubmitting}
             >
               <option value="meal_issue">{t("categories.mealIssue")}</option>
@@ -176,20 +203,21 @@ export default function TicketsPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1.5">{t("description")}</label>
+            <label className="mb-1.5 block text-sm font-medium">{t("description")}</label>
             <textarea
               {...register("description")}
               placeholder={t("descriptionPlaceholder")}
-              className="w-full min-h-[100px] p-3.5 rounded-lg border border-input bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-colors resize-none"
+              className="border-input bg-card placeholder:text-muted-foreground focus:ring-ring min-h-[100px] w-full resize-none rounded-lg border p-3.5 text-sm transition-colors focus:ring-2 focus:outline-none"
               disabled={isSubmitting}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1.5">
-              {t("screenshot")} <span className="text-muted-foreground font-normal">({locale === "ar" ? "اختياري" : "optional"})</span>
+            <label className="mb-1.5 block text-sm font-medium">
+              {t("screenshot")}{" "}
+              <span className="text-muted-foreground font-normal">({tCheckIn("optional")})</span>
             </label>
-            <label className="flex items-center justify-center h-16 rounded-lg border border-dashed border-border bg-neutral-50 cursor-pointer hover:bg-neutral-100 transition-colors">
+            <label className="border-border flex h-16 cursor-pointer items-center justify-center rounded-lg border border-dashed bg-neutral-50 transition-colors hover:bg-neutral-100">
               <input
                 type="file"
                 accept="image/*"
@@ -200,9 +228,11 @@ export default function TicketsPage() {
                 }}
                 disabled={isSubmitting || isUploading}
               />
-              <div className="flex items-center gap-2 text-muted-foreground">
+              <div className="text-muted-foreground flex items-center gap-2">
                 <Upload className="h-4 w-4" />
-                <span className="text-xs">{screenshotFile ? screenshotFile.name : t("uploadHint")}</span>
+                <span className="text-xs">
+                  {screenshotFile ? screenshotFile.name : t("uploadHint")}
+                </span>
               </div>
             </label>
           </div>
@@ -210,12 +240,18 @@ export default function TicketsPage() {
           <button
             type="submit"
             disabled={isSubmitting || isUploading}
-            className="w-full py-3 rounded-lg bg-primary text-white font-semibold text-sm hover:bg-primary/90 transition-all active:scale-[0.97] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-primary hover:bg-primary/90 flex w-full items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold text-white transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSubmitting ? (
-              <><Loader2 className="h-4 w-4 animate-spin" />{locale === "ar" ? "جارٍ الإرسال..." : "Submitting..."}</>
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {t("sending")}
+              </>
             ) : (
-              <><Send className="h-4 w-4" />{t("submitTicket")}</>
+              <>
+                <Send className="h-4 w-4" />
+                {t("submitTicket")}
+              </>
             )}
           </button>
         </form>
@@ -223,12 +259,12 @@ export default function TicketsPage() {
 
       {/* Existing Tickets */}
       <div>
-        <h2 className="font-semibold text-sm text-muted-foreground mb-3">{t("myTickets")}</h2>
+        <h2 className="text-muted-foreground mb-3 text-sm font-semibold">{t("myTickets")}</h2>
 
         {isLoading ? (
           <div className="space-y-3">
             {[0, 1, 2].map((i) => (
-              <div key={i} className="rounded-xl border border-border bg-card p-4">
+              <div key={i} className="border-border bg-card rounded-xl border p-4">
                 <div className="flex items-center gap-3">
                   <Skeleton className="h-10 w-10 rounded-xl" />
                   <div className="flex-1 space-y-2">
@@ -240,8 +276,8 @@ export default function TicketsPage() {
             ))}
           </div>
         ) : error ? (
-          <div className="rounded-xl border border-border bg-card p-6 text-center">
-            <p className="text-sm text-error-500">{error}</p>
+          <div className="border-border bg-card rounded-xl border p-6 text-center">
+            <p className="text-error-500 text-sm">{error}</p>
           </div>
         ) : tickets.length === 0 ? (
           <EmptyState
@@ -262,38 +298,46 @@ export default function TicketsPage() {
                 <Link
                   key={ticket._id}
                   href={`/tickets/${ticket._id}`}
-                  className="block rounded-xl border border-border bg-card p-4 hover:bg-neutral-50 transition-all active:scale-[0.97] animate-slide-up"
+                  className="border-border bg-card animate-slide-up block rounded-xl border p-4 transition-all hover:bg-neutral-50 active:scale-[0.97]"
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
                   <div className="flex items-start gap-3">
-                    <div className={cn(
-                      "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
-                      ticket.status === "open" ? "bg-success-500/10 text-success-500"
-                        : ticket.status === "coach_responded" ? "bg-[#F59E0B]/10 text-[#F59E0B]"
-                        : "bg-neutral-100 text-muted-foreground"
-                    )}>
+                    <div
+                      className={cn(
+                        "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
+                        ticket.status === "open"
+                          ? "bg-success-500/10 text-success-500"
+                          : ticket.status === "coach_responded"
+                            ? "bg-[#F59E0B]/10 text-[#F59E0B]"
+                            : "text-muted-foreground bg-neutral-100",
+                      )}
+                    >
                       {getCategoryIcon(ticket.status)}
                     </div>
-                    <div className="flex-1 min-w-0">
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
-                        <p className="font-semibold text-sm truncate">{ticket.subject}</p>
-                        <span className={cn(
-                          "shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-medium",
-                          getStatusStyle(ticket.status)
-                        )}>
-                          {t(`status.${ticket.status === "coach_responded" ? "coachResponded" : ticket.status}`)}
+                        <p className="truncate text-sm font-semibold">{ticket.subject}</p>
+                        <span
+                          className={cn(
+                            "shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-medium",
+                            getStatusStyle(ticket.status),
+                          )}
+                        >
+                          {t(
+                            `status.${ticket.status === "coach_responded" ? "coachResponded" : ticket.status}`,
+                          )}
                         </span>
                       </div>
                       {lastMessage && (
-                        <p className="text-xs text-muted-foreground truncate mt-1">
+                        <p className="text-muted-foreground mt-1 truncate text-xs">
                           {lastMessage.message}
                         </p>
                       )}
-                      <p className="text-[10px] text-muted-foreground mt-1.5">
+                      <p className="text-muted-foreground mt-1.5 text-[10px]">
                         {getTimeAgo(ticket._creationTime, locale)}
                       </p>
                     </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-1 rtl:rotate-180" />
+                    <ChevronRight className="text-muted-foreground mt-1 h-4 w-4 shrink-0 rtl:rotate-180" />
                   </div>
                 </Link>
               );

@@ -31,8 +31,7 @@ export const resetClientUser = internalAction({
   args: {},
   handler: async (ctx) => {
     const seedPassword = process.env.SEED_USER_PASSWORD;
-    if (!seedPassword)
-      throw new Error("SEED_USER_PASSWORD env var is required");
+    if (!seedPassword) throw new Error("SEED_USER_PASSWORD env var is required");
 
     const results: string[] = [];
 
@@ -49,7 +48,10 @@ export const resetClientUser = internalAction({
         });
         results.push(r);
       } catch (error) {
-        console.error("Failed to delete seed user:", error);
+        console.error("[Seed:seedTestUsers] Failed to delete seed user", {
+          email,
+          error: error instanceof Error ? error.message : String(error),
+        });
         results.push(`ERROR deleting seed user: ${error}`);
       }
     }
@@ -65,7 +67,9 @@ export const resetClientUser = internalAction({
       });
       results.push(r);
     } catch (error) {
-      console.error("Failed to create client user:", error);
+      console.error("[Seed:seedTestUsers] Failed to create client user", {
+        error: error instanceof Error ? error.message : String(error),
+      });
       results.push(`ERROR creating client user: ${error}`);
     }
 
@@ -481,20 +485,20 @@ MONITORING RECOVERY (coach should track):
 
     for (const doc of documents) {
       // Check if this document already exists (by title)
-      const existing: boolean = await ctx.runQuery(
-        internal.seed.checkKnowledgeExists,
-        { title: doc.title },
-      );
+      const existing: boolean = await ctx.runQuery(internal.seed.checkKnowledgeExists, {
+        title: doc.title,
+      });
 
       if (existing) {
         results.push(`SKIPPED: "${doc.title}" already exists`);
         continue;
       }
 
-      const entryId = await ctx.runMutation(
-        internal.knowledgeBase.insertTextEntryInternal,
-        { title: doc.title, content: doc.content, tags: doc.tags },
-      );
+      const entryId = await ctx.runMutation(internal.knowledgeBase.insertTextEntryInternal, {
+        title: doc.title,
+        content: doc.content,
+        tags: doc.tags,
+      });
       results.push(`CREATED: "${doc.title}" → ${entryId}`);
     }
 
@@ -513,8 +517,7 @@ export const seedDemoUsers = internalAction({
   args: {},
   handler: async (ctx) => {
     const seedPassword = process.env.SEED_USER_PASSWORD;
-    if (!seedPassword)
-      throw new Error("SEED_USER_PASSWORD env var is required");
+    if (!seedPassword) throw new Error("SEED_USER_PASSWORD env var is required");
 
     const demoUsers = [
       { email: "nearexpiry@fitfast.app", fullName: "Near Expiry Demo" },
@@ -555,10 +558,9 @@ export const seedDemoUsers = internalAction({
     // We need to find the userId for each user from profiles
     for (const user of demoUsers) {
       try {
-        const authAccount = await ctx.runQuery(
-          internal.seedDemo_helpers.findAuthAccountByEmail,
-          { email: user.email },
-        );
+        const authAccount = await ctx.runQuery(internal.seed.findAuthAccountByEmail, {
+          email: user.email,
+        });
         if (!authAccount) {
           results.push(`SKIP populate ${user.email}: auth account not found`);
           continue;
@@ -566,16 +568,10 @@ export const seedDemoUsers = internalAction({
         const userId = authAccount.userId;
 
         if (user.email === "nearexpiry@fitfast.app") {
-          const r = await ctx.runMutation(
-            internal.seedDemo.populateNearExpiryUser,
-            { userId },
-          );
+          const r = await ctx.runMutation(internal.seed.populateNearExpiryUser, { userId });
           results.push(r);
         } else {
-          const r = await ctx.runMutation(
-            internal.seedDemo.populateExpiredUser,
-            { userId },
-          );
+          const r = await ctx.runMutation(internal.seed.populateExpiredUser, { userId });
           results.push(r);
         }
       } catch (error) {
@@ -591,8 +587,7 @@ export const seedTestUsers = internalAction({
   args: {},
   handler: async (ctx) => {
     const seedPassword = process.env.SEED_USER_PASSWORD;
-    if (!seedPassword)
-      throw new Error("SEED_USER_PASSWORD env var is required");
+    if (!seedPassword) throw new Error("SEED_USER_PASSWORD env var is required");
 
     const testUsers = [
       {
@@ -621,11 +616,466 @@ export const seedTestUsers = internalAction({
         });
         results.push(result);
       } catch (error) {
-        console.error("Failed to seed user:", error);
+        console.error("[Seed:seedDemoUsers] Failed to seed user", {
+          fullName: user.fullName,
+          error: error instanceof Error ? error.message : String(error),
+        });
         results.push(`ERROR seeding user: ${error}`);
       }
     }
 
     return results.join("\n");
+  },
+});
+
+// ============================================================================
+// Food database seeding (previously seedFoodDatabase.ts)
+// ============================================================================
+
+interface FoodEntry {
+  name: string;
+  nameAr?: string;
+  category: string;
+  tags: string[];
+  per100g: { calories: number; protein: number; carbs: number; fat: number; fiber?: number };
+  isRecipe: boolean;
+  servingSize?: string;
+  perServing?: { calories: number; protein: number; carbs: number; fat: number };
+  ingredients?: string[];
+  instructions?: string[];
+  source: string;
+  isVerified: boolean;
+}
+
+const SEED_FOODS: FoodEntry[] = [
+  {
+    name: "Chicken Breast (Grilled)",
+    nameAr: "صدر دجاج مشوي",
+    category: "protein",
+    tags: ["high_protein", "low_fat"],
+    per100g: { calories: 165, protein: 31, carbs: 0, fat: 3.6 },
+    isRecipe: false,
+    source: "usda",
+    isVerified: true,
+  },
+  {
+    name: "Chicken Thigh (Skinless)",
+    nameAr: "فخذ دجاج بدون جلد",
+    category: "protein",
+    tags: ["high_protein"],
+    per100g: { calories: 177, protein: 24.8, carbs: 0, fat: 8.4 },
+    isRecipe: false,
+    source: "usda",
+    isVerified: true,
+  },
+  {
+    name: "Beef Steak (Lean)",
+    nameAr: "ستيك لحم بقري",
+    category: "protein",
+    tags: ["high_protein"],
+    per100g: { calories: 207, protein: 26.1, carbs: 0, fat: 9.7 },
+    isRecipe: false,
+    source: "usda",
+    isVerified: true,
+  },
+  {
+    name: "Ground Beef (90% Lean, Cooked)",
+    nameAr: "لحم مفروم قليل الدهن (مطبوخ)",
+    category: "protein",
+    tags: ["high_protein"],
+    per100g: { calories: 204, protein: 25.2, carbs: 0, fat: 10.8 },
+    isRecipe: false,
+    source: "usda",
+    isVerified: true,
+  },
+  {
+    name: "Salmon (Atlantic)",
+    nameAr: "سلمون",
+    category: "protein",
+    tags: ["high_protein", "omega_3"],
+    per100g: { calories: 208, protein: 20.4, carbs: 0, fat: 13.4 },
+    isRecipe: false,
+    source: "usda",
+    isVerified: true,
+  },
+  {
+    name: "Tuna (Canned Light in Water)",
+    nameAr: "تونة معلبة",
+    category: "protein",
+    tags: ["high_protein", "low_fat", "quick_prep"],
+    per100g: { calories: 86, protein: 19.4, carbs: 0, fat: 0.6 },
+    isRecipe: false,
+    source: "usda",
+    isVerified: true,
+  },
+  {
+    name: "Tilapia (Baked)",
+    nameAr: "بلطي مشوي",
+    category: "protein",
+    tags: ["high_protein", "low_fat", "egyptian"],
+    per100g: { calories: 128, protein: 26.2, carbs: 0, fat: 2.7 },
+    isRecipe: false,
+    source: "usda",
+    isVerified: true,
+  },
+  {
+    name: "Eggs (Whole, Boiled)",
+    nameAr: "بيض مسلوق",
+    category: "protein",
+    tags: ["high_protein", "quick_prep"],
+    per100g: { calories: 155, protein: 12.6, carbs: 1.1, fat: 10.6 },
+    isRecipe: false,
+    source: "usda",
+    isVerified: true,
+  },
+  {
+    name: "Egg Whites",
+    nameAr: "بياض البيض",
+    category: "protein",
+    tags: ["high_protein", "low_fat", "low_carb"],
+    per100g: { calories: 52, protein: 10.9, carbs: 0.7, fat: 0.2 },
+    isRecipe: false,
+    source: "usda",
+    isVerified: true,
+  },
+  {
+    name: "Shrimp (Cooked)",
+    nameAr: "جمبري مطبوخ",
+    category: "protein",
+    tags: ["high_protein", "low_fat"],
+    per100g: { calories: 99, protein: 22.8, carbs: 1.7, fat: 1.7 },
+    isRecipe: false,
+    source: "usda",
+    isVerified: true,
+  },
+  {
+    name: "Turkey Breast",
+    nameAr: "صدر ديك رومي",
+    category: "protein",
+    tags: ["high_protein", "low_fat"],
+    per100g: { calories: 147, protein: 30, carbs: 0, fat: 2.1 },
+    isRecipe: false,
+    source: "usda",
+    isVerified: true,
+  },
+  {
+    name: "Greek Yogurt (0% Fat)",
+    nameAr: "زبادي يوناني خالي الدسم",
+    category: "dairy",
+    tags: ["high_protein", "low_fat", "quick_prep"],
+    per100g: { calories: 59, protein: 10.2, carbs: 3.6, fat: 0.4 },
+    isRecipe: false,
+    source: "usda",
+    isVerified: true,
+  },
+  {
+    name: "Cottage Cheese (Low Fat)",
+    nameAr: "جبن قريش",
+    category: "dairy",
+    tags: ["high_protein", "low_fat", "egyptian"],
+    per100g: { calories: 81, protein: 10.4, carbs: 4.8, fat: 2.3 },
+    isRecipe: false,
+    source: "usda",
+    isVerified: true,
+  },
+  {
+    name: "Whey Protein (Scoop ~30g)",
+    nameAr: "واي بروتين",
+    category: "protein",
+    tags: ["high_protein", "low_fat", "post_workout"],
+    per100g: { calories: 380, protein: 75, carbs: 8, fat: 4 },
+    isRecipe: false,
+    source: "usda",
+    isVerified: true,
+  },
+  {
+    name: "Lentils (Cooked)",
+    nameAr: "عدس مطبوخ",
+    category: "protein",
+    tags: ["high_protein", "high_fiber", "vegan", "egyptian"],
+    per100g: { calories: 116, protein: 9, carbs: 20, fat: 0.4, fiber: 7.9 },
+    isRecipe: false,
+    source: "usda",
+    isVerified: true,
+  },
+  {
+    name: "Chickpeas (Cooked)",
+    nameAr: "حمص مطبوخ",
+    category: "protein",
+    tags: ["high_protein", "high_fiber", "vegan", "middle_eastern"],
+    per100g: { calories: 164, protein: 8.9, carbs: 27.4, fat: 2.6, fiber: 7.6 },
+    isRecipe: false,
+    source: "usda",
+    isVerified: true,
+  },
+  {
+    name: "Fava Beans (Foul Medames)",
+    nameAr: "فول مدمس",
+    category: "protein",
+    tags: ["high_protein", "high_fiber", "vegan", "egyptian"],
+    per100g: { calories: 110, protein: 7.6, carbs: 19.7, fat: 0.4, fiber: 5.4 },
+    isRecipe: false,
+    source: "usda",
+    isVerified: true,
+  },
+  {
+    name: "Labneh",
+    nameAr: "لبنة",
+    category: "dairy",
+    tags: ["high_protein", "middle_eastern"],
+    per100g: { calories: 154, protein: 5.7, carbs: 4, fat: 13.5 },
+    isRecipe: false,
+    source: "usda",
+    isVerified: true,
+  },
+  {
+    name: "White Rice (Cooked)",
+    nameAr: "أرز أبيض مطبوخ",
+    category: "carb",
+    tags: ["post_workout"],
+    per100g: { calories: 130, protein: 2.7, carbs: 28.2, fat: 0.3 },
+    isRecipe: false,
+    source: "usda",
+    isVerified: true,
+  },
+  {
+    name: "Brown Rice (Cooked)",
+    nameAr: "أرز بني مطبوخ",
+    category: "carb",
+    tags: ["high_fiber"],
+    per100g: { calories: 112, protein: 2.3, carbs: 23.5, fat: 0.8, fiber: 1.6 },
+    isRecipe: false,
+    source: "usda",
+    isVerified: true,
+  },
+  {
+    name: "Sweet Potato (Baked)",
+    nameAr: "بطاطا حلوة مشوية",
+    category: "carb",
+    tags: ["high_fiber"],
+    per100g: { calories: 90, protein: 2, carbs: 20.7, fat: 0.1, fiber: 3.3 },
+    isRecipe: false,
+    source: "usda",
+    isVerified: true,
+  },
+  {
+    name: "Oats (Dry)",
+    nameAr: "شوفان جاف",
+    category: "carb",
+    tags: ["high_fiber", "meal_prep_friendly"],
+    per100g: { calories: 389, protein: 16.9, carbs: 66.3, fat: 6.9, fiber: 10.6 },
+    isRecipe: false,
+    source: "usda",
+    isVerified: true,
+  },
+  {
+    name: "Baladi Bread (Egyptian)",
+    nameAr: "عيش بلدي",
+    category: "carb",
+    tags: ["egyptian"],
+    per100g: { calories: 275, protein: 9, carbs: 57, fat: 1.2, fiber: 2.4 },
+    isRecipe: false,
+    source: "usda",
+    isVerified: true,
+  },
+  {
+    name: "Banana",
+    nameAr: "موز",
+    category: "fruit",
+    tags: ["quick_prep", "post_workout"],
+    per100g: { calories: 89, protein: 1.1, carbs: 22.8, fat: 0.3, fiber: 2.6 },
+    isRecipe: false,
+    source: "usda",
+    isVerified: true,
+  },
+  {
+    name: "Dates (Medjool)",
+    nameAr: "تمر",
+    category: "fruit",
+    tags: ["quick_prep", "middle_eastern", "post_workout"],
+    per100g: { calories: 277, protein: 1.8, carbs: 75, fat: 0.2, fiber: 6.7 },
+    isRecipe: false,
+    source: "usda",
+    isVerified: true,
+  },
+  {
+    name: "Olive Oil",
+    nameAr: "زيت زيتون",
+    category: "fat",
+    tags: ["middle_eastern"],
+    per100g: { calories: 884, protein: 0, carbs: 0, fat: 100 },
+    isRecipe: false,
+    source: "usda",
+    isVerified: true,
+  },
+  {
+    name: "Almonds",
+    nameAr: "لوز",
+    category: "fat",
+    tags: ["high_protein", "high_fiber", "quick_prep"],
+    per100g: { calories: 579, protein: 21.2, carbs: 21.6, fat: 49.9, fiber: 12.5 },
+    isRecipe: false,
+    source: "usda",
+    isVerified: true,
+  },
+  {
+    name: "Peanut Butter",
+    nameAr: "زبدة فول سوداني",
+    category: "fat",
+    tags: ["high_protein", "quick_prep"],
+    per100g: { calories: 588, protein: 22, carbs: 24, fat: 50, fiber: 6 },
+    isRecipe: false,
+    source: "usda",
+    isVerified: true,
+  },
+  {
+    name: "Tahini",
+    nameAr: "طحينة",
+    category: "fat",
+    tags: ["middle_eastern", "high_protein"],
+    per100g: { calories: 595, protein: 17, carbs: 21.2, fat: 53.8, fiber: 9.3 },
+    isRecipe: false,
+    source: "usda",
+    isVerified: true,
+  },
+  {
+    name: "Broccoli",
+    nameAr: "بروكلي",
+    category: "vegetable",
+    tags: ["high_fiber", "low_carb"],
+    per100g: { calories: 34, protein: 2.8, carbs: 6.6, fat: 0.4, fiber: 2.6 },
+    isRecipe: false,
+    source: "usda",
+    isVerified: true,
+  },
+  {
+    name: "Spinach (Raw)",
+    nameAr: "سبانخ",
+    category: "vegetable",
+    tags: ["low_carb"],
+    per100g: { calories: 23, protein: 2.9, carbs: 3.6, fat: 0.4, fiber: 2.2 },
+    isRecipe: false,
+    source: "usda",
+    isVerified: true,
+  },
+  {
+    name: "Protein Pancakes",
+    nameAr: "بان كيك بروتين",
+    category: "recipe",
+    tags: ["junk_made_healthy", "high_protein", "quick_prep"],
+    per100g: { calories: 170, protein: 18, carbs: 18, fat: 3 },
+    isRecipe: true,
+    servingSize: "3 pancakes (180g)",
+    perServing: { calories: 306, protein: 32, carbs: 32, fat: 5.4 },
+    ingredients: [
+      "1 scoop whey protein",
+      "1 banana",
+      "2 egg whites",
+      "30g oats",
+      "1 tsp baking powder",
+    ],
+    instructions: [
+      "Blend all ingredients until smooth",
+      "Heat non-stick pan on medium",
+      "Pour batter to make 3 pancakes",
+      "Cook 2 min each side until golden",
+      "Top with berries or honey",
+    ],
+    source: "verified_recipe",
+    isVerified: true,
+  },
+  {
+    name: "Healthy Chicken Shawarma Bowl",
+    nameAr: "شاورما دجاج صحية",
+    category: "recipe",
+    tags: ["junk_made_healthy", "egyptian", "middle_eastern", "high_protein"],
+    per100g: { calories: 140, protein: 15, carbs: 12, fat: 4 },
+    isRecipe: true,
+    servingSize: "1 bowl (350g)",
+    perServing: { calories: 490, protein: 52, carbs: 42, fat: 14 },
+    ingredients: [
+      "200g chicken breast (sliced)",
+      "Shawarma spices",
+      "100g brown rice",
+      "Pickled turnips, cucumber, tomato",
+      "30g tahini sauce",
+    ],
+    instructions: [
+      "Marinate chicken in spices for 30 min",
+      "Grill or pan-sear chicken until golden",
+      "Cook rice and prepare vegetables",
+      "Assemble bowl and drizzle tahini",
+    ],
+    source: "verified_recipe",
+    isVerified: true,
+  },
+  {
+    name: "Healthy Koshari",
+    nameAr: "كشري صحي",
+    category: "recipe",
+    tags: ["egyptian", "high_fiber", "vegan", "comfort_food"],
+    per100g: { calories: 140, protein: 6, carbs: 25, fat: 2 },
+    isRecipe: true,
+    servingSize: "1 bowl (350g)",
+    perServing: { calories: 490, protein: 21, carbs: 88, fat: 7 },
+    ingredients: [
+      "100g brown rice (cooked)",
+      "50g lentils (cooked)",
+      "50g whole wheat pasta (cooked)",
+      "Tomato sauce with garlic and vinegar",
+      "Crispy onions (air-fried)",
+    ],
+    instructions: [
+      "Cook rice, lentils, and pasta separately",
+      "Layer in bowl: rice, lentils, pasta",
+      "Top with spiced tomato sauce",
+      "Garnish with air-fried crispy onions",
+    ],
+    source: "verified_recipe",
+    isVerified: true,
+  },
+  {
+    name: "Egyptian Lentil Soup",
+    nameAr: "شوربة عدس",
+    category: "recipe",
+    tags: ["egyptian", "high_protein", "high_fiber", "vegan", "comfort_food"],
+    per100g: { calories: 80, protein: 5, carbs: 13, fat: 1 },
+    isRecipe: true,
+    servingSize: "1 bowl (300g)",
+    perServing: { calories: 240, protein: 15, carbs: 39, fat: 3 },
+    ingredients: [
+      "150g red lentils",
+      "1 onion, 2 carrots",
+      "3 garlic cloves",
+      "1 tsp cumin",
+      "Lemon juice, salt",
+    ],
+    instructions: [
+      "Sauté onion and garlic",
+      "Add lentils, carrots, water",
+      "Simmer 20-25 min until soft",
+      "Blend until smooth",
+      "Season with cumin, lemon, salt",
+    ],
+    source: "verified_recipe",
+    isVerified: true,
+  },
+];
+
+export const seedFoods = internalAction({
+  args: {},
+  handler: async (ctx) => {
+    const existing = await ctx.runQuery(internal.foodDatabase.getFoodReferenceForPrompt);
+    if (existing.length > 100) {
+      console.log("[Seed] Food database already populated, skipping.");
+      return;
+    }
+
+    let count = 0;
+    for (const food of SEED_FOODS) {
+      await ctx.runMutation(internal.foodDatabase.insertFood, { ...food });
+      count++;
+    }
+    console.log(`[Seed] Inserted ${count} foods into foodDatabase.`);
   },
 });

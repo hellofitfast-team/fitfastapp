@@ -27,16 +27,31 @@ import { StepNavigation } from "./_components/step-navigation";
 
 // Schema and type exported for sub-components to import
 export const checkInSchema = z.object({
-  weight: z.coerce.number().positive("Weight must be positive").min(20, "Weight seems too low").max(300, "Weight seems too high"),
+  weight: z.coerce
+    .number()
+    .positive("Weight must be positive")
+    .min(20, "Weight seems too low")
+    .max(300, "Weight seems too high"),
   chest: z.coerce.number().optional(),
   waist: z.coerce.number().optional(),
   hips: z.coerce.number().optional(),
   arms: z.coerce.number().optional(),
   thighs: z.coerce.number().optional(),
-  workoutPerformance: z.string().min(10, "Please provide at least 10 characters about your workout performance"),
-  energyLevel: z.coerce.number().min(1, "Energy level must be between 1-10").max(10, "Energy level must be between 1-10"),
-  sleepQuality: z.coerce.number().min(1, "Sleep quality must be between 1-10").max(10, "Sleep quality must be between 1-10"),
-  dietaryAdherence: z.coerce.number().min(1, "Dietary adherence must be between 1-10").max(10, "Dietary adherence must be between 1-10"),
+  workoutPerformance: z
+    .string()
+    .min(10, "Please provide at least 10 characters about your workout performance"),
+  energyLevel: z.coerce
+    .number()
+    .min(1, "Energy level must be between 1-10")
+    .max(10, "Energy level must be between 1-10"),
+  sleepQuality: z.coerce
+    .number()
+    .min(1, "Sleep quality must be between 1-10")
+    .max(10, "Sleep quality must be between 1-10"),
+  dietaryAdherence: z.coerce
+    .number()
+    .min(1, "Dietary adherence must be between 1-10")
+    .max(10, "Dietary adherence must be between 1-10"),
   dietNotes: z.string().optional(),
   newInjuries: z.string().optional(),
   notes: z.string().optional(),
@@ -73,7 +88,13 @@ export default function CheckInPage() {
   const [uploadedPhotos, setUploadedPhotos] = useState<File[]>([]);
 
   // Use the extracted hook for lock status
-  const { isLocked: isCheckInLocked, nextCheckInDate, daysUntilNextCheckIn, isLoadingLockStatus } = useCheckInLock();
+  const {
+    isLocked: isCheckInLocked,
+    nextCheckInDate,
+    daysUntilNextCheckIn,
+    frequencyDays,
+    isLoadingLockStatus,
+  } = useCheckInLock();
 
   const methods = useForm<CheckInFormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- zodResolver type inference gap with react-hook-form v7
@@ -96,7 +117,11 @@ export default function CheckInPage() {
       const isImage = file.type.startsWith("image/");
       const isUnder5MB = file.size <= 5 * 1024 * 1024;
       if (!isImage || !isUnder5MB) {
-        toast({ title: t("invalidFile"), description: t("invalidFileDescription"), variant: "destructive" });
+        toast({
+          title: t("invalidFile"),
+          description: t("invalidFileDescription"),
+          variant: "destructive",
+        });
         return false;
       }
       return true;
@@ -129,11 +154,19 @@ export default function CheckInPage() {
   const validateStep = async (step: number): Promise<boolean> => {
     let fields: (keyof CheckInFormData)[] = [];
     switch (step) {
-      case 1: fields = ["weight"]; break;
-      case 2: fields = ["workoutPerformance", "energyLevel", "sleepQuality"]; break;
-      case 3: fields = ["dietaryAdherence"]; break;
-      case 4: return true;
-      default: return true;
+      case 1:
+        fields = ["weight"];
+        break;
+      case 2:
+        fields = ["workoutPerformance", "energyLevel", "sleepQuality"];
+        break;
+      case 3:
+        fields = ["dietaryAdherence"];
+        break;
+      case 4:
+        return true;
+      default:
+        return true;
     }
     return await methods.trigger(fields);
   };
@@ -192,7 +225,11 @@ export default function CheckInPage() {
 
   const onSubmit = async (data: CheckInFormData) => {
     if (!profile) {
-      toast({ title: t("authRequired"), description: t("authRequiredDescription"), variant: "destructive" });
+      toast({
+        title: t("authRequired"),
+        description: t("authRequiredDescription"),
+        variant: "destructive",
+      });
       return;
     }
 
@@ -222,8 +259,8 @@ export default function CheckInPage() {
       // Generate new plans
       const language = profile.language || "en";
       const [mealResult, workoutResult] = await Promise.allSettled([
-        generateMealPlan({ checkInId, language, planDuration: 14 }),
-        generateWorkoutPlan({ checkInId, language, planDuration: 14 }),
+        generateMealPlan({ checkInId, language, planDuration: frequencyDays }),
+        generateWorkoutPlan({ checkInId, language, planDuration: frequencyDays }),
       ]);
 
       if (mealResult.status === "rejected" || workoutResult.status === "rejected") {
@@ -243,21 +280,25 @@ export default function CheckInPage() {
       Sentry.captureException(error, {
         tags: { feature: "check-in-submission" },
       });
-      toast({ title: t("submissionFailed"), description: error instanceof Error ? error.message : t("tryAgain"), variant: "destructive" });
+      toast({
+        title: t("submissionFailed"),
+        description: error instanceof Error ? error.message : t("tryAgain"),
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="px-4 py-6 max-w-2xl mx-auto space-y-5 pb-8">
+    <div className="mx-auto max-w-2xl space-y-5 px-4 py-6 pb-8">
       {/* Submission Overlay */}
       {isSubmitting && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="rounded-2xl bg-card p-8 text-center shadow-xl mx-4">
-            <Loader2 className="mx-auto h-10 w-10 animate-spin mb-4 text-primary" />
-            <p className="font-bold text-lg">{t("submitting")}</p>
-            <p className="text-sm text-muted-foreground mt-2">{t("newPlanGenerated")}</p>
+          <div className="bg-card mx-4 rounded-2xl p-8 text-center shadow-xl">
+            <Loader2 className="text-primary mx-auto mb-4 h-10 w-10 animate-spin" />
+            <p className="text-lg font-bold">{t("submitting")}</p>
+            <p className="text-muted-foreground mt-2 text-sm">{t("newPlanGenerated")}</p>
           </div>
         </div>
       )}
@@ -265,17 +306,21 @@ export default function CheckInPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold">{t("title")}</h1>
-        <p className="text-sm text-muted-foreground mt-1">{t("subtitle")}</p>
+        <p className="text-muted-foreground mt-1 text-sm">{t("subtitle")}</p>
       </div>
 
       {/* Check-in Locked Notice */}
       {isLoadingLockStatus ? (
-        <div className="rounded-xl border border-border bg-card p-12 text-center">
-          <Loader2 className="mx-auto h-10 w-10 animate-spin text-muted-foreground mb-4" />
-          <p className="font-semibold text-sm text-muted-foreground">Loading...</p>
+        <div className="border-border bg-card rounded-xl border p-12 text-center">
+          <Loader2 className="text-muted-foreground mx-auto mb-4 h-10 w-10 animate-spin" />
+          <p className="text-muted-foreground text-sm font-semibold">Loading...</p>
         </div>
       ) : isCheckInLocked && nextCheckInDate ? (
-        <CheckInLocked nextCheckInDate={nextCheckInDate} daysUntilNextCheckIn={daysUntilNextCheckIn} />
+        <CheckInLocked
+          nextCheckInDate={nextCheckInDate}
+          daysUntilNextCheckIn={daysUntilNextCheckIn}
+          frequencyDays={frequencyDays}
+        />
       ) : null}
 
       {/* Show form only if NOT locked */}
@@ -286,7 +331,11 @@ export default function CheckInPage() {
 
           {/* Form with FormProvider — swipe to navigate steps */}
           <FormProvider {...methods}>
-            <form onSubmit={methods.handleSubmit(onSubmit)} onKeyDown={handleKeyDown} className="space-y-5">
+            <form
+              onSubmit={methods.handleSubmit(onSubmit)}
+              onKeyDown={handleKeyDown}
+              className="space-y-5"
+            >
               {/* Swipeable step content */}
               <div {...swipeHandlers} className="touch-pan-y">
                 <div key={currentStep} className="animate-fade-in">

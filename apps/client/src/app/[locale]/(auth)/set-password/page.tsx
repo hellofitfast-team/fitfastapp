@@ -11,27 +11,28 @@ import { useAuthActions } from "@convex-dev/auth/react";
 import { Lock, CheckCircle2, ArrowRight, Loader2 } from "lucide-react";
 import { cn } from "@fitfast/ui/cn";
 
-const setPasswordSchema = z
-  .object({
-    code: z.string().min(1, "Verification code is required"),
-    password: z
-      .string()
-      .min(8, "Password must be at least 8 characters")
-      .regex(
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-        "Password must contain at least one uppercase letter, one lowercase letter, and one number"
-      ),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-  });
-
-type SetPasswordFormData = z.infer<typeof setPasswordSchema>;
+type SetPasswordFormData = {
+  code: string;
+  password: string;
+  confirmPassword: string;
+};
 
 export default function SetPasswordPage() {
   const t = useTranslations("auth");
+
+  const setPasswordSchema = z
+    .object({
+      code: z.string().min(1, t("verificationRequired")),
+      password: z
+        .string()
+        .min(8, t("passwordRequirements"))
+        .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, t("passwordComplexity")),
+      confirmPassword: z.string(),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: t("passwordsMustMatch"),
+      path: ["confirmPassword"],
+    });
   const router = useRouter();
   const searchParams = useSearchParams();
   const { signIn } = useAuthActions();
@@ -54,7 +55,7 @@ export default function SetPasswordPage() {
 
   const onSubmit = async (data: SetPasswordFormData) => {
     if (!email) {
-      setError("Email not found. Please start the password reset process again.");
+      setError(t("emailNotFound"));
       return;
     }
 
@@ -73,9 +74,7 @@ export default function SetPasswordPage() {
         router.replace("/");
       }, 2000);
     } catch (err: unknown) {
-      const message = err instanceof Error
-        ? err.message
-        : "An unexpected error occurred. Please try again.";
+      const message = err instanceof Error ? err.message : t("unexpectedError");
       setError(message);
     } finally {
       setIsLoading(false);
@@ -84,58 +83,58 @@ export default function SetPasswordPage() {
 
   if (passwordSet) {
     return (
-      <div className="rounded-xl border border-border bg-card shadow-lg overflow-hidden">
-        <div className="p-6 text-center border-b border-border bg-success-500/5">
-          <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-success-500/10 mb-3">
-            <CheckCircle2 className="h-7 w-7 text-success-500" />
+      <div className="border-border bg-card overflow-hidden rounded-xl border shadow-lg">
+        <div className="border-border bg-success-500/5 border-b p-6 text-center">
+          <div className="bg-success-500/10 mb-3 inline-flex h-14 w-14 items-center justify-center rounded-full">
+            <CheckCircle2 className="text-success-500 h-7 w-7" />
           </div>
           <h1 className="text-xl font-bold">{t("passwordSet")}</h1>
-          <p className="text-sm text-muted-foreground mt-1">{t("redirectingToDashboard")}</p>
+          <p className="text-muted-foreground mt-1 text-sm">{t("redirectingToDashboard")}</p>
         </div>
-        <div className="p-6 flex justify-center">
-          <Loader2 className="h-6 w-6 animate-spin text-success-500" />
+        <div className="flex justify-center p-6">
+          <Loader2 className="text-success-500 h-6 w-6 animate-spin" />
         </div>
       </div>
     );
   }
 
   const getPasswordStrength = () => {
-    if (!password) return { level: 0, text: "Weak" };
+    if (!password) return { level: 0, text: t("passwordStrength.weak") };
     const hasLength = password.length >= 8;
     const hasUpper = /[A-Z]/.test(password);
     const hasLower = /[a-z]/.test(password);
     const hasNumber = /\d/.test(password);
     const score = [hasLength, hasUpper, hasLower, hasNumber].filter(Boolean).length;
-    if (score === 4) return { level: 3, text: "Strong" };
-    if (score >= 2) return { level: 2, text: "Medium" };
-    return { level: 1, text: "Weak" };
+    if (score === 4) return { level: 3, text: t("passwordStrength.strong") };
+    if (score >= 2) return { level: 2, text: t("passwordStrength.medium") };
+    return { level: 1, text: t("passwordStrength.weak") };
   };
 
   const strength = getPasswordStrength();
 
   return (
-    <div className="rounded-xl border border-border bg-card shadow-lg overflow-hidden">
+    <div className="border-border bg-card overflow-hidden rounded-xl border shadow-lg">
       {/* Header */}
-      <div className="p-6 text-center border-b border-border">
-        <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 mb-3">
-          <Lock className="h-7 w-7 text-primary" />
+      <div className="border-border border-b p-6 text-center">
+        <div className="bg-primary/10 mb-3 inline-flex h-14 w-14 items-center justify-center rounded-full">
+          <Lock className="text-primary h-7 w-7" />
         </div>
         <h1 className="text-2xl font-bold">{t("setPassword")}</h1>
-        <p className="text-sm text-muted-foreground mt-1">{t("createPasswordDescription")}</p>
-        {email && <p className="text-sm font-medium mt-2">{email}</p>}
+        <p className="text-muted-foreground mt-1 text-sm">{t("createPasswordDescription")}</p>
+        {email && <p className="mt-2 text-sm font-medium">{email}</p>}
       </div>
 
       {/* Form */}
       <div className="p-6">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {error && (
-            <div className="rounded-lg bg-error-500/10 border border-error-500/20 p-3">
-              <p className="text-sm text-error-500">{error}</p>
+            <div className="bg-error-500/10 border-error-500/20 rounded-lg border p-3">
+              <p className="text-error-500 text-sm">{error}</p>
             </div>
           )}
 
           <div>
-            <label htmlFor="code" className="block text-sm font-medium mb-1.5">
+            <label htmlFor="code" className="mb-1.5 block text-sm font-medium">
               {t("verificationCode")}
             </label>
             <input
@@ -143,82 +142,110 @@ export default function SetPasswordPage() {
               type="text"
               placeholder="123456"
               autoComplete="one-time-code"
-              className="w-full h-11 px-4 rounded-lg border border-input bg-card text-sm text-center tracking-widest placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-colors"
+              className="border-input bg-card placeholder:text-muted-foreground focus:ring-ring h-11 w-full rounded-lg border px-4 text-center text-sm tracking-widest transition-colors focus:ring-2 focus:outline-none"
               {...register("code")}
               disabled={isLoading}
             />
-            {errors.code && (
-              <p className="mt-1 text-xs text-error-500">{errors.code.message}</p>
-            )}
+            {errors.code && <p className="text-error-500 mt-1 text-xs">{errors.code.message}</p>}
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium mb-1.5">
+            <label htmlFor="password" className="mb-1.5 block text-sm font-medium">
               {t("password")}
             </label>
             <div className="relative">
-              <Lock className="absolute start-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Lock className="text-muted-foreground absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2" />
               <input
                 id="password"
                 type="password"
                 placeholder="••••••••"
                 autoComplete="new-password"
-                className="w-full h-11 ps-10 pe-4 rounded-lg border border-input bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-colors"
+                className="border-input bg-card placeholder:text-muted-foreground focus:ring-ring h-11 w-full rounded-lg border ps-10 pe-4 text-sm transition-colors focus:ring-2 focus:outline-none"
                 {...register("password")}
                 disabled={isLoading}
               />
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">{t("passwordRequirements")}</p>
+            <p className="text-muted-foreground mt-1 text-xs">{t("passwordRequirements")}</p>
             {errors.password && (
-              <p className="mt-1 text-xs text-error-500">{errors.password.message}</p>
+              <p className="text-error-500 mt-1 text-xs">{errors.password.message}</p>
             )}
 
             {password && password.length > 0 && (
               <div className="mt-2.5 space-y-1.5">
                 <div className="flex gap-1">
-                  <div className={cn("h-1.5 flex-1 rounded-full", strength.level >= 1 ? "bg-error-500" : "bg-neutral-200")} />
-                  <div className={cn("h-1.5 flex-1 rounded-full", strength.level >= 2 ? "bg-amber-500" : "bg-neutral-200")} />
-                  <div className={cn("h-1.5 flex-1 rounded-full", strength.level >= 3 ? "bg-success-500" : "bg-neutral-200")} />
+                  <div
+                    className={cn(
+                      "h-1.5 flex-1 rounded-full",
+                      strength.level >= 1 ? "bg-error-500" : "bg-neutral-200",
+                    )}
+                  />
+                  <div
+                    className={cn(
+                      "h-1.5 flex-1 rounded-full",
+                      strength.level >= 2 ? "bg-amber-500" : "bg-neutral-200",
+                    )}
+                  />
+                  <div
+                    className={cn(
+                      "h-1.5 flex-1 rounded-full",
+                      strength.level >= 3 ? "bg-success-500" : "bg-neutral-200",
+                    )}
+                  />
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Strength: <span className={cn(
-                    strength.level === 3 ? "text-success-500" : strength.level === 2 ? "text-amber-500" : "text-error-500"
-                  )}>{strength.text}</span>
+                <p className="text-muted-foreground text-xs">
+                  {t("passwordStrength.label")}:{" "}
+                  <span
+                    className={cn(
+                      strength.level === 3
+                        ? "text-success-500"
+                        : strength.level === 2
+                          ? "text-amber-500"
+                          : "text-error-500",
+                    )}
+                  >
+                    {strength.text}
+                  </span>
                 </p>
               </div>
             )}
           </div>
 
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium mb-1.5">
+            <label htmlFor="confirmPassword" className="mb-1.5 block text-sm font-medium">
               {t("confirmPassword")}
             </label>
             <div className="relative">
-              <Lock className="absolute start-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Lock className="text-muted-foreground absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2" />
               <input
                 id="confirmPassword"
                 type="password"
                 placeholder="••••••••"
                 autoComplete="new-password"
-                className="w-full h-11 ps-10 pe-4 rounded-lg border border-input bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-colors"
+                className="border-input bg-card placeholder:text-muted-foreground focus:ring-ring h-11 w-full rounded-lg border ps-10 pe-4 text-sm transition-colors focus:ring-2 focus:outline-none"
                 {...register("confirmPassword")}
                 disabled={isLoading}
               />
             </div>
             {errors.confirmPassword && (
-              <p className="mt-1 text-xs text-error-500">{errors.confirmPassword.message}</p>
+              <p className="text-error-500 mt-1 text-xs">{errors.confirmPassword.message}</p>
             )}
           </div>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3 rounded-lg bg-primary text-white font-semibold text-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.97] flex items-center justify-center gap-2"
+            className="bg-primary hover:bg-primary/90 flex w-full items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold text-white transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isLoading ? (
-              <><Loader2 className="h-4 w-4 animate-spin" />{t("updatingPassword")}...</>
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {t("updatingPassword")}...
+              </>
             ) : (
-              <>{t("setPassword")}<ArrowRight className="h-4 w-4 rtl:rotate-180" /></>
+              <>
+                {t("setPassword")}
+                <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+              </>
             )}
           </button>
         </form>

@@ -131,9 +131,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-red-900">
-                    Something went wrong
-                  </h3>
+                  <h3 className="text-lg font-semibold text-red-900">Something went wrong</h3>
                   <p className="mt-2 text-sm text-red-700">
                     {this.state.error.message || "An unexpected error occurred"}
                   </p>
@@ -142,7 +140,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               <div className="flex justify-end">
                 <button
                   onClick={this.reset}
-                  className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
+                  className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:outline-none"
                 >
                   Try again
                 </button>

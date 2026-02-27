@@ -14,19 +14,9 @@ const maxWidthMap = {
   xl: "max-w-5xl",
 } as const;
 
-export function PageContainer({
-  children,
-  className,
-  maxWidth = "md",
-}: PageContainerProps) {
+export function PageContainer({ children, className, maxWidth = "md" }: PageContainerProps) {
   return (
-    <div
-      className={cn(
-        "px-4 py-6 space-y-5 mx-auto lg:px-6",
-        maxWidthMap[maxWidth],
-        className
-      )}
-    >
+    <div className={cn("mx-auto space-y-5 px-4 py-6 lg:px-6", maxWidthMap[maxWidth], className)}>
       {children}
     </div>
   );

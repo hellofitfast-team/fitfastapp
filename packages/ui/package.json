@@ -65,7 +65,11 @@
     "react-dom": ">=19"
   },
   "peerDependenciesMeta": {
-    "@sentry/nextjs": { "optional": true },
-    "next-intl": { "optional": true }
+    "@sentry/nextjs": {
+      "optional": true
+    },
+    "next-intl": {
+      "optional": true
+    }
   }
 }

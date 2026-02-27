@@ -7,15 +7,10 @@ import { Link } from "@fitfast/i18n/navigation";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
-import {
-  ArrowLeft,
-  MessageSquare,
-  Shield,
-  Send,
-  Loader2,
-} from "lucide-react";
+import { ArrowLeft, MessageSquare, Shield, Send, Loader2 } from "lucide-react";
 import { Skeleton } from "@fitfast/ui/skeleton";
 import { cn } from "@fitfast/ui/cn";
+import { useToast } from "@/hooks/use-toast";
 
 interface TicketMessage {
   sender: string;
@@ -24,7 +19,11 @@ interface TicketMessage {
 }
 
 // Group messages by calendar day
-function groupMessagesByDate(messages: TicketMessage[], locale: string, t: (key: string) => string) {
+function groupMessagesByDate(
+  messages: TicketMessage[],
+  locale: string,
+  t: (key: string) => string,
+) {
   const groups: { dateKey: string; label: string; messages: TicketMessage[] }[] = [];
   const today = new Date().toISOString().split("T")[0];
   const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
@@ -41,10 +40,10 @@ function groupMessagesByDate(messages: TicketMessage[], locale: string, t: (key:
       } else if (dateKey === yesterday) {
         label = t("chat.yesterday");
       } else {
-        label = new Date(dateKey).toLocaleDateString(
-          locale === "ar" ? "ar-u-nu-latn" : "en-US",
-          { month: "short", day: "numeric" }
-        );
+        label = new Date(dateKey).toLocaleDateString(locale === "ar" ? "ar-u-nu-latn" : "en-US", {
+          month: "short",
+          day: "numeric",
+        });
       }
       groups.push({ dateKey, label, messages: [msg] });
     }
@@ -53,10 +52,10 @@ function groupMessagesByDate(messages: TicketMessage[], locale: string, t: (key:
 }
 
 function formatTime(timestamp: number, locale: string): string {
-  return new Date(timestamp).toLocaleTimeString(
-    locale === "ar" ? "ar-u-nu-latn" : "en-US",
-    { hour: "2-digit", minute: "2-digit" }
-  );
+  return new Date(timestamp).toLocaleTimeString(locale === "ar" ? "ar-u-nu-latn" : "en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 export default function TicketDetailPage() {
@@ -72,6 +71,7 @@ export default function TicketDetailPage() {
   const replyToTicket = useMutation(api.tickets.replyToTicket);
 
   const isLoading = ticket === undefined;
+  const { toast } = useToast();
 
   const [reply, setReply] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -92,31 +92,38 @@ export default function TicketDetailPage() {
       });
       setReply("");
     } catch {
-      // silently fail -- user can retry
+      toast({ title: t("errors.replyFailed"), variant: "destructive" });
     } finally {
       setIsSending(false);
     }
   };
 
-  const toCamelCase = (str: string) =>
-    str.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
+  const toCamelCase = (str: string) => str.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
 
   const safeT = (key: string, fallback: string) => {
-    try { return t(key as any); } catch { return fallback; }
+    try {
+      return t(key as any);
+    } catch {
+      return fallback;
+    }
   };
 
   const getStatusStyle = (status: string) => {
     switch (status) {
-      case "open": return "bg-success-500/10 text-success-500";
-      case "coach_responded": return "bg-[#F59E0B]/10 text-[#F59E0B]";
-      case "closed": return "bg-neutral-100 text-muted-foreground";
-      default: return "";
+      case "open":
+        return "bg-success-500/10 text-success-500";
+      case "coach_responded":
+        return "bg-[#F59E0B]/10 text-[#F59E0B]";
+      case "closed":
+        return "bg-neutral-100 text-muted-foreground";
+      default:
+        return "";
     }
   };
 
   if (isLoading) {
     return (
-      <div className="px-4 py-6 space-y-4 max-w-3xl mx-auto lg:px-6">
+      <div className="mx-auto max-w-3xl space-y-4 px-4 py-6 lg:px-6">
         <Skeleton className="h-10 w-32 rounded-lg" />
         <Skeleton className="h-20 w-full rounded-xl" />
         <Skeleton className="h-32 w-full rounded-xl" />
@@ -126,16 +133,16 @@ export default function TicketDetailPage() {
 
   if (!ticket) {
     return (
-      <div className="px-4 py-6 space-y-6 max-w-3xl mx-auto lg:px-6">
+      <div className="mx-auto max-w-3xl space-y-6 px-4 py-6 lg:px-6">
         <Link
           href="/tickets"
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-sm font-medium transition-colors"
         >
           <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
           {t("backToTickets")}
         </Link>
-        <div className="rounded-xl border border-border bg-card p-10 text-center">
-          <MessageSquare className="h-10 w-10 mx-auto text-muted-foreground/40 mb-3" />
+        <div className="border-border bg-card rounded-xl border p-10 text-center">
+          <MessageSquare className="text-muted-foreground/40 mx-auto mb-3 h-10 w-10" />
           <p className="font-medium">{t("ticketNotFound")}</p>
         </div>
       </div>
@@ -145,38 +152,43 @@ export default function TicketDetailPage() {
   const messageGroups = groupMessagesByDate(
     ticket.messages as TicketMessage[],
     locale,
-    (key: string) => safeT(key, key)
+    (key: string) => safeT(key, key),
   );
 
   return (
-    <div className="px-4 py-6 space-y-4 max-w-3xl mx-auto lg:px-6 flex flex-col min-h-[calc(100vh-8rem)]">
+    <div className="mx-auto flex min-h-[calc(100vh-8rem)] max-w-3xl flex-col space-y-4 px-4 py-6 lg:px-6">
       {/* Back button */}
       <Link
         href="/tickets"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-sm font-medium transition-colors"
       >
         <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
         {t("backToTickets")}
       </Link>
 
       {/* Ticket header */}
-      <div className="rounded-xl border border-border bg-card p-4 shadow-card">
+      <div className="border-border bg-card shadow-card rounded-xl border p-4">
         <div className="flex items-start justify-between gap-3">
           <div>
             <h1 className="text-lg font-semibold">{ticket.subject}</h1>
-            <div className="flex flex-wrap items-center gap-2 mt-1">
+            <div className="mt-1 flex flex-wrap items-center gap-2">
               {ticket.category && (
-                <span className="text-xs text-muted-foreground">
+                <span className="text-muted-foreground text-xs">
                   {safeT(`categories.${toCamelCase(ticket.category)}`, ticket.category)}
                 </span>
               )}
             </div>
           </div>
-          <span className={cn(
-            "shrink-0 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-            getStatusStyle(ticket.status)
-          )}>
-            {safeT(`status.${ticket.status === "coach_responded" ? "coachResponded" : ticket.status}`, ticket.status)}
+          <span
+            className={cn(
+              "inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+              getStatusStyle(ticket.status),
+            )}
+          >
+            {safeT(
+              `status.${ticket.status === "coach_responded" ? "coachResponded" : ticket.status}`,
+              ticket.status,
+            )}
           </span>
         </div>
       </div>
@@ -186,12 +198,12 @@ export default function TicketDetailPage() {
         {messageGroups.map((group) => (
           <div key={group.dateKey}>
             {/* Date separator */}
-            <div className="flex items-center gap-3 my-4">
-              <div className="flex-1 h-px bg-border" />
-              <span className="text-xs text-muted-foreground font-medium px-2 py-1 bg-neutral-100 rounded-full">
+            <div className="my-4 flex items-center gap-3">
+              <div className="bg-border h-px flex-1" />
+              <span className="text-muted-foreground rounded-full bg-neutral-100 px-2 py-1 text-xs font-medium">
                 {group.label}
               </span>
-              <div className="flex-1 h-px bg-border" />
+              <div className="bg-border h-px flex-1" />
             </div>
 
             {/* Messages */}
@@ -203,18 +215,22 @@ export default function TicketDetailPage() {
                 return (
                   <div
                     key={`${group.dateKey}-${i}`}
-                    className="flex items-end gap-2 justify-start mb-2 animate-slide-up"
+                    className="animate-slide-up mb-2 flex items-end justify-start gap-2"
                     style={{ animationDelay: `${i * 30}ms` }}
                   >
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-neutral-200 mb-1">
-                      <Shield className="h-3.5 w-3.5 text-muted-foreground" />
+                    <div className="mb-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-neutral-200">
+                      <Shield className="text-muted-foreground h-3.5 w-3.5" />
                     </div>
-                    <div className={cn(
-                      "max-w-[75%] rounded-2xl bg-neutral-100 text-foreground px-4 py-2.5 shadow-sm",
-                      isRtl ? "rounded-br-sm" : "rounded-bl-sm"
-                    )}>
+                    <div
+                      className={cn(
+                        "text-foreground max-w-[75%] rounded-2xl bg-neutral-100 px-4 py-2.5 shadow-sm",
+                        isRtl ? "rounded-br-sm" : "rounded-bl-sm",
+                      )}
+                    >
                       <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.message}</p>
-                      <p className="text-[10px] text-muted-foreground mt-1">{formatTime(msg.timestamp, locale)}</p>
+                      <p className="text-muted-foreground mt-1 text-[10px]">
+                        {formatTime(msg.timestamp, locale)}
+                      </p>
                     </div>
                   </div>
                 );
@@ -224,15 +240,19 @@ export default function TicketDetailPage() {
               return (
                 <div
                   key={`${group.dateKey}-${i}`}
-                  className="flex items-end gap-2 justify-end mb-2 animate-slide-up"
+                  className="animate-slide-up mb-2 flex items-end justify-end gap-2"
                   style={{ animationDelay: `${i * 30}ms` }}
                 >
-                  <div className={cn(
-                    "max-w-[75%] rounded-2xl bg-primary text-primary-foreground px-4 py-2.5 shadow-sm",
-                    isRtl ? "rounded-bl-sm" : "rounded-br-sm"
-                  )}>
+                  <div
+                    className={cn(
+                      "bg-primary text-primary-foreground max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm",
+                      isRtl ? "rounded-bl-sm" : "rounded-br-sm",
+                    )}
+                  >
                     <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.message}</p>
-                    <p className="text-[10px] text-primary-foreground/70 mt-1">{formatTime(msg.timestamp, locale)}</p>
+                    <p className="text-primary-foreground/70 mt-1 text-[10px]">
+                      {formatTime(msg.timestamp, locale)}
+                    </p>
                   </div>
                 </div>
               );
@@ -244,13 +264,13 @@ export default function TicketDetailPage() {
 
       {/* Reply area */}
       {ticket.status !== "closed" ? (
-        <div className="sticky bottom-0 bg-background border-t border-border p-3 -mx-4 lg:-mx-6 px-4 lg:px-6 flex gap-2">
+        <div className="bg-background border-border sticky bottom-0 -mx-4 flex gap-2 border-t p-3 px-4 lg:-mx-6 lg:px-6">
           <textarea
             value={reply}
             onChange={(e) => setReply(e.target.value)}
             placeholder={t("replyPlaceholder")}
             rows={1}
-            className="flex-1 rounded-xl border border-border bg-card px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-colors resize-none"
+            className="border-border bg-card placeholder:text-muted-foreground focus:ring-ring flex-1 resize-none rounded-xl border px-3 py-2 text-sm transition-colors focus:ring-2 focus:outline-none"
             disabled={isSending}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
@@ -262,7 +282,7 @@ export default function TicketDetailPage() {
           <button
             onClick={handleSendReply}
             disabled={isSending || !reply.trim()}
-            className="h-10 w-10 shrink-0 rounded-full bg-primary text-primary-foreground flex items-center justify-center active:scale-[0.97] disabled:opacity-50 transition-all"
+            className="bg-primary text-primary-foreground flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-all active:scale-[0.97] disabled:opacity-50"
           >
             {isSending ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -272,8 +292,8 @@ export default function TicketDetailPage() {
           </button>
         </div>
       ) : (
-        <div className="rounded-lg bg-neutral-50 border border-border p-3 text-center">
-          <p className="text-sm text-muted-foreground">{t("ticketClosed")}</p>
+        <div className="border-border rounded-lg border bg-neutral-50 p-3 text-center">
+          <p className="text-muted-foreground text-sm">{t("ticketClosed")}</p>
         </div>
       )}
     </div>

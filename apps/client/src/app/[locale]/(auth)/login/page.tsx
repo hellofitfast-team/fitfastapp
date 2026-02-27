@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
@@ -12,15 +12,20 @@ import { useConvexAuth, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Mail, Lock, ArrowRight, Zap, Loader2 } from "lucide-react";
 
-const loginSchema = z.object({
-  email: z.string().email("Please enter a valid email"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-});
+type LoginFormData = {
+  email: string;
+  password: string;
+};
 
-type LoginFormData = z.infer<typeof loginSchema>;
+const ALLOWED_MESSAGES = new Set(["session_expired", "account_pending", "password_changed"]);
 
 export default function LoginPage() {
   const t = useTranslations("auth");
+
+  const loginSchema = z.object({
+    email: z.string().email(t("validEmail")),
+    password: z.string().min(6, t("passwordMinLength")),
+  });
   const router = useRouter();
   const searchParams = useSearchParams();
   const { signIn, signOut } = useAuthActions();
@@ -28,14 +33,18 @@ export default function LoginPage() {
   const profile = useQuery(api.profiles.getMyProfile, isAuthenticated ? {} : "skip");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Tracks whether we're actively signing out a stale session to prevent redirect loops
+  const isSigningOut = useRef(false);
 
   // If user is already signed in, check role then redirect
   useEffect(() => {
-    if (!isAuthenticated || profile === undefined) return; // still loading
+    if (!isAuthenticated || profile === undefined || isSigningOut.current) return;
 
     if (profile?.isCoach) {
-      // Coach trying to use client app — sign them out and show error
+      // Coach session on client app (shared cookie collision) — auto-clear it
+      isSigningOut.current = true;
       signOut().then(() => {
+        isSigningOut.current = false;
         setError(t("coachAccountError"));
       });
       return;
@@ -47,15 +56,30 @@ export default function LoginPage() {
     }
   }, [isAuthenticated, profile, router, signOut, t]);
 
+  // Auto-clear stale coach session when redirected with coach_not_allowed
   useEffect(() => {
     const errorParam = searchParams.get("error");
+    if (
+      (errorParam === "coach_account" || errorParam === "coach_not_allowed") &&
+      isAuthenticated &&
+      !isSigningOut.current
+    ) {
+      // Stale coach session still in cookie — sign out to clear it
+      isSigningOut.current = true;
+      signOut().then(() => {
+        isSigningOut.current = false;
+        setError(t("coachAccountError"));
+      });
+      return;
+    }
+
     const messageParam = searchParams.get("message");
     if (errorParam === "coach_account" || errorParam === "coach_not_allowed") {
       setError(t("coachAccountError"));
-    } else if (messageParam) {
-      setError(messageParam);
+    } else if (messageParam && ALLOWED_MESSAGES.has(messageParam)) {
+      setError(t(`loginMessages.${messageParam}`));
     }
-  }, [searchParams, t]);
+  }, [searchParams, t, isAuthenticated, signOut]);
 
   const {
     register,
@@ -77,88 +101,89 @@ export default function LoginPage() {
 
       await signIn("password", formData);
       router.replace("/");
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Invalid email or password";
-      setError(message);
+    } catch {
+      // Never expose raw server errors — always show friendly message
+      setError(t("invalidCredentials"));
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden animate-fade-in">
+    <div className="border-border bg-card animate-fade-in overflow-hidden rounded-2xl border shadow-sm">
       {/* Header */}
-      <div className="p-6 text-center border-b border-border">
-        <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 mb-3">
-          <span className="text-xl font-bold text-primary">FF</span>
-        </div>
+      <div className="border-border border-b p-6 text-center">
         <h1 className="text-2xl font-bold">{t("signIn")}</h1>
-        <p className="text-sm text-muted-foreground mt-1">{t("signInDescription")}</p>
+        <p className="text-muted-foreground mt-1 text-sm">{t("signInDescription")}</p>
       </div>
 
       {/* Form */}
       <div className="p-6">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {error && (
-            <div className="rounded-lg bg-error-500/10 border border-error-500/20 p-3">
-              <p className="text-sm text-error-500">{error}</p>
+            <div className="bg-error-500/10 border-error-500/20 rounded-lg border p-3">
+              <p className="text-error-500 text-sm">{error}</p>
             </div>
           )}
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-1.5">
+            <label htmlFor="email" className="mb-1.5 block text-sm font-medium">
               {t("email")}
             </label>
             <div className="relative">
-              <Mail className="absolute start-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Mail className="text-muted-foreground absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2" />
               <input
                 id="email"
                 type="email"
                 placeholder="you@example.com"
-                className="w-full h-11 ps-10 pe-4 rounded-lg border border-input bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-colors"
+                className="border-input bg-card placeholder:text-muted-foreground focus:ring-ring h-11 w-full rounded-lg border ps-10 pe-4 text-sm transition-colors focus:ring-2 focus:outline-none"
                 {...register("email")}
                 disabled={isLoading}
               />
             </div>
-            {errors.email && (
-              <p className="mt-1 text-xs text-error-500">{errors.email.message}</p>
-            )}
+            {errors.email && <p className="text-error-500 mt-1 text-xs">{errors.email.message}</p>}
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-1.5">
+            <div className="mb-1.5 flex items-center justify-between">
               <label htmlFor="password" className="block text-sm font-medium">
                 {t("password")}
               </label>
-              <Link href="/magic-link" className="text-xs text-primary hover:underline">
+              <Link href="/magic-link" className="text-primary text-xs hover:underline">
                 {t("forgotPassword")}
               </Link>
             </div>
             <div className="relative">
-              <Lock className="absolute start-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Lock className="text-muted-foreground absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2" />
               <input
                 id="password"
                 type="password"
                 placeholder="••••••••"
-                className="w-full h-11 ps-10 pe-4 rounded-lg border border-input bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-colors"
+                className="border-input bg-card placeholder:text-muted-foreground focus:ring-ring h-11 w-full rounded-lg border ps-10 pe-4 text-sm transition-colors focus:ring-2 focus:outline-none"
                 {...register("password")}
                 disabled={isLoading}
               />
             </div>
             {errors.password && (
-              <p className="mt-1 text-xs text-error-500">{errors.password.message}</p>
+              <p className="text-error-500 mt-1 text-xs">{errors.password.message}</p>
             )}
           </div>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3 rounded-lg bg-primary text-white font-semibold text-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.97] flex items-center justify-center gap-2"
+            className="bg-primary hover:bg-primary/90 flex w-full items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold text-white transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isLoading ? (
-              <><Loader2 className="h-4 w-4 animate-spin" />{t("signingIn")}...</>
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {t("signingIn")}...
+              </>
             ) : (
-              <>{t("signIn")}<ArrowRight className="h-4 w-4 rtl:rotate-180" /></>
+              <>
+                {t("signIn")}
+                <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+              </>
             )}
           </button>
         </form>
@@ -166,16 +191,16 @@ export default function LoginPage() {
         {/* Divider */}
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-border" />
+            <div className="border-border w-full border-t" />
           </div>
           <div className="relative flex justify-center">
-            <span className="bg-card px-3 text-xs text-muted-foreground">{t("or")}</span>
+            <span className="bg-card text-muted-foreground px-3 text-xs">{t("or")}</span>
           </div>
         </div>
 
         {/* Magic Link / Forgot Password */}
         <Link href="/magic-link" className="block">
-          <button className="w-full py-3 rounded-lg border border-border text-sm font-medium hover:bg-neutral-50 transition-colors flex items-center justify-center gap-2">
+          <button className="border-border flex w-full items-center justify-center gap-2 rounded-lg border py-3 text-sm font-medium transition-colors hover:bg-neutral-50">
             <Zap className="h-4 w-4" />
             {t("magicLink")}
           </button>

@@ -31,10 +31,7 @@ function chunkText(text: string): string[] {
 export const embedEntry = internalAction({
   args: { entryId: v.id("coachKnowledge") },
   handler: async (ctx, { entryId }): Promise<void> => {
-    const entry = await ctx.runQuery(
-      internal.knowledgeBase.getEntryInternal,
-      { entryId },
-    );
+    const entry = await ctx.runQuery(internal.knowledgeBase.getEntryInternal, { entryId });
     if (!entry?.content) return;
 
     const rag = getRagClient();
@@ -68,7 +65,8 @@ export const processPdfUpload = internalAction({
 
     const buffer = Buffer.from(await blob.arrayBuffer());
     const pdfParseModule = await import("pdf-parse");
-    const pdfParse = typeof pdfParseModule === "function" ? pdfParseModule : (pdfParseModule as any).default;
+    const pdfParse =
+      typeof pdfParseModule === "function" ? pdfParseModule : (pdfParseModule as any).default;
     const pdf = await pdfParse(buffer);
     const text = pdf.text.trim();
 
@@ -124,9 +122,7 @@ export const searchKnowledge = internalAction({
         filters,
       });
 
-      return result.results.map((r) =>
-        r.content.map((c) => c.text).join("\n"),
-      );
+      return result.results.map((r) => r.content.map((c) => c.text).join("\n"));
     } catch {
       // RAG namespace may not exist yet (no entries added)
       return [];
@@ -152,10 +148,11 @@ export const processPdfUploadPublic = action({
     if (!profile?.isCoach) throw new Error("Not authorized — coach only");
 
     // Insert knowledge entry
-    const entryId = await ctx.runMutation(
-      internal.knowledgeBase.insertPdfEntry,
-      { title, storageId, tags },
-    );
+    const entryId = await ctx.runMutation(internal.knowledgeBase.insertPdfEntry, {
+      title,
+      storageId,
+      tags,
+    });
 
     // Process PDF in background
     await ctx.scheduler.runAfter(0, internal.knowledgeBaseActions.processPdfUpload, {

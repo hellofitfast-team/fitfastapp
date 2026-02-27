@@ -9,26 +9,16 @@ export interface FormFieldProps {
   className?: string;
 }
 
-export function FormField({
-  label,
-  error,
-  optional,
-  children,
-  className,
-}: FormFieldProps) {
+export function FormField({ label, error, optional, children, className }: FormFieldProps) {
   return (
     <div className={cn("space-y-1.5", className)}>
       <label className="block text-sm font-medium">
         {label}
-        {optional && (
-          <span className="text-muted-foreground font-normal ms-1">
-            (optional)
-          </span>
-        )}
+        {optional && <span className="text-muted-foreground ms-1 font-normal">(optional)</span>}
       </label>
       {children}
       {error && (
-        <p className="text-xs text-error-500" role="alert">
+        <p className="text-error-500 text-xs" role="alert">
           {error}
         </p>
       )}

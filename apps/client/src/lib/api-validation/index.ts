@@ -1,6 +1,6 @@
-import * as Sentry from '@sentry/nextjs';
-import { NextResponse } from 'next/server';
-import { z } from 'zod';
+import * as Sentry from "@sentry/nextjs";
+import { NextResponse } from "next/server";
+import { z } from "zod";
 
 /**
  * Validates request body against a Zod schema.
@@ -14,17 +14,17 @@ import { z } from 'zod';
 export function validateRequestBody<T extends z.ZodTypeAny>(
   body: unknown,
   schema: T,
-  context: { userId?: string; feature: string }
+  context: { userId?: string; feature: string },
 ): { success: true; data: z.infer<T> } | { success: false; response: NextResponse } {
   const result = schema.safeParse(body);
 
   if (!result.success) {
     // Log validation failure to Sentry
-    Sentry.captureException(new Error('Request validation failed'), {
-      level: 'warning',
+    Sentry.captureException(new Error("Request validation failed"), {
+      level: "warning",
       tags: {
         feature: context.feature,
-        validation: 'request-body',
+        validation: "request-body",
       },
       extra: {
         userId: context.userId,
@@ -38,13 +38,13 @@ export function validateRequestBody<T extends z.ZodTypeAny>(
       success: false,
       response: NextResponse.json(
         {
-          error: 'Invalid request',
+          error: "Invalid request",
           details: result.error.issues.map((e) => ({
-            field: e.path.join('.'),
+            field: e.path.join("."),
             message: e.message,
           })),
         },
-        { status: 400 }
+        { status: 400 },
       ),
     };
   }
@@ -56,8 +56,7 @@ export function validateRequestBody<T extends z.ZodTypeAny>(
 }
 
 // Barrel exports for all schema files
-export * from './plans';
-export * from './tickets';
-export * from './admin';
-export * from './notifications';
-
+export * from "./plans";
+export * from "./tickets";
+export * from "./admin";
+export * from "./notifications";

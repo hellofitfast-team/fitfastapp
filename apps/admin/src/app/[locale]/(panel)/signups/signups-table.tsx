@@ -64,7 +64,7 @@ function PaymentScreenshot({ storageId }: { storageId: Id<"_storage"> }) {
     return (
       <div className="flex w-64 shrink-0 items-center justify-center rounded-lg border border-dashed border-stone-200 p-8">
         <div className="text-center">
-          <ImageIcon className="h-8 w-8 mx-auto text-stone-300 mb-2" />
+          <ImageIcon className="mx-auto mb-2 h-8 w-8 text-stone-300" />
           <p className="text-xs text-stone-400">Image unavailable</p>
         </div>
       </div>
@@ -76,13 +76,13 @@ function PaymentScreenshot({ storageId }: { storageId: Id<"_storage"> }) {
       <button
         type="button"
         onClick={() => setIsZoomed(true)}
-        className="w-64 shrink-0 overflow-hidden rounded-lg border border-stone-200 hover:border-primary/40 transition-colors cursor-zoom-in"
+        className="hover:border-primary/40 w-64 shrink-0 cursor-zoom-in overflow-hidden rounded-lg border border-stone-200 transition-colors"
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={url}
           alt="Payment screenshot"
-          className="w-full h-48 object-contain bg-stone-50"
+          className="h-48 w-full bg-stone-50 object-contain"
         />
       </button>
 
@@ -93,15 +93,15 @@ function PaymentScreenshot({ storageId }: { storageId: Id<"_storage"> }) {
         >
           <button
             onClick={() => setIsZoomed(false)}
-            className="absolute top-4 end-4 w-9 h-9 rounded-full bg-white/20 text-white flex items-center justify-center hover:bg-white/40 transition-colors"
+            className="absolute end-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-white transition-colors hover:bg-white/40"
           >
-            <X className="w-5 h-5" />
+            <X className="h-5 w-5" />
           </button>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={url}
             alt="Payment screenshot full size"
-            className="max-w-full max-h-full object-contain rounded-lg"
+            className="max-h-full max-w-full rounded-lg object-contain"
             onClick={(e) => e.stopPropagation()}
           />
         </div>
@@ -178,32 +178,30 @@ export function SignupsTable() {
   if (signups.length === 0) {
     return (
       <div className="rounded-xl border border-stone-200 bg-white p-12 text-center">
-        <UserPlus className="h-12 w-12 mx-auto text-stone-300 mb-4" />
-        <p className="font-medium text-stone-500">
-          {t("noResults")}
-        </p>
+        <UserPlus className="mx-auto mb-4 h-12 w-12 text-stone-300" />
+        <p className="font-medium text-stone-500">{t("noResults")}</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border border-stone-200 bg-white overflow-hidden">
+    <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
       <table className="w-full">
         <thead>
           <tr className="border-b border-stone-100 bg-stone-50/50">
-            <th className="px-4 py-3 text-start text-xs font-medium text-stone-500 uppercase tracking-wide">
+            <th className="px-4 py-3 text-start text-xs font-medium tracking-wide text-stone-500 uppercase">
               {t("client")}
             </th>
-            <th className="px-4 py-3 text-start text-xs font-medium text-stone-500 uppercase tracking-wide">
+            <th className="px-4 py-3 text-start text-xs font-medium tracking-wide text-stone-500 uppercase">
               {t("plan")}
             </th>
-            <th className="px-4 py-3 text-start text-xs font-medium text-stone-500 uppercase tracking-wide">
+            <th className="px-4 py-3 text-start text-xs font-medium tracking-wide text-stone-500 uppercase">
               {t("status")}
             </th>
-            <th className="px-4 py-3 text-start text-xs font-medium text-stone-500 uppercase tracking-wide">
+            <th className="px-4 py-3 text-start text-xs font-medium tracking-wide text-stone-500 uppercase">
               {t("date")}
             </th>
-            <th className="px-4 py-3 text-end text-xs font-medium text-stone-500 uppercase tracking-wide">
+            <th className="px-4 py-3 text-end text-xs font-medium tracking-wide text-stone-500 uppercase">
               {t("actions")}
             </th>
           </tr>
@@ -214,39 +212,27 @@ export function SignupsTable() {
             const isRejecting = rejectingId === signup._id;
             const ocrData = signup.ocrExtractedData as OcrData | null;
             const ocrEntries = ocrData
-              ? Object.entries(ocrData).filter(
-                  ([, v]) => v !== null && v !== undefined && v !== ""
-                )
+              ? Object.entries(ocrData).filter(([, v]) => v !== null && v !== undefined && v !== "")
               : [];
 
             return (
               <tr
                 key={signup._id}
-                className="border-b border-stone-100 last:border-0 hover:bg-stone-50/50 transition-colors"
+                className="border-b border-stone-100 transition-colors last:border-0 hover:bg-stone-50/50"
               >
                 <td colSpan={5} className="p-0">
                   <div className="grid grid-cols-[1fr_auto_auto_auto_auto] items-center">
                     {/* Client */}
                     <div className="px-4 py-4">
-                      <p className="font-medium text-sm text-stone-900">
-                        {signup.fullName}
-                      </p>
-                      <p className="text-xs text-stone-500">
-                        {signup.email}
-                      </p>
-                      {signup.phone && (
-                        <p className="text-xs text-stone-400">
-                          {signup.phone}
-                        </p>
-                      )}
+                      <p className="text-sm font-medium text-stone-900">{signup.fullName}</p>
+                      <p className="text-xs text-stone-500">{signup.email}</p>
+                      {signup.phone && <p className="text-xs text-stone-400">{signup.phone}</p>}
                     </div>
 
                     {/* Plan */}
                     <div className="px-4 py-4">
-                      <span className="text-xs font-semibold text-primary">
-                        {signup.planTier
-                          ? tierLabels[signup.planTier] || signup.planTier
-                          : "---"}
+                      <span className="text-primary text-xs font-semibold">
+                        {signup.planTier ? tierLabels[signup.planTier] || signup.planTier : "---"}
                       </span>
                     </div>
 
@@ -257,15 +243,9 @@ export function SignupsTable() {
                           statusStyles[signup.status] ?? ""
                         }`}
                       >
-                        {signup.status === "pending" && (
-                          <Clock className="h-3 w-3" />
-                        )}
-                        {signup.status === "approved" && (
-                          <Check className="h-3 w-3" />
-                        )}
-                        {signup.status === "rejected" && (
-                          <X className="h-3 w-3" />
-                        )}
+                        {signup.status === "pending" && <Clock className="h-3 w-3" />}
+                        {signup.status === "approved" && <Check className="h-3 w-3" />}
+                        {signup.status === "rejected" && <X className="h-3 w-3" />}
                         {signup.status}
                       </span>
                     </div>
@@ -281,7 +261,7 @@ export function SignupsTable() {
                         {/* View Details */}
                         <Link
                           href={`/signups/${signup._id}`}
-                          className="flex min-h-11 items-center gap-1.5 rounded-lg border border-stone-200 px-2.5 text-xs font-medium text-stone-500 hover:border-stone-300 hover:text-stone-700 transition-colors"
+                          className="flex min-h-11 items-center gap-1.5 rounded-lg border border-stone-200 px-2.5 text-xs font-medium text-stone-500 transition-colors hover:border-stone-300 hover:text-stone-700"
                         >
                           <ExternalLink className="h-3.5 w-3.5" />
                           {t("viewDetails")}
@@ -289,9 +269,7 @@ export function SignupsTable() {
 
                         {/* Payment toggle */}
                         <button
-                          onClick={() =>
-                            setExpandedId(isExpanded ? null : signup._id)
-                          }
+                          onClick={() => setExpandedId(isExpanded ? null : signup._id)}
                           className={`flex min-h-11 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition-colors ${
                             isExpanded
                               ? "border-primary/30 bg-primary/10 text-primary"
@@ -312,7 +290,7 @@ export function SignupsTable() {
                             <button
                               onClick={() => handleApprove(signup._id)}
                               disabled={actionId === signup._id}
-                              className="flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100 transition-colors disabled:opacity-50"
+                              className="flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 transition-colors hover:bg-emerald-100 disabled:opacity-50"
                             >
                               <Check className="h-3 w-3" />
                               {t("approve")}
@@ -320,7 +298,7 @@ export function SignupsTable() {
                             <button
                               onClick={() => handleRejectClick(signup._id)}
                               disabled={actionId === signup._id}
-                              className="flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100 transition-colors disabled:opacity-50"
+                              className="flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-100 disabled:opacity-50"
                             >
                               <X className="h-3 w-3" />
                               {t("reject")}
@@ -334,7 +312,7 @@ export function SignupsTable() {
                   {/* Inline rejection reason input */}
                   {isRejecting && (
                     <div className="border-t border-stone-100 bg-red-50/30 p-4">
-                      <p className="text-xs font-medium text-stone-600 mb-2">
+                      <p className="mb-2 text-xs font-medium text-stone-600">
                         {t("rejectionReasonLabel")}
                       </p>
                       <div className="flex items-start gap-3">
@@ -343,14 +321,14 @@ export function SignupsTable() {
                           onChange={(e) => setRejectionReason(e.target.value)}
                           placeholder={t("rejectionReasonPlaceholder")}
                           rows={2}
-                          className="flex-1 rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
+                          className="focus:ring-primary/20 focus:border-primary flex-1 resize-none rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-900 transition-all placeholder:text-stone-400 focus:ring-2 focus:outline-none"
                           autoFocus
                         />
-                        <div className="flex flex-col gap-2 shrink-0">
+                        <div className="flex shrink-0 flex-col gap-2">
                           <button
                             onClick={() => handleRejectSubmit(signup._id)}
                             disabled={actionId === signup._id || !rejectionReason.trim()}
-                            className="flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100 transition-colors disabled:opacity-50"
+                            className="flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-100 disabled:opacity-50"
                           >
                             <X className="h-3 w-3" />
                             {t("confirmReject")}
@@ -358,7 +336,7 @@ export function SignupsTable() {
                           <button
                             onClick={handleRejectCancel}
                             disabled={actionId === signup._id}
-                            className="flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 transition-colors disabled:opacity-50"
+                            className="flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-50 disabled:opacity-50"
                           >
                             {t("cancelReject")}
                           </button>
@@ -376,10 +354,8 @@ export function SignupsTable() {
                         ) : (
                           <div className="flex w-64 shrink-0 items-center justify-center rounded-lg border border-dashed border-stone-200 p-8">
                             <div className="text-center">
-                              <ImageIcon className="h-8 w-8 mx-auto text-stone-300 mb-2" />
-                              <p className="text-xs text-stone-400">
-                                {t("noScreenshot")}
-                              </p>
+                              <ImageIcon className="mx-auto mb-2 h-8 w-8 text-stone-300" />
+                              <p className="text-xs text-stone-400">{t("noScreenshot")}</p>
                             </div>
                           </div>
                         )}
@@ -387,7 +363,7 @@ export function SignupsTable() {
                         {/* OCR extracted data */}
                         {ocrEntries.length > 0 && (
                           <div className="flex-1">
-                            <p className="text-[10px] font-medium uppercase tracking-wide text-stone-400 mb-2">
+                            <p className="mb-2 text-[10px] font-medium tracking-wide text-stone-400 uppercase">
                               {t("extractedPaymentData")}
                             </p>
                             <div className="space-y-2">
@@ -396,12 +372,10 @@ export function SignupsTable() {
                                   key={key}
                                   className="flex items-baseline gap-3 border-b border-stone-100 pb-2"
                                 >
-                                  <span className="shrink-0 text-[10px] font-medium uppercase tracking-wide text-primary w-16">
+                                  <span className="text-primary w-16 shrink-0 text-[10px] font-medium tracking-wide uppercase">
                                     {ocrFieldLabels[key] || key}
                                   </span>
-                                  <span className="text-sm text-stone-900">
-                                    {String(value)}
-                                  </span>
+                                  <span className="text-sm text-stone-900">{String(value)}</span>
                                 </div>
                               ))}
                             </div>
@@ -409,11 +383,9 @@ export function SignupsTable() {
                         )}
 
                         {ocrEntries.length === 0 && (
-                          <div className="flex-1 flex items-center">
+                          <div className="flex flex-1 items-center">
                             <p className="text-xs text-stone-400">
-                              {signup.paymentScreenshotId
-                                ? t("noOcrData")
-                                : t("noPaymentProof")}
+                              {signup.paymentScreenshotId ? t("noOcrData") : t("noPaymentProof")}
                             </p>
                           </div>
                         )}

@@ -25,9 +25,7 @@ export function StepProgress({ currentStep, steps }: StepProgressProps) {
           <p
             key={step.id}
             className={`flex-1 text-center text-[10px] font-medium ${
-              currentStep >= step.id
-                ? "text-foreground"
-                : "text-muted-foreground"
+              currentStep >= step.id ? "text-foreground" : "text-muted-foreground"
             }`}
           >
             {step.name}

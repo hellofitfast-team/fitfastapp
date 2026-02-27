@@ -37,6 +37,7 @@ metrics:
 Created a centralized query layer in `src/lib/supabase/queries/` with five typed query functions that eliminate code duplication across the meal and workout plan API routes. All queries now have consistent error handling with Sentry logging (feature tags + userId context) and throw descriptive AppError codes.
 
 **Query functions:**
+
 - `getProfileById` - Fetches profile by userId, throws PROFILE_NOT_FOUND
 - `getAssessmentByUserId` - Fetches assessment by userId, throws ASSESSMENT_NOT_FOUND
 - `getCheckInById` - Fetches check-in by id, returns null on failure (non-critical)
@@ -44,6 +45,7 @@ Created a centralized query layer in `src/lib/supabase/queries/` with five typed
 - `saveWorkoutPlan` - Saves workout plan to DB, throws WORKOUT_PLAN_SAVE_FAILED
 
 **API route refactoring:**
+
 - Replaced all inline `.from()` queries with extracted query functions
 - Replaced `console.error` with `Sentry.captureException` with userId/action/timestamp context
 - Added Sentry logging to OneSignal notification failures (not silently swallowed)
@@ -56,15 +58,18 @@ None - plan executed exactly as written.
 ## Technical Notes
 
 **Supabase Type Workarounds Applied:**
+
 - Used `as never` cast on insert payloads in `saveMealPlan` and `saveWorkoutPlan` per MEMORY.md pattern
 - Used `.single<Type>()` on query results for proper type inference
 
 **Error Handling Pattern:**
+
 - Query functions throw AppError with descriptive codes (PROFILE_NOT_FOUND, etc.)
 - All errors logged to Sentry with feature tags and context (userId, errorCode)
 - Check-in queries return null instead of throwing (non-critical for plan generation)
 
 **Sentry Integration:**
+
 - All query functions log to Sentry with feature tags: `profile-query`, `assessment-query`, `check-in-query`, `meal-plan-save`, `workout-plan-save`
 - API route catch blocks log to Sentry with feature tags: `meal-plan-generation`, `workout-plan-generation`
 - Notification failures logged at warning level with `notification` feature tag
@@ -72,6 +77,7 @@ None - plan executed exactly as written.
 ## Verification Results
 
 All verification checks passed:
+
 - TypeScript compilation: Zero new errors (only pre-existing .next/types error)
 - Query extraction: Both routes use `getProfileById`, `getAssessmentByUserId`, `getCheckInById`
 - No inline queries: Zero `.from("profiles")` or `.from("initial_assessments")` in route files
@@ -81,6 +87,7 @@ All verification checks passed:
 ## Self-Check: PASSED
 
 **Created files verified:**
+
 ```bash
 ✓ src/lib/supabase/queries/profiles.ts
 ✓ src/lib/supabase/queries/assessments.ts
@@ -90,12 +97,14 @@ All verification checks passed:
 ```
 
 **Commits verified:**
+
 ```bash
 ✓ 3713d62: feat(04-02): create extracted Supabase query functions
 ✓ f7e3d77: refactor(04-02): update plan API routes to use extracted queries and Sentry
 ```
 
 **Pattern verification:**
+
 ```bash
 ✓ AppError imports present in all query files
 ✓ Sentry.captureException present in all query files and API routes

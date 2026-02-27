@@ -1,10 +1,7 @@
 import * as React from "react";
 import { cn } from "./cn";
 
-export function Skeleton({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+export function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       role="status"
@@ -25,10 +22,7 @@ export function SkeletonText({
       {Array.from({ length: lines }).map((_, i) => (
         <div
           key={i}
-          className={cn(
-            "h-4 animate-pulse rounded-md bg-neutral-200",
-            i === lines - 1 && "w-3/4"
-          )}
+          className={cn("h-4 animate-pulse rounded-md bg-neutral-200", i === lines - 1 && "w-3/4")}
         />
       ))}
     </div>
@@ -51,15 +45,12 @@ export function SkeletonCircle({
   );
 }
 
-export function SkeletonCard({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+export function SkeletonCard({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       role="status"
       aria-label="Loading"
-      className={cn("rounded-xl border border-border p-5 space-y-3", className)}
+      className={cn("border-border space-y-3 rounded-xl border p-5", className)}
       {...props}
     >
       <div className="h-4 w-2/3 animate-pulse rounded-md bg-neutral-200" />
@@ -77,7 +68,7 @@ export function SkeletonWidgetCard({ className, ...props }: React.HTMLAttributes
     <div
       role="status"
       aria-label="Loading"
-      className={cn("rounded-xl border border-border bg-card p-4", className)}
+      className={cn("border-border bg-card rounded-xl border p-4", className)}
       {...props}
     >
       <div className="flex items-start justify-between">
@@ -98,7 +89,7 @@ export function SkeletonMealCard({ className, ...props }: React.HTMLAttributes<H
     <div
       role="status"
       aria-label="Loading"
-      className={cn("rounded-xl border border-border bg-card p-4", className)}
+      className={cn("border-border bg-card rounded-xl border p-4", className)}
       {...props}
     >
       <div className="flex items-center gap-3">
@@ -119,7 +110,7 @@ export function SkeletonWorkoutCard({ className, ...props }: React.HTMLAttribute
     <div
       role="status"
       aria-label="Loading"
-      className={cn("rounded-xl border border-border bg-card space-y-3 p-4", className)}
+      className={cn("border-border bg-card space-y-3 rounded-xl border p-4", className)}
       {...props}
     >
       <div className="flex items-center gap-3">
@@ -144,7 +135,7 @@ export function SkeletonTicketItem({ className, ...props }: React.HTMLAttributes
     <div
       role="status"
       aria-label="Loading"
-      className={cn("rounded-xl border border-border bg-card p-4", className)}
+      className={cn("border-border bg-card rounded-xl border p-4", className)}
       {...props}
     >
       <div className="flex items-center gap-3">

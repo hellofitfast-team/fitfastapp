@@ -42,26 +42,16 @@ export function SaveButton({
     <button
       onClick={handleClick}
       disabled={state === "saving"}
-      className={`flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium transition-all duration-300 disabled:opacity-70 shadow-md ${
+      className={`flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium shadow-md transition-all duration-300 disabled:opacity-70 ${
         isSuccess
           ? "bg-emerald-500 text-white shadow-emerald-200"
           : isError
             ? "bg-red-500 text-white shadow-red-200"
-            : "bg-primary text-white hover:bg-primary/90 shadow-primary/20"
+            : "bg-primary hover:bg-primary/90 shadow-primary/20 text-white"
       }`}
     >
-      {isSuccess ? (
-        <Check className="h-4 w-4" />
-      ) : (
-        <Save className="h-4 w-4" />
-      )}
-      {state === "saving"
-        ? savingLabel
-        : isSuccess
-          ? savedLabel
-          : isError
-            ? errorLabel
-            : label}
+      {isSuccess ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
+      {state === "saving" ? savingLabel : isSuccess ? savedLabel : isError ? errorLabel : label}
     </button>
   );
 }

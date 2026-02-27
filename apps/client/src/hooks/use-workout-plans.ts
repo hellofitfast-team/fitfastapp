@@ -5,10 +5,7 @@ import { api } from "@/convex/_generated/api";
 
 export function useWorkoutPlans() {
   const { isAuthenticated } = useConvexAuth();
-  const plans = useQuery(
-    api.workoutPlans.getMyPlans,
-    isAuthenticated ? {} : "skip",
-  );
+  const plans = useQuery(api.workoutPlans.getMyPlans, isAuthenticated ? {} : "skip");
 
   return {
     workoutPlans: plans ?? [],
@@ -19,10 +16,7 @@ export function useWorkoutPlans() {
 
 export function useCurrentWorkoutPlan() {
   const { isAuthenticated } = useConvexAuth();
-  const plan = useQuery(
-    api.workoutPlans.getCurrentPlan,
-    isAuthenticated ? {} : "skip",
-  );
+  const plan = useQuery(api.workoutPlans.getCurrentPlan, isAuthenticated ? {} : "skip");
 
   return {
     workoutPlan: plan ?? null,

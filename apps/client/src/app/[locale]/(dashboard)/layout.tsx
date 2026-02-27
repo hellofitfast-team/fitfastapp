@@ -5,11 +5,7 @@ import { fetchQuery } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
 import { DashboardShell } from "@/components/layouts";
 
-export default async function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const locale = await getLocale();
   const token = await convexAuthNextjsToken();
 
@@ -45,8 +41,8 @@ export default async function DashboardLayout({
     case "inactive":
       redirect(
         `/${locale}/login?message=${encodeURIComponent(
-          "Your account is inactive. Please contact support."
-        )}`
+          "Your account is inactive. Please contact support.",
+        )}`,
       );
       break;
     case "active":
@@ -71,10 +67,7 @@ export default async function DashboardLayout({
   }
 
   return (
-    <DashboardShell
-      userName={profile.fullName || "User"}
-      daysUntilExpiry={daysUntilExpiry}
-    >
+    <DashboardShell userName={profile.fullName || "User"} daysUntilExpiry={daysUntilExpiry}>
       {children}
     </DashboardShell>
   );

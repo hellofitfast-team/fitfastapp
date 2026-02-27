@@ -5,7 +5,12 @@ import { UtensilsCrossed, Clock, ShieldAlert, Ban } from "lucide-react";
 import { MultiSelect } from "@fitfast/ui/multi-select";
 import { SectionCard } from "@fitfast/ui/section-card";
 import { cn } from "@fitfast/ui/cn";
-import { CUISINE_PREFERENCES, MEALS_PER_DAY, COMMON_ALLERGIES, DIETARY_RESTRICTIONS } from "./constants";
+import {
+  CUISINE_PREFERENCES,
+  MEALS_PER_DAY,
+  COMMON_ALLERGIES,
+  DIETARY_RESTRICTIONS,
+} from "./constants";
 
 interface DietarySectionProps {
   selectedFoodPrefs: string[];
@@ -84,10 +89,10 @@ export function DietarySection({
                 onClick={() => setMealsPerDay(isSelected ? "" : option.id)}
                 disabled={isLoading}
                 className={cn(
-                  "flex items-center justify-center rounded-xl border-2 px-3 py-3 text-xs font-semibold uppercase tracking-wide transition-all",
+                  "flex items-center justify-center rounded-xl border-2 px-3 py-3 text-xs font-semibold tracking-wide uppercase transition-all",
                   isSelected
                     ? "border-[#22C55E] bg-[#22C55E]/5 text-[#22C55E]"
-                    : "border-stone-200 text-stone-500 hover:border-stone-300"
+                    : "border-stone-200 text-stone-500 hover:border-stone-300",
                 )}
               >
                 {t(`mealsPerDayOptions.${option.id}`)}
@@ -98,11 +103,7 @@ export function DietarySection({
       </SectionCard>
 
       {/* Food Allergies */}
-      <SectionCard
-        icon={ShieldAlert}
-        title={t("allergiesTitle")}
-        variant="nutrition"
-      >
+      <SectionCard icon={ShieldAlert} title={t("allergiesTitle")} variant="nutrition">
         <MultiSelect
           options={COMMON_ALLERGIES.map((item) => ({
             ...item,
@@ -119,11 +120,7 @@ export function DietarySection({
       </SectionCard>
 
       {/* Dietary Restrictions */}
-      <SectionCard
-        icon={Ban}
-        title={t("restrictionsTitle")}
-        variant="nutrition"
-      >
+      <SectionCard icon={Ban} title={t("restrictionsTitle")} variant="nutrition">
         <MultiSelect
           options={DIETARY_RESTRICTIONS.map((item) => ({
             ...item,

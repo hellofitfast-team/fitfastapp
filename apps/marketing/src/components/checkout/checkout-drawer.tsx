@@ -30,15 +30,15 @@ export function CheckoutDrawer({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[92dvh] flex flex-col">
+      <DrawerContent className="flex max-h-[92dvh] flex-col">
         {/* Header */}
-        <DrawerHeader className="flex-shrink-0 relative px-6 pt-6 pb-4 border-b border-[var(--color-border)]">
+        <DrawerHeader className="relative flex-shrink-0 border-b border-[var(--color-border)] px-6 pt-6 pb-4">
           <div className="pe-8">
-            <DrawerTitle className="text-lg font-bold text-[var(--color-foreground)] text-start">
+            <DrawerTitle className="text-start text-lg font-bold text-[var(--color-foreground)]">
               {t("formTitle")}
             </DrawerTitle>
             {selectedPlan && (
-              <DrawerDescription className="mt-1 text-sm text-[var(--color-muted-foreground)] text-start">
+              <DrawerDescription className="mt-1 text-start text-sm text-[var(--color-muted-foreground)]">
                 {selectedPlan.name} — {selectedPlan.price.toLocaleString("en-EG")}{" "}
                 {selectedPlan.currency} / {selectedPlan.duration}
               </DrawerDescription>
@@ -48,22 +48,17 @@ export function CheckoutDrawer({
           {/* Close button */}
           <DrawerClose asChild>
             <button
-              className="absolute top-5 end-5 w-8 h-8 rounded-full bg-[var(--color-muted)] flex items-center justify-center text-[var(--color-muted-foreground)] hover:bg-[var(--color-border)] transition-colors"
+              className="absolute end-5 top-5 flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-muted)] text-[var(--color-muted-foreground)] transition-colors hover:bg-[var(--color-border)]"
               aria-label="Close"
             >
-              <X className="w-4 h-4" />
+              <X className="h-4 w-4" />
             </button>
           </DrawerClose>
         </DrawerHeader>
 
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto px-6 py-5">
-          {selectedPlan && (
-            <CheckoutForm
-              selectedPlan={selectedPlan}
-              onSuccess={onSuccess}
-            />
-          )}
+          {selectedPlan && <CheckoutForm selectedPlan={selectedPlan} onSuccess={onSuccess} />}
         </div>
       </DrawerContent>
     </Drawer>

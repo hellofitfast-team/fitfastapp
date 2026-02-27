@@ -57,19 +57,19 @@ Each preset defines: `palette`, `typography`, `identity` (the overall feel), and
 
 - **Identity:** A champion's training ground meets a performance scientist's lab.
 - **Palette:** Royal Blue `#0F52BA` (Primary — dominance, trust, peak performance)
-Volt Yellow `#DFFF00` (Accent — explosive energy, victory)
-Porcelain `#F8FAFB` (Background — clinical clarity)
-Midnight `#1C2541` (Text/Dark — depth, focus)
+  Volt Yellow `#DFFF00` (Accent — explosive energy, victory)
+  Porcelain `#F8FAFB` (Background — clinical clarity)
+  Midnight `#1C2541` (Text/Dark — depth, focus)
 
 - **Typography:** Headings: "Inter" (wide tracking, confident stance)
-Drama: "Bebas Neue" (condensed caps — podium authority)
-Data: "JetBrains Mono" (metrics, splits, macros)
+  Drama: "Bebas Neue" (condensed caps — podium authority)
+  Data: "JetBrains Mono" (metrics, splits, macros)
 
 - **Image Mood:** Olympic-grade equipment with blue accent lighting
-Athletes in deep focus (close-ups of determination)
-Blueberries, spirulina, blue-toned superfoods
-Chrome barbells against royal blue walls
-Water splashes frozen mid-motion
+  Athletes in deep focus (close-ups of determination)
+  Blueberries, spirulina, blue-toned superfoods
+  Chrome barbells against royal blue walls
+  Water splashes frozen mid-motion
 
 - **Hero line pattern:** "[Power noun] meets" (Bold Sans — e.g., "Discipline meets") / "[VICTORY WORD]." (Condensed All-Caps — e.g., "RELENTLESS.")
 

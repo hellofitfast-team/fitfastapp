@@ -20,13 +20,13 @@ gaps: []
 
 ### Observable Truths
 
-| #   | Truth                                                                                    | Status      | Evidence                                                                                 |
-| --- | ---------------------------------------------------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------- |
-| 1   | All pages audited in Arabic locale with zero layout breaks or visual regressions        | ✓ VERIFIED  | TypeScript passes, build succeeds, Playwright screenshots exist, 1 physical property found (intentional full-width overlay) |
-| 2   | Progress bars fill right-to-left in Arabic mode                                         | ⚠️ PARTIAL  | ProgressCharts.tsx has dir attribute; settings page missing dir attribute (line 350)     |
-| 3   | Numbers and dates formatted with proper locale-aware formatting in both languages       | ✓ VERIFIED  | 490/490 translation keys in sync, 0 bare toLocaleDateString calls, all utilities locale-aware |
-| 4   | All translation keys present with no missing keys or raw fallback text visible          | ✓ VERIFIED  | EN: 490 keys, AR: 490 keys, 0 missing in either language                                |
-| 5   | Both client and coach flows work identically well in English and Arabic                 | ✓ VERIFIED  | Visual testing completed, all directional icons have rtl:rotate-180                      |
+| #   | Truth                                                                             | Status     | Evidence                                                                                                                    |
+| --- | --------------------------------------------------------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------- |
+| 1   | All pages audited in Arabic locale with zero layout breaks or visual regressions  | ✓ VERIFIED | TypeScript passes, build succeeds, Playwright screenshots exist, 1 physical property found (intentional full-width overlay) |
+| 2   | Progress bars fill right-to-left in Arabic mode                                   | ⚠️ PARTIAL | ProgressCharts.tsx has dir attribute; settings page missing dir attribute (line 350)                                        |
+| 3   | Numbers and dates formatted with proper locale-aware formatting in both languages | ✓ VERIFIED | 490/490 translation keys in sync, 0 bare toLocaleDateString calls, all utilities locale-aware                               |
+| 4   | All translation keys present with no missing keys or raw fallback text visible    | ✓ VERIFIED | EN: 490 keys, AR: 490 keys, 0 missing in either language                                                                    |
+| 5   | Both client and coach flows work identically well in English and Arabic           | ✓ VERIFIED | Visual testing completed, all directional icons have rtl:rotate-180                                                         |
 
 **Score:** 4/5 truths verified (1 partial)
 
@@ -34,12 +34,12 @@ gaps: []
 
 Phase 10-05 had no artifacts defined in must_haves (audit/verification phase). Modified files verified:
 
-| Artifact                                    | Expected                           | Status     | Details                                                        |
-| ------------------------------------------- | ---------------------------------- | ---------- | -------------------------------------------------------------- |
-| `src/components/ui/dropdown-menu.tsx`       | ChevronRight with rtl:rotate-180   | ✓ VERIFIED | Line 36: `<ChevronRight className="ms-auto rtl:rotate-180"/>` |
-| `src/components/ui/pagination.tsx`          | Chevrons with rtl:rotate-180       | ✓ VERIFIED | Lines 72, 89: ChevronLeft/Right have rtl:rotate-180           |
-| `src/components/charts/ProgressCharts.tsx`  | Progress bars with dir attribute   | ✓ VERIFIED | Line 111: dir={locale === "ar" ? "rtl" : "ltr"}                |
-| `src/app/[locale]/(dashboard)/settings/page.tsx` | Progress bar with dir attribute | ⚠️ PARTIAL | Line 350: Missing dir attribute on progress bar container      |
+| Artifact                                         | Expected                         | Status     | Details                                                       |
+| ------------------------------------------------ | -------------------------------- | ---------- | ------------------------------------------------------------- |
+| `src/components/ui/dropdown-menu.tsx`            | ChevronRight with rtl:rotate-180 | ✓ VERIFIED | Line 36: `<ChevronRight className="ms-auto rtl:rotate-180"/>` |
+| `src/components/ui/pagination.tsx`               | Chevrons with rtl:rotate-180     | ✓ VERIFIED | Lines 72, 89: ChevronLeft/Right have rtl:rotate-180           |
+| `src/components/charts/ProgressCharts.tsx`       | Progress bars with dir attribute | ✓ VERIFIED | Line 111: dir={locale === "ar" ? "rtl" : "ltr"}               |
+| `src/app/[locale]/(dashboard)/settings/page.tsx` | Progress bar with dir attribute  | ⚠️ PARTIAL | Line 350: Missing dir attribute on progress bar container     |
 
 ### Key Link Verification
 
@@ -47,36 +47,37 @@ No key_links defined in must_haves (verification phase focuses on code patterns,
 
 Manual verification of critical patterns:
 
-| From                | To                       | Via                     | Status     | Details                                                           |
-| ------------------- | ------------------------ | ----------------------- | ---------- | ----------------------------------------------------------------- |
-| Date components     | Locale utilities         | formatDateShort/etc     | ✓ WIRED    | 10+ components use centralized utilities with locale parameter    |
-| Progress bars       | RTL direction            | dir attribute           | ⚠️ PARTIAL | ProgressCharts.tsx wired; settings.tsx not wired                  |
-| Directional icons   | RTL rotation             | rtl:rotate-180 class    | ✓ WIRED    | All ArrowLeft/Right/ChevronRight have rtl:rotate-180              |
-| Translation keys    | Message files            | useTranslations hook    | ✓ WIRED    | 490 keys in perfect sync between en.json and ar.json              |
+| From              | To               | Via                  | Status     | Details                                                        |
+| ----------------- | ---------------- | -------------------- | ---------- | -------------------------------------------------------------- |
+| Date components   | Locale utilities | formatDateShort/etc  | ✓ WIRED    | 10+ components use centralized utilities with locale parameter |
+| Progress bars     | RTL direction    | dir attribute        | ⚠️ PARTIAL | ProgressCharts.tsx wired; settings.tsx not wired               |
+| Directional icons | RTL rotation     | rtl:rotate-180 class | ✓ WIRED    | All ArrowLeft/Right/ChevronRight have rtl:rotate-180           |
+| Translation keys  | Message files    | useTranslations hook | ✓ WIRED    | 490 keys in perfect sync between en.json and ar.json           |
 
 ### Requirements Coverage
 
 From REQUIREMENTS.md:
 
-| Requirement | Status         | Blocking Issue                                   |
-| ----------- | -------------- | ------------------------------------------------ |
-| RTL-01      | ✓ SATISFIED    | All pages audited, 1 intentional physical property remaining |
-| RTL-02      | ⚠️ PARTIAL     | Settings page progress bar missing dir attribute |
-| RTL-03      | ✓ SATISFIED    | All dates/numbers use locale-aware formatting    |
-| RTL-04      | ✓ SATISFIED    | 490/490 translation keys in sync                 |
+| Requirement | Status      | Blocking Issue                                               |
+| ----------- | ----------- | ------------------------------------------------------------ |
+| RTL-01      | ✓ SATISFIED | All pages audited, 1 intentional physical property remaining |
+| RTL-02      | ⚠️ PARTIAL  | Settings page progress bar missing dir attribute             |
+| RTL-03      | ✓ SATISFIED | All dates/numbers use locale-aware formatting                |
+| RTL-04      | ✓ SATISFIED | 490/490 translation keys in sync                             |
 
 ### Anti-Patterns Found
 
-| File                                              | Line      | Pattern                            | Severity  | Impact                                                     |
-| ------------------------------------------------- | --------- | ---------------------------------- | --------- | ---------------------------------------------------------- |
-| src/app/[locale]/(dashboard)/settings/page.tsx   | 350-354   | Progress bar without dir attribute | ⚠️ Warning | Progress bar fills left-to-right in both languages         |
-| src/app/[locale]/(dashboard)/progress/_components/photos-tab.tsx | 52 | Physical property left-0 right-0   | ℹ️ Info   | Intentional full-width overlay - not RTL-blocking          |
+| File                                                              | Line    | Pattern                            | Severity   | Impact                                             |
+| ----------------------------------------------------------------- | ------- | ---------------------------------- | ---------- | -------------------------------------------------- |
+| src/app/[locale]/(dashboard)/settings/page.tsx                    | 350-354 | Progress bar without dir attribute | ⚠️ Warning | Progress bar fills left-to-right in both languages |
+| src/app/[locale]/(dashboard)/progress/\_components/photos-tab.tsx | 52      | Physical property left-0 right-0   | ℹ️ Info    | Intentional full-width overlay - not RTL-blocking  |
 
 ### Human Verification Required
 
 Based on SUMMARY Task 2 checkpoint, visual verification was completed via automated Playwright testing with screenshots captured. The following test results documented:
 
 **Automated Visual Testing Completed:**
+
 - ✓ 21/25 Playwright tests passed
 - ✓ 4 false positives (forgot-password link proximity to button - intentional UX)
 - ✓ Screenshots captured in test-results/rtl-audit/ for 9 pages (EN and AR)
@@ -97,6 +98,7 @@ Based on SUMMARY Task 2 checkpoint, visual verification was completed via automa
 #### 2. End-to-End Arabic User Flow
 
 **Test:**
+
 1. Create account in Arabic mode (/ar/login)
 2. Complete onboarding in Arabic
 3. Navigate through dashboard pages
@@ -104,6 +106,7 @@ Based on SUMMARY Task 2 checkpoint, visual verification was completed via automa
 5. Check all arrows/chevrons point correctly
 
 **Expected:**
+
 - All dates show Arabic month names with Western numerals
 - All directional icons point in reading direction
 - No layout breaks or visual regressions
@@ -114,12 +117,14 @@ Based on SUMMARY Task 2 checkpoint, visual verification was completed via automa
 #### 3. Coach Flow in Arabic
 
 **Test:**
+
 1. Log in as coach at /ar/admin/login
 2. Navigate admin panel pages
 3. Review client list, tickets, signups
 4. Verify Arabic date formatting in all tables
 
 **Expected:**
+
 - Admin pages mirror correctly
 - Tables maintain readability
 - Action buttons positioned correctly
@@ -146,61 +151,80 @@ The settings page contains a progress bar showing subscription days remaining (l
 ### Automated Code Audits (Task 1)
 
 #### 1. TypeScript Check
+
 ```bash
 pnpm tsc --noEmit
 ```
+
 **Result:** ✓ PASSED - 0 errors
 
 #### 2. Physical Property Sweep
+
 ```bash
 grep -rn 'ml-|mr-|pl-|pr-|border-l-|border-r-|left-[0-9]|right-[0-9]|text-left|text-right' src/
 ```
+
 **Result:** ✓ PASSED - 1 instance found
+
 - `src/app/[locale]/(dashboard)/progress/_components/photos-tab.tsx:52`
 - Pattern: `left-0 right-0` (full-width overlay - intentional)
 
 #### 3. Hardcoded Locale Sweep
+
 ```bash
 grep -rn '"en-US"|"ar-EG"' src/app/ src/components/ src/lib/
 ```
+
 **Result:** ✓ PASSED - 9 instances found
+
 - All instances are locale-switching logic: `locale === "ar" ? "ar-u-nu-latn" : "en-US"`
 - NOT hardcoded strings - proper locale parameter usage
 - Found in: lib/utils/index.ts (5×), settings/page.tsx (1×), tickets/[id]/page.tsx (2×), check-in-locked.tsx (1×)
 
 #### 4. Bare toLocaleDateString Sweep
+
 ```bash
 grep -rn '\.toLocaleDateString()' src/app/ src/components/
 ```
+
 **Result:** ✓ PASSED - 0 matches
 
 #### 5. Directional Icon Sweep
+
 ```bash
 grep -rn 'ArrowRight|ArrowLeft|ChevronRight' src/ | grep -v 'import|from|rtl:rotate-180'
 ```
+
 **Result:** ✓ PASSED - 0 matches
+
 - All icons have rtl:rotate-180 class
 - Verified in: tickets/[id]/page.tsx, clients/[id]/page.tsx, admin/page.tsx
 
 #### 6. Translation Key Parity Check
+
 ```bash
 node /tmp/check_keys.js
 ```
+
 **Result:** ✓ PASSED
+
 - EN keys: 490 | AR keys: 490
 - Missing in AR: 0
 - Missing in EN: 0
 - Perfect sync
 
 #### 7. Build Check
+
 ```bash
 pnpm build
 ```
+
 **Result:** ✓ PASSED - Production build succeeded
 
 ### Visual Testing (Task 2)
 
 **Playwright Test Results:**
+
 - Test suite: rtl-audit.spec.ts
 - Total tests: 25
 - Passed: 21
@@ -208,6 +232,7 @@ pnpm build
 - Screenshots captured: 9 pages × 2 locales = 18 screenshots
 
 **Test Coverage:**
+
 - ✓ Auth: /login, /magic-link, /set-password
 - ✓ Admin: /admin/login
 - ✓ Both locales: /en and /ar variants tested
@@ -217,6 +242,7 @@ pnpm build
 - ✓ Back arrows point correctly (right in RTL, left in LTR)
 
 **Evidence:** test-results/rtl-audit/ contains screenshots:
+
 ```
 ar-admin-login.png
 ar-login.png
@@ -231,15 +257,19 @@ en-set-password.png
 ### Commit Verification
 
 **Claimed commit:** 042f46e
+
 ```bash
 git log --oneline --all | grep 042f46e
 ```
+
 **Result:** ✓ VERIFIED - Commit exists
+
 - Message: "fix(10-05): add rtl:rotate-180 to chevron icons in pagination and dropdown"
 
 ### File Verification
 
 **Claimed modified files:**
+
 1. ✓ src/components/ui/dropdown-menu.tsx - Exists, ChevronRight has rtl:rotate-180 (line 36)
 2. ✓ src/components/ui/pagination.tsx - Exists, ChevronLeft/Right have rtl:rotate-180 (lines 72, 89)
 
@@ -250,32 +280,38 @@ git log --oneline --all | grep 042f46e
 ### What Works (Verified)
 
 **✓ UI Components (Phase 10-01)**
+
 - All 9 shadcn/ui components converted to logical properties
 - Card, Sheet, Dialog, Dropdown, Select, Pagination, Tabs, Alert-Dialog
 - No physical directional properties remaining
 
 **✓ Date/Number Formatting (Phase 10-02)**
+
 - formatDate, formatDateShort, formatDateWithWeekday utilities
 - formatTime, formatNumber utilities
 - All use ar-u-nu-latn for Arabic (Western numerals, Arabic month names)
 - 12 dashboard/admin pages use centralized utilities
 
 **✓ Auth & Onboarding (Phase 10-03)**
+
 - Login, magic-link, set-password, admin-login
 - Welcome, initial-assessment pages
 - All inputs, buttons, icons RTL-aware
 
 **✓ Progress Indicators (Phase 10-04)**
+
 - ProgressCharts.tsx linear progress bars with dir attribute
 - Circular progress (direction-neutral by design)
 - All directional icons with rtl:rotate-180
 
 **✓ Translation Completeness**
+
 - 490 keys in perfect sync
 - No missing translations
 - No fallback text visible
 
 **✓ Build & Type Safety**
+
 - TypeScript: 0 errors
 - Production build: Succeeds
 - No breaking changes
@@ -283,6 +319,7 @@ git log --oneline --all | grep 042f46e
 ### What's Incomplete (Gap)
 
 **⚠️ Settings Page Progress Bar**
+
 - File: src/app/[locale]/(dashboard)/settings/page.tsx
 - Lines: 350-354
 - Issue: Missing `dir` attribute

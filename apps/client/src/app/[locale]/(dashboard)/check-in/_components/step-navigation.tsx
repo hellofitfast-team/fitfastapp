@@ -12,7 +12,13 @@ interface StepNavigationProps {
   onNext: (e?: React.MouseEvent) => void;
 }
 
-export function StepNavigation({ currentStep, totalSteps, isSubmitting, onBack, onNext }: StepNavigationProps) {
+export function StepNavigation({
+  currentStep,
+  totalSteps,
+  isSubmitting,
+  onBack,
+  onNext,
+}: StepNavigationProps) {
   const t = useTranslations("checkIn");
   const tCommon = useTranslations("common");
 

@@ -12,22 +12,44 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { cn } from "@fitfast/ui/cn";
+import { useToast } from "@/hooks/use-toast";
 
 const profileSchema = z.object({
-  fullName: z.string().min(2, "Name must be at least 2 characters").max(100, "Name must be under 100 characters"),
-  phone: z.string().regex(/^[\d+\-\s()]*$/, "Invalid phone number format").optional().or(z.literal("")),
+  fullName: z
+    .string()
+    .min(2, "Name must be at least 2 characters")
+    .max(100, "Name must be under 100 characters"),
+  phone: z
+    .string()
+    .regex(/^[\d+\-\s()]*$/, "Invalid phone number format")
+    .optional()
+    .or(z.literal("")),
   language: z.enum(["en", "ar"]),
 });
 type ProfileFormData = z.infer<typeof profileSchema>;
 
 export default function SettingsPage() {
   const t = useTranslations("settings");
+  const tTracking = useTranslations("tracking");
   const locale = useLocale();
   const { profile, signOut } = useAuth();
-  const { isSupported, isSubscribed, permission, toggleSubscription, loading: notifLoading, error: notifError } = useNotifications();
+  const {
+    isSupported,
+    isSubscribed,
+    permission,
+    toggleSubscription,
+    loading: notifLoading,
+    error: notifError,
+  } = useNotifications();
   const updateProfile = useMutation(api.profiles.updateProfile);
 
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<ProfileFormData>({
+  const { toast } = useToast();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     mode: "onBlur",
     reValidateMode: "onBlur",
@@ -64,6 +86,7 @@ export default function SettingsPage() {
       });
     } catch (err) {
       console.error("Failed to update profile:", err);
+      toast({ title: t("errors.saveFailed"), variant: "destructive" });
     }
     setIsSaving(false);
   };
@@ -73,7 +96,7 @@ export default function SettingsPage() {
     try {
       await updateProfile({ notificationReminderTime: newTime });
     } catch {
-      // silently fail
+      toast({ title: t("errors.saveFailed"), variant: "destructive" });
     }
   };
 
@@ -88,76 +111,89 @@ export default function SettingsPage() {
     const daysRemaining = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
     const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
     const daysPassed = totalDays - daysRemaining;
-    const progressPercentage = totalDays > 0 ? Math.min(100, Math.max(0, (daysPassed / totalDays) * 100)) : 0;
-    const formattedEndDate = endDate.toLocaleDateString(locale === "ar" ? "ar-u-nu-latn" : "en-US", {
-      month: "long", day: "numeric", year: "numeric",
-    });
+    const progressPercentage =
+      totalDays > 0 ? Math.min(100, Math.max(0, (daysPassed / totalDays) * 100)) : 0;
+    const formattedEndDate = endDate.toLocaleDateString(
+      locale === "ar" ? "ar-u-nu-latn" : "en-US",
+      {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      },
+    );
     return { daysRemaining, progressPercentage, formattedEndDate };
   };
 
   const { daysRemaining, progressPercentage, formattedEndDate } = calculatePlanDetails();
 
   return (
-    <div className="px-4 py-6 space-y-5 max-w-2xl mx-auto lg:px-6">
+    <div className="mx-auto max-w-2xl space-y-5 px-4 py-6 lg:px-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold">{t("title")}</h1>
-        <p className="text-sm text-muted-foreground mt-1">{t("subtitle")}</p>
+        <p className="text-muted-foreground mt-1 text-sm">{t("subtitle")}</p>
       </div>
 
       {/* Profile Settings */}
-      <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden animate-slide-up" style={{ animationDelay: "0ms" }}>
-        <div className="flex items-center gap-2 p-4 border-b border-border bg-neutral-50/50">
-          <User className="h-4 w-4 text-primary" />
-          <h3 className="font-semibold text-sm">{t("profile")}</h3>
+      <div
+        className="border-border bg-card shadow-card animate-slide-up overflow-hidden rounded-xl border"
+        style={{ animationDelay: "0ms" }}
+      >
+        <div className="border-border flex items-center gap-2 border-b bg-neutral-50/50 p-4">
+          <User className="text-primary h-4 w-4" />
+          <h3 className="text-sm font-semibold">{t("profile")}</h3>
         </div>
-        <form onSubmit={handleSubmit(onSubmit)} className="p-4 space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-4">
           <div>
-            <label className="block text-sm font-medium mb-1.5">{t("email")}</label>
+            <label className="mb-1.5 block text-sm font-medium">{t("email")}</label>
             <input
               type="email"
               value={profile?.email || ""}
               readOnly
-              className="w-full h-11 px-3.5 rounded-lg border border-input bg-neutral-50 text-sm text-muted-foreground cursor-not-allowed"
+              className="border-input text-muted-foreground h-11 w-full cursor-not-allowed rounded-lg border bg-neutral-50 px-3.5 text-sm"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5">{t("fullName")}</label>
+            <label className="mb-1.5 block text-sm font-medium">{t("fullName")}</label>
             <input
               type="text"
               placeholder="John Doe"
               {...register("fullName")}
               className={cn(
-                "w-full h-11 px-3.5 rounded-lg border bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-colors",
-                errors.fullName ? "border-error-500" : "border-input"
+                "bg-card placeholder:text-muted-foreground focus:ring-ring h-11 w-full rounded-lg border px-3.5 text-sm transition-colors focus:ring-2 focus:outline-none",
+                errors.fullName ? "border-error-500" : "border-input",
               )}
               aria-invalid={errors.fullName ? "true" : "false"}
             />
             {errors.fullName && (
-              <p className="mt-1 text-xs text-error-500" role="alert">{errors.fullName.message}</p>
+              <p className="text-error-500 mt-1 text-xs" role="alert">
+                {errors.fullName.message}
+              </p>
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5">{t("phone")}</label>
+            <label className="mb-1.5 block text-sm font-medium">{t("phone")}</label>
             <input
               type="tel"
               placeholder="01xxxxxxxxx"
               {...register("phone")}
               className={cn(
-                "w-full h-11 px-3.5 rounded-lg border bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-colors",
-                errors.phone ? "border-error-500" : "border-input"
+                "bg-card placeholder:text-muted-foreground focus:ring-ring h-11 w-full rounded-lg border px-3.5 text-sm transition-colors focus:ring-2 focus:outline-none",
+                errors.phone ? "border-error-500" : "border-input",
               )}
               aria-invalid={errors.phone ? "true" : "false"}
             />
             {errors.phone && (
-              <p className="mt-1 text-xs text-error-500" role="alert">{errors.phone.message}</p>
+              <p className="text-error-500 mt-1 text-xs" role="alert">
+                {errors.phone.message}
+              </p>
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5">{t("language")}</label>
+            <label className="mb-1.5 block text-sm font-medium">{t("language")}</label>
             <select
               {...register("language")}
-              className="w-full h-11 px-3.5 rounded-lg border border-input bg-card text-sm appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring transition-colors"
+              className="border-input bg-card focus:ring-ring h-11 w-full cursor-pointer appearance-none rounded-lg border px-3.5 text-sm transition-colors focus:ring-2 focus:outline-none"
             >
               <option value="en">English</option>
               <option value="ar">العربية</option>
@@ -166,27 +202,34 @@ export default function SettingsPage() {
           <button
             type="submit"
             disabled={isSaving}
-            className="w-full py-2.5 rounded-lg bg-primary text-white font-semibold text-sm hover:bg-primary/90 transition-all active:scale-[0.97] disabled:opacity-50"
+            className="bg-primary hover:bg-primary/90 w-full rounded-lg py-2.5 text-sm font-semibold text-white transition-all active:scale-[0.97] disabled:opacity-50"
           >
-            {isSaving ? (locale === "ar" ? "جارٍ الحفظ..." : "Saving...") : t("saveChanges")}
+            {isSaving ? tTracking("saving") : t("saveChanges")}
           </button>
         </form>
       </div>
 
       {/* Notifications */}
-      <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden animate-slide-up" style={{ animationDelay: "50ms" }}>
-        <div className="flex items-center gap-2 p-4 border-b border-border bg-neutral-50/50">
-          <Bell className="h-4 w-4 text-primary" />
-          <h3 className="font-semibold text-sm">{t("notifications")}</h3>
+      <div
+        className="border-border bg-card shadow-card animate-slide-up overflow-hidden rounded-xl border"
+        style={{ animationDelay: "50ms" }}
+      >
+        <div className="border-border flex items-center gap-2 border-b bg-neutral-50/50 p-4">
+          <Bell className="text-primary h-4 w-4" />
+          <h3 className="text-sm font-semibold">{t("notifications")}</h3>
         </div>
-        <div className="p-4 space-y-5">
+        <div className="space-y-5 p-4">
           {notifError ? (
-            <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
               <div className="flex items-start gap-2.5">
-                <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
                 <div>
-                  <p className="text-sm font-medium text-amber-900">{t("notificationsUnavailableTitle")}</p>
-                  <p className="text-xs text-amber-700 mt-0.5">{t("notificationsUnavailableDescription")}</p>
+                  <p className="text-sm font-medium text-amber-900">
+                    {t("notificationsUnavailableTitle")}
+                  </p>
+                  <p className="mt-0.5 text-xs text-amber-700">
+                    {t("notificationsUnavailableDescription")}
+                  </p>
                 </div>
               </div>
             </div>
@@ -195,7 +238,7 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-sm font-medium">{t("enableNotifications")}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
+                  <p className="text-muted-foreground mt-0.5 text-xs">
                     {isSupported
                       ? permission === "denied"
                         ? t("notificationsDenied")
@@ -212,25 +255,27 @@ export default function SettingsPage() {
                     className={cn(
                       "relative h-7 w-12 rounded-full transition-colors",
                       isSubscribed ? "bg-primary" : "bg-neutral-200",
-                      (!isSupported || permission === "denied") && "opacity-50 cursor-not-allowed"
+                      (!isSupported || permission === "denied") && "cursor-not-allowed opacity-50",
                     )}
                     role="switch"
                     aria-checked={isSubscribed}
                   >
-                    <span className={cn(
-                      "absolute top-0.5 h-6 w-6 rounded-full bg-white shadow-sm transition-transform",
-                      isSubscribed ? "translate-x-5" : "translate-x-0.5"
-                    )} />
+                    <span
+                      className={cn(
+                        "absolute top-0.5 h-6 w-6 rounded-full bg-white shadow-sm transition-transform",
+                        isSubscribed ? "translate-x-5" : "translate-x-0.5",
+                      )}
+                    />
                   </button>
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1.5">{t("reminderTime")}</label>
+                <label className="mb-1.5 block text-sm font-medium">{t("reminderTime")}</label>
                 <input
                   type="time"
                   value={reminderTime}
                   onChange={(e) => handleReminderTimeChange(e.target.value)}
-                  className="h-11 px-3.5 rounded-lg border border-input bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-colors"
+                  className="border-input bg-card focus:ring-ring h-11 rounded-lg border px-3.5 text-sm transition-colors focus:ring-2 focus:outline-none"
                 />
               </div>
             </>
@@ -239,18 +284,21 @@ export default function SettingsPage() {
       </div>
 
       {/* Account */}
-      <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden animate-slide-up" style={{ animationDelay: "100ms" }}>
-        <div className="flex items-center gap-2 p-4 border-b border-border bg-neutral-50/50">
-          <Shield className="h-4 w-4 text-primary" />
-          <h3 className="font-semibold text-sm">{t("account")}</h3>
+      <div
+        className="border-border bg-card shadow-card animate-slide-up overflow-hidden rounded-xl border"
+        style={{ animationDelay: "100ms" }}
+      >
+        <div className="border-border flex items-center gap-2 border-b bg-neutral-50/50 p-4">
+          <Shield className="text-primary h-4 w-4" />
+          <h3 className="text-sm font-semibold">{t("account")}</h3>
         </div>
-        <div className="p-4 space-y-3">
-          <button className="w-full py-2.5 rounded-lg border border-border text-sm font-medium hover:bg-neutral-50 transition-colors">
+        <div className="space-y-3 p-4">
+          <button className="border-border w-full rounded-lg border py-2.5 text-sm font-medium transition-colors hover:bg-neutral-50">
             {t("changePassword")}
           </button>
           <button
             onClick={() => signOut()}
-            className="w-full py-2.5 rounded-lg border border-error-500/30 bg-error-500/5 text-sm font-medium text-error-500 hover:bg-error-500/10 transition-colors flex items-center justify-center gap-2"
+            className="border-error-500/30 bg-error-500/5 text-error-500 hover:bg-error-500/10 flex w-full items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-colors"
           >
             <LogOut className="h-4 w-4" />
             {t("signOut")}
@@ -259,56 +307,67 @@ export default function SettingsPage() {
       </div>
 
       {/* Plan Details */}
-      <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden animate-slide-up" style={{ animationDelay: "150ms" }}>
-        <div className="flex items-center gap-2 p-4 border-b border-border bg-neutral-50/50">
-          <CreditCard className="h-4 w-4 text-primary" />
-          <h3 className="font-semibold text-sm">{t("planDetails")}</h3>
+      <div
+        className="border-border bg-card shadow-card animate-slide-up overflow-hidden rounded-xl border"
+        style={{ animationDelay: "150ms" }}
+      >
+        <div className="border-border flex items-center gap-2 border-b bg-neutral-50/50 p-4">
+          <CreditCard className="text-primary h-4 w-4" />
+          <h3 className="text-sm font-semibold">{t("planDetails")}</h3>
         </div>
-        <div className="p-4 space-y-4">
+        <div className="space-y-4 p-4">
           {profile?.planTier ? (
             <>
-              <div className="flex justify-between items-center py-2 border-b border-border">
-                <span className="text-xs text-muted-foreground">{t("planTier")}</span>
-                <span className="text-sm font-semibold">
-                  {t(`planTiers.${profile.planTier}`)}
-                </span>
+              <div className="border-border flex items-center justify-between border-b py-2">
+                <span className="text-muted-foreground text-xs">{t("planTier")}</span>
+                <span className="text-sm font-semibold">{t(`planTiers.${profile.planTier}`)}</span>
               </div>
-              <div className="flex justify-between items-center py-2 border-b border-border">
-                <span className="text-xs text-muted-foreground">{t("planStart")}</span>
+              <div className="border-border flex items-center justify-between border-b py-2">
+                <span className="text-muted-foreground text-xs">{t("planStart")}</span>
                 <span className="text-sm font-semibold">
                   {profile.planStartDate
-                    ? new Date(profile.planStartDate).toLocaleDateString(locale === "ar" ? "ar-u-nu-latn" : "en-US", { month: "long", day: "numeric", year: "numeric" })
+                    ? new Date(profile.planStartDate).toLocaleDateString(
+                        locale === "ar" ? "ar-u-nu-latn" : "en-US",
+                        { month: "long", day: "numeric", year: "numeric" },
+                      )
                     : "—"}
                 </span>
               </div>
-              <div className="flex justify-between items-center py-2 border-b border-border">
-                <span className="text-xs text-muted-foreground">{t("planExpiry")}</span>
+              <div className="border-border flex items-center justify-between border-b py-2">
+                <span className="text-muted-foreground text-xs">{t("planExpiry")}</span>
                 <span className="text-sm font-semibold">{formattedEndDate}</span>
               </div>
-              <div className="flex justify-between items-center py-2 border-b border-border">
-                <span className="text-xs text-muted-foreground">{t("status")}</span>
-                <span className={cn(
-                  "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-                  profile.status === "active" ? "bg-[#10B981]/10 text-[#10B981]" :
-                  profile.status === "expired" ? "bg-error-500/10 text-error-500" :
-                  "bg-amber-500/10 text-amber-600"
-                )}>
+              <div className="border-border flex items-center justify-between border-b py-2">
+                <span className="text-muted-foreground text-xs">{t("status")}</span>
+                <span
+                  className={cn(
+                    "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+                    profile.status === "active"
+                      ? "bg-[#10B981]/10 text-[#10B981]"
+                      : profile.status === "expired"
+                        ? "bg-error-500/10 text-error-500"
+                        : "bg-amber-500/10 text-amber-600",
+                  )}
+                >
                   {t(`statuses.${profile.status}`)}
                 </span>
               </div>
-              <div className="rounded-lg bg-neutral-50 border border-border p-4">
-                <p className="text-xs text-muted-foreground mb-1">{t("daysRemaining")}</p>
+              <div className="border-border rounded-lg border bg-neutral-50 p-4">
+                <p className="text-muted-foreground mb-1 text-xs">{t("daysRemaining")}</p>
                 <p className="text-3xl font-bold">{daysRemaining}</p>
-                <div className="mt-3 h-2 rounded-full bg-neutral-200 overflow-hidden" dir={locale === "ar" ? "rtl" : "ltr"}>
+                <div
+                  className="mt-3 h-2 overflow-hidden rounded-full bg-neutral-200"
+                  dir={locale === "ar" ? "rtl" : "ltr"}
+                >
                   <div
-                    className="h-full bg-primary rounded-full transition-all"
+                    className="bg-primary h-full rounded-full transition-all"
                     style={{ width: `${progressPercentage.toFixed(1)}%` }}
                   />
                 </div>
               </div>
             </>
           ) : (
-            <p className="text-sm text-muted-foreground py-4 text-center">{t("noPlan")}</p>
+            <p className="text-muted-foreground py-4 text-center text-sm">{t("noPlan")}</p>
           )}
         </div>
       </div>

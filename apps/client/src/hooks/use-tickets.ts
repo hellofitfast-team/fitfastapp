@@ -16,10 +16,7 @@ interface CreateTicketData {
 
 export function useTickets() {
   const { isAuthenticated } = useConvexAuth();
-  const tickets = useQuery(
-    api.tickets.getMyTickets,
-    isAuthenticated ? {} : "skip",
-  );
+  const tickets = useQuery(api.tickets.getMyTickets, isAuthenticated ? {} : "skip");
   const createTicketMutation = useMutation(api.tickets.createTicket);
 
   const [isCreating, setIsCreating] = useState(false);

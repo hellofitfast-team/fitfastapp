@@ -3,9 +3,21 @@
 export const PRIMARY_GOALS = [
   { id: "lose_fat", label: "LOSE FAT", description: "Reduce body fat while preserving muscle" },
   { id: "build_muscle", label: "BUILD MUSCLE", description: "Gain muscle mass and size" },
-  { id: "body_recomposition", label: "BODY RECOMPOSITION", description: "Lose fat and build muscle simultaneously — best for beginners" },
-  { id: "get_stronger", label: "GET STRONGER", description: "Increase strength and lifting performance" },
-  { id: "improve_fitness", label: "IMPROVE OVERALL FITNESS", description: "Balanced health, energy, and body composition" },
+  {
+    id: "body_recomposition",
+    label: "BODY RECOMPOSITION",
+    description: "Lose fat and build muscle simultaneously — best for beginners",
+  },
+  {
+    id: "get_stronger",
+    label: "GET STRONGER",
+    description: "Increase strength and lifting performance",
+  },
+  {
+    id: "improve_fitness",
+    label: "IMPROVE OVERALL FITNESS",
+    description: "Balanced health, energy, and body composition",
+  },
 ];
 
 // ── Optional secondary focus (multi-select, up to 2) ────────────────────────
@@ -100,11 +112,31 @@ export const TRAINING_TIMES = [
 type DayLimits = { min: number; max: number; recommended: number };
 
 const DAY_LIMITS: Record<string, Record<string, DayLimits>> = {
-  lose_fat:            { beginner: { min: 3, max: 5, recommended: 3 }, intermediate: { min: 3, max: 5, recommended: 4 }, advanced: { min: 3, max: 6, recommended: 5 } },
-  build_muscle:        { beginner: { min: 3, max: 4, recommended: 3 }, intermediate: { min: 3, max: 5, recommended: 4 }, advanced: { min: 4, max: 6, recommended: 5 } },
-  body_recomposition:  { beginner: { min: 3, max: 4, recommended: 3 }, intermediate: { min: 3, max: 5, recommended: 4 }, advanced: { min: 4, max: 6, recommended: 5 } },
-  get_stronger:        { beginner: { min: 3, max: 4, recommended: 3 }, intermediate: { min: 3, max: 5, recommended: 4 }, advanced: { min: 3, max: 5, recommended: 4 } },
-  improve_fitness:     { beginner: { min: 3, max: 5, recommended: 3 }, intermediate: { min: 3, max: 5, recommended: 4 }, advanced: { min: 3, max: 6, recommended: 5 } },
+  lose_fat: {
+    beginner: { min: 3, max: 5, recommended: 3 },
+    intermediate: { min: 3, max: 5, recommended: 4 },
+    advanced: { min: 3, max: 6, recommended: 5 },
+  },
+  build_muscle: {
+    beginner: { min: 3, max: 4, recommended: 3 },
+    intermediate: { min: 3, max: 5, recommended: 4 },
+    advanced: { min: 4, max: 6, recommended: 5 },
+  },
+  body_recomposition: {
+    beginner: { min: 3, max: 4, recommended: 3 },
+    intermediate: { min: 3, max: 5, recommended: 4 },
+    advanced: { min: 4, max: 6, recommended: 5 },
+  },
+  get_stronger: {
+    beginner: { min: 3, max: 4, recommended: 3 },
+    intermediate: { min: 3, max: 5, recommended: 4 },
+    advanced: { min: 3, max: 5, recommended: 4 },
+  },
+  improve_fitness: {
+    beginner: { min: 3, max: 5, recommended: 3 },
+    intermediate: { min: 3, max: 5, recommended: 4 },
+    advanced: { min: 3, max: 6, recommended: 5 },
+  },
 };
 
 const DEFAULT_LIMITS: DayLimits = { min: 3, max: 6, recommended: 4 };

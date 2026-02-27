@@ -38,16 +38,19 @@ PWA manifest corrected, safe area insets applied to mobile header, dynamic viewp
 ## Task 1 Summary
 
 ### PWA Manifest Verification
+
 - `"display": "standalone"` -- already present, confirmed
 - `theme_color`: `#4169E1` (royal blue) -- matches design tokens, confirmed
 - `background_color`: changed from `#000000` to `#FFFEF5` (cream) -- was incorrect, now matches `--color-background`
 - Icons: 192x192 and 512x512 both exist at `/icons/`, confirmed
 
 ### Viewport and Safe Area Setup
+
 - `viewportFit: "cover"` -- already present in Next.js `Viewport` export (layout.tsx line 62)
 - Added CSS custom properties to globals.css: `--safe-area-top`, `--safe-area-bottom`, `--safe-area-left`, `--safe-area-right`
 
 ### Component Safe Area Handling
+
 - **Bottom navigation** (`bottom-nav.tsx`): Already had `pb-[env(safe-area-inset-bottom)]` -- no change needed
 - **Mobile header** (`mobile-header.tsx`): Added `pt-[env(safe-area-inset-top)]` for notch/status bar in standalone mode; moved height to inner div for correct sizing
 - **Dashboard shell v2** (`dashboard-shell-v2.tsx`): Already used `min-h-dvh` and `pb-[calc(var(--height-bottom-nav)+env(safe-area-inset-bottom))]` -- no change needed
@@ -56,6 +59,7 @@ PWA manifest corrected, safe area insets applied to mobile header, dynamic viewp
 - **More menu** (`more-menu.tsx`): Already had `pb-[env(safe-area-inset-bottom)]` -- no change needed
 
 ### What Was NOT Changed (by design)
+
 - Desktop-only components (no notches/home indicators)
 - Modal/drawer overlays (handled by Vaul internally)
 
@@ -65,9 +69,9 @@ None -- plan executed exactly as written.
 
 ## Commits
 
-| Task | Commit | Description |
-|------|--------|-------------|
-| 1 | 774c514 | feat(15-03): PWA standalone mode audit and safe area fixes |
+| Task | Commit  | Description                                                |
+| ---- | ------- | ---------------------------------------------------------- |
+| 1    | 774c514 | feat(15-03): PWA standalone mode audit and safe area fixes |
 
 ## Verification
 
@@ -79,5 +83,6 @@ None -- plan executed exactly as written.
 ## Awaiting
 
 Task 2 is a `checkpoint:human-verify` requiring manual testing of:
+
 - Functionality regression check across all pages in both EN and AR locales
 - PWA standalone mode test on mobile device or simulator

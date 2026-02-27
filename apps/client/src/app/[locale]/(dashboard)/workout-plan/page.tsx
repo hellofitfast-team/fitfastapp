@@ -2,9 +2,21 @@
 
 import { useTranslations, useLocale } from "next-intl";
 import { useCurrentWorkoutPlan } from "@/hooks/use-workout-plans";
-import { Dumbbell, Clock, RefreshCw, Zap, Target, Loader2, AlertTriangle, Sparkles, ChevronDown } from "lucide-react";
+import {
+  Dumbbell,
+  Clock,
+  RefreshCw,
+  Zap,
+  Target,
+  Loader2,
+  AlertTriangle,
+  Sparkles,
+  ChevronDown,
+} from "lucide-react";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { cn } from "@fitfast/ui/cn";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { usePlanStream } from "@/hooks/use-plan-stream";
 import { EmptyState } from "@fitfast/ui/empty-state";
 import { WidgetCard } from "@fitfast/ui/widget-card";
@@ -33,18 +45,22 @@ function normalizeWorkoutDay(raw: any) {
   if (!raw) return null;
 
   // Handle exercise list: old format uses "workout" array, new uses "exercises"
-  const rawExercises = Array.isArray(raw.exercises) ? raw.exercises
-    : Array.isArray(raw.workout) ? raw.workout
-    : [];
+  const rawExercises = Array.isArray(raw.exercises)
+    ? raw.exercises
+    : Array.isArray(raw.workout)
+      ? raw.workout
+      : [];
 
   const exercises = rawExercises.map((ex: any) => ({
     name: ex.name || ex.exercise || "",
     sets: ex.sets || 0,
     reps: ex.reps || "",
     rest: ex.rest || ex.restBetweenSets || "-",
-    targetMuscles: Array.isArray(ex.targetMuscles) ? ex.targetMuscles
-      : Array.isArray(ex.musclesTargeted) ? ex.musclesTargeted
-      : [],
+    targetMuscles: Array.isArray(ex.targetMuscles)
+      ? ex.targetMuscles
+      : Array.isArray(ex.musclesTargeted)
+        ? ex.musclesTargeted
+        : [],
     instructions: Array.isArray(ex.instructions) ? ex.instructions : [],
     equipment: ex.equipment || "",
     notes: ex.notes || "",
@@ -59,7 +75,11 @@ function normalizeWorkoutDay(raw: any) {
     } else {
       // Old format: convert cardio + dynamicStretching to exercise list
       if (warmup.cardio) {
-        warmupExercises.push({ name: warmup.cardio, duration: warmup.duration || 60, instructions: [] });
+        warmupExercises.push({
+          name: warmup.cardio,
+          duration: warmup.duration || 60,
+          instructions: [],
+        });
       }
       if (Array.isArray(warmup.dynamicStretching)) {
         warmup.dynamicStretching.forEach((s: string) => {
@@ -87,9 +107,11 @@ function normalizeWorkoutDay(raw: any) {
   return {
     workoutName: raw.workoutName || raw.name || "",
     duration: raw.duration || null,
-    targetMuscles: Array.isArray(raw.targetMuscles) ? raw.targetMuscles
-      : Array.isArray(raw.musclesTargeted) ? raw.musclesTargeted
-      : [],
+    targetMuscles: Array.isArray(raw.targetMuscles)
+      ? raw.targetMuscles
+      : Array.isArray(raw.musclesTargeted)
+        ? raw.musclesTargeted
+        : [],
     restDay: raw.restDay || false,
     exercises,
     warmup: { exercises: warmupExercises },
@@ -103,6 +125,7 @@ export default function WorkoutPlanPage() {
   const tEmpty = useTranslations("emptyStates");
   const locale = useLocale();
   const { workoutPlan, isLoading, error } = useCurrentWorkoutPlan();
+  const assessment = useQuery(api.assessments.getMyAssessment);
   const [selectedDay, setSelectedDay] = useState(0);
   const [expandedExercise, setExpandedExercise] = useState<number | null>(0);
   const daySelectorRef = useRef<HTMLDivElement>(null);
@@ -137,9 +160,13 @@ export default function WorkoutPlanPage() {
   );
 
   // Compute today's day index from plan start date
-  const maxDayIndex = workoutPlan?.startDate && workoutPlan?.endDate
-    ? Math.ceil((new Date(workoutPlan.endDate).getTime() - new Date(workoutPlan.startDate).getTime()) / 86400000) - 1
-    : 13;
+  const maxDayIndex =
+    workoutPlan?.startDate && workoutPlan?.endDate
+      ? Math.ceil(
+          (new Date(workoutPlan.endDate).getTime() - new Date(workoutPlan.startDate).getTime()) /
+            86400000,
+        ) - 1
+      : 13;
   const todayDayIndex = useMemo(() => {
     if (!workoutPlan?.startDate) return 0;
     const start = new Date(workoutPlan.startDate);
@@ -155,9 +182,13 @@ export default function WorkoutPlanPage() {
   }, [todayDayIndex, workoutPlan?.startDate]);
 
   // Dynamic total days
-  const totalDays = workoutPlan?.startDate && workoutPlan?.endDate
-    ? Math.ceil((new Date(workoutPlan.endDate).getTime() - new Date(workoutPlan.startDate).getTime()) / 86400000)
-    : 14;
+  const totalDays =
+    workoutPlan?.startDate && workoutPlan?.endDate
+      ? Math.ceil(
+          (new Date(workoutPlan.endDate).getTime() - new Date(workoutPlan.startDate).getTime()) /
+            86400000,
+        )
+      : 14;
 
   // Detect rest days for DaySelector
   const restDays = useMemo(() => {
@@ -177,8 +208,8 @@ export default function WorkoutPlanPage() {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">{tCommon("loading")}</p>
+          <Loader2 className="text-primary h-8 w-8 animate-spin" />
+          <p className="text-muted-foreground text-sm">{tCommon("loading")}</p>
         </div>
       </div>
     );
@@ -187,19 +218,17 @@ export default function WorkoutPlanPage() {
   // Show streaming banner while AI generates the plan (only if planData not yet parsed)
   if (workoutPlan && isStreaming && streamedText && !workoutPlan.planData) {
     return (
-      <div className="px-4 py-6 space-y-5 max-w-3xl mx-auto lg:px-6">
+      <div className="mx-auto max-w-3xl space-y-5 px-4 py-6 lg:px-6">
         <div>
           <h1 className="text-2xl font-bold">{t("title")}</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{t("generating")}</p>
+          <p className="text-muted-foreground mt-0.5 text-sm">{t("generating")}</p>
         </div>
         <div className="rounded-xl border border-[#F97316]/30 bg-[#F97316]/5 p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <Sparkles className="h-4 w-4 text-[#F97316] animate-pulse" />
-            <span className="text-sm font-semibold text-[#F97316]">
-              {t("aiGenerating")}
-            </span>
+          <div className="mb-3 flex items-center gap-2">
+            <Sparkles className="h-4 w-4 animate-pulse text-[#F97316]" />
+            <span className="text-sm font-semibold text-[#F97316]">{t("aiGenerating")}</span>
           </div>
-          <pre className="text-sm text-muted-foreground whitespace-pre-wrap font-sans leading-relaxed max-h-96 overflow-y-auto">
+          <pre className="text-muted-foreground max-h-96 overflow-y-auto font-sans text-sm leading-relaxed whitespace-pre-wrap">
             {streamedText}
           </pre>
         </div>
@@ -208,17 +237,28 @@ export default function WorkoutPlanPage() {
   }
 
   if (error || !workoutPlan) {
+    const isPlansGenerating = !workoutPlan && !!assessment;
     return (
-      <div className="px-4 py-6 space-y-6 max-w-3xl mx-auto lg:px-6">
+      <div className="mx-auto max-w-3xl space-y-6 px-4 py-6 lg:px-6">
         <div>
           <h1 className="text-2xl font-bold">{t("title")}</h1>
-          <p className="text-sm text-muted-foreground mt-1">{t("getStarted")}</p>
+          <p className="text-muted-foreground mt-1 text-sm">{t("getStarted")}</p>
         </div>
-        <EmptyState
-          icon={Dumbbell}
-          title={tEmpty("noWorkoutPlan.title")}
-          description={tEmpty("noWorkoutPlan.description")}
-        />
+        {isPlansGenerating ? (
+          <div className="border-border bg-card space-y-4 rounded-xl border p-8 text-center">
+            <Loader2 className="text-primary mx-auto h-10 w-10 animate-spin" />
+            <h2 className="text-lg font-bold">{tEmpty("workoutPlanGenerating.title")}</h2>
+            <p className="text-muted-foreground mx-auto max-w-md text-sm">
+              {tEmpty("workoutPlanGenerating.description")}
+            </p>
+          </div>
+        ) : (
+          <EmptyState
+            icon={Dumbbell}
+            title={tEmpty("noWorkoutPlan.title")}
+            description={tEmpty("noWorkoutPlan.description")}
+          />
+        )}
       </div>
     );
   }
@@ -232,25 +272,26 @@ export default function WorkoutPlanPage() {
   const dayPlan = normalizeWorkoutDay(rawDayPlan);
 
   return (
-    <div className="px-4 py-6 space-y-5 max-w-3xl mx-auto lg:px-6">
+    <div className="mx-auto max-w-3xl space-y-5 px-4 py-6 lg:px-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold">{t("title")}</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          {new Date(workoutPlan.startDate).toLocaleDateString(locale === "ar" ? "ar-EG" : "en")} - {new Date(workoutPlan.endDate).toLocaleDateString(locale === "ar" ? "ar-EG" : "en")}
+        <p className="text-muted-foreground mt-0.5 text-sm">
+          {new Date(workoutPlan.startDate).toLocaleDateString(locale === "ar" ? "ar-EG" : "en")} -{" "}
+          {new Date(workoutPlan.endDate).toLocaleDateString(locale === "ar" ? "ar-EG" : "en")}
         </p>
       </div>
 
       {/* Training Split Overview Card */}
       {planData.splitName && (
         <div className="rounded-xl border border-[#F97316]/20 bg-gradient-to-r from-[#F97316]/5 to-[#F97316]/10 p-4">
-          <div className="flex items-center gap-2 mb-1.5">
+          <div className="mb-1.5 flex items-center gap-2">
             <Target className="h-4 w-4 text-[#F97316]" />
             <span className="text-sm font-bold text-[#F97316]">{t("trainingSplit")}</span>
           </div>
           <h3 className="text-lg font-bold">{planData.splitName}</h3>
           {planData.splitDescription && (
-            <p className="text-xs text-muted-foreground mt-1">{planData.splitDescription}</p>
+            <p className="text-muted-foreground mt-1 text-xs">{planData.splitDescription}</p>
           )}
         </div>
       )}
@@ -259,7 +300,10 @@ export default function WorkoutPlanPage() {
       <DaySelector
         totalDays={totalDays}
         selectedDay={selectedDay}
-        onSelectDay={(day) => { setSelectedDay(day); setExpandedExercise(0); }}
+        onSelectDay={(day) => {
+          setSelectedDay(day);
+          setExpandedExercise(0);
+        }}
         planStartDate={workoutPlan.startDate}
         restDays={restDays}
         featureColor="fitness"
@@ -269,12 +313,12 @@ export default function WorkoutPlanPage() {
       {dayPlan && (
         <>
           {dayPlan.restDay ? (
-            <div className="rounded-xl border border-border bg-card p-10 text-center shadow-card animate-slide-up">
-              <div className="flex h-16 w-16 mx-auto items-center justify-center rounded-full bg-neutral-100 mb-4">
-                <Zap className="h-8 w-8 text-muted-foreground" />
+            <div className="border-border bg-card shadow-card animate-slide-up rounded-xl border p-10 text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100">
+                <Zap className="text-muted-foreground h-8 w-8" />
               </div>
               <h3 className="text-lg font-semibold">{t("restDay")}</h3>
-              <p className="mt-2 text-sm text-muted-foreground max-w-sm mx-auto">
+              <p className="text-muted-foreground mx-auto mt-2 max-w-sm text-sm">
                 {t("restDescription")}
               </p>
             </div>
@@ -283,49 +327,60 @@ export default function WorkoutPlanPage() {
               {/* Daily Workout Summary Card (WORK-05) */}
               <WidgetCard featureColor="fitness" title={dayPlan.workoutName || t("todaysWorkout")}>
                 <div className="flex items-center">
-                  <div className="text-center flex-1">
-                    <p className="text-lg font-bold">{Array.isArray(dayPlan.targetMuscles) ? dayPlan.targetMuscles.join(", ") : "-"}</p>
-                    <p className="text-[10px] text-muted-foreground">{t("targetMuscles")}</p>
+                  <div className="flex-1 text-center">
+                    <p className="text-lg font-bold">
+                      {Array.isArray(dayPlan.targetMuscles)
+                        ? dayPlan.targetMuscles.join(", ")
+                        : "-"}
+                    </p>
+                    <p className="text-muted-foreground text-[10px]">{t("targetMuscles")}</p>
                   </div>
-                  <div className="w-px h-8 bg-border" />
-                  <div className="text-center flex-1">
+                  <div className="bg-border h-8 w-px" />
+                  <div className="flex-1 text-center">
                     <p className="text-lg font-bold">{dayPlan.exercises?.length || 0}</p>
-                    <p className="text-[10px] text-muted-foreground">{t("exercises")}</p>
+                    <p className="text-muted-foreground text-[10px]">{t("exercises")}</p>
                   </div>
-                  <div className="w-px h-8 bg-border" />
-                  <div className="text-center flex-1">
+                  <div className="bg-border h-8 w-px" />
+                  <div className="flex-1 text-center">
                     <p className="text-lg font-bold">{dayPlan.duration || "-"}</p>
-                    <p className="text-[10px] text-muted-foreground">{t("duration")}</p>
+                    <p className="text-muted-foreground text-[10px]">{t("duration")}</p>
                   </div>
                 </div>
               </WidgetCard>
 
               {/* Warmup */}
-              {dayPlan.warmup && Array.isArray(dayPlan.warmup.exercises) && dayPlan.warmup.exercises.length > 0 && (
-                <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden animate-slide-up">
-                  <div className="flex items-center gap-2 p-4 border-b border-border bg-[#F97316]/8">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-md bg-[#F97316]/12 text-[#F97316] text-xs font-bold">W</span>
-                    <h3 className="font-semibold text-sm">{t("warmup")}</h3>
-                  </div>
-                  <div className="divide-y divide-border">
-                    {dayPlan.warmup.exercises.map((exercise: any, index: number) => (
-                      <div key={index} className="p-4">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="font-medium text-sm">{exercise.name}</span>
-                          <span className="text-xs text-muted-foreground rounded-md bg-neutral-100 px-2 py-0.5">
-                            {exercise.duration}s
-                          </span>
+              {dayPlan.warmup &&
+                Array.isArray(dayPlan.warmup.exercises) &&
+                dayPlan.warmup.exercises.length > 0 && (
+                  <div className="border-border bg-card shadow-card animate-slide-up overflow-hidden rounded-xl border">
+                    <div className="border-border flex items-center gap-2 border-b bg-[#F97316]/8 p-4">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-md bg-[#F97316]/12 text-xs font-bold text-[#F97316]">
+                        W
+                      </span>
+                      <h3 className="text-sm font-semibold">{t("warmup")}</h3>
+                    </div>
+                    <div className="divide-border divide-y">
+                      {dayPlan.warmup.exercises.map((exercise: any, index: number) => (
+                        <div key={index} className="p-4">
+                          <div className="mb-1.5 flex items-center justify-between">
+                            <span className="text-sm font-medium">{exercise.name}</span>
+                            <span className="text-muted-foreground rounded-md bg-neutral-100 px-2 py-0.5 text-xs">
+                              {exercise.duration}s
+                            </span>
+                          </div>
+                          <ul className="text-muted-foreground space-y-0.5 text-xs">
+                            {(Array.isArray(exercise.instructions)
+                              ? exercise.instructions
+                              : []
+                            ).map((instruction: string, i: number) => (
+                              <li key={i}>&#8226; {instruction}</li>
+                            ))}
+                          </ul>
                         </div>
-                        <ul className="space-y-0.5 text-xs text-muted-foreground">
-                          {(Array.isArray(exercise.instructions) ? exercise.instructions : []).map((instruction: string, i: number) => (
-                            <li key={i}>&#8226; {instruction}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {/* Exercise Mini-Cards (WORK-02, WORK-03, WORK-04) */}
               <div className="space-y-3">
@@ -335,50 +390,57 @@ export default function WorkoutPlanPage() {
                   return (
                     <div
                       key={index}
-                      className="rounded-xl border border-border bg-card shadow-card overflow-hidden animate-slide-up"
+                      className="border-border bg-card shadow-card animate-slide-up overflow-hidden rounded-xl border"
                       style={{ animationDelay: `${index * 50}ms` }}
                     >
                       {/* Exercise Header */}
                       <button
                         onClick={() => setExpandedExercise(isExpanded ? null : index)}
-                        className="w-full p-3.5 flex items-center justify-between gap-3 text-start hover:bg-neutral-50 transition-colors active:scale-[0.97]"
+                        className="flex w-full items-center justify-between gap-3 p-3.5 text-start transition-colors hover:bg-neutral-50 active:scale-[0.97]"
                       >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F97316]/10 text-[#F97316] text-xs font-bold">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F97316]/10 text-xs font-bold text-[#F97316]">
                             {String(index + 1).padStart(2, "0")}
                           </div>
                           <div className="min-w-0">
-                            <h4 className="font-semibold text-sm truncate">{exercise.name}</h4>
-                            <p className="text-xs text-muted-foreground mt-0.5">
+                            <h4 className="truncate text-sm font-semibold">{exercise.name}</h4>
+                            <p className="text-muted-foreground mt-0.5 text-xs">
                               {exercise.sets}x{exercise.reps} {t("reps")}
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex shrink-0 items-center gap-2">
                           {/* Muscle group tags (WORK-03) */}
                           {exercise.targetMuscles && exercise.targetMuscles.length > 0 && (
-                            <span className="rounded-full bg-[#F97316]/10 text-[#F97316] px-2 py-0.5 text-[10px] font-medium hidden sm:inline-block">
+                            <span className="hidden rounded-full bg-[#F97316]/10 px-2 py-0.5 text-[10px] font-medium text-[#F97316] sm:inline-block">
                               {exercise.targetMuscles.join(", ")}
                             </span>
                           )}
-                          <ChevronDown className={cn(
-                            "h-4 w-4 text-muted-foreground transition-transform duration-200",
-                            isExpanded && "rotate-180"
-                          )} />
+                          <ChevronDown
+                            className={cn(
+                              "text-muted-foreground h-4 w-4 transition-transform duration-200",
+                              isExpanded && "rotate-180",
+                            )}
+                          />
                         </div>
                       </button>
 
                       {/* Expanded Content (WORK-04) */}
-                      <div className={cn(
-                        "overflow-hidden transition-all duration-200 ease-in-out",
-                        isExpanded ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"
-                      )}>
-                        <div className="px-3.5 pb-3.5 space-y-3 border-t border-border pt-3">
+                      <div
+                        className={cn(
+                          "overflow-hidden transition-all duration-200 ease-in-out",
+                          isExpanded ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0",
+                        )}
+                      >
+                        <div className="border-border space-y-3 border-t px-3.5 pt-3 pb-3.5">
                           {/* Muscle tags (visible on mobile when expanded) */}
                           {exercise.targetMuscles && exercise.targetMuscles.length > 0 && (
                             <div className="flex flex-wrap gap-1 sm:hidden">
                               {exercise.targetMuscles.map((muscle: string, mi: number) => (
-                                <span key={mi} className="rounded-full bg-[#F97316]/10 text-[#F97316] px-2 py-0.5 text-[10px] font-medium">
+                                <span
+                                  key={mi}
+                                  className="rounded-full bg-[#F97316]/10 px-2 py-0.5 text-[10px] font-medium text-[#F97316]"
+                                >
                                   {muscle}
                                 </span>
                               ))}
@@ -389,28 +451,30 @@ export default function WorkoutPlanPage() {
                           <div className="grid grid-cols-3 gap-2">
                             <div className="rounded-lg bg-neutral-50 p-2 text-center">
                               <p className="text-sm font-bold">{exercise.sets}</p>
-                              <p className="text-[10px] text-muted-foreground">{t("sets")}</p>
+                              <p className="text-muted-foreground text-[10px]">{t("sets")}</p>
                             </div>
                             <div className="rounded-lg bg-neutral-50 p-2 text-center">
                               <p className="text-sm font-bold">{exercise.reps}</p>
-                              <p className="text-[10px] text-muted-foreground">{t("reps")}</p>
+                              <p className="text-muted-foreground text-[10px]">{t("reps")}</p>
                             </div>
                             <div className="rounded-lg bg-neutral-50 p-2 text-center">
-                              <p className="text-sm font-bold">{exercise.rest || (exercise as any).restBetweenSets || "-"}</p>
-                              <p className="text-[10px] text-muted-foreground">{t("rest")}</p>
+                              <p className="text-sm font-bold">
+                                {exercise.rest || (exercise as any).restBetweenSets || "-"}
+                              </p>
+                              <p className="text-muted-foreground text-[10px]">{t("rest")}</p>
                             </div>
                           </div>
 
                           {/* Equipment */}
                           {exercise.equipment && (
-                            <span className="inline-block rounded-md bg-[#F97316]/12 text-[#F97316] px-2.5 py-1 text-xs font-medium">
+                            <span className="inline-block rounded-md bg-[#F97316]/12 px-2.5 py-1 text-xs font-medium text-[#F97316]">
                               {exercise.equipment}
                             </span>
                           )}
 
                           {/* Notes */}
                           {exercise.notes && (
-                            <p className="text-xs text-muted-foreground italic bg-neutral-50 rounded-lg p-2.5">
+                            <p className="text-muted-foreground rounded-lg bg-neutral-50 p-2.5 text-xs italic">
                               {exercise.notes}
                             </p>
                           )}
@@ -422,31 +486,38 @@ export default function WorkoutPlanPage() {
               </div>
 
               {/* Cooldown */}
-              {dayPlan.cooldown && Array.isArray(dayPlan.cooldown.exercises) && dayPlan.cooldown.exercises.length > 0 && (
-                <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden animate-slide-up">
-                  <div className="flex items-center gap-2 p-4 border-b border-border bg-neutral-50">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-md bg-neutral-200 text-xs font-bold">C</span>
-                    <h3 className="font-semibold text-sm">{t("cooldown")}</h3>
-                  </div>
-                  <div className="divide-y divide-border">
-                    {dayPlan.cooldown.exercises.map((exercise: any, index: number) => (
-                      <div key={index} className="p-4">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="font-medium text-sm">{exercise.name}</span>
-                          <span className="text-xs text-muted-foreground rounded-md bg-neutral-100 px-2 py-0.5">
-                            {exercise.duration}s
-                          </span>
+              {dayPlan.cooldown &&
+                Array.isArray(dayPlan.cooldown.exercises) &&
+                dayPlan.cooldown.exercises.length > 0 && (
+                  <div className="border-border bg-card shadow-card animate-slide-up overflow-hidden rounded-xl border">
+                    <div className="border-border flex items-center gap-2 border-b bg-neutral-50 p-4">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-md bg-neutral-200 text-xs font-bold">
+                        C
+                      </span>
+                      <h3 className="text-sm font-semibold">{t("cooldown")}</h3>
+                    </div>
+                    <div className="divide-border divide-y">
+                      {dayPlan.cooldown.exercises.map((exercise: any, index: number) => (
+                        <div key={index} className="p-4">
+                          <div className="mb-1.5 flex items-center justify-between">
+                            <span className="text-sm font-medium">{exercise.name}</span>
+                            <span className="text-muted-foreground rounded-md bg-neutral-100 px-2 py-0.5 text-xs">
+                              {exercise.duration}s
+                            </span>
+                          </div>
+                          <ul className="text-muted-foreground space-y-0.5 text-xs">
+                            {(Array.isArray(exercise.instructions)
+                              ? exercise.instructions
+                              : []
+                            ).map((instruction: string, i: number) => (
+                              <li key={i}>&#8226; {instruction}</li>
+                            ))}
+                          </ul>
                         </div>
-                        <ul className="space-y-0.5 text-xs text-muted-foreground">
-                          {(Array.isArray(exercise.instructions) ? exercise.instructions : []).map((instruction: string, i: number) => (
-                            <li key={i}>&#8226; {instruction}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
             </>
           )}
         </>
@@ -454,18 +525,18 @@ export default function WorkoutPlanPage() {
 
       {/* Progression Notes */}
       {planData.progressionNotes && (
-        <div className="rounded-xl bg-[#F97316]/8 border border-[#F97316]/20 p-4">
-          <p className="text-xs text-muted-foreground font-medium mb-1">{t("progressionNotes")}</p>
+        <div className="rounded-xl border border-[#F97316]/20 bg-[#F97316]/8 p-4">
+          <p className="text-muted-foreground mb-1 text-xs font-medium">{t("progressionNotes")}</p>
           <p className="text-sm font-medium">{planData.progressionNotes}</p>
         </div>
       )}
 
       {/* Safety Tips */}
       {planData.safetyTips && planData.safetyTips.length > 0 && (
-        <div className="rounded-xl bg-error-500/5 border border-error-500/20 p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <AlertTriangle className="h-4 w-4 text-error-500" />
-            <p className="text-xs font-semibold text-error-500">{t("safetyTips")}</p>
+        <div className="bg-error-500/5 border-error-500/20 rounded-xl border p-4">
+          <div className="mb-2 flex items-center gap-2">
+            <AlertTriangle className="text-error-500 h-4 w-4" />
+            <p className="text-error-500 text-xs font-semibold">{t("safetyTips")}</p>
           </div>
           <ul className="space-y-1.5">
             {planData.safetyTips.map((tip, index) => (

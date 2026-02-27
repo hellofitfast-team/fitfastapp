@@ -62,19 +62,17 @@ export function MobileHeader({ userName }: MobileHeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-[var(--z-header)] border-b border-border bg-card/95 backdrop-blur-md pt-[env(safe-area-inset-top)] lg:hidden">
+    <header className="border-border bg-card/95 sticky top-0 z-[var(--z-header)] border-b pt-[env(safe-area-inset-top)] backdrop-blur-md lg:hidden">
       <div className="flex h-[var(--height-header)] items-center justify-between px-4">
         {/* Left side — Greeting or Title */}
         {isDashboard && userName ? (
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-white text-xs font-bold">
+            <div className="bg-primary flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold text-white">
               {getInitials(userName)}
             </div>
             <div>
-              <p className="text-sm font-bold">
-                {userName.split(" ")[0]}
-              </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm font-bold">{userName.split(" ")[0]}</p>
+              <p className="text-muted-foreground text-xs">
                 {new Date().toLocaleDateString(currentLocale === "ar" ? "ar-EG" : "en-US", {
                   weekday: "short",
                   month: "short",
@@ -85,10 +83,8 @@ export function MobileHeader({ userName }: MobileHeaderProps) {
           </div>
         ) : (
           <div className="flex items-center gap-2.5">
-            <div className="w-0.5 h-5 rounded-full bg-primary" />
-            <h1 className="text-lg font-bold tracking-tight truncate">
-              {t(titleKey)}
-            </h1>
+            <div className="bg-primary h-5 w-0.5 rounded-full" />
+            <h1 className="truncate text-lg font-bold tracking-tight">{t(titleKey)}</h1>
           </div>
         )}
 
@@ -96,7 +92,7 @@ export function MobileHeader({ userName }: MobileHeaderProps) {
         <div className="flex items-center gap-1.5">
           {/* Language Switcher */}
           <button
-            className="flex h-11 w-11 items-center justify-center rounded-lg text-xs font-semibold text-muted-foreground hover:bg-neutral-100 hover:text-foreground transition-colors"
+            className="text-muted-foreground hover:text-foreground flex h-11 w-11 items-center justify-center rounded-lg text-xs font-semibold transition-colors hover:bg-neutral-100"
             onClick={switchLocale}
             aria-label="Switch language"
           >
@@ -105,7 +101,7 @@ export function MobileHeader({ userName }: MobileHeaderProps) {
 
           {/* Notifications */}
           <button
-            className="flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground hover:bg-neutral-100 hover:text-foreground transition-colors"
+            className="text-muted-foreground hover:text-foreground flex h-11 w-11 items-center justify-center rounded-lg transition-colors hover:bg-neutral-100"
             aria-label="Notifications"
           >
             <Bell className="h-4 w-4" />
@@ -115,7 +111,7 @@ export function MobileHeader({ userName }: MobileHeaderProps) {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
-                className="flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground hover:bg-neutral-100 hover:text-foreground transition-colors"
+                className="text-muted-foreground hover:text-foreground flex h-11 w-11 items-center justify-center rounded-lg transition-colors hover:bg-neutral-100"
                 aria-label="User menu"
               >
                 <User className="h-4 w-4" />
@@ -123,15 +119,12 @@ export function MobileHeader({ userName }: MobileHeaderProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               {userName && (
-                <div className="px-3 py-2 text-sm font-medium text-muted-foreground">
+                <div className="text-muted-foreground px-3 py-2 text-sm font-medium">
                   {userName}
                 </div>
               )}
               <DropdownMenuItem asChild>
-                <Link
-                  href="/settings"
-                  className="flex items-center gap-2 cursor-pointer"
-                >
+                <Link href="/settings" className="flex cursor-pointer items-center gap-2">
                   <Settings className="h-4 w-4" />
                   {t("nav.settings")}
                 </Link>
@@ -139,7 +132,7 @@ export function MobileHeader({ userName }: MobileHeaderProps) {
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={handleLogout}
-                className="flex items-center gap-2 text-error-500 cursor-pointer focus:text-error-500"
+                className="text-error-500 focus:text-error-500 flex cursor-pointer items-center gap-2"
               >
                 <LogOut className="h-4 w-4" />
                 {t("auth.logout")}

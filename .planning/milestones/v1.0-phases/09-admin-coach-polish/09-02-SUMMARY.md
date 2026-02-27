@@ -62,6 +62,7 @@ metrics:
 ## What Was Built
 
 ### Task 1: Admin Settings Form Error Handling + Toaster in Layout
+
 - Wrapped `handleSave` in try-catch with explicit error checking for Promise.all results
 - Added success toast on save and destructive toast on failure
 - Log all errors to Sentry with tags: `feature: "admin-settings"`, `operation: "update-config"`, `panel: "admin"`
@@ -70,6 +71,7 @@ metrics:
 - Added 4 i18n keys for toast messages (saveSuccess, saveSuccessDescription, saveError, saveErrorGeneric) in both English and Arabic
 
 ### Task 2: Admin Route Error Boundaries + i18n
+
 - Created 4 error.tsx files following brutalist pattern from Phase 8:
   - `(panel)/error.tsx` - Panel-level fallback (catches errors in dashboard, etc.)
   - `settings/error.tsx` - Settings route errors
@@ -88,6 +90,7 @@ None - plan executed exactly as written. All Supabase errors are now explicitly 
 ## Verification Results
 
 All verification criteria passed:
+
 - ✓ `pnpm tsc --noEmit` passes with no errors
 - ✓ Sentry.captureException present in settings-form.tsx
 - ✓ 2 toast() calls in settings-form.tsx (success + error)
@@ -100,30 +103,37 @@ All verification criteria passed:
 ## Key Implementation Details
 
 **Error Checking Pattern:**
+
 ```typescript
 const results = await Promise.all([...updates]);
 const errors = results.filter((r) => r.error);
 if (errors.length > 0) {
-  throw new Error(`Failed to update ${errors.length} setting(s): ${errors.map((e) => e.error?.message).join(", ")}`);
+  throw new Error(
+    `Failed to update ${errors.length} setting(s): ${errors.map((e) => e.error?.message).join(", ")}`,
+  );
 }
 ```
 
 **Toast Feedback:**
+
 - Success: Default toast variant with title + description
 - Error: Destructive toast with error message (or generic fallback)
 
 **Sentry Tagging:**
+
 - Admin-specific: `panel: "admin"` on all admin errors
 - Feature: `admin-settings`, `admin-signups-page`, `admin-tickets-page`, `admin-panel`
 - Operation: `update-config` (for settings form)
 
 **i18n Structure:**
+
 - Toast messages under `admin` namespace (settings-specific)
 - Error boundaries under `routeErrors` namespace (consistent with dashboard)
 
 ## Testing Notes
 
 To verify:
+
 1. Navigate to `/admin/settings`
 2. Change a setting and click Save → should see "Settings Saved" toast
 3. Simulate Supabase error (disconnect network) → should see destructive toast with error message and Sentry log
@@ -148,16 +158,19 @@ To verify:
 ## Self-Check: PASSED
 
 **Created files exist:**
+
 - ✓ src/app/[locale]/(admin)/admin/(panel)/error.tsx
 - ✓ src/app/[locale]/(admin)/admin/(panel)/settings/error.tsx
 - ✓ src/app/[locale]/(admin)/admin/(panel)/signups/error.tsx
 - ✓ src/app/[locale]/(admin)/admin/(panel)/tickets/error.tsx
 
 **Commits exist:**
+
 - ✓ 383d1c9 present in git log
 - ✓ 155e976 present in git log
 
 **Modified files contain expected changes:**
+
 - ✓ settings-form.tsx has Sentry.captureException and toast calls
 - ✓ layout.tsx imports and renders Toaster
 - ✓ en.json and ar.json have saveSuccess and adminSettings keys

@@ -24,10 +24,9 @@ export const sendPlanReadyNotification = internalAction({
     workoutPlanId: v.id("workoutPlans"),
   },
   handler: async (ctx, { userId }) => {
-    const subscription = await ctx.runQuery(
-      internal.pushSubscriptions.getSubscriptionByUserId,
-      { userId },
-    );
+    const subscription = await ctx.runQuery(internal.pushSubscriptions.getSubscriptionByUserId, {
+      userId,
+    });
     if (!subscription?.isActive || !subscription.onesignalSubscriptionId) return;
 
     await retrier.run(ctx, internal.notifications.sendPlanReadyPush, {
@@ -51,10 +50,9 @@ export const sendPlanReadyPush = internalAction({
 export const sendReminderToUser = internalAction({
   args: { userId: v.string() },
   handler: async (ctx, { userId }) => {
-    const subscription = await ctx.runQuery(
-      internal.pushSubscriptions.getSubscriptionByUserId,
-      { userId },
-    );
+    const subscription = await ctx.runQuery(internal.pushSubscriptions.getSubscriptionByUserId, {
+      userId,
+    });
 
     if (subscription?.isActive && subscription.onesignalSubscriptionId) {
       await retrier.run(ctx, internal.notifications.sendReminderPush, {

@@ -44,8 +44,7 @@ export default defineSchema({
     changedFields: v.array(v.string()),
     versionNumber: v.number(),
     createdAt: v.number(),
-  })
-    .index("by_userId", ["userId"]),
+  }).index("by_userId", ["userId"]),
 
   initialAssessments: defineTable({
     userId: v.string(),
@@ -76,12 +75,16 @@ export default defineSchema({
     age: v.optional(v.number()),
     gender: v.optional(v.string()),
     exerciseHistory: v.optional(v.string()),
-    experienceLevel: v.optional(
+    activityLevel: v.optional(
       v.union(
-        v.literal("beginner"),
-        v.literal("intermediate"),
-        v.literal("advanced"),
+        v.literal("sedentary"),
+        v.literal("lightly_active"),
+        v.literal("moderately_active"),
+        v.literal("very_active"),
       ),
+    ),
+    experienceLevel: v.optional(
+      v.union(v.literal("beginner"), v.literal("intermediate"), v.literal("advanced")),
     ),
     lifestyleHabits: v.optional(
       v.object({
@@ -180,11 +183,7 @@ export default defineSchema({
       ),
     ),
     description: v.optional(v.string()),
-    status: v.union(
-      v.literal("open"),
-      v.literal("coach_responded"),
-      v.literal("closed"),
-    ),
+    status: v.union(v.literal("open"), v.literal("coach_responded"), v.literal("closed")),
     messages: v.array(
       v.object({
         sender: v.union(v.literal("client"), v.literal("coach")),
@@ -232,11 +231,7 @@ export default defineSchema({
     ),
     paymentScreenshotId: v.optional(v.id("_storage")),
     ocrExtractedData: v.optional(v.any()),
-    status: v.union(
-      v.literal("pending"),
-      v.literal("approved"),
-      v.literal("rejected"),
-    ),
+    status: v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected")),
     reviewedAt: v.optional(v.number()),
     rejectionReason: v.optional(v.string()),
     inviteToken: v.optional(v.string()),
@@ -270,6 +265,42 @@ export default defineSchema({
   })
     .index("by_storageId", ["storageId"])
     .index("by_uploadedBy", ["uploadedBy"]),
+
+  foodDatabase: defineTable({
+    name: v.string(),
+    nameAr: v.optional(v.string()),
+    category: v.string(), // "protein" | "carb" | "fat" | "vegetable" | "fruit" | "dairy" | "dessert" | "recipe"
+    tags: v.array(v.string()),
+    per100g: v.object({
+      calories: v.number(),
+      protein: v.number(),
+      carbs: v.number(),
+      fat: v.number(),
+      fiber: v.optional(v.number()),
+    }),
+    isRecipe: v.boolean(),
+    servingSize: v.optional(v.string()),
+    perServing: v.optional(
+      v.object({
+        calories: v.number(),
+        protein: v.number(),
+        carbs: v.number(),
+        fat: v.number(),
+      }),
+    ),
+    ingredients: v.optional(v.array(v.string())),
+    instructions: v.optional(v.array(v.string())),
+    source: v.string(), // "usda" | "coach" | "verified_recipe"
+    isVerified: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_category", ["category"])
+    .index("by_isRecipe", ["isRecipe"])
+    .searchIndex("search_name", {
+      searchField: "name",
+      filterFields: ["category", "isRecipe"],
+    }),
 
   coachKnowledge: defineTable({
     title: v.string(),

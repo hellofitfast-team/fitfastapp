@@ -45,31 +45,35 @@ Based on research, suggested phase structure:
    - Test: Lighthouse accessibility audit, cross-browser testing
 
 **Phase ordering rationale:**
+
 - Phase 1 first because core color swap enables testing
 - Phase 2 depends on Phase 1 (can't audit components with old colors)
 - Phase 3 is polish layer on top of working rebrand
 
 **Research flags for phases:**
+
 - Phase 1: Unlikely to need deeper research (straightforward CSS changes)
 - Phase 2: May need research if custom components use unexpected color patterns (grep codebase for #FF3B00)
 - Phase 3: Standard accessibility patterns, no research needed
 
 ## Confidence Assessment
 
-| Area | Confidence | Notes |
-|------|------------|-------|
-| Stack | HIGH | Tailwind v4 official docs, shadcn/ui migration guide verified. Current implementation audited. |
-| Features | HIGH | Component inventory based on shadcn/ui standard patterns. Semantic color mapping well-documented. |
-| Architecture | HIGH | CSS-first theming is standard v4 pattern. No custom config needed. |
-| Pitfalls | HIGH | Official upgrade guide, community GitHub discussions, verified with current codebase. |
+| Area         | Confidence | Notes                                                                                             |
+| ------------ | ---------- | ------------------------------------------------------------------------------------------------- |
+| Stack        | HIGH       | Tailwind v4 official docs, shadcn/ui migration guide verified. Current implementation audited.    |
+| Features     | HIGH       | Component inventory based on shadcn/ui standard patterns. Semantic color mapping well-documented. |
+| Architecture | HIGH       | CSS-first theming is standard v4 pattern. No custom config needed.                                |
+| Pitfalls     | HIGH       | Official upgrade guide, community GitHub discussions, verified with current codebase.             |
 
 **Confidence drivers:**
+
 - Official Tailwind v4 documentation (theme variables, upgrade guide)
 - Official shadcn/ui theming and v4 migration docs
 - Direct inspection of FitFast's current implementation
 - Multiple community sources (Shadcnblocks, GitHub discussions) confirming patterns
 
 **Uncertainty:**
+
 - Exact Royal Blue OKLCH values (web tools gave approximate values, but HSL format recommended anyway)
 - Whether any custom components hardcode orange colors (requires codebase grep)
 
@@ -85,16 +89,19 @@ Based on research, suggested phase structure:
 ### Remaining Gaps
 
 **1. Custom component color audit** (Phase 2 task)
+
 - Need to grep codebase for `#FF3B00`, `#00FF94`, `bg-orange`, `text-orange`, `border-orange`
 - Identify any hardcoded colors in React components, SVGs, or custom CSS
 - Cannot predict extent until search is run
 
 **2. Royal Blue shade palette** (Optional enhancement)
+
 - Research provided single Royal Blue value (#4169e1 / hsl(225 73% 57%))
 - Full 50-900 shade palette generation can use Tailwind defaults or manual creation
 - Recommend using Tailwind's default blue scale with override for 500 shade
 
 **3. Accessibility contrast verification** (Phase 3 task)
+
 - Research provided theoretical contrast ratios
 - Need actual testing with FitFast's cream background (#FFFEF5) vs white
 - Chrome DevTools contrast checker required for validation
@@ -119,6 +126,7 @@ Based on research, suggested phase structure:
 ## Sources Summary
 
 **PRIMARY (HIGH Confidence):**
+
 - [Tailwind CSS v4 Theme Variables](https://tailwindcss.com/docs/theme)
 - [Tailwind CSS v4.0 Release Notes](https://tailwindcss.com/blog/tailwindcss-v4)
 - [Tailwind v4 Upgrade Guide](https://tailwindcss.com/docs/upgrade-guide)
@@ -127,12 +135,14 @@ Based on research, suggested phase structure:
 - [shadcn/ui Color Palette Reference](https://ui.shadcn.com/colors)
 
 **SECONDARY (MEDIUM Confidence):**
+
 - [Shadcnblocks: Tailwind 4 Theming Guide](https://www.shadcnblocks.com/blog/tailwind4-shadcn-themeing/)
 - [Tailwind v4 vs v3 Comparison](https://frontend-hero.com/tailwind-v4-vs-v3)
 - [Tailwind CSS v4 Complete Guide 2026](https://devtoolbox.dedyn.io/blog/tailwind-css-v4-complete-guide)
 - [Frontend Tools: Best Practices 2025-2026](https://www.frontendtools.tech/blog/tailwind-css-best-practices-design-system-patterns)
 
 **VERIFICATION (Codebase Analysis):**
+
 - `/Users/ziadadel/Desktop/fitfast/src/app/globals.css` (current theme implementation)
 - Confirmed Tailwind v4.1.18 installation
 - Confirmed `@theme inline` usage (correct pattern)

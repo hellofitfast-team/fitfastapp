@@ -2,9 +2,8 @@ import { notFound } from "next/navigation";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { routing } from "@fitfast/i18n/routing";
-import { ServiceWorkerRegistration } from "@/components/pwa/ServiceWorkerRegistration";
-import { OneSignalProvider } from "@/components/pwa/OneSignalProvider";
 import { ConvexClientProvider } from "@/components/providers/convex-provider";
+import { PWAProviders } from "@/components/pwa/PWAProviders";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -30,8 +29,7 @@ export default async function LocaleLayout({
   return (
     <ConvexClientProvider>
       <NextIntlClientProvider messages={messages}>
-        <ServiceWorkerRegistration />
-        <OneSignalProvider />
+        <PWAProviders />
         {children}
       </NextIntlClientProvider>
     </ConvexClientProvider>

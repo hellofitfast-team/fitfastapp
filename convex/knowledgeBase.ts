@@ -1,10 +1,5 @@
 import { v } from "convex/values";
-import {
-  query,
-  mutation,
-  internalMutation,
-  internalQuery,
-} from "./_generated/server";
+import { query, mutation, internalMutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getAuthUserId } from "./auth";
 
@@ -31,11 +26,7 @@ export const listKnowledgeEntries = query({
   args: {},
   handler: async (ctx) => {
     await requireCoach(ctx);
-    return ctx.db
-      .query("coachKnowledge")
-      .withIndex("by_createdAt")
-      .order("desc")
-      .collect();
+    return ctx.db.query("coachKnowledge").withIndex("by_createdAt").order("desc").collect();
   },
 });
 

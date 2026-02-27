@@ -89,12 +89,7 @@ export const updateClientStatus = mutation({
       v.literal("inactive"),
       v.literal("expired"),
     ),
-    planTier: v.optional(
-      v.union(
-        v.literal("monthly"),
-        v.literal("quarterly"),
-      ),
-    ),
+    planTier: v.optional(v.union(v.literal("monthly"), v.literal("quarterly"))),
     planStartDate: v.optional(v.string()),
     planEndDate: v.optional(v.string()),
   },
@@ -167,8 +162,11 @@ export const rejectClient = mutation({
       await activeClientsCount.deleteIfExists(ctx, { key: profileId, id: profileId });
     }
 
-    // Delete the profile
-    await ctx.db.delete(profileId);
+    // Cascade-delete all user data (profile, plans, check-ins, tickets, files, etc.)
+    await ctx.scheduler.runAfter(0, internal.dataRetention.cascadeDeleteUser, {
+      userId: profile.userId,
+      profileId: profile._id,
+    });
   },
 });
 

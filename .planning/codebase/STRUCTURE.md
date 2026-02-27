@@ -162,54 +162,64 @@ fitfast/
 ## Directory Purposes
 
 **src/app:**
+
 - Purpose: Next.js App Router; file-based routing determines URL structure
 - Contains: Route groups, pages, layouts, API handlers
 - Key pattern: `[locale]` dynamic segment parameterizes all routes for i18n; route groups `(name)` organize related pages without affecting URL
 
 **src/app/[locale]/(auth):**
+
 - Purpose: Public authentication pages
 - Contains: Login, magic-link confirmation, password set, sign-in orchestration
 - Access: No auth required (public routes in middleware)
 - Layout: Stylized auth shell with header, marquee, footer
 
 **src/app/[locale]/(dashboard):**
+
 - Purpose: Client-facing fitness features and dashboard
 - Contains: Check-in, meal/workout plans, progress tracking, tickets, settings
 - Access: Authenticated users only; redirects if status != "active" or no assessment
 - Layout: Dashboard shell with header, sidebar navigation
 
 **src/app/[locale]/(onboarding):**
+
 - Purpose: Guided flow for new clients before dashboard access
 - Contains: Welcome page, initial assessment form, pending approval status
 - Access: Authenticated users with status == "pending_approval" or no assessment yet
 
 **src/app/[locale]/(admin):**
+
 - Purpose: Coach management interface
 - Contains: Client management, signup approvals, ticket responses, FAQs, coach settings
 - Access: Authenticated coaches only (is_coach == true); checked in middleware
 - Layout: Admin shell with different navigation and data context
 
 **src/app/api:**
+
 - Purpose: Backend business logic exposed as HTTP endpoints
 - Contains: Auth orchestration, plan generation, database mutations, external service calls
 - Pattern: RESTful structure matching feature domains; all routes validate auth first
 
 **src/components/ui:**
+
 - Purpose: Reusable shadcn/ui components
 - Contains: Form controls, dialogs, cards, dropdowns
 - Pattern: Copy-pasted from shadcn/ui; minimal customization; used across all pages
 
 **src/components/layouts:**
+
 - Purpose: Shell/wrapper components
 - Contains: DashboardShell (client dashboard wrapper), Header, Sidebar
 - Pattern: Render children within layout, manage nav state, display user info
 
 **src/components/admin:**
+
 - Purpose: Admin-specific UI
 - Contains: AdminShell, AdminHeader, AdminSidebar
 - Pattern: Similar to client layouts but with coach-specific nav and badge counts
 
 **src/lib/supabase:**
+
 - Purpose: Supabase client initialization and session management
 - Key files:
   - `server.ts`: Create server-safe client (handles cookies, session)
@@ -218,6 +228,7 @@ fitfast/
   - `middleware.ts`: Session refresh logic called from `proxy.ts`
 
 **src/lib/ai:**
+
 - Purpose: AI integration and plan generation
 - Key files:
   - `openrouter.ts`: OpenRouter API client wrapper (DeepSeek V3)
@@ -225,22 +236,26 @@ fitfast/
   - `workout-plan-generator.ts`: Workout plan prompt engineering + JSON parsing
 
 **src/hooks:**
+
 - Purpose: Custom React hooks for data fetching and state management
 - Pattern: SWR for remote state (auto-refresh, deduplication), Zustand for local state
 - Usage: Call from client components to get data + loading/error/refetch
 
 **src/types:**
+
 - Purpose: Type definitions
 - Key file: `database.ts` (auto-generated from Supabase schema)
 - Usage: Import for type safety in all components and API routes
 
 **src/messages:**
+
 - Purpose: Internationalization translation strings
 - Files: `en.json`, `ar.json` with namespaced keys
 - Pattern: Keys like `checkIn.steps.weight`, values in respective language
 - Usage: `useTranslations('namespace')` in client, `getTranslations()` in server
 
 **supabase/migrations:**
+
 - Purpose: Database schema and RLS policies
 - Key file: `001_initial_schema.sql`
 - Contains: Table definitions, indexes, row-level security policies, auth setup
@@ -248,36 +263,43 @@ fitfast/
 ## Key File Locations
 
 **Entry Points:**
+
 - `src/app/layout.tsx`: Root metadata, PWA setup
 - `src/app/[locale]/layout.tsx`: i18n provider, service worker registration, OneSignal setup
 - `src/proxy.ts`: Edge middleware for every request (auth, i18n routing)
 
 **Authentication:**
+
 - `src/app/api/auth/sign-in/route.ts`: OTP magic link request
 - `src/app/api/auth/callback/route.ts`: Handle Supabase redirect after email click
 - `src/lib/supabase/middleware.ts`: Session refresh on each request
 
 **Plans (Core Feature):**
+
 - `src/app/api/plans/meal/route.ts`: POST to generate meal plan
 - `src/app/api/plans/workout/route.ts`: POST to generate workout plan
 - `src/lib/ai/meal-plan-generator.ts`: AI prompt + parsing
 - `src/lib/ai/workout-plan-generator.ts`: AI prompt + parsing
 
 **Dashboard & Client Features:**
+
 - `src/app/[locale]/(dashboard)/layout.tsx`: Status/assessment guards, route to appropriate page
 - `src/hooks/use-dashboard.ts`: Dashboard data aggregation (streaks, progress, schedules)
 - `src/components/layouts/dashboard-shell.tsx`: Dashboard UI wrapper
 
 **Admin Features:**
+
 - `src/app/[locale]/(admin)/admin/(panel)/layout.tsx`: Admin shell + badge counts
 - `src/app/api/admin/approve-signup/route.ts`: Coach approval action
 - `src/app/api/admin/ocr/route.ts`: Payment verification OCR
 
 **i18n:**
+
 - `src/i18n/routing.ts`: Locale routing config
 - `src/messages/en.json`, `src/messages/ar.json`: Translation strings
 
 **Configuration:**
+
 - `next.config.ts`: Next.js + i18n + Sentry setup
 - `tsconfig.json`: TypeScript compiler options
 - `.env.local`: Runtime secrets (not committed)
@@ -286,6 +308,7 @@ fitfast/
 ## Naming Conventions
 
 **Files:**
+
 - `.tsx` → React components (includes JSX)
 - `.ts` → TypeScript modules, utilities, services
 - `layout.tsx` → Route layout (child wrapper)
@@ -295,6 +318,7 @@ fitfast/
 - `(group)` → Route group (not affecting URL, for organization)
 
 **Directories:**
+
 - `[locale]` → Parameterized directory (locale segment)
 - `(groupName)` → Route group (logical grouping)
 - `api/` → API routes
@@ -305,28 +329,33 @@ fitfast/
 - `messages/` → i18n files
 
 **Components:**
+
 - PascalCase (e.g., `DashboardShell`, `CheckInForm`)
 - Descriptive names (e.g., `UserAuthForm`, `MealPlanCard`)
 - Layout components: suffix with `Shell` or `Layout`
 - Utility/presentational: generic names (e.g., `Header`, `Sidebar`)
 
 **Functions:**
+
 - camelCase (e.g., `generateMealPlan`, `fetchUserProfile`)
 - Hooks: prefix `use` (e.g., `useAuth`, `useDashboard`)
 - Async: no special prefix, but typed as `async () => Promise<T>`
 
 **Variables:**
+
 - camelCase for local vars, props
 - UPPERCASE for constants (e.g., `OPENROUTER_API_URL`)
 - Prefixed with `is`/`has` for booleans (e.g., `isLoading`, `hasAssessment`)
 
 **Database/Types:**
+
 - snake_case for table/column names (Supabase convention)
 - PascalCase for TypeScript types (e.g., `type Profile`, `interface MealPlan`)
 
 ## Where to Add New Code
 
 **New Feature (e.g., Progress Tracking):**
+
 - Primary code:
   - Pages: `src/app/[locale]/(dashboard)/progress/page.tsx`
   - API: `src/app/api/progress/route.ts` (if needed)
@@ -335,28 +364,33 @@ fitfast/
 - Components: Create in `src/components/` if reusable, else inline in page
 
 **New Component (e.g., ProgressChart):**
+
 - Implementation: `src/components/charts/ProgressChart.tsx`
 - Export from: `src/components/index.ts` (barrel file) if widely used
 - Usage: Import in pages or parent components
 
 **New API Endpoint:**
+
 - Location: `src/app/api/{feature}/{action}/route.ts`
   - Example: `src/app/api/admin/send-message/route.ts`
 - Pattern: Follow existing routes → auth check → validate input → execute → return JSON
 - Error handling: Wrap in try-catch, return `{ error, status }` on failure
 
 **New Hook:**
+
 - Location: `src/hooks/use-{feature}.ts`
 - Pattern: Use SWR for remote state, expose `{ data, loading, error, refetch }`
 - If Zustand needed: Create `stores/{feature}.ts` (not yet in codebase, but follow pattern from `use-toast.ts`)
 
 **Database Changes:**
+
 - Schema: New migration in `supabase/migrations/{N}_description.sql`
 - Types: Auto-generated in `src/types/database.ts` after Supabase sync
 - Indexes: Add for frequently queried columns (user_id, created_at)
 - RLS: Write policies to restrict row access
 
 **Utilities:**
+
 - Shared helpers: `src/lib/utils/`
 - Supabase operations: `src/lib/supabase/`
 - Auth logic: `src/lib/auth/`
@@ -364,31 +398,37 @@ fitfast/
 ## Special Directories
 
 **src/.next:**
+
 - Purpose: Next.js build output (generated, never edit)
 - Generated: Yes
 - Committed: No
 
 **node_modules:**
+
 - Purpose: Dependencies installed by pnpm
 - Generated: Yes
 - Committed: No
 
 **public:**
+
 - Purpose: Static assets served at `/` path
 - Contains: Favicons, PWA manifest, images
 - Committed: Yes (small files)
 
 **supabase/migrations:**
+
 - Purpose: Database schema version control
 - Committed: Yes (all migrations)
-- Pattern: Chronological filenames (001_, 002_, etc.)
+- Pattern: Chronological filenames (001*, 002*, etc.)
 
 **src/messages:**
+
 - Purpose: i18n translation files
 - Committed: Yes
 - Pattern: One JSON file per locale, namespaced keys
 
 **.planning/codebase:**
+
 - Purpose: Generated architecture/structure documentation
 - Generated: By `/gsd:map-codebase` command
 - Committed: Yes (documents, not sensitive)
@@ -396,4 +436,4 @@ fitfast/
 
 ---
 
-*Structure analysis: 2026-02-12*
+_Structure analysis: 2026-02-12_

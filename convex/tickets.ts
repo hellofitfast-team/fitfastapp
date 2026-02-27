@@ -127,10 +127,7 @@ export const replyToTicket = mutation({
     if (ticket.status === "closed") throw new Error("Cannot reply to closed ticket");
 
     await ctx.db.patch(ticketId, {
-      messages: [
-        ...ticket.messages,
-        { sender: "client" as const, message, timestamp: Date.now() },
-      ],
+      messages: [...ticket.messages, { sender: "client" as const, message, timestamp: Date.now() }],
       updatedAt: Date.now(),
     });
   },
@@ -155,10 +152,7 @@ export const respondToTicket = mutation({
     if (!ticket) throw new Error("Ticket not found");
 
     await ctx.db.patch(ticketId, {
-      messages: [
-        ...ticket.messages,
-        { sender: "coach" as const, message, timestamp: Date.now() },
-      ],
+      messages: [...ticket.messages, { sender: "coach" as const, message, timestamp: Date.now() }],
       status: "coach_responded",
       updatedAt: Date.now(),
     });

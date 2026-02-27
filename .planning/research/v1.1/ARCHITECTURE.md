@@ -21,6 +21,7 @@ DashboardLayout (server component -- auth/guards)
 **Current nav pattern:** Desktop = permanent left sidebar (272px). Mobile = hamburger menu opens full sidebar overlay.
 
 **Problems with current approach for mobile:**
+
 - Sidebar is a desktop-first pattern forced onto mobile via overlay
 - Hamburger menu requires two taps to reach any nav item (tap hamburger, then tap item)
 - No persistent mobile navigation -- users lose spatial orientation
@@ -45,15 +46,17 @@ DashboardLayout (server component -- auth/guards)
 **Decision: Use ONE layout component with responsive breakpoint switching.**
 
 **Why not separate layouts:**
+
 - Next.js App Router layouts persist across navigations -- you cannot conditionally render different layout trees based on viewport without client-side JS anyway
 - Two layout trees means duplicated guard logic, duplicated state, duplicated providers
 - Content components are the same -- only the nav chrome changes
 - SSR cannot know viewport width, so both would render on the server regardless
 
 **Why single responsive layout works:**
+
 - Tailwind's responsive utilities (`lg:hidden`, `lg:flex`) handle visibility cleanly
 - The DashboardShell already does this pattern (sidebar hidden on mobile, visible on desktop)
-- We just need to swap *which* nav component is visible at each breakpoint
+- We just need to swap _which_ nav component is visible at each breakpoint
 
 ### 2.2 New Layout Structure
 
@@ -68,6 +71,7 @@ DashboardLayout (server component -- unchanged, auth/guards)
 ```
 
 **Key changes from current:**
+
 1. Replace sidebar with **desktop top navbar** (horizontal nav at lg+)
 2. Add **mobile bottom navigation** bar (visible below lg)
 3. Simplify mobile header (page title + actions only, no hamburger)
@@ -77,12 +81,13 @@ DashboardLayout (server component -- unchanged, auth/guards)
 
 **Use `lg` (1024px) as the primary layout switch point.** This is the existing breakpoint in the codebase (`lg:hidden`, `lg:relative` in sidebar.tsx).
 
-| Breakpoint | Width | Nav Pattern |
-|------------|-------|-------------|
+| Breakpoint       | Width    | Nav Pattern                                   |
+| ---------------- | -------- | --------------------------------------------- |
 | default (mobile) | 0-1023px | Bottom nav (5 primary items) + compact header |
-| `lg` (desktop) | 1024+ | Horizontal top navbar with all items |
+| `lg` (desktop)   | 1024+    | Horizontal top navbar with all items          |
 
 **Why `lg` not `md` (768px):**
+
 - Tablets in portrait (768-1023px) behave more like phones for thumb reach -- bottom nav is better
 - The existing codebase already uses `lg` as the mobile/desktop split
 - Keeps consistency with current implementation, reducing refactor scope
@@ -124,21 +129,21 @@ The current `@theme inline` block defines colors, fonts, and radius. For the ren
   /* === EXISTING (keep all current tokens) === */
 
   /* === NEW: Spacing Scale for Components === */
-  --spacing-page: 1rem;         /* page-level padding on mobile */
-  --spacing-page-lg: 1.5rem;    /* page-level padding on desktop */
-  --spacing-card: 1.5rem;       /* internal card padding (currently p-6) */
+  --spacing-page: 1rem; /* page-level padding on mobile */
+  --spacing-page-lg: 1.5rem; /* page-level padding on desktop */
+  --spacing-card: 1.5rem; /* internal card padding (currently p-6) */
   --spacing-card-compact: 1rem; /* compact card padding for mobile widgets */
-  --spacing-nav: 0.75rem;       /* nav item padding */
-  --spacing-section: 2rem;      /* gap between page sections */
+  --spacing-nav: 0.75rem; /* nav item padding */
+  --spacing-section: 2rem; /* gap between page sections */
 
   /* === NEW: Shadow Scale === */
-  --shadow-brutal-sm: 4px 4px 0px 0px rgba(0,0,0,1);
-  --shadow-brutal-md: 8px 8px 0px 0px rgba(0,0,0,1);   /* current default */
-  --shadow-brutal-lg: 12px 12px 0px 0px rgba(0,0,0,1);
+  --shadow-brutal-sm: 4px 4px 0px 0px rgba(0, 0, 0, 1);
+  --shadow-brutal-md: 8px 8px 0px 0px rgba(0, 0, 0, 1); /* current default */
+  --shadow-brutal-lg: 12px 12px 0px 0px rgba(0, 0, 0, 1);
 
   /* === NEW: Border Scale === */
   --border-thin: 2px;
-  --border-default: 4px;        /* current default throughout */
+  --border-default: 4px; /* current default throughout */
   --border-thick: 6px;
 
   /* === NEW: Z-Index Scale === */
@@ -152,13 +157,14 @@ The current `@theme inline` block defines colors, fonts, and radius. For the ren
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
 
   /* === NEW: Layout Dimensions === */
-  --height-header: 4rem;           /* 64px -- h-16, unchanged */
-  --height-bottom-nav: 4rem;       /* 64px bottom nav */
-  --height-desktop-nav: 4rem;      /* 64px top nav on desktop */
+  --height-header: 4rem; /* 64px -- h-16, unchanged */
+  --height-bottom-nav: 4rem; /* 64px bottom nav */
+  --height-desktop-nav: 4rem; /* 64px top nav on desktop */
 }
 ```
 
 **Why named spacing tokens instead of just using Tailwind's numeric scale:**
+
 - `p-[var(--spacing-card)]` is self-documenting -- you know it is card padding
 - Changing card padding globally means editing one token, not finding every `p-6`
 - The brutalist style has very specific spacing rhythm that should be codified
@@ -184,6 +190,7 @@ Exception: The bottom sheet grab handle can use `rounded-full` as a functional a
 ### 4.1 Decision: CSS Keyframes + Tailwind Utilities (NOT framer-motion)
 
 **Do not add framer-motion.** Reasons:
+
 - The project has zero animation library dependencies today
 - framer-motion (now "motion") adds ~30KB+ to client bundle
 - The brutalist aesthetic calls for snappy, mechanical transitions -- not spring physics
@@ -211,13 +218,21 @@ Vaul (built-in):
 
 ```css
 @keyframes slideUpNav {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
 }
 
 @keyframes slideDownNav {
-  from { transform: translateY(0); }
-  to { transform: translateY(100%); }
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
+  }
 }
 
 .animate-slide-up-nav {
@@ -238,6 +253,7 @@ For v1.1, **do not implement route-based page transitions.** Next.js App Router 
 **Library:** `vaul` (already the shadcn/ui recommendation for Drawer component)
 
 **Why Vaul:**
+
 - shadcn/ui has a first-party Drawer component built on Vaul
 - Consistent with the existing shadcn/ui component pattern in the project
 - Handles touch gestures, snap points, accessibility out of the box
@@ -245,6 +261,7 @@ For v1.1, **do not implement route-based page transitions.** Next.js App Router 
 - Already works with Radix Dialog primitives (same pattern as existing Dialog)
 
 **Installation:**
+
 ```bash
 pnpm add vaul
 # Then add shadcn drawer component (manually, since this project hand-customizes shadcn)
@@ -255,6 +272,7 @@ pnpm add vaul
 **Use Portal (via Vaul's built-in portal behavior).**
 
 Vaul renders drawer content in a portal by default (same as Radix Dialog). This is correct because:
+
 - Bottom sheet must overlay the bottom nav and content area
 - Z-index stacking is cleaner with portals
 - Focus trapping works correctly
@@ -276,12 +294,7 @@ The drawer does NOT need to be a child of BottomNav. Any component can trigger i
 
 ```tsx
 // src/components/ui/drawer.tsx
-<Drawer.Content className="
-  fixed inset-x-0 bottom-0
-  border-t-4 border-x-4 border-black
-  bg-cream
-  shadow-[0_-8px_0px_0px_rgba(0,0,0,1)]
-">
+<Drawer.Content className="bg-cream fixed inset-x-0 bottom-0 border-x-4 border-t-4 border-black shadow-[0_-8px_0px_0px_rgba(0,0,0,1)]">
   {/* Grab handle -- only element with border-radius */}
   <div className="mx-auto mt-4 h-1.5 w-12 rounded-full bg-black" />
   {children}
@@ -290,11 +303,11 @@ The drawer does NOT need to be a child of BottomNav. Any component can trigger i
 
 ### 5.4 Snap Points for Common Uses
 
-| Use Case | Snap Points | Example |
-|----------|-------------|---------|
-| Quick action menu | `["200px", 1]` | Meal swap options |
-| Detail view | `["50%", 1]` | Exercise detail in workout plan |
-| Form | `[1]` | Check-in form (full screen only) |
+| Use Case          | Snap Points    | Example                          |
+| ----------------- | -------------- | -------------------------------- |
+| Quick action menu | `["200px", 1]` | Meal swap options                |
+| Detail view       | `["50%", 1]`   | Exercise detail in workout plan  |
+| Form              | `[1]`          | Check-in form (full screen only) |
 
 ---
 
@@ -320,6 +333,7 @@ const NAV_ITEMS = [
 ```
 
 **5 items in bottom nav** (the standard mobile maximum). The remaining items (Tracking, Tickets, FAQ, Settings) move to:
+
 - Desktop top nav: all items visible
 - Mobile: accessible via a "More" menu or through the settings/profile area
 
@@ -360,6 +374,7 @@ Check-in: primary blue background (always highlighted as CTA)
 ### 6.4 Hide on Scroll (Optional, Deferred)
 
 The bottom nav CAN hide on downward scroll and reappear on upward scroll to reclaim vertical space. **Defer this to a polish pass.** Implementing it requires:
+
 - A scroll direction hook (`useScrollDirection`)
 - CSS transform to slide nav down
 - Careful handling of momentum scrolling on iOS
@@ -389,19 +404,13 @@ The current sidebar (272px, 9 nav items) becomes a horizontal top navbar on desk
 
 ```tsx
 // src/components/layouts/desktop-top-nav.tsx
-<nav className="
-  hidden lg:flex
-  h-[var(--height-desktop-nav)]
-  border-b-4 border-black
-  bg-cream
-  items-center
-  justify-between
-  px-6
-">
+<nav className="bg-cream hidden h-[var(--height-desktop-nav)] items-center justify-between border-b-4 border-black px-6 lg:flex">
   {/* Left: Logo + Nav Links */}
   <div className="flex items-center gap-1">
     <Logo />
-    {navItems.map(item => <NavLink key={item.href} {...item} />)}
+    {navItems.map((item) => (
+      <NavLink key={item.href} {...item} />
+    ))}
   </div>
   {/* Right: Lang switch, notifications, user menu */}
   <div className="flex items-center gap-2">
@@ -431,6 +440,7 @@ On mobile, the header becomes much simpler since navigation moved to the bottom 
 ```
 
 No hamburger menu. No logo (logo can go in a dedicated spot or be part of the dashboard page itself). The header shows:
+
 - **Left:** Current page title (dynamic based on route)
 - **Right:** Language switch, notifications, user avatar/menu
 
@@ -501,8 +511,8 @@ Consistent page title component used at the top of each page's content:
 ```tsx
 // src/components/ui/page-header.tsx
 <div className="border-b-4 border-black p-[var(--spacing-page)] lg:p-[var(--spacing-page-lg)]">
-  <h1 className="text-2xl font-black uppercase tracking-tight">{title}</h1>
-  {subtitle && <p className="font-mono text-xs text-neutral-500 mt-1">{subtitle}</p>}
+  <h1 className="text-2xl font-black tracking-tight uppercase">{title}</h1>
+  {subtitle && <p className="mt-1 font-mono text-xs text-neutral-500">{subtitle}</p>}
 </div>
 ```
 
@@ -530,12 +540,16 @@ For multi-step forms (check-in flow, onboarding). A progress indicator + step co
 // Brutalist step indicator: numbered blocks
 <div className="flex gap-0">
   {steps.map((step, i) => (
-    <div className={cn(
-      "flex-1 border-4 border-black p-2 text-center font-mono text-xs font-bold",
-      i < currentStep ? "bg-black text-primary" :
-      i === currentStep ? "bg-primary text-white" :
-      "bg-cream text-neutral-400"
-    )}>
+    <div
+      className={cn(
+        "flex-1 border-4 border-black p-2 text-center font-mono text-xs font-bold",
+        i < currentStep
+          ? "text-primary bg-black"
+          : i === currentStep
+            ? "bg-primary text-white"
+            : "bg-cream text-neutral-400",
+      )}
+    >
       {i + 1}
     </div>
   ))}
@@ -565,6 +579,7 @@ For multi-step forms (check-in flow, onboarding). A progress indicator + step co
    - Or keep old files for reference during the transition
 
 **Why this approach:**
+
 - Zero risk of breaking the production app during development
 - Easy A/B comparison (toggle import to compare old vs new)
 - Page components (dashboard/page.tsx, meal-plan/page.tsx, etc.) need zero changes initially -- they just render inside whatever shell wraps them
@@ -596,11 +611,11 @@ For multi-step forms (check-in flow, onboarding). A progress indicator + step co
 
 ### 10.3 Files to Deprecate
 
-| File | Replaced By | When |
-|------|-------------|------|
-| `layouts/sidebar.tsx` | `layouts/desktop-top-nav.tsx` | Phase A |
-| `layouts/header.tsx` | `layouts/mobile-header.tsx` + `layouts/desktop-top-nav.tsx` | Phase A |
-| `layouts/dashboard-shell.tsx` | `layouts/dashboard-shell-v2.tsx` (then renamed) | Phase A |
+| File                          | Replaced By                                                 | When    |
+| ----------------------------- | ----------------------------------------------------------- | ------- |
+| `layouts/sidebar.tsx`         | `layouts/desktop-top-nav.tsx`                               | Phase A |
+| `layouts/header.tsx`          | `layouts/mobile-header.tsx` + `layouts/desktop-top-nav.tsx` | Phase A |
+| `layouts/dashboard-shell.tsx` | `layouts/dashboard-shell-v2.tsx` (then renamed)             | Phase A |
 
 ---
 
@@ -608,19 +623,20 @@ For multi-step forms (check-in flow, onboarding). A progress indicator + step co
 
 All new components must work in both LTR and RTL. Key patterns:
 
-| CSS Property | LTR | RTL | Tailwind Utility |
-|-------------|-----|-----|-----------------|
-| Margin/padding start | `ml-*` | `mr-*` | `ms-*` |
-| Margin/padding end | `mr-*` | `ml-*` | `me-*` |
-| Border start | `border-l-*` | `border-r-*` | `border-s-*` |
-| Border end | `border-r-*` | `border-l-*` | `border-e-*` |
-| Position start | `left-*` | `right-*` | `start-*` |
-| Position end | `right-*` | `left-*` | `end-*` |
-| Text align | `text-left` | `text-right` | `text-start` |
+| CSS Property         | LTR          | RTL          | Tailwind Utility |
+| -------------------- | ------------ | ------------ | ---------------- |
+| Margin/padding start | `ml-*`       | `mr-*`       | `ms-*`           |
+| Margin/padding end   | `mr-*`       | `ml-*`       | `me-*`           |
+| Border start         | `border-l-*` | `border-r-*` | `border-s-*`     |
+| Border end           | `border-r-*` | `border-l-*` | `border-e-*`     |
+| Position start       | `left-*`     | `right-*`    | `start-*`        |
+| Position end         | `right-*`    | `left-*`     | `end-*`          |
+| Text align           | `text-left`  | `text-right` | `text-start`     |
 
 **The existing codebase already uses logical properties (`start-0`, `border-e-4`, `ms-*`).** Continue this pattern in all new components.
 
 **Bottom nav and top nav are symmetric**, so RTL mostly just requires:
+
 - Text direction flips automatically
 - Icons with directional meaning (chevrons) need `rtl:rotate-180`
 
@@ -638,6 +654,7 @@ padding-bottom: var(--safe-area-bottom);
 ```
 
 Also ensure the root HTML has:
+
 ```html
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 ```
@@ -645,6 +662,7 @@ Also ensure the root HTML has:
 ### 12.2 Standalone PWA Mode
 
 When installed as PWA (`display: standalone`), the browser chrome disappears. The header and bottom nav become the only navigation chrome. Test that:
+
 - Top status bar area is accounted for (`env(safe-area-inset-top)`)
 - Bottom nav does not overlap with iOS home indicator
 - Android back gesture still works (no custom back button needed -- browser handles it)
@@ -661,12 +679,12 @@ The new layout components (`BottomNav`, `MobileHeader`, `DesktopTopNav`) are all
 
 ### 13.2 Bundle Impact
 
-| Addition | Estimated Size | Justification |
-|----------|---------------|---------------|
-| `vaul` (Drawer) | ~5KB gzip | Replaces need for framer-motion entirely |
-| New layout components | ~3-4KB total | Replaces existing sidebar + header (~3KB) |
-| New UI primitives | ~2-3KB total | Small, focused components |
-| **Net change** | **~+5KB** | Vaul is the only new dependency |
+| Addition              | Estimated Size | Justification                             |
+| --------------------- | -------------- | ----------------------------------------- |
+| `vaul` (Drawer)       | ~5KB gzip      | Replaces need for framer-motion entirely  |
+| New layout components | ~3-4KB total   | Replaces existing sidebar + header (~3KB) |
+| New UI primitives     | ~2-3KB total   | Small, focused components                 |
+| **Net change**        | **~+5KB**      | Vaul is the only new dependency           |
 
 ### 13.3 Avoiding Layout Shift
 

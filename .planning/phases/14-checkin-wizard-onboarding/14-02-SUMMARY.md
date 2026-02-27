@@ -16,7 +16,11 @@ affects: [15-rtl-audit-polish]
 # Tech tracking
 tech-stack:
   added: []
-  patterns: [useFormContext watch for multi-section review display, useEffect-based smart default from async Convex query]
+  patterns:
+    [
+      useFormContext watch for multi-section review display,
+      useEffect-based smart default from async Convex query,
+    ]
 
 key-files:
   created: []
@@ -53,6 +57,7 @@ completed: 2026-02-23
 - **Files modified:** 4
 
 ## Accomplishments
+
 - Review step now shows all entered data organized into Body, Fitness, Diet, and Photos sections
 - Non-empty measurements displayed with units; empty measurements hidden
 - Weight field auto-fills from user's last check-in via getLatestCheckIn query
@@ -67,12 +72,14 @@ Each task was committed atomically:
 2. **Task 2: Pre-fill weight from last check-in** - `3336151` (feat)
 
 ## Files Created/Modified
+
 - `apps/client/src/app/[locale]/(dashboard)/check-in/_components/review-step.tsx` - Rewritten with 4 section cards showing all form fields
 - `apps/client/src/app/[locale]/(dashboard)/check-in/page.tsx` - Added getLatestCheckIn query + useEffect weight pre-fill
 - `apps/client/src/messages/en.json` - Added reviewBody, reviewFitness, reviewDiet, dietNotes, none, photosUploaded, noPhotos keys
 - `apps/client/src/messages/ar.json` - Added same keys in Arabic
 
 ## Decisions Made
+
 - Used useEffect for weight pre-fill instead of defaultValues in useForm, since Convex queries return undefined while loading and the async nature requires post-mount setValue
 - Separate SectionCard per category (Body, Fitness, Diet, Photos) instead of one combined card for better visual organization
 
@@ -81,17 +88,21 @@ Each task was committed atomically:
 None - plan executed exactly as written.
 
 ## Issues Encountered
+
 None
 
 ## User Setup Required
+
 None - no external service configuration required.
 
 ## Next Phase Readiness
+
 - Review screen complete, ready for Phase 14 Plan 03 (if any)
 - RTL layout should be verified in Phase 15
 
 ---
-*Phase: 14-checkin-wizard-onboarding*
-*Completed: 2026-02-23*
+
+_Phase: 14-checkin-wizard-onboarding_
+_Completed: 2026-02-23_
 
 ## Self-Check: PASSED

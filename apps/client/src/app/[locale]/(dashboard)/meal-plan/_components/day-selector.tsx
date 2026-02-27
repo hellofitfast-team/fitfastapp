@@ -48,7 +48,7 @@ export function DaySelector({
   };
 
   return (
-    <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-4 px-4 lg:mx-0 lg:px-0 scrollbar-hide">
+    <div className="scrollbar-hide -mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 lg:mx-0 lg:px-0">
       {Array.from({ length: totalDays }, (_, i) => {
         const isActive = selectedDay === i;
         const isRest = restDays.includes(i);
@@ -60,18 +60,16 @@ export function DaySelector({
             ref={isActive ? activeRef : undefined}
             onClick={() => onSelectDay(i)}
             className={cn(
-              "flex-shrink-0 min-w-[48px] px-3 py-2.5 rounded-xl text-xs font-semibold transition-colors text-center",
+              "min-w-[48px] flex-shrink-0 rounded-xl px-3 py-2.5 text-center text-xs font-semibold transition-colors",
               isActive
                 ? ACTIVE_STYLES[featureColor]
                 : isRest
-                ? "bg-neutral-100 text-neutral-400"
-                : "bg-neutral-100 text-muted-foreground hover:bg-neutral-200"
+                  ? "bg-neutral-100 text-neutral-400"
+                  : "text-muted-foreground bg-neutral-100 hover:bg-neutral-200",
             )}
           >
             <div>Day {i + 1}</div>
-            {weekday && (
-              <div className="text-[10px] mt-0.5 opacity-80">{weekday}</div>
-            )}
+            {weekday && <div className="mt-0.5 text-[10px] opacity-80">{weekday}</div>}
           </button>
         );
       })}

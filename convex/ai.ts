@@ -14,7 +14,13 @@ import { selectWorkoutSplit, type WorkoutSplit } from "./workoutSplitEngine";
 // ---------------------------------------------------------------------------
 
 interface ValidationWarning {
-  type: "macro_mismatch" | "below_minimum_calories" | "zero_value" | "missing_exercises" | "missing_warmup_cooldown" | "totals_corrected";
+  type:
+    | "macro_mismatch"
+    | "below_minimum_calories"
+    | "zero_value"
+    | "missing_exercises"
+    | "missing_warmup_cooldown"
+    | "totals_corrected";
   day?: string;
   message: string;
 }
@@ -31,7 +37,10 @@ function validateAndCorrectMealPlan(
     if (!dayData?.meals || !Array.isArray(dayData.meals)) continue;
 
     // Sum actual meal macros
-    let sumCalories = 0, sumProtein = 0, sumCarbs = 0, sumFat = 0;
+    let sumCalories = 0,
+      sumProtein = 0,
+      sumCarbs = 0,
+      sumFat = 0;
     for (const meal of dayData.meals) {
       if (!meal || typeof meal !== "object") continue;
       sumCalories += Number(meal.calories) || 0;
@@ -41,10 +50,18 @@ function validateAndCorrectMealPlan(
 
       // Flag zero-value meals
       if ((Number(meal.calories) || 0) === 0) {
-        warnings.push({ type: "zero_value", day: dayKey, message: `Meal "${meal.name}" has 0 calories` });
+        warnings.push({
+          type: "zero_value",
+          day: dayKey,
+          message: `Meal "${meal.name}" has 0 calories`,
+        });
       }
       if ((Number(meal.protein) || 0) === 0) {
-        warnings.push({ type: "zero_value", day: dayKey, message: `Meal "${meal.name}" has 0 protein` });
+        warnings.push({
+          type: "zero_value",
+          day: dayKey,
+          message: `Meal "${meal.name}" has 0 protein`,
+        });
       }
     }
 
@@ -57,10 +74,11 @@ function validateAndCorrectMealPlan(
       fat: Math.round(sumFat),
     };
 
-    if (existingTotals && (
-      Math.abs(existingTotals.calories - sumCalories) > 1 ||
-      Math.abs(existingTotals.protein - sumProtein) > 1
-    )) {
+    if (
+      existingTotals &&
+      (Math.abs(existingTotals.calories - sumCalories) > 1 ||
+        Math.abs(existingTotals.protein - sumProtein) > 1)
+    ) {
       warnings.push({
         type: "totals_corrected",
         day: dayKey,
@@ -69,9 +87,68 @@ function validateAndCorrectMealPlan(
     }
     dayData.dailyTotals = correctedTotals;
 
+    // Per-meal macro cross-check: P*4 + C*4 + F*9 should ≈ claimed calories
+    for (const meal of dayData.meals) {
+      if (!meal || typeof meal !== "object") continue;
+      const mealCal = Number(meal.calories) || 0;
+      const computedCal =
+        (Number(meal.protein) || 0) * 4 +
+        (Number(meal.carbs) || 0) * 4 +
+        (Number(meal.fat) || 0) * 9;
+      if (mealCal > 0 && Math.abs(computedCal - mealCal) > 30) {
+        meal.calories = Math.round(computedCal);
+        warnings.push({
+          type: "macro_mismatch",
+          day: dayKey,
+          message: `Meal "${meal.name}" calories corrected: claimed ${mealCal}, macro sum ${Math.round(computedCal)}`,
+        });
+      }
+    }
+
+    // Recalculate after per-meal corrections
+    sumCalories = 0;
+    sumProtein = 0;
+    sumCarbs = 0;
+    sumFat = 0;
+    for (const meal of dayData.meals) {
+      if (!meal || typeof meal !== "object") continue;
+      sumCalories += Number(meal.calories) || 0;
+      sumProtein += Number(meal.protein) || 0;
+      sumCarbs += Number(meal.carbs) || 0;
+      sumFat += Number(meal.fat) || 0;
+    }
+    dayData.dailyTotals = {
+      calories: Math.round(sumCalories),
+      protein: Math.round(sumProtein),
+      carbs: Math.round(sumCarbs),
+      fat: Math.round(sumFat),
+    };
+
     // Check if day is significantly off from nutrition targets
-    const calorieDiff = Math.abs(sumCalories - nutritionTargets.calories) / nutritionTargets.calories;
-    if (calorieDiff > 0.05) {
+    const calorieDiff =
+      Math.abs(sumCalories - nutritionTargets.calories) / nutritionTargets.calories;
+    if (calorieDiff > 0.1 && sumCalories > 0) {
+      // Scale portions proportionally to hit target
+      const scaleFactor = nutritionTargets.calories / sumCalories;
+      for (const meal of dayData.meals) {
+        if (!meal || typeof meal !== "object") continue;
+        meal.calories = Math.round((Number(meal.calories) || 0) * scaleFactor);
+        meal.protein = Math.round((Number(meal.protein) || 0) * scaleFactor);
+        meal.carbs = Math.round((Number(meal.carbs) || 0) * scaleFactor);
+        meal.fat = Math.round((Number(meal.fat) || 0) * scaleFactor);
+      }
+      dayData.dailyTotals = {
+        calories: nutritionTargets.calories,
+        protein: Math.round(sumProtein * scaleFactor),
+        carbs: Math.round(sumCarbs * scaleFactor),
+        fat: Math.round(sumFat * scaleFactor),
+      };
+      warnings.push({
+        type: "totals_corrected",
+        day: dayKey,
+        message: `Day calories ${Math.round(sumCalories)} were ${Math.round(calorieDiff * 100)}% off — portions scaled by ${scaleFactor.toFixed(2)}x`,
+      });
+    } else if (calorieDiff > 0.05) {
       warnings.push({
         type: "macro_mismatch",
         day: dayKey,
@@ -92,9 +169,7 @@ function validateAndCorrectMealPlan(
   return warnings;
 }
 
-function validateWorkoutPlan(
-  planData: Record<string, unknown>,
-): ValidationWarning[] {
+function validateWorkoutPlan(planData: Record<string, unknown>): ValidationWarning[] {
   const warnings: ValidationWarning[] = [];
   const weeklyPlan = planData.weeklyPlan as Record<string, any> | undefined;
   if (!weeklyPlan || typeof weeklyPlan !== "object") return warnings;
@@ -106,7 +181,11 @@ function validateWorkoutPlan(
 
     if (!isRestDay) {
       // Training day checks
-      if (!dayData.exercises || !Array.isArray(dayData.exercises) || dayData.exercises.length === 0) {
+      if (
+        !dayData.exercises ||
+        !Array.isArray(dayData.exercises) ||
+        dayData.exercises.length === 0
+      ) {
         warnings.push({
           type: "missing_exercises",
           day: dayKey,
@@ -159,15 +238,14 @@ async function getCoachKnowledgeContext(
   const clientContext = contextParts.join("; ");
 
   // Filter by relevant tags so meal prompts get nutrition docs and workout prompts get training docs
-  const tags = planType === "meal"
-    ? ["nutrition", "general"]
-    : ["workout", "recovery", "general"];
+  const tags = planType === "meal" ? ["nutrition", "general"] : ["workout", "recovery", "general"];
 
   try {
-    const chunks: string[] = await ctx.runAction(
-      internal.knowledgeBaseActions.searchKnowledge,
-      { query: clientContext, limit: 5, tags },
-    );
+    const chunks: string[] = await ctx.runAction(internal.knowledgeBaseActions.searchKnowledge, {
+      query: clientContext,
+      limit: 5,
+      tags,
+    });
 
     if (chunks.length === 0) return "";
 
@@ -197,10 +275,10 @@ async function generateMealPlanHandler(
   },
 ): Promise<Id<"mealPlans">> {
   // Build rich progressive context (profile, assessment, check-in history, adherence, reflections)
-  const clientCtx: ClientContext = await ctx.runQuery(
-    internal.clientContext.buildClientContext,
-    { userId, checkInId },
-  );
+  const clientCtx: ClientContext = await ctx.runQuery(internal.clientContext.buildClientContext, {
+    userId,
+    checkInId,
+  });
 
   if (!clientCtx.assessment) throw new Error("Assessment not found");
 
@@ -208,19 +286,28 @@ async function generateMealPlanHandler(
   const assessment = clientCtx.assessment;
   const scheduleData = assessment.scheduleAvailability as { days?: string[] } | null;
   const trainingDays = scheduleData?.days?.length ?? 4;
-  console.log(`[AI] Nutrition input for user ${userId}: weight=${assessment.currentWeight}, height=${assessment.height}, age=${assessment.age}, gender=${assessment.gender}, days=${trainingDays}, goal=${assessment.goals?.split(",")[0]?.trim()}`);
+  console.log(
+    `[AI] Generating meal plan for user ${userId} (${language}), training days: ${trainingDays}`,
+  );
 
   const nutritionTargets: NutritionTargets = calculateNutritionTargets({
     weightKg: assessment.currentWeight ?? 75,
     heightCm: assessment.height ?? 170,
     age: assessment.age ?? 30,
-    gender: (assessment.gender === "female" ? "female" : "male"),
+    gender: assessment.gender === "female" ? "female" : "male",
     trainingDaysPerWeek: trainingDays,
     goal: assessment.goals?.split(",")[0]?.trim() ?? "general_fitness",
+    activityLevel: (assessment as any).activityLevel ?? undefined,
   });
 
   // Fetch coach knowledge context via RAG (filtered to nutrition/general docs)
   const knowledgeSection = await getCoachKnowledgeContext(ctx, clientCtx.assessment, "meal");
+
+  // Fetch food database reference for the AI prompt
+  const foodReference: string = await ctx.runQuery(
+    internal.foodDatabase.getFoodReferenceForPrompt,
+    {},
+  );
 
   const { createOpenRouter } = await import("@openrouter/ai-sdk-provider");
   const { generateText } = await import("ai");
@@ -288,6 +375,7 @@ GUIDELINES:
 7. If weight trend shows stall (>2 weeks same weight on fat loss), slightly increase protein and reduce carbs
 8. Vary meals across days — avoid repeating the same meal more than twice per week
 ${isArabic ? "ALL content MUST be in Arabic language. Focus on Egyptian/Middle Eastern cuisine." : ""}${knowledgeSection}
+${foodReference}
 IMPORTANT: Respond ONLY with valid JSON. No markdown, no code blocks, just raw JSON.`;
 
   const userPrompt = `Create a ${planDuration}-day meal plan ${isArabic ? "ENTIRELY IN ARABIC" : "in English"}:
@@ -345,10 +433,7 @@ VALIDATION RULES (the plan will be programmatically verified — violations will
 - Do NOT round the daily target to a "nice" number — use the EXACT values provided above`;
 
   // Create stream for live progress
-  const streamId: string = await ctx.runMutation(
-    internal.streamingManager.createStream,
-    {},
-  );
+  const streamId: string = await ctx.runMutation(internal.streamingManager.createStream, {});
 
   const result = await generateText({
     model: openrouter("deepseek/deepseek-chat"),
@@ -364,7 +449,9 @@ VALIDATION RULES (the plan will be programmatically verified — violations will
     const cleaned = result.text.replace(/```json\n?|```\n?/g, "").trim();
     planData = JSON.parse(cleaned);
   } catch (parseErr) {
-    console.error(`[AI] Meal plan JSON parse failed for user ${userId}. Text length: ${result.text.length}, finish reason: ${result.finishReason}`);
+    console.error(
+      `[AI] Meal plan JSON parse failed for user ${userId}. Text length: ${result.text.length}, finish reason: ${result.finishReason}`,
+    );
     planData = { raw: result.text, parseError: true };
   }
 
@@ -373,7 +460,10 @@ VALIDATION RULES (the plan will be programmatically verified — violations will
     const validationWarnings = validateAndCorrectMealPlan(planData, nutritionTargets);
     if (validationWarnings.length > 0) {
       planData.validationWarnings = validationWarnings;
-      console.warn(`[AI] Meal plan validation: ${validationWarnings.length} warnings for user ${userId}`, validationWarnings);
+      console.warn(
+        `[AI] Meal plan validation: ${validationWarnings.length} warnings for user ${userId}`,
+        validationWarnings,
+      );
     }
   }
 
@@ -409,10 +499,10 @@ async function generateWorkoutPlanHandler(
   },
 ): Promise<Id<"workoutPlans">> {
   // Build rich progressive context (profile, assessment, check-in history, adherence, reflections)
-  const clientCtx: ClientContext = await ctx.runQuery(
-    internal.clientContext.buildClientContext,
-    { userId, checkInId },
-  );
+  const clientCtx: ClientContext = await ctx.runQuery(internal.clientContext.buildClientContext, {
+    userId,
+    checkInId,
+  });
 
   if (!clientCtx.assessment) throw new Error("Assessment not found");
 
@@ -435,7 +525,9 @@ async function generateWorkoutPlanHandler(
   const isArabic = language === "ar";
 
   const contextBlock = formatContextForPrompt(clientCtx);
-  const dayLabelsStr = (isArabic ? split.dayLabelsAr : split.dayLabels).slice(0, planDuration).join(" → ");
+  const dayLabelsStr = (isArabic ? split.dayLabelsAr : split.dayLabels)
+    .slice(0, planDuration)
+    .join(" → ");
 
   const systemPrompt = `You are an expert certified personal trainer and exercise physiologist. Create personalized workout plans grounded in evidence-based exercise science.
 
@@ -550,10 +642,7 @@ Each exercise MUST have: name, sets, reps, restBetweenSets, targetMuscles, instr
 Rest days only need: restDay=true, workoutName.`;
 
   // Create stream for live progress
-  const streamId: string = await ctx.runMutation(
-    internal.streamingManager.createStream,
-    {},
-  );
+  const streamId: string = await ctx.runMutation(internal.streamingManager.createStream, {});
 
   const result = await generateText({
     model: openrouter("deepseek/deepseek-chat"),
@@ -577,7 +666,10 @@ Rest days only need: restDay=true, workoutName.`;
     const validationWarnings = validateWorkoutPlan(planData);
     if (validationWarnings.length > 0) {
       planData.validationWarnings = validationWarnings;
-      console.warn(`[AI] Workout plan validation: ${validationWarnings.length} warnings for user ${userId}`, validationWarnings);
+      console.warn(
+        `[AI] Workout plan validation: ${validationWarnings.length} warnings for user ${userId}`,
+        validationWarnings,
+      );
     }
   }
 
@@ -611,8 +703,14 @@ export const generateMealPlanInternal = internalAction({
   },
   returns: v.id("mealPlans"),
   handler: async (ctx, { userId, checkInId, language, planDuration }): Promise<Id<"mealPlans">> => {
-    const resolvedDuration: number = planDuration ?? await ctx.runQuery(internal.helpers.getCheckInFrequencyInternal);
-    return generateMealPlanHandler(ctx, { userId, checkInId, language, planDuration: resolvedDuration });
+    const resolvedDuration: number =
+      planDuration ?? (await ctx.runQuery(internal.helpers.getCheckInFrequencyInternal));
+    return generateMealPlanHandler(ctx, {
+      userId,
+      checkInId,
+      language,
+      planDuration: resolvedDuration,
+    });
   },
 });
 
@@ -624,9 +722,18 @@ export const generateWorkoutPlanInternal = internalAction({
     planDuration: v.optional(v.number()),
   },
   returns: v.id("workoutPlans"),
-  handler: async (ctx, { userId, checkInId, language, planDuration }): Promise<Id<"workoutPlans">> => {
-    const resolvedDuration: number = planDuration ?? await ctx.runQuery(internal.helpers.getCheckInFrequencyInternal);
-    return generateWorkoutPlanHandler(ctx, { userId, checkInId, language, planDuration: resolvedDuration });
+  handler: async (
+    ctx,
+    { userId, checkInId, language, planDuration },
+  ): Promise<Id<"workoutPlans">> => {
+    const resolvedDuration: number =
+      planDuration ?? (await ctx.runQuery(internal.helpers.getCheckInFrequencyInternal));
+    return generateWorkoutPlanHandler(ctx, {
+      userId,
+      checkInId,
+      language,
+      planDuration: resolvedDuration,
+    });
   },
 });
 
@@ -634,13 +741,27 @@ export const generateWorkoutPlanInternal = internalAction({
 // Dynamic plan-generation rate limiting
 // ---------------------------------------------------------------------------
 
-async function checkPlanGenerationLimit(ctx: ActionCtx, userId: string, isInitialGeneration?: boolean): Promise<void> {
-  // Skip rate limit for initial assessment generation (first-time plans)
-  if (isInitialGeneration) return;
+async function checkPlanGenerationLimit(
+  ctx: ActionCtx,
+  userId: string,
+  isInitialGeneration?: boolean,
+): Promise<void> {
+  if (isInitialGeneration) {
+    // Server-side verification: user must have zero existing plans
+    const existingCount: number = await ctx.runQuery(internal.helpers.countRecentPlans, {
+      userId,
+      since: 0,
+    });
+    if (existingCount >= 2) throw new Error("Initial generation already completed");
+    return;
+  }
 
   const frequencyDays: number = await ctx.runQuery(internal.helpers.getCheckInFrequencyInternal);
   const windowStart = Date.now() - frequencyDays * 24 * 60 * 60 * 1000;
-  const recentCount: number = await ctx.runQuery(internal.helpers.countRecentPlans, { userId, since: windowStart });
+  const recentCount: number = await ctx.runQuery(internal.helpers.countRecentPlans, {
+    userId,
+    since: windowStart,
+  });
   if (recentCount >= 2) {
     throw new Error("Plan generation limit reached for this cycle");
   }
@@ -658,14 +779,23 @@ export const generateMealPlan = action({
     isInitialGeneration: v.optional(v.boolean()),
   },
   returns: v.id("mealPlans"),
-  handler: async (ctx, { checkInId, language, planDuration, isInitialGeneration }): Promise<Id<"mealPlans">> => {
+  handler: async (
+    ctx,
+    { checkInId, language, planDuration, isInitialGeneration },
+  ): Promise<Id<"mealPlans">> => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
     await checkPlanGenerationLimit(ctx, userId, isInitialGeneration);
 
-    const resolvedDuration = planDuration ?? await ctx.runQuery(internal.helpers.getCheckInFrequencyInternal);
-    return generateMealPlanHandler(ctx, { userId, checkInId, language, planDuration: resolvedDuration });
+    const resolvedDuration =
+      planDuration ?? (await ctx.runQuery(internal.helpers.getCheckInFrequencyInternal));
+    return generateMealPlanHandler(ctx, {
+      userId,
+      checkInId,
+      language,
+      planDuration: resolvedDuration,
+    });
   },
 });
 
@@ -677,14 +807,23 @@ export const generateWorkoutPlan = action({
     isInitialGeneration: v.optional(v.boolean()),
   },
   returns: v.id("workoutPlans"),
-  handler: async (ctx, { checkInId, language, planDuration, isInitialGeneration }): Promise<Id<"workoutPlans">> => {
+  handler: async (
+    ctx,
+    { checkInId, language, planDuration, isInitialGeneration },
+  ): Promise<Id<"workoutPlans">> => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
     await checkPlanGenerationLimit(ctx, userId, isInitialGeneration);
 
-    const resolvedDuration = planDuration ?? await ctx.runQuery(internal.helpers.getCheckInFrequencyInternal);
-    return generateWorkoutPlanHandler(ctx, { userId, checkInId, language, planDuration: resolvedDuration });
+    const resolvedDuration =
+      planDuration ?? (await ctx.runQuery(internal.helpers.getCheckInFrequencyInternal));
+    return generateWorkoutPlanHandler(ctx, {
+      userId,
+      checkInId,
+      language,
+      planDuration: resolvedDuration,
+    });
   },
 });
 

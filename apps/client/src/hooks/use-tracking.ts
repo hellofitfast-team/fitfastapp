@@ -6,10 +6,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 
 export function useTracking(date: string) {
   const { isAuthenticated } = useConvexAuth();
-  const data = useQuery(
-    api.completions.getTrackingData,
-    isAuthenticated ? { date } : "skip",
-  );
+  const data = useQuery(api.completions.getTrackingData, isAuthenticated ? { date } : "skip");
 
   const toggleMealMutation = useMutation(api.completions.toggleMealCompletion);
   const toggleWorkoutMutation = useMutation(api.completions.toggleWorkoutCompletion);

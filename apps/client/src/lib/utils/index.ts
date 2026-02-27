@@ -38,10 +38,7 @@ export function formatTime(date: Date | string, locale: string = "en"): string {
   });
 }
 
-export function formatRelativeDate(
-  date: Date | string,
-  locale: string = "en"
-): string {
+export function formatRelativeDate(date: Date | string, locale: string = "en"): string {
   const d = typeof date === "string" ? new Date(date) : date;
   const now = new Date();
   const diffTime = Math.abs(now.getTime() - d.getTime());
@@ -49,8 +46,7 @@ export function formatRelativeDate(
 
   if (diffDays === 0) return locale === "ar" ? "اليوم" : "Today";
   if (diffDays === 1) return locale === "ar" ? "أمس" : "Yesterday";
-  if (diffDays < 7)
-    return locale === "ar" ? `منذ ${diffDays} أيام` : `${diffDays} days ago`;
+  if (diffDays < 7) return locale === "ar" ? `منذ ${diffDays} أيام` : `${diffDays} days ago`;
 
   return formatDate(d, locale);
 }
@@ -90,10 +86,7 @@ export function formatWeight(weight: number, unit: "kg" | "lb" = "kg"): string {
 }
 
 // Format height with unit
-export function formatHeight(
-  height: number,
-  unit: "cm" | "ft" = "cm"
-): string {
+export function formatHeight(height: number, unit: "cm" | "ft" = "cm"): string {
   if (unit === "ft") {
     const feet = Math.floor(height / 30.48);
     const inches = Math.round((height % 30.48) / 2.54);

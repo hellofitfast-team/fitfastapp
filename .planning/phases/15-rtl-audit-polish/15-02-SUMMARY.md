@@ -56,12 +56,14 @@ Audited all interactive elements across client dashboard, admin panel, and share
 ### Changes by Category
 
 **UI Package (4 files):**
+
 - `button.tsx`: sm variant h-9 -> h-11, icon variant h-10 -> h-12
 - `toast.tsx`: ToastAction h-8 -> h-11
 - `pagination.tsx`: PaginationEllipsis h-9 -> h-11
 - `rating-selector.tsx`: Rating buttons h-10 -> h-11
 
 **Client Navigation/Header (5 files):**
+
 - `sidebar.tsx`: Close button h-9 -> h-11, nav items added min-h-11
 - `mobile-header.tsx`: Locale/notification/menu buttons h-9 -> h-11
 - `desktop-top-nav.tsx`: All icon buttons h-9 -> h-11, nav links added min-h-11, user menu h-9 -> h-11
@@ -69,6 +71,7 @@ Audited all interactive elements across client dashboard, admin panel, and share
 - `LocaleSwitcher.tsx`: h-10 -> h-11
 
 **Client Dashboard (5 files):**
+
 - `photos-step.tsx`: Remove photo button h-8 -> h-11
 - `photos-tab.tsx`: Close modal button h-9 -> h-11
 - `workout-tracking.tsx`: Workout checkbox h-9 -> h-11
@@ -76,6 +79,7 @@ Audited all interactive elements across client dashboard, admin panel, and share
 - `faq/page.tsx`: Contact support button py-2.5 -> h-11
 
 **Admin Panel (8 files):**
+
 - `admin-header.tsx`: Hamburger h-9 -> h-11, lang switcher h-9 -> h-11, logout h-9 -> h-11
 - `admin-sidebar.tsx`: Close button h-8 -> h-11, nav items added min-h-11
 - `faq-manager.tsx`: Edit/delete buttons h-8 -> h-11
@@ -114,6 +118,6 @@ None - Task 1 executed as written.
 
 ## Commits
 
-| Task | Commit | Description |
-|------|--------|-------------|
+| Task | Commit  | Description                                                         |
+| ---- | ------- | ------------------------------------------------------------------- |
 | 1    | 1b0060b | fix(15-02): enforce 44px+ touch targets on all interactive elements |

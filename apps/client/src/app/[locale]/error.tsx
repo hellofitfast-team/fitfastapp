@@ -15,6 +15,7 @@ export default function Error({
   reset: () => void;
 }) {
   const t = useTranslations("common");
+  const tErrors = useTranslations("errors");
 
   useEffect(() => {
     // Log the error to Sentry
@@ -25,24 +26,20 @@ export default function Error({
     <div className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-error-100">
-            <AlertTriangle className="h-8 w-8 text-error-600" />
+          <div className="bg-error-100 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
+            <AlertTriangle className="text-error-600 h-8 w-8" />
           </div>
-          <CardTitle className="text-xl text-neutral-900">
-            {t("error")}
-          </CardTitle>
+          <CardTitle className="text-xl text-neutral-900">{t("error")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 text-center">
-          <p className="text-sm text-neutral-600">
-            Something went wrong. Our team has been notified and we&apos;re working to fix it.
-          </p>
+          <p className="text-sm text-neutral-600">{tErrors("somethingWentWrong")}</p>
           {error.digest && (
             <p className="text-xs text-neutral-400">
-              Error ID: {error.digest}
+              {tErrors("errorId")}: {error.digest}
             </p>
           )}
           <Button onClick={() => reset()} className="w-full">
-            Try again
+            {tErrors("tryAgain")}
           </Button>
         </CardContent>
       </Card>

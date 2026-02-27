@@ -64,12 +64,16 @@ export const submitAssessment = mutation({
     medicalConditions: v.optional(v.array(v.string())),
     injuries: v.optional(v.array(v.string())),
     exerciseHistory: v.optional(v.string()),
-    experienceLevel: v.optional(
+    activityLevel: v.optional(
       v.union(
-        v.literal("beginner"),
-        v.literal("intermediate"),
-        v.literal("advanced"),
+        v.literal("sedentary"),
+        v.literal("lightly_active"),
+        v.literal("moderately_active"),
+        v.literal("very_active"),
       ),
+    ),
+    experienceLevel: v.optional(
+      v.union(v.literal("beginner"), v.literal("intermediate"), v.literal("advanced")),
     ),
     lifestyleHabits: v.optional(
       v.object({
@@ -78,10 +82,12 @@ export const submitAssessment = mutation({
       }),
     ),
     // Optional: trigger server-side plan generation after assessment
-    generatePlans: v.optional(v.object({
-      language: v.union(v.literal("en"), v.literal("ar")),
-      planDuration: v.number(),
-    })),
+    generatePlans: v.optional(
+      v.object({
+        language: v.union(v.literal("en"), v.literal("ar")),
+        planDuration: v.number(),
+      }),
+    ),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);

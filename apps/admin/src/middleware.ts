@@ -19,45 +19,45 @@ function getLocaleFromPath(pathname: string): string {
   return match ? match[1] : "en";
 }
 
-const isPublicRoute = createRouteMatcher([
-  "/login",
-  "/en/login",
-  "/ar/login",
-]);
+const isPublicRoute = createRouteMatcher(["/login", "/en/login", "/ar/login"]);
 
-export default convexAuthNextjsMiddleware(
-  async (request, { convexAuth }) => {
-    const { pathname } = request.nextUrl;
+export default convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
+  const requestId = request.headers.get("x-request-id") ?? crypto.randomUUID();
 
-    // Skip static files (but NOT /api/auth — handled by convexAuthNextjsMiddleware)
-    if (
-      pathname.startsWith("/_next") ||
-      pathname.startsWith("/favicon") ||
-      pathname.includes(".")
-    ) {
-      return NextResponse.next();
-    }
+  const { pathname } = request.nextUrl;
 
-    const path = stripLocale(pathname);
-    const locale = getLocaleFromPath(pathname);
+  // Skip static files (but NOT /api/auth — handled by convexAuthNextjsMiddleware)
+  if (pathname.startsWith("/_next") || pathname.startsWith("/favicon") || pathname.includes(".")) {
+    const response = NextResponse.next();
+    response.headers.set("x-request-id", requestId);
+    return response;
+  }
 
-    // Login page is public
-    if (path === "/login") {
-      return intlMiddleware(request);
-    }
+  const path = stripLocale(pathname);
+  const locale = getLocaleFromPath(pathname);
 
-    // All other routes require authentication
-    const isAuthenticated = await convexAuth.isAuthenticated();
+  // Login page is public
+  if (path === "/login") {
+    const response = intlMiddleware(request);
+    response.headers.set("x-request-id", requestId);
+    return response;
+  }
 
-    if (!isAuthenticated) {
-      return nextjsMiddlewareRedirect(request, `/${locale}/login`);
-    }
+  // All other routes require authentication
+  const isAuthenticated = await convexAuth.isAuthenticated();
 
-    // Coach role check is done at the layout level via Convex query
-    // (checking profile.isCoach) — middleware only checks authentication
-    return intlMiddleware(request);
-  },
-);
+  if (!isAuthenticated) {
+    const response = nextjsMiddlewareRedirect(request, `/${locale}/login`);
+    response.headers.set("x-request-id", requestId);
+    return response;
+  }
+
+  // Coach role check is done at the layout level via Convex query
+  // (checking profile.isCoach) — middleware only checks authentication
+  const response = intlMiddleware(request);
+  response.headers.set("x-request-id", requestId);
+  return response;
+});
 
 export const config = {
   matcher: ["/((?!_next|.*\\..*).*)"],

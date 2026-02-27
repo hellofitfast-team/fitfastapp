@@ -15,26 +15,30 @@ Current state: AI generators (`meal-plan-generator.ts`, `workout-plan-generator.
 ## Standard Stack
 
 ### Core Infrastructure (Already Installed)
-| Library | Version | Purpose | Why Standard |
-|---------|---------|---------|--------------|
-| exponential-backoff | 3.1.3 | Retry logic with jitter | Industry standard for exponential backoff, already used in `withRetry()` |
-| zod | 4.3.6 | Runtime validation | Type-safe schema validation, already used for plan validation |
-| @sentry/nextjs | 10.38.0 | Error logging/monitoring | Production error tracking, already integrated |
-| swr | 2.4.0 | Client-side data fetching | React hooks with built-in caching, already used in `use-dashboard.ts` |
+
+| Library             | Version | Purpose                   | Why Standard                                                             |
+| ------------------- | ------- | ------------------------- | ------------------------------------------------------------------------ |
+| exponential-backoff | 3.1.3   | Retry logic with jitter   | Industry standard for exponential backoff, already used in `withRetry()` |
+| zod                 | 4.3.6   | Runtime validation        | Type-safe schema validation, already used for plan validation            |
+| @sentry/nextjs      | 10.38.0 | Error logging/monitoring  | Production error tracking, already integrated                            |
+| swr                 | 2.4.0   | Client-side data fetching | React hooks with built-in caching, already used in `use-dashboard.ts`    |
 
 ### AI/Database Stack (Existing)
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| @supabase/ssr | 0.8.0 | Supabase client for Next.js | All database operations |
+
+| Library        | Version    | Purpose                       | When to Use                  |
+| -------------- | ---------- | ----------------------------- | ---------------------------- |
+| @supabase/ssr  | 0.8.0      | Supabase client for Next.js   | All database operations      |
 | OpenRouter API | N/A (REST) | AI generation via DeepSeek V3 | Meal/workout plan generation |
-| Qwen3-VL | N/A (REST) | OCR for payment screenshots | Admin signup approval flow |
+| Qwen3-VL       | N/A (REST) | OCR for payment screenshots   | Admin signup approval flow   |
 
 ### No Additional Dependencies Needed
+
 Phase 3 already created all required utilities. Phase 4 is application/integration work, not new infrastructure.
 
 ## Architecture Patterns
 
 ### Recommended Project Structure
+
 ```
 src/
 ├── lib/
@@ -62,9 +66,11 @@ src/
 ```
 
 ### Pattern 1: Wrapping OpenRouter API Calls with Retry
+
 **What:** All network calls to OpenRouter API wrapped in `withRetry()` with exponential backoff
 **When to use:** Any `fetch()` call to external AI services (OpenRouter, vision models)
 **Example:**
+
 ```typescript
 // Source: src/lib/errors/retry.ts (Phase 3)
 import { withRetry, AIGenerationError } from "@/lib/errors";
@@ -75,7 +81,9 @@ export class OpenRouterClient {
       async () => {
         const response = await fetch(OPENROUTER_API_URL, {
           method: "POST",
-          headers: { /* auth headers */ },
+          headers: {
+            /* auth headers */
+          },
           body: JSON.stringify({ model, messages, ...options }),
         });
 
@@ -84,16 +92,13 @@ export class OpenRouterClient {
           throw new AIGenerationError(
             `OpenRouter API error: ${response.status}`,
             "openrouter",
-            new Error(errorText)
+            new Error(errorText),
           );
         }
 
         const data = await response.json();
         if (!data.choices?.[0]?.message?.content) {
-          throw new AIGenerationError(
-            "No response from OpenRouter",
-            "openrouter"
-          );
+          throw new AIGenerationError("No response from OpenRouter", "openrouter");
         }
 
         return data.choices[0].message.content;
@@ -108,16 +113,18 @@ export class OpenRouterClient {
           }
           return true;
         },
-      }
+      },
     );
   }
 }
 ```
 
 ### Pattern 2: Validating AI Responses with Zod
+
 **What:** All AI-generated JSON parsed and validated through Zod schemas before database save
 **When to use:** After receiving raw string response from AI, before inserting into database
 **Example:**
+
 ```typescript
 // Source: src/lib/validation/meal-plan.ts (Phase 3)
 import { validateMealPlanResponse } from "@/lib/validation";
@@ -138,11 +145,7 @@ export async function generateMealPlan(params: MealPlanGenerationParams) {
   } catch (error) {
     if (error instanceof ValidationError) {
       // Validation failed - AI returned invalid structure
-      throw new AIGenerationError(
-        "AI generated invalid meal plan structure",
-        "openrouter",
-        error
-      );
+      throw new AIGenerationError("AI generated invalid meal plan structure", "openrouter", error);
     }
     // Other errors (RetryError, network errors) bubble up
     throw error;
@@ -151,9 +154,11 @@ export async function generateMealPlan(params: MealPlanGenerationParams) {
 ```
 
 ### Pattern 3: Extracted Supabase Query Functions
+
 **What:** Reusable, typed query functions replace inline `.from().select()` duplication
 **When to use:** When same query appears in multiple API routes or components
 **Example:**
+
 ```typescript
 // Source: NEW file - src/lib/supabase/queries/profiles.ts
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -169,7 +174,7 @@ type Profile = Database["public"]["Tables"]["profiles"]["Row"];
  */
 export async function getProfileById(
   supabase: SupabaseClient<Database>,
-  userId: string
+  userId: string,
 ): Promise<Profile> {
   const { data, error } = await supabase
     .from("profiles")
@@ -190,9 +195,11 @@ export async function getProfileById(
 ```
 
 ### Pattern 4: Service Layer Error Context
+
 **What:** All errors include structured context (userId, action, timestamp) for debugging
 **When to use:** When catching/throwing errors in service layer operations
 **Example:**
+
 ```typescript
 // When catching errors in API routes
 catch (error) {
@@ -218,6 +225,7 @@ catch (error) {
 ```
 
 ### Anti-Patterns to Avoid
+
 - **Bare JSON.parse without try-catch:** Always wrap in try-catch or use Zod validation helpers
 - **Silent error swallowing:** `catch {}` blocks hide production issues - always log to Sentry
 - **Inline query duplication:** Repeated `.from("profiles").select("*").eq("id", userId)` across routes - extract to query function
@@ -226,24 +234,26 @@ catch (error) {
 
 ## Don't Hand-Roll
 
-| Problem | Don't Build | Use Instead | Why |
-|---------|-------------|-------------|-----|
-| Exponential backoff retry | Custom retry loop with setTimeout | `exponential-backoff` library via `withRetry()` | Handles jitter, max delay, attempt tracking automatically |
-| JSON validation | Manual property checking | Zod schemas with `.safeParse()` | Type-safe, composable, generates TypeScript types |
-| Error tracking | `console.error()` only | Sentry captureException with context | Aggregates errors, alerts on spikes, provides stack traces |
-| Query result type casting | `as any` or unsafe casts | Supabase generics with Database type | Type-safe at compile time, catches schema mismatches |
+| Problem                   | Don't Build                       | Use Instead                                     | Why                                                        |
+| ------------------------- | --------------------------------- | ----------------------------------------------- | ---------------------------------------------------------- |
+| Exponential backoff retry | Custom retry loop with setTimeout | `exponential-backoff` library via `withRetry()` | Handles jitter, max delay, attempt tracking automatically  |
+| JSON validation           | Manual property checking          | Zod schemas with `.safeParse()`                 | Type-safe, composable, generates TypeScript types          |
+| Error tracking            | `console.error()` only            | Sentry captureException with context            | Aggregates errors, alerts on spikes, provides stack traces |
+| Query result type casting | `as any` or unsafe casts          | Supabase generics with Database type            | Type-safe at compile time, catches schema mismatches       |
 
 **Key insight:** Service layer hardening is about defense-in-depth. Network calls can fail (retry), AI can return invalid JSON (validate), and database queries can error (add context). Each layer catches a different failure mode.
 
 ## Common Pitfalls
 
 ### Pitfall 1: Retrying Non-Idempotent Operations Without Safeguards
+
 **What goes wrong:** Retry logic on database INSERT can create duplicate records
 **Why it happens:** `withRetry()` will retry failed operations, but INSERT operations may partially succeed before failing
 **How to avoid:** Only retry read operations and idempotent writes. For INSERTs, add unique constraints or upsert logic.
 **Warning signs:** Duplicate meal plans with same user_id + check_in_id, duplicate check-ins on same date
 
 **Solution pattern:**
+
 ```typescript
 // DON'T retry raw INSERT operations
 const plan = await withRetry(() =>
@@ -260,12 +270,14 @@ const { data, error } = await supabase
 ```
 
 ### Pitfall 2: Validation Errors vs. Genuine AI Failures
+
 **What goes wrong:** AI returns valid response but Zod schema rejects it due to schema mismatch
 **Why it happens:** AI output evolves (adds new fields, changes structure) but schema doesn't update
 **How to avoid:** Use `.passthrough()` on Zod schemas to allow extra fields, log schema validation failures separately
 **Warning signs:** High rate of ValidationError in Sentry despite AI generating reasonable-looking output
 
 **Solution pattern:**
+
 ```typescript
 // Strict schema - will reject if AI adds new fields
 const StrictMealPlanSchema = z.object({
@@ -275,20 +287,24 @@ const StrictMealPlanSchema = z.object({
 }); // Rejects if AI adds "tips" field
 
 // Flexible schema - allows evolution
-const FlexibleMealPlanSchema = z.object({
-  weeklyPlan: z.record(z.string(), DailyMealPlanSchema),
-  weeklyTotals: DailyTotalsSchema,
-  notes: z.string(),
-}).passthrough(); // Allows extra fields, still validates required ones
+const FlexibleMealPlanSchema = z
+  .object({
+    weeklyPlan: z.record(z.string(), DailyMealPlanSchema),
+    weeklyTotals: DailyTotalsSchema,
+    notes: z.string(),
+  })
+  .passthrough(); // Allows extra fields, still validates required ones
 ```
 
 ### Pitfall 3: Missing Locale Context in Error Messages
+
 **What goes wrong:** Arabic users see English error messages, breaking bilingual UX
 **Why it happens:** Service layer errors don't include locale, API routes return hardcoded English errors
 **How to avoid:** Pass locale through API request, use next-intl for error messages, log locale in Sentry context
 **Warning signs:** User confusion in Arabic locale, support tickets about English errors
 
 **Solution pattern:**
+
 ```typescript
 // API route extracts locale from request
 export async function POST(request: NextRequest) {
@@ -299,13 +315,14 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     Sentry.captureException(error, {
       tags: { locale },
-      extra: { /* context */ },
+      extra: {
+        /* context */
+      },
     });
 
     // Return localized error (server-side translation)
-    const errorMessage = locale === "ar"
-      ? "فشل في إنشاء خطة الوجبات"
-      : "Failed to generate meal plan";
+    const errorMessage =
+      locale === "ar" ? "فشل في إنشاء خطة الوجبات" : "Failed to generate meal plan";
 
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
@@ -313,12 +330,14 @@ export async function POST(request: NextRequest) {
 ```
 
 ### Pitfall 4: Over-Logging in Retry Attempts
+
 **What goes wrong:** Sentry quota exhausted by retry attempt warnings on transient failures
 **Why it happens:** `withRetry()` logs each attempt as warning, 3 attempts × many users = noise
 **How to avoid:** Only log final RetryError as error, use breadcrumbs for retry attempts
 **Warning signs:** Sentry quota warnings, mostly "Retry attempt X/3" messages in Sentry
 
 **Solution pattern:**
+
 ```typescript
 // Current implementation in retry.ts logs each attempt as warning
 // Consider using Sentry.addBreadcrumb() instead for retry attempts
@@ -340,6 +359,7 @@ if (allAttemptsExhausted) {
 Verified patterns from codebase and official documentation:
 
 ### OpenRouter API Client with Retry (Full Implementation)
+
 ```typescript
 // Source: src/lib/ai/openrouter.ts (Phase 4 update)
 import { withRetry, AIGenerationError } from "@/lib/errors";
@@ -365,7 +385,7 @@ export class OpenRouterClient {
       temperature?: number;
       max_tokens?: number;
       model?: string;
-    } = {}
+    } = {},
   ): Promise<string> {
     const { temperature = 0.7, max_tokens = 4000, model = MODEL } = options;
 
@@ -387,17 +407,14 @@ export class OpenRouterClient {
           throw new AIGenerationError(
             `OpenRouter API error: ${response.status}`,
             "openrouter",
-            new Error(error)
+            new Error(error),
           );
         }
 
         const data: OpenRouterResponse = await response.json();
 
         if (!data.choices || data.choices.length === 0) {
-          throw new AIGenerationError(
-            "No response from OpenRouter",
-            "openrouter"
-          );
+          throw new AIGenerationError("No response from OpenRouter", "openrouter");
         }
 
         return data.choices[0].message.content;
@@ -410,14 +427,18 @@ export class OpenRouterClient {
           if (error instanceof AIGenerationError) {
             const message = error.message;
             // Don't retry 4xx errors (auth, invalid request, etc.)
-            if (message.includes("400") || message.includes("401") ||
-                message.includes("403") || message.includes("422")) {
+            if (
+              message.includes("400") ||
+              message.includes("401") ||
+              message.includes("403") ||
+              message.includes("422")
+            ) {
               return false;
             }
           }
           return true; // Retry 5xx and network errors
         },
-      }
+      },
     );
   }
 
@@ -428,7 +449,7 @@ export class OpenRouterClient {
   async complete(
     prompt: string,
     systemPrompt?: string,
-    options?: { temperature?: number; max_tokens?: number }
+    options?: { temperature?: number; max_tokens?: number },
   ): Promise<string> {
     const messages: OpenRouterMessage[] = [];
 
@@ -444,6 +465,7 @@ export class OpenRouterClient {
 ```
 
 ### Meal Plan Generator with Full Validation Pipeline
+
 ```typescript
 // Source: src/lib/ai/meal-plan-generator.ts (Phase 4 update)
 import { getOpenRouterClient } from "./openrouter";
@@ -452,7 +474,7 @@ import { AIGenerationError } from "@/lib/errors";
 import * as Sentry from "@sentry/nextjs";
 
 export async function generateMealPlan(
-  params: MealPlanGenerationParams
+  params: MealPlanGenerationParams,
 ): Promise<ValidatedMealPlan> {
   const { profile, assessment, checkIn, language, planDuration = 7 } = params;
 
@@ -492,7 +514,7 @@ export async function generateMealPlan(
       throw new AIGenerationError(
         `AI generated invalid meal plan: ${error.message}`,
         "openrouter",
-        error
+        error,
       );
     }
 
@@ -502,6 +524,7 @@ export async function generateMealPlan(
 ```
 
 ### Extracted Supabase Query Function
+
 ```typescript
 // Source: NEW - src/lib/supabase/queries/profiles.ts
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -518,7 +541,7 @@ type Assessment = Database["public"]["Tables"]["initial_assessments"]["Row"];
  */
 export async function getProfileById(
   supabase: SupabaseClient<Database>,
-  userId: string
+  userId: string,
 ): Promise<Profile> {
   const { data, error } = await supabase
     .from("profiles")
@@ -543,7 +566,7 @@ export async function getProfileById(
  */
 export async function getAssessmentByUserId(
   supabase: SupabaseClient<Database>,
-  userId: string
+  userId: string,
 ): Promise<Assessment> {
   const { data, error } = await supabase
     .from("initial_assessments")
@@ -564,6 +587,7 @@ export async function getAssessmentByUserId(
 ```
 
 ### Using Extracted Queries in API Routes
+
 ```typescript
 // Source: src/app/api/plans/meal/route.ts (Phase 4 update)
 import { createClient } from "@/lib/supabase/server";
@@ -574,7 +598,9 @@ import * as Sentry from "@sentry/nextjs";
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -619,10 +645,7 @@ export async function POST(request: NextRequest) {
         tags: { feature: "meal-plan-save" },
         extra: { userId: user.id, checkInId },
       });
-      return NextResponse.json(
-        { error: "Failed to save meal plan" },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Failed to save meal plan" }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, mealPlan: savedPlan });
@@ -634,24 +657,22 @@ export async function POST(request: NextRequest) {
         timestamp: new Date().toISOString(),
       },
     });
-    return NextResponse.json(
-      { error: "Failed to generate meal plan" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to generate meal plan" }, { status: 500 });
   }
 }
 ```
 
 ## State of the Art
 
-| Old Approach | Current Approach | When Changed | Impact |
-|--------------|------------------|--------------|--------|
-| Bare fetch() with no retry | fetch() wrapped in exponential-backoff library | Phase 4 | Handles transient network failures automatically |
-| Manual JSON.parse in generators | Zod validation with .safeParse() | Phase 3/4 | Type-safe validation + automatic Sentry logging |
-| console.error() only | Sentry.captureException with context | Already in use | Centralized error tracking with context |
-| Inline Supabase queries | Extracted query functions in lib/supabase/queries/ | Phase 4 | Reusable, typed, includes error handling |
+| Old Approach                    | Current Approach                                   | When Changed   | Impact                                           |
+| ------------------------------- | -------------------------------------------------- | -------------- | ------------------------------------------------ |
+| Bare fetch() with no retry      | fetch() wrapped in exponential-backoff library     | Phase 4        | Handles transient network failures automatically |
+| Manual JSON.parse in generators | Zod validation with .safeParse()                   | Phase 3/4      | Type-safe validation + automatic Sentry logging  |
+| console.error() only            | Sentry.captureException with context               | Already in use | Centralized error tracking with context          |
+| Inline Supabase queries         | Extracted query functions in lib/supabase/queries/ | Phase 4        | Reusable, typed, includes error handling         |
 
 **Deprecated/outdated:**
+
 - **Direct JSON.parse in AI generators:** Use `validateMealPlanResponse()` / `validateWorkoutPlanResponse()` instead
 - **Duplicate .from().select() queries:** Extract to `lib/supabase/queries/` with proper types and error handling
 - **Silent .catch(() => {}):** Always log to Sentry with context, even for fire-and-forget operations
@@ -681,24 +702,28 @@ export async function POST(request: NextRequest) {
 ## Sources
 
 ### Primary (HIGH confidence)
+
 - Codebase inspection: `src/lib/errors/retry.ts`, `src/lib/validation/*.ts`, `src/lib/ai/*.ts`
 - exponential-backoff documentation: https://www.npmjs.com/package/exponential-backoff (v3.1.3)
 - Zod documentation: https://zod.dev (v4.3.6)
 - Sentry Next.js documentation: https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
 ### Secondary (MEDIUM confidence)
+
 - FitFast project roadmap: `.planning/ROADMAP.md` (Phase 4 requirements)
 - Phase 3 plans: Custom error classes, retry utility, Zod schemas already implemented
 - Supabase SSR documentation: https://supabase.com/docs/guides/auth/server-side/nextjs
 
 ### Tertiary (LOW confidence)
+
 - None - all findings verified against codebase and official documentation
 
 ## Metadata
 
 **Confidence breakdown:**
+
 - Standard stack: HIGH - All libraries already installed and used in Phase 3
-- Architecture: HIGH - Patterns verified in existing codebase (retry.ts, validation/*.ts)
+- Architecture: HIGH - Patterns verified in existing codebase (retry.ts, validation/\*.ts)
 - Pitfalls: MEDIUM - Based on common service layer issues + codebase inspection
 - Code examples: HIGH - Derived from existing implementations + official docs
 

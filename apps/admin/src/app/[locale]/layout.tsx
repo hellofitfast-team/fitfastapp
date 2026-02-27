@@ -25,9 +25,7 @@ export default async function LocaleLayout({
 
   return (
     <ConvexClientProvider>
-      <NextIntlClientProvider messages={messages}>
-        {children}
-      </NextIntlClientProvider>
+      <NextIntlClientProvider messages={messages}>{children}</NextIntlClientProvider>
     </ConvexClientProvider>
   );
 }

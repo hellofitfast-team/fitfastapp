@@ -15,25 +15,29 @@ This phase wraps the remaining vulnerability: unvalidated user input at the API 
 ## Standard Stack
 
 ### Core Infrastructure (Already Installed)
-| Library | Version | Purpose | Why Standard |
-|---------|---------|---------|--------------|
-| zod | 4.3.6 | Request body validation | Type-safe runtime validation, already used for AI output validation in Phase 4 |
-| @sentry/nextjs | 10.38.0 | Error logging with context | Production-grade error tracking, already integrated throughout codebase |
-| Next.js 16.1.6 | 16.1.6 | App Router API routes | Built-in Web Request/Response APIs, standard for 2026 Next.js apps |
+
+| Library        | Version | Purpose                    | Why Standard                                                                   |
+| -------------- | ------- | -------------------------- | ------------------------------------------------------------------------------ |
+| zod            | 4.3.6   | Request body validation    | Type-safe runtime validation, already used for AI output validation in Phase 4 |
+| @sentry/nextjs | 10.38.0 | Error logging with context | Production-grade error tracking, already integrated throughout codebase        |
+| Next.js 16.1.6 | 16.1.6  | App Router API routes      | Built-in Web Request/Response APIs, standard for 2026 Next.js apps             |
 
 ### Supporting
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| zod-validation-error | 3.4.0 | User-friendly Zod errors | Converting technical Zod errors to end-user messages |
+
+| Library              | Version | Purpose                  | When to Use                                          |
+| -------------------- | ------- | ------------------------ | ---------------------------------------------------- |
+| zod-validation-error | 3.4.0   | User-friendly Zod errors | Converting technical Zod errors to end-user messages |
 
 ### Alternatives Considered
-| Instead of | Could Use | Tradeoff |
-|------------|-----------|----------|
-| Zod | Joi, Yup | Zod has better TypeScript integration and is already used in Phase 4 |
+
+| Instead of                | Could Use              | Tradeoff                                                                            |
+| ------------------------- | ---------------------- | ----------------------------------------------------------------------------------- |
+| Zod                       | Joi, Yup               | Zod has better TypeScript integration and is already used in Phase 4                |
 | Manual validation wrapper | next-zod-api, next-joi | Custom wrapper more lightweight, avoids new dependencies when Zod already installed |
-| zod-validation-error | Custom error formatter | Library provides battle-tested formatting, maintained by community |
+| zod-validation-error      | Custom error formatter | Library provides battle-tested formatting, maintained by community                  |
 
 **Installation:**
+
 ```bash
 # zod-validation-error is optional - can be added if custom error formatting becomes complex
 pnpm install zod-validation-error
@@ -42,6 +46,7 @@ pnpm install zod-validation-error
 ## Architecture Patterns
 
 ### Recommended Project Structure
+
 ```
 src/
 ├── app/
@@ -73,9 +78,11 @@ src/
 ```
 
 ### Pattern 1: API Route Input Validation with Zod
+
 **What:** All API routes validate request body with Zod schemas before processing
 **When to use:** Every POST/PUT/PATCH endpoint that accepts JSON body
 **Example:**
+
 ```typescript
 // Source: Best practices from Dub.co, MakerKit, and Next.js community patterns
 import { z } from "zod";
@@ -94,7 +101,9 @@ export async function POST(request: NextRequest) {
 
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     userId = user?.id;
 
     if (!user) {
@@ -120,12 +129,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: "Invalid request",
-          details: validated.error.issues.map(e => ({
+          details: validated.error.issues.map((e) => ({
             field: e.path.join("."),
             message: e.message,
           })),
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -140,24 +149,33 @@ export async function POST(request: NextRequest) {
 ```
 
 ### Pattern 2: OCR Output Validation (ADMIN-02)
+
 **What:** OCR extracted data validated with Zod schema before database storage
 **When to use:** Admin OCR endpoint that extracts payment data from screenshots
 **Example:**
-```typescript
+
+````typescript
 // Source: src/app/api/admin/ocr/route.ts (Phase 5 enhancement)
 import { z } from "zod";
 
 // Define OCR result schema
-const OcrResultSchema = z.object({
-  amount: z.string().regex(/^\d+(\.\d{1,2})?$/, "Amount must be a valid number").optional(),
-  sender_name: z.string().min(1).max(100).optional(),
-  reference_number: z.string().min(1).max(50).optional(),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD format").optional(),
-  bank: z.string().min(1).max(50).optional(),
-}).refine(
-  data => Object.values(data).some(v => v !== undefined),
-  { message: "At least one field must be extracted" }
-);
+const OcrResultSchema = z
+  .object({
+    amount: z
+      .string()
+      .regex(/^\d+(\.\d{1,2})?$/, "Amount must be a valid number")
+      .optional(),
+    sender_name: z.string().min(1).max(100).optional(),
+    reference_number: z.string().min(1).max(50).optional(),
+    date: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD format")
+      .optional(),
+    bank: z.string().min(1).max(50).optional(),
+  })
+  .refine((data) => Object.values(data).some((v) => v !== undefined), {
+    message: "At least one field must be extracted",
+  });
 
 export async function POST(request: Request) {
   // ... existing auth check ...
@@ -168,12 +186,15 @@ export async function POST(request: Request) {
     // Parse OCR response
     let rawOcrResult: unknown;
     try {
-      const cleaned = rawContent.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
+      const cleaned = rawContent
+        .replace(/```json\s*/g, "")
+        .replace(/```\s*/g, "")
+        .trim();
       rawOcrResult = JSON.parse(cleaned);
     } catch {
       return NextResponse.json(
         { error: "Failed to parse OCR response", raw: rawContent },
-        { status: 422 }
+        { status: 422 },
       );
     }
 
@@ -197,7 +218,7 @@ export async function POST(request: Request) {
           details: validated.error.issues,
           raw: rawOcrResult,
         },
-        { status: 422 }
+        { status: 422 },
       );
     }
 
@@ -219,18 +240,17 @@ export async function POST(request: Request) {
       tags: { feature: "ocr-extraction" },
       extra: { coachId: user.id, signupId },
     });
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
-```
+````
 
 ### Pattern 3: Parallel Data Fetching with Promise.all (PERF-01)
+
 **What:** Independent data fetches executed in parallel to reduce latency
 **When to use:** When multiple queries don't depend on each other's results
 **Example:**
+
 ```typescript
 // Source: Next.js official docs + check-in/page.tsx (Phase 5 enhancement)
 // BEFORE (Sequential - 400-600ms wasted):
@@ -269,9 +289,11 @@ if (lastCheckInRes.error) {
 ```
 
 ### Pattern 4: Replacing Silent .catch with Sentry (RELY-03)
+
 **What:** All `.catch(() => {})` blocks replaced with Sentry logging
 **When to use:** Fire-and-forget operations (notifications) that shouldn't block the response
 **Example:**
+
 ```typescript
 // Source: src/app/api/plans/meal/route.ts (already implements this pattern correctly)
 
@@ -300,9 +322,11 @@ try {
 ```
 
 ### Pattern 5: User-Facing Error Messages for Plan Generation (RELY-05)
+
 **What:** Plan generation failures display clear warning to user, not silent failure
 **When to use:** Check-in page when parallel plan generation fails
 **Example:**
+
 ```typescript
 // Source: src/app/[locale]/(dashboard)/check-in/page.tsx (Phase 5 enhancement)
 // In client component check-in submission
@@ -368,9 +392,11 @@ try {
 ```
 
 ### Pattern 6: Validation Helper Wrapper
+
 **What:** Reusable validation wrapper to reduce boilerplate
 **When to use:** When multiple routes share similar validation patterns
 **Example:**
+
 ```typescript
 // Source: lib/api-validation/index.ts (NEW)
 import { z } from "zod";
@@ -384,7 +410,7 @@ import * as Sentry from "@sentry/nextjs";
 export function validateRequestBody<T extends z.ZodTypeAny>(
   body: unknown,
   schema: T,
-  context: { userId?: string; feature: string }
+  context: { userId?: string; feature: string },
 ): { success: true; data: z.infer<T> } | { success: false; response: NextResponse } {
   const result = schema.safeParse(body);
 
@@ -404,12 +430,12 @@ export function validateRequestBody<T extends z.ZodTypeAny>(
       response: NextResponse.json(
         {
           error: "Invalid request",
-          details: result.error.issues.map(e => ({
+          details: result.error.issues.map((e) => ({
             field: e.path.join("."),
             message: e.message,
           })),
         },
-        { status: 400 }
+        { status: 400 },
       ),
     };
   }
@@ -431,6 +457,7 @@ const { checkInId, planDuration } = validation.data; // Type-safe
 ```
 
 ### Anti-Patterns to Avoid
+
 - **Bare `await request.json()` without validation:** Always validate with Zod schema
 - **Sequential Promise chaining when independent:** Use `Promise.all()` for parallel execution
 - **`console.error()` in API routes:** Always use `Sentry.captureException()` with context
@@ -439,24 +466,26 @@ const { checkInId, planDuration } = validation.data; // Type-safe
 
 ## Don't Hand-Roll
 
-| Problem | Don't Build | Use Instead | Why |
-|---------|-------------|-------------|-----|
-| Request validation | Manual type checking | Zod schemas with `.safeParse()` | Type-safe, composable, generates TypeScript types |
-| User-friendly Zod errors | Custom error formatter | zod-validation-error library | Battle-tested, handles edge cases, maintained |
-| Validation wrapper | Custom HOF per route | Shared `validateRequestBody()` helper | DRY principle, consistent error format |
-| Parallel execution | Multiple awaits | `Promise.all()` or `Promise.allSettled()` | Built-in, handles failures correctly |
+| Problem                  | Don't Build            | Use Instead                               | Why                                               |
+| ------------------------ | ---------------------- | ----------------------------------------- | ------------------------------------------------- |
+| Request validation       | Manual type checking   | Zod schemas with `.safeParse()`           | Type-safe, composable, generates TypeScript types |
+| User-friendly Zod errors | Custom error formatter | zod-validation-error library              | Battle-tested, handles edge cases, maintained     |
+| Validation wrapper       | Custom HOF per route   | Shared `validateRequestBody()` helper     | DRY principle, consistent error format            |
+| Parallel execution       | Multiple awaits        | `Promise.all()` or `Promise.allSettled()` | Built-in, handles failures correctly              |
 
 **Key insight:** API routes are the security boundary between untrusted user input and trusted service layer. Validate early (at boundary), fail fast (return 400 before processing), and log everything (Sentry context for debugging).
 
 ## Common Pitfalls
 
 ### Pitfall 1: Promise.all Fails Entire Operation on Single Failure
+
 **What goes wrong:** If one query in `Promise.all()` fails, entire operation rejects
 **Why it happens:** `Promise.all()` short-circuits on first rejection
 **How to avoid:** Use `Promise.allSettled()` when failures should be handled individually
 **Warning signs:** Check-in lock status fails to load if config query errors
 
 **Solution pattern:**
+
 ```typescript
 // DON'T use Promise.all when individual failures are acceptable
 const [a, b, c] = await Promise.all([query1(), query2(), query3()]);
@@ -473,12 +502,14 @@ const lastPlan = results[2].status === "fulfilled" ? results[2].value.data : nul
 ```
 
 ### Pitfall 2: Validation Schema Drift from Database Schema
+
 **What goes wrong:** API accepts fields that database rejects, or vice versa
 **Why it happens:** Zod schemas defined separately from Supabase types
 **How to avoid:** Generate Zod schemas from Supabase types, or validate both layers
 **Warning signs:** 500 errors on INSERT after successful 200 validation
 
 **Solution pattern:**
+
 ```typescript
 // Sync validation with database types
 import type { Database } from "@/types/database";
@@ -494,12 +525,14 @@ const CreateTicketSchema = z.object({
 ```
 
 ### Pitfall 3: Exposing Technical Zod Errors to End Users
+
 **What goes wrong:** Users see "Expected number, received string" instead of friendly message
 **Why it happens:** Returning `error.issues` directly to frontend
 **How to avoid:** Map Zod errors to user-friendly messages, use zod-validation-error
 **Warning signs:** User confusion, support tickets about cryptic errors
 
 **Solution pattern:**
+
 ```typescript
 import { fromZodError } from "zod-validation-error";
 
@@ -520,18 +553,20 @@ if (!result.success) {
 
   return NextResponse.json(
     { error: friendlyError.message }, // "Invalid request: Subject is required. Category must be one of plan, payment, technical, bug_report."
-    { status: 400 }
+    { status: 400 },
   );
 }
 ```
 
 ### Pitfall 4: Not Logging Validation Failures (Security Blind Spot)
+
 **What goes wrong:** Malicious requests go unnoticed, no visibility into attack patterns
 **Why it happens:** Validation failures return 400 without logging
 **How to avoid:** Log all validation failures with request context to Sentry
 **Warning signs:** Sudden 400 spike with no Sentry events, missed intrusion attempts
 
 **Solution pattern:**
+
 ```typescript
 if (!result.success) {
   // Log validation failure (even though returning 400)
@@ -555,12 +590,14 @@ if (!result.success) {
 ```
 
 ### Pitfall 5: Parallel Fetching Without Error Boundaries
+
 **What goes wrong:** One failed query crashes entire page load
 **Why it happens:** Promise.all used without try-catch or error handling
 **How to avoid:** Wrap Promise.all in try-catch, use Promise.allSettled, or add per-query error handling
 **Warning signs:** Blank check-in page when single config query fails
 
 **Solution pattern:**
+
 ```typescript
 // Add error boundary around parallel fetching
 useEffect(() => {
@@ -609,13 +646,19 @@ useEffect(() => {
 Verified patterns from official sources and codebase:
 
 ### Complete API Route with Validation and Error Handling
+
 ```typescript
 // Source: Best practices from Next.js docs, Sentry docs, Dub.co blog
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { generateMealPlan } from "@/lib/ai/meal-plan-generator";
-import { getProfileById, getAssessmentByUserId, getCheckInById, saveMealPlan } from "@/lib/supabase/queries";
+import {
+  getProfileById,
+  getAssessmentByUserId,
+  getCheckInById,
+  saveMealPlan,
+} from "@/lib/supabase/queries";
 import { validateRequestBody } from "@/lib/api-validation";
 import * as Sentry from "@sentry/nextjs";
 
@@ -632,7 +675,9 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient();
 
     // Check authentication
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     userId = user?.id;
 
     if (!user) {
@@ -687,7 +732,7 @@ export async function POST(request: NextRequest) {
         user.id,
         "Meal Plan Ready!",
         "Your new meal plan is ready. Check it out!",
-        { url: "/meal-plan" }
+        { url: "/meal-plan" },
       );
     } catch (notifError) {
       Sentry.captureException(notifError, {
@@ -711,15 +756,13 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(
-      { error: "Failed to generate meal plan" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to generate meal plan" }, { status: 500 });
   }
 }
 ```
 
 ### Parallel Data Fetching in Check-In Page
+
 ```typescript
 // Source: Next.js docs - Data Fetching Patterns
 // src/app/[locale]/(dashboard)/check-in/page.tsx (Phase 5 enhancement)
@@ -758,17 +801,16 @@ useEffect(() => {
       ]);
 
       // Handle individual results with fallbacks
-      const lastCheckIn = results[0].status === "fulfilled" && !results[0].value.error
-        ? results[0].value.data
-        : null;
+      const lastCheckIn =
+        results[0].status === "fulfilled" && !results[0].value.error ? results[0].value.data : null;
 
-      const checkInFrequencyDays = results[1].status === "fulfilled" && !results[1].value.error
-        ? parseInt(results[1].value.data?.value || "14")
-        : 14; // Default fallback
+      const checkInFrequencyDays =
+        results[1].status === "fulfilled" && !results[1].value.error
+          ? parseInt(results[1].value.data?.value || "14")
+          : 14; // Default fallback
 
-      const lastPlan = results[2].status === "fulfilled" && !results[2].value.error
-        ? results[2].value.data
-        : null;
+      const lastPlan =
+        results[2].status === "fulfilled" && !results[2].value.error ? results[2].value.data : null;
 
       // Determine baseline date
       let baselineDate: Date | null = null;
@@ -791,7 +833,7 @@ useEffect(() => {
 
         if (isLocked) {
           const daysRemaining = Math.ceil(
-            (nextAllowedDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+            (nextAllowedDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
           );
           setDaysUntilNextCheckIn(daysRemaining);
         }
@@ -812,11 +854,16 @@ useEffect(() => {
 ```
 
 ### Plan Generation with User Feedback on Failure
+
 ```typescript
 // Source: src/app/[locale]/(dashboard)/check-in/page.tsx (Phase 5 enhancement)
 const onSubmit = async (data: CheckInFormData) => {
   if (!user) {
-    toast({ title: t("authRequired"), description: t("authRequiredDescription"), variant: "destructive" });
+    toast({
+      title: t("authRequired"),
+      description: t("authRequiredDescription"),
+      variant: "destructive",
+    });
     return;
   }
 
@@ -824,12 +871,16 @@ const onSubmit = async (data: CheckInFormData) => {
   try {
     const uploadedPhotoUrls = await uploadPhotosToStorage();
     const supabase = createClient();
-    const measurements = { /* ... */ };
+    const measurements = {
+      /* ... */
+    };
 
     // Save check-in data
     const { data: checkInData, error: checkInError } = await supabase
       .from("check_ins")
-      .insert({ /* ... */ } as any)
+      .insert({
+        /* ... */
+      } as any)
       .select()
       .single();
 
@@ -841,7 +892,7 @@ const onSubmit = async (data: CheckInFormData) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ checkInId: (checkInData as any).id }),
-      }).catch(err => {
+      }).catch((err) => {
         console.error("Meal plan generation failed:", err);
         Sentry.captureException(err, {
           tags: { feature: "plan-generation", planType: "meal" },
@@ -853,7 +904,7 @@ const onSubmit = async (data: CheckInFormData) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ checkInId: (checkInData as any).id }),
-      }).catch(err => {
+      }).catch((err) => {
         console.error("Workout plan generation failed:", err);
         Sentry.captureException(err, {
           tags: { feature: "plan-generation", planType: "workout" },
@@ -903,15 +954,16 @@ const onSubmit = async (data: CheckInFormData) => {
 
 ## State of the Art
 
-| Old Approach | Current Approach | When Changed | Impact |
-|--------------|------------------|--------------|--------|
-| Bare `await request.json()` | Zod validation with `.safeParse()` | Phase 5 | Type-safe validation, clear error messages, logged failures |
-| `console.error()` in API routes | `Sentry.captureException()` with context | Phase 5 | Centralized error tracking, aggregation, alerting |
-| Sequential data fetching | `Promise.all()` for independent queries | Phase 5 | 2-3x faster page loads (400-600ms saved on check-in) |
-| Silent plan generation failures | User-facing warning messages | Phase 5 (RELY-05) | Users aware of delayed plans, reduces confusion |
-| No OCR validation | Zod schema validation on OCR results | Phase 5 (ADMIN-02) | Prevents corrupt payment data in database |
+| Old Approach                    | Current Approach                         | When Changed       | Impact                                                      |
+| ------------------------------- | ---------------------------------------- | ------------------ | ----------------------------------------------------------- |
+| Bare `await request.json()`     | Zod validation with `.safeParse()`       | Phase 5            | Type-safe validation, clear error messages, logged failures |
+| `console.error()` in API routes | `Sentry.captureException()` with context | Phase 5            | Centralized error tracking, aggregation, alerting           |
+| Sequential data fetching        | `Promise.all()` for independent queries  | Phase 5            | 2-3x faster page loads (400-600ms saved on check-in)        |
+| Silent plan generation failures | User-facing warning messages             | Phase 5 (RELY-05)  | Users aware of delayed plans, reduces confusion             |
+| No OCR validation               | Zod schema validation on OCR results     | Phase 5 (ADMIN-02) | Prevents corrupt payment data in database                   |
 
 **Deprecated/outdated:**
+
 - **Unvalidated `request.json()`:** Always validate with Zod schema before processing
 - **`console.error()` without Sentry:** Use `Sentry.captureException()` with tags/extra context
 - **Silent `.catch(() => {})`:** Log non-critical failures with `level: "warning"`
@@ -942,6 +994,7 @@ const onSubmit = async (data: CheckInFormData) => {
 ## Sources
 
 ### Primary (HIGH confidence)
+
 - [Next.js Data Fetching Patterns](https://nextjs.org/docs/app/building-your-application/data-fetching/patterns) - Official Next.js 14 patterns
 - [Sentry Next.js Capturing Errors](https://docs.sentry.io/platforms/javascript/guides/nextjs/capturing-errors/) - Error context and enrichment
 - [Sentry Enriching Events Context](https://docs.sentry.io/platforms/javascript/enriching-events/context/) - Tags vs contexts vs extra data
@@ -950,17 +1003,20 @@ const onSubmit = async (data: CheckInFormData) => {
 - Codebase inspection: `src/app/api/`, `src/lib/ai/`, Phase 4 implementation
 
 ### Secondary (MEDIUM confidence)
+
 - [Promise.all Parallel API Calls | Kite Metric](https://kitemetric.com/blogs/harness-the-power-of-promise-all-for-parallel-api-calls) - Parallel execution patterns
 - [Fire and Forget in Node.js | Medium](https://medium.com/@dev.chetan.rathor/understanding-fire-and-forget-in-node-js-what-it-really-means-a83705aca4eb) - Non-blocking operations
 - [Zod Error Customization](https://zod.dev/error-customization) - User-friendly error messages
 - [zod-validation-error npm](https://www.npmjs.com/package/zod-validation-error) - Error formatting library
 
 ### Tertiary (LOW confidence)
+
 - None - all patterns verified against official docs and codebase
 
 ## Metadata
 
 **Confidence breakdown:**
+
 - Standard stack: HIGH - Zod and Sentry already installed and used in Phase 4
 - Architecture: HIGH - Patterns verified in Next.js docs and production codebases (Dub.co)
 - Pitfalls: MEDIUM-HIGH - Based on common API validation issues + codebase inspection

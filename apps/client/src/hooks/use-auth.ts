@@ -10,10 +10,7 @@ export function useAuth() {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useConvexAuth();
   const { signOut: convexSignOut } = useAuthActions();
-  const profile = useQuery(
-    api.profiles.getMyProfile,
-    isAuthenticated ? {} : "skip",
-  );
+  const profile = useQuery(api.profiles.getMyProfile, isAuthenticated ? {} : "skip");
 
   const signOut = async () => {
     await convexSignOut();

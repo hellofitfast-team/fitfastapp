@@ -5,14 +5,10 @@ import { useTranslations } from "next-intl";
 import { useConvexAuth, useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
-import {
-  HelpCircle,
-  Plus,
-  Trash2,
-  Save,
-  X,
-  Pencil,
-} from "lucide-react";
+import { createLogger } from "@fitfast/config/logger";
+
+const log = createLogger("admin-faqs");
+import { HelpCircle, Plus, Trash2, Save, X, Pencil } from "lucide-react";
 
 export function FaqManager() {
   const t = useTranslations("admin");
@@ -48,7 +44,7 @@ export function FaqManager() {
       setNewAnswer("");
       setShowNew(false);
     } catch (err) {
-      console.error("Failed to create FAQ:", err);
+      log.error({ err, language: newLang }, "Failed to create FAQ");
     }
     setIsSaving(false);
   };
@@ -65,16 +61,17 @@ export function FaqManager() {
       await updateFAQ({ faqId, question: editQuestion, answer: editAnswer });
       setEditingId(null);
     } catch (err) {
-      console.error("Failed to update FAQ:", err);
+      log.error({ err, faqId }, "Failed to update FAQ");
     }
     setIsSaving(false);
   };
 
   const handleDelete = async (faqId: Id<"faqs">) => {
+    if (!window.confirm(t("confirmDeleteFaq"))) return;
     try {
       await deleteFAQ({ faqId });
     } catch (err) {
-      console.error("Failed to delete FAQ:", err);
+      log.error({ err, faqId }, "Failed to delete FAQ");
     }
   };
 
@@ -83,15 +80,15 @@ export function FaqManager() {
       {/* Add new FAQ button */}
       <button
         onClick={() => setShowNew(!showNew)}
-        className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary/90 transition-colors"
+        className="bg-primary hover:bg-primary/90 flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-colors"
       >
         {showNew ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-        {showNew ? "Cancel" : "Add FAQ"}
+        {showNew ? t("cancel") : t("addFaq")}
       </button>
 
       {/* New FAQ form */}
       {showNew && (
-        <div className="rounded-xl border border-stone-200 bg-white p-5 space-y-3">
+        <div className="space-y-3 rounded-xl border border-stone-200 bg-white p-5">
           <div className="flex gap-2">
             <button
               onClick={() => setNewLang("en")}
@@ -118,20 +115,20 @@ export function FaqManager() {
             type="text"
             value={newQuestion}
             onChange={(e) => setNewQuestion(e.target.value)}
-            placeholder="Question..."
-            className="w-full rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm font-medium text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+            placeholder={t("questionPlaceholder")}
+            className="focus:ring-primary/20 focus:border-primary w-full rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm font-medium text-stone-900 transition-all placeholder:text-stone-400 focus:ring-2 focus:outline-none"
           />
           <textarea
             value={newAnswer}
             onChange={(e) => setNewAnswer(e.target.value)}
-            placeholder="Answer..."
+            placeholder={t("answerPlaceholder")}
             rows={3}
-            className="w-full rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
+            className="focus:ring-primary/20 focus:border-primary w-full resize-none rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm text-stone-900 transition-all placeholder:text-stone-400 focus:ring-2 focus:outline-none"
           />
           <button
             onClick={handleCreate}
             disabled={isSaving || !newQuestion.trim() || !newAnswer.trim()}
-            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-xs font-medium text-white hover:bg-primary/90 transition-colors disabled:opacity-50"
+            className="bg-primary hover:bg-primary/90 flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-medium text-white transition-colors disabled:opacity-50"
           >
             <Save className="h-3 w-3" />
             {t("save")}
@@ -142,70 +139,66 @@ export function FaqManager() {
       {/* FAQ list */}
       {allFaqs.length === 0 && !showNew ? (
         <div className="rounded-xl border border-stone-200 bg-white p-12 text-center">
-          <HelpCircle className="h-12 w-12 mx-auto text-stone-300 mb-4" />
-          <p className="font-medium text-stone-500">
-            {t("noResults")}
-          </p>
+          <HelpCircle className="mx-auto mb-4 h-12 w-12 text-stone-300" />
+          <p className="font-medium text-stone-500">{t("noResults")}</p>
         </div>
       ) : (
         <div className="space-y-2">
           {allFaqs.map((faq) => (
             <div
               key={faq._id}
-              className="rounded-xl border border-stone-200 bg-white hover:border-stone-300 transition-colors"
+              className="rounded-xl border border-stone-200 bg-white transition-colors hover:border-stone-300"
             >
               {editingId === faq._id ? (
-                <div className="p-5 space-y-3">
+                <div className="space-y-3 p-5">
                   <input
                     type="text"
                     value={editQuestion}
                     onChange={(e) => setEditQuestion(e.target.value)}
-                    className="w-full rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm font-medium text-stone-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    className="focus:ring-primary/20 focus:border-primary w-full rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm font-medium text-stone-900 transition-all focus:ring-2 focus:outline-none"
                   />
                   <textarea
                     value={editAnswer}
                     onChange={(e) => setEditAnswer(e.target.value)}
                     rows={3}
-                    className="w-full rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
+                    className="focus:ring-primary/20 focus:border-primary w-full resize-none rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm text-stone-900 transition-all focus:ring-2 focus:outline-none"
                   />
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleSave(faq._id)}
                       disabled={isSaving}
-                      className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-xs font-medium text-white hover:bg-primary/90 transition-colors disabled:opacity-50"
+                      className="bg-primary hover:bg-primary/90 flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-medium text-white transition-colors disabled:opacity-50"
                     >
                       <Save className="h-3 w-3" />
                       {t("save")}
                     </button>
                     <button
                       onClick={() => setEditingId(null)}
-                      className="flex items-center gap-2 rounded-lg border border-stone-200 px-4 py-2 text-xs font-medium text-stone-600 hover:bg-stone-50 transition-colors"
+                      className="flex items-center gap-2 rounded-lg border border-stone-200 px-4 py-2 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-50"
                     >
-                      Cancel
+                      {t("cancel")}
                     </button>
                   </div>
                 </div>
               ) : (
                 <div className="flex items-start gap-3 p-4">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm text-stone-900">{faq.question}</p>
-                    <p className="text-xs text-stone-500 mt-1 line-clamp-2">
-                      {faq.answer}
-                    </p>
-                    <span className="inline-block mt-2 rounded-full border border-stone-200 px-2 py-0.5 text-[10px] font-medium text-stone-500">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-stone-900">{faq.question}</p>
+                    <p className="mt-1 line-clamp-2 text-xs text-stone-500">{faq.answer}</p>
+                    <span className="mt-2 inline-block rounded-full border border-stone-200 px-2 py-0.5 text-[10px] font-medium text-stone-500">
                       {faq.language.toUpperCase()}
                     </span>
                   </div>
                   <div className="flex shrink-0 gap-1">
                     <button
                       onClick={() => handleEdit(faq)}
-                      className="flex h-11 w-11 items-center justify-center rounded-lg border border-stone-200 text-stone-400 hover:border-primary/30 hover:text-primary transition-colors"
+                      className="hover:border-primary/30 hover:text-primary flex h-11 w-11 items-center justify-center rounded-lg border border-stone-200 text-stone-400 transition-colors"
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
                     <button
                       onClick={() => handleDelete(faq._id)}
-                      className="flex h-11 w-11 items-center justify-center rounded-lg border border-stone-200 text-stone-400 hover:border-red-300 hover:text-red-600 transition-colors"
+                      className="flex h-11 w-11 items-center justify-center rounded-lg border border-stone-200 text-stone-400 transition-colors hover:border-red-300 hover:text-red-600"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>

@@ -54,7 +54,7 @@ export interface GeneratedWorkoutPlan {
 }
 
 export async function generateWorkoutPlan(
-  params: WorkoutPlanGenerationParams
+  params: WorkoutPlanGenerationParams,
 ): Promise<ValidatedWorkoutPlan> {
   const { profile, assessment, checkIn, language, planDuration = 7 } = params;
 
@@ -69,7 +69,9 @@ IMPORTANT GUIDELINES:
 4. Progress exercises appropriately
 5. Include warm-up and cool-down
 6. Provide clear, safe instructions
-${isArabic ? `
+${
+  isArabic
+    ? `
 ARABIC LANGUAGE REQUIREMENTS:
 - ALL text content MUST be in Arabic language
 - Exercise names MUST be in Arabic (e.g., "تمرين الضغط" not "Push-ups")
@@ -77,7 +79,9 @@ ARABIC LANGUAGE REQUIREMENTS:
 - Muscle group names MUST be in Arabic (e.g., "الصدر، الظهر" not "chest, back")
 - Instructions MUST be in Arabic
 - Notes and tips MUST be in Arabic
-- Equipment names SHOULD be in Arabic where possible` : ""}`;
+- Equipment names SHOULD be in Arabic where possible`
+    : ""
+}`;
 
   const userPrompt = `Create a ${planDuration}-day workout plan ${isArabic ? "ENTIRELY IN ARABIC LANGUAGE" : "in English"} for a user with the following profile:
 
@@ -93,13 +97,17 @@ MEDICAL CONSIDERATIONS:
 - Injuries: ${assessment.injuries?.join(", ") || "None"}
 - Exercise History: ${assessment.exerciseHistory || "None"}
 
-${checkIn ? `
+${
+  checkIn
+    ? `
 RECENT CHECK-IN DATA:
 - Current Weight: ${checkIn.weight}kg
 - Workout Performance: ${checkIn.workoutPerformance || "N/A"}
 - Energy Level: ${checkIn.energyLevel}/10
 - New Injuries: ${checkIn.newInjuries || "None"}
-` : ""}`;
+`
+    : ""
+}`;
 
   try {
     const { object, usage } = await generateObject({
@@ -142,7 +150,7 @@ RECENT CHECK-IN DATA:
     throw new AIGenerationError(
       `Failed to generate workout plan: ${error instanceof Error ? error.message : String(error)}`,
       "openrouter",
-      error instanceof Error ? error : undefined
+      error instanceof Error ? error : undefined,
     );
   }
 }

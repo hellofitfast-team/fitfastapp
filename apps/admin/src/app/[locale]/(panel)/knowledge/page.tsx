@@ -10,7 +10,7 @@ export default function KnowledgePage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
-        <p className="text-sm text-stone-500 mt-1">{t("description")}</p>
+        <p className="mt-1 text-sm text-stone-500">{t("description")}</p>
       </div>
       <KnowledgeManager />
     </div>

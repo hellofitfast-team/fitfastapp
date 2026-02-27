@@ -55,7 +55,7 @@ export function PaymentMethodsManager() {
         {[1].map((i) => (
           <div
             key={i}
-            className="h-32 rounded-xl border border-stone-200 bg-stone-50 animate-pulse"
+            className="h-32 animate-pulse rounded-xl border border-stone-200 bg-stone-50"
           />
         ))}
       </div>
@@ -78,11 +78,9 @@ export function PaymentMethodsManager() {
   const handleChange = <K extends keyof PaymentMethod>(
     index: number,
     field: K,
-    value: PaymentMethod[K]
+    value: PaymentMethod[K],
   ) => {
-    setMethods(
-      methods.map((m, i) => (i === index ? { ...m, [field]: value } : m))
-    );
+    setMethods(methods.map((m, i) => (i === index ? { ...m, [field]: value } : m)));
   };
 
   const handleSave = async () => {
@@ -113,13 +111,10 @@ export function PaymentMethodsManager() {
       )}
 
       {methods.map((method, index) => (
-        <div
-          key={index}
-          className="rounded-xl border border-stone-200 bg-white overflow-hidden"
-        >
+        <div key={index} className="overflow-hidden rounded-xl border border-stone-200 bg-white">
           {/* Card header */}
-          <div className="flex items-center justify-between px-4 py-3 bg-stone-50/50 border-b border-stone-100">
-            <span className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+          <div className="flex items-center justify-between border-b border-stone-100 bg-stone-50/50 px-4 py-3">
+            <span className="text-xs font-semibold tracking-wide text-stone-500 uppercase">
               {t("paymentMethodCard")} {index + 1}
             </span>
             <button
@@ -135,16 +130,16 @@ export function PaymentMethodsManager() {
             </button>
           </div>
 
-          <div className="p-4 space-y-3">
+          <div className="space-y-3 p-4">
             {/* Type */}
             <div>
-              <label className="block text-xs font-medium text-stone-500 mb-1">
+              <label className="mb-1 block text-xs font-medium text-stone-500">
                 {t("accountType")}
               </label>
               <select
                 value={method.type}
                 onChange={(e) => handleChange(index, "type", e.target.value)}
-                className="w-full h-10 rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                className="focus:ring-primary/20 focus:border-primary h-10 w-full rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm text-stone-900 transition-all focus:ring-2 focus:outline-none"
               >
                 {ACCOUNT_TYPES.map((type) => (
                   <option key={type} value={type}>
@@ -157,48 +152,42 @@ export function PaymentMethodsManager() {
             {/* Account Name & Number */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-stone-500 mb-1">
+                <label className="mb-1 block text-xs font-medium text-stone-500">
                   {t("accountName")}
                 </label>
                 <input
                   type="text"
                   value={method.accountName}
-                  onChange={(e) =>
-                    handleChange(index, "accountName", e.target.value)
-                  }
+                  onChange={(e) => handleChange(index, "accountName", e.target.value)}
                   placeholder="Ahmed Hassan"
-                  className="w-full h-10 rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  className="focus:ring-primary/20 focus:border-primary h-10 w-full rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm text-stone-900 transition-all placeholder:text-stone-400 focus:ring-2 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-stone-500 mb-1">
+                <label className="mb-1 block text-xs font-medium text-stone-500">
                   {t("accountNumber")}
                 </label>
                 <input
                   type="text"
                   value={method.accountNumber}
-                  onChange={(e) =>
-                    handleChange(index, "accountNumber", e.target.value)
-                  }
+                  onChange={(e) => handleChange(index, "accountNumber", e.target.value)}
                   placeholder="01XXXXXXXXX"
-                  className="w-full h-10 rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  className="focus:ring-primary/20 focus:border-primary h-10 w-full rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm text-stone-900 transition-all placeholder:text-stone-400 focus:ring-2 focus:outline-none"
                 />
               </div>
             </div>
 
             {/* Instructions */}
             <div>
-              <label className="block text-xs font-medium text-stone-500 mb-1">
+              <label className="mb-1 block text-xs font-medium text-stone-500">
                 {t("instructions")}
               </label>
               <textarea
                 value={method.instructions ?? ""}
-                onChange={(e) =>
-                  handleChange(index, "instructions", e.target.value)
-                }
+                onChange={(e) => handleChange(index, "instructions", e.target.value)}
                 placeholder={t("instructionsPlaceholder")}
                 rows={2}
-                className="w-full rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
+                className="focus:ring-primary/20 focus:border-primary w-full resize-none rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-900 transition-all placeholder:text-stone-400 focus:ring-2 focus:outline-none"
               />
             </div>
           </div>
@@ -208,7 +197,7 @@ export function PaymentMethodsManager() {
       {/* Add button */}
       <button
         onClick={handleAdd}
-        className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-stone-200 py-3 text-sm font-medium text-stone-400 hover:border-primary/30 hover:text-primary transition-colors"
+        className="hover:border-primary/30 hover:text-primary flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-stone-200 py-3 text-sm font-medium text-stone-400 transition-colors"
       >
         <Plus className="h-4 w-4" />
         {t("addPaymentMethod")}

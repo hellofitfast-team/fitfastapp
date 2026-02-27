@@ -33,9 +33,7 @@ export function SocialLinksManager() {
   }, [serverLinks, links]);
 
   if (links === null) {
-    return (
-      <div className="h-32 rounded-xl border border-stone-200 bg-stone-50 animate-pulse" />
-    );
+    return <div className="h-32 animate-pulse rounded-xl border border-stone-200 bg-stone-50" />;
   }
 
   const handleChange = (key: string, value: string) => {
@@ -55,25 +53,21 @@ export function SocialLinksManager() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-stone-200 bg-white p-4 space-y-3">
+      <div className="space-y-3 rounded-xl border border-stone-200 bg-white p-4">
         {SOCIAL_PLATFORMS.map(({ key, label, placeholder }) => (
           <div key={key}>
-            <label className="block text-xs font-medium text-stone-500 mb-1">
-              {label}
-            </label>
+            <label className="mb-1 block text-xs font-medium text-stone-500">{label}</label>
             <input
               type="url"
               value={links[key] ?? ""}
               onChange={(e) => handleChange(key, e.target.value)}
               placeholder={placeholder}
               dir="ltr"
-              className="w-full h-10 rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              className="focus:ring-primary/20 focus:border-primary h-10 w-full rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm text-stone-900 transition-all placeholder:text-stone-400 focus:ring-2 focus:outline-none"
             />
           </div>
         ))}
-        <p className="text-[11px] text-stone-400">
-          {t("socialLinksDesc")}
-        </p>
+        <p className="text-[11px] text-stone-400">{t("socialLinksDesc")}</p>
       </div>
 
       <div className="flex justify-end pt-2">

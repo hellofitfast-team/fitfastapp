@@ -20,7 +20,7 @@ export function ExpiryBanner({ daysUntilExpiry }: ExpiryBannerProps) {
       <span>{message}</span>
       <Link
         href="/expired"
-        className="underline underline-offset-2 font-bold hover:text-white/90 transition-colors"
+        className="font-bold underline underline-offset-2 transition-colors hover:text-white/90"
       >
         {t("renewNow")}
       </Link>

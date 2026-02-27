@@ -5,6 +5,7 @@
 ## APIs & External Services
 
 **AI/LLM:**
+
 - OpenRouter API - LLM inference platform
   - Models used:
     - `deepseek/deepseek-chat` (DeepSeek V3) for meal and workout plan generation
@@ -18,6 +19,7 @@
     - `src/app/api/admin/ocr/route.ts` - Extracts payment data from screenshots
 
 **Push Notifications:**
+
 - OneSignal - Cross-platform push notification service
   - SDK/Client:
     - Client-side: `react-onesignal 3.4.6` for subscription + identity
@@ -33,6 +35,7 @@
     - Check-in reminders (triggered automatically every 14 days)
 
 **Error Tracking & Monitoring:**
+
 - Sentry - Error aggregation and performance monitoring
   - SDK: `@sentry/nextjs 10.38.0`
   - Auth: `NEXT_PUBLIC_SENTRY_DSN` (client), `SENTRY_DSN` (server), `SENTRY_ORG`, `SENTRY_PROJECT` (build)
@@ -48,6 +51,7 @@
 ## Data Storage
 
 **Databases:**
+
 - Supabase (PostgreSQL)
   - Connection: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
   - Client libraries:
@@ -66,6 +70,7 @@
   - RLS enabled on all tables - users see only their own data
 
 **File Storage:**
+
 - Supabase Storage (via postgres bucket)
   - Image optimization via: Supabase remote pattern in Next.js config
   - Hostname: `obxtcnygregnhbafsfsd.supabase.co`
@@ -73,6 +78,7 @@
   - Usage: User avatars, meal/workout plan images, receipt uploads for OCR
 
 **Caching:**
+
 - SWR 2.4.0 - Client-side HTTP cache with revalidation
 - Service Worker - Offline caching for PWA (`public/sw.js`)
 - No external cache service (Redis, Memcached) detected
@@ -80,6 +86,7 @@
 ## Authentication & Identity
 
 **Auth Provider:**
+
 - Supabase Auth (PostgreSQL + built-in auth)
   - Implementation:
     - Email/magic link signup for clients
@@ -95,17 +102,20 @@
   - Middleware: `src/middleware.ts` (via proxy.ts in Next.js 16) handles session refresh
 
 **User Identity Linking:**
+
 - OneSignal external_id - Maps OneSignal subscription to Supabase user.id
   - Implementation: `src/components/pwa/OneSignalIdentity.tsx` via `setExternalUserId()`
 
 ## Monitoring & Observability
 
 **Error Tracking:**
+
 - Sentry - All frontend and server errors automatically captured
   - Sampling: Client 20%, Server 100%, Session Replay 1%
   - Features: Error boundaries, source maps, user context
 
 **Logs:**
+
 - Console logging in development
 - Sentry captures stack traces in production
 - No external logging service (CloudWatch, Datadog) configured
@@ -113,16 +123,19 @@
 ## CI/CD & Deployment
 
 **Hosting:**
+
 - Vercel - Primary deployment platform
   - Auto-deployment on git push
   - Environment variables managed in Vercel dashboard
 
 **CI Pipeline:**
+
 - GitHub Actions (implied by Vercel integration)
 - Pre-commit: ESLint via `pnpm lint`
 - Build: `pnpm build` (Next.js with Sentry source map upload)
 
 **Supabase Hosting:**
+
 - Supabase Cloud - Managed PostgreSQL + Auth + Storage
   - Project: fitfast (already provisioned)
   - Migrations applied via `supabase/migrations/` directory
@@ -132,6 +145,7 @@
 **Required env vars (Development & Production):**
 
 Public (safe to commit in build):
+
 - `NEXT_PUBLIC_SUPABASE_URL` - e.g., `https://yourproject.supabase.co`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous (limited RLS)
 - `NEXT_PUBLIC_SENTRY_DSN` - Error tracking endpoint
@@ -140,6 +154,7 @@ Public (safe to commit in build):
 - `NEXT_PUBLIC_ONESIGNAL_APP_ID` - OneSignal app identifier
 
 Private (must be in `.env.local` or Vercel secrets):
+
 - `OPENROUTER_API_KEY` - OpenRouter API key (server-only)
 - `ONESIGNAL_REST_API_KEY` - OneSignal REST API (server-only notifications)
 - `SUPABASE_SERVICE_ROLE_KEY` - Admin bypass key (server-only, never expose)
@@ -148,6 +163,7 @@ Private (must be in `.env.local` or Vercel secrets):
 - `SENTRY_PROJECT` - Sentry project (build-time)
 
 **Secrets location:**
+
 - Development: `.env.local` (in `.gitignore`)
 - Production: Vercel Environment Variables dashboard
 - Reference: `.env.example` in repo (public template)
@@ -155,11 +171,13 @@ Private (must be in `.env.local` or Vercel secrets):
 ## Webhooks & Callbacks
 
 **Incoming:**
+
 - Supabase Auth callbacks:
   - `src/app/api/auth/callback/route.ts` - Handles OAuth redirects
   - Magic link verification (via Supabase-managed email)
 
 **Outgoing:**
+
 - OneSignal - Push notifications sent from:
   - `src/app/api/plans/meal/route.ts` - On meal plan generation
   - `src/app/api/plans/workout/route.ts` - On workout plan generation
@@ -169,26 +187,31 @@ Private (must be in `.env.local` or Vercel secrets):
 ## API Routes (Server Integration Points)
 
 **Authentication:**
+
 - `POST /api/auth/sign-in` - Email/password login
 - `POST /api/auth/logout` - Logout
 - `GET /api/auth/callback` - OAuth callback
 - `GET /api/auth/profile` - Current user profile
 
 **AI Generation:**
+
 - `POST /api/plans/meal` - Generate meal plan (calls OpenRouter + OneSignal)
 - `POST /api/plans/workout` - Generate workout plan (calls OpenRouter + OneSignal)
 
 **Admin (Coach Only):**
+
 - `POST /api/admin/ocr` - OCR receipt verification (calls OpenRouter)
 - `POST /api/admin/approve-signup` - Approve pending client signup
 - `POST /api/admin/notifications/send` - Send push notification (calls OneSignal)
 
 **Configuration:**
+
 - `GET /api/config/pricing` - Pricing tiers
 
 **User Data:**
+
 - `POST /api/tickets` - Submit support ticket
 
 ---
 
-*Integration audit: 2026-02-12*
+_Integration audit: 2026-02-12_

@@ -2,6 +2,7 @@
  * OpenRouter API Client
  * Uses DeepSeek V3 for meal and workout plan generation
  */
+import "server-only";
 
 import { withRetry, AIGenerationError } from "@/lib/errors";
 import * as Sentry from "@sentry/nextjs";
@@ -48,13 +49,9 @@ export class OpenRouterClient {
       temperature?: number;
       max_tokens?: number;
       model?: string;
-    } = {}
+    } = {},
   ): Promise<string> {
-    const {
-      temperature = 0.7,
-      max_tokens = 4000,
-      model = MODEL,
-    } = options;
+    const { temperature = 0.7, max_tokens = 4000, model = MODEL } = options;
 
     return withRetry(
       async () => {
@@ -84,26 +81,20 @@ export class OpenRouterClient {
             throw new AIGenerationError(
               `OpenRouter API error: ${response.status}`,
               "openrouter",
-              new Error(errorText)
+              new Error(errorText),
             );
           }
 
           const data: OpenRouterResponse = await response.json();
 
           if (!data.choices || data.choices.length === 0) {
-            throw new AIGenerationError(
-              "No response from OpenRouter",
-              "openrouter"
-            );
+            throw new AIGenerationError("No response from OpenRouter", "openrouter");
           }
 
           return data.choices[0].message.content;
         } catch (error) {
           if (error instanceof Error && error.name === "AbortError") {
-            throw new AIGenerationError(
-              "OpenRouter request timed out after 30s",
-              "openrouter"
-            );
+            throw new AIGenerationError("OpenRouter request timed out after 30s", "openrouter");
           }
           throw error;
         } finally {
@@ -129,7 +120,7 @@ export class OpenRouterClient {
           // Retry on 5xx and network errors
           return true;
         },
-      }
+      },
     );
   }
 
@@ -142,7 +133,7 @@ export class OpenRouterClient {
     options?: {
       temperature?: number;
       max_tokens?: number;
-    }
+    },
   ): Promise<string> {
     const messages: OpenRouterMessage[] = [];
 

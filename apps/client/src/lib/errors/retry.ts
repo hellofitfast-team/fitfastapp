@@ -68,7 +68,7 @@ export async function withRetry<T>(
     maxAttempts?: number;
     operationName?: string;
     shouldRetry?: (error: Error) => boolean;
-  }
+  },
 ): Promise<T> {
   const maxAttempts = options?.maxAttempts ?? 3;
   const operationName = options?.operationName ?? "operation";
@@ -103,7 +103,7 @@ export async function withRetry<T>(
               errorMessage: error.message,
               errorStack: error.stack,
             },
-          }
+          },
         );
 
         // Check if we should retry this specific error
@@ -119,7 +119,7 @@ export async function withRetry<T>(
     const retryError = new RetryError(
       `Operation '${operationName}' failed after ${maxAttempts} attempts`,
       lastError ?? (error instanceof Error ? error : new Error(String(error))),
-      maxAttempts
+      maxAttempts,
     );
 
     // Capture retry exhaustion to Sentry with error level

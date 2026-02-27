@@ -7,9 +7,7 @@ import { getAuthUserId } from "./auth";
 /**
  * Singleton PersistentTextStreaming instance.
  */
-export const streaming = new PersistentTextStreaming(
-  components.persistentTextStreaming,
-);
+export const streaming = new PersistentTextStreaming(components.persistentTextStreaming);
 
 // Thin wrappers so "use node" actions can create/read streams via ctx.runMutation/runQuery
 

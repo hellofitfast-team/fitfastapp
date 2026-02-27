@@ -19,10 +19,7 @@ export default function PendingPage() {
 
     if (profile.status === "active") {
       router.replace("/initial-assessment");
-    } else if (
-      profile.status === "inactive" ||
-      profile.status === "expired"
-    ) {
+    } else if (profile.status === "inactive" || profile.status === "expired") {
       router.replace("/login?error=rejected");
     }
   }, [profile, router]);
@@ -52,21 +49,17 @@ export default function PendingPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="text-center py-6">
-        <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 mb-4">
-          <Clock className="h-8 w-8 text-primary" />
+      <div className="py-6 text-center">
+        <div className="bg-primary/10 mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full">
+          <Clock className="text-primary h-8 w-8" />
         </div>
-        <h1 className="text-3xl font-bold tracking-tight">
-          {t("title")}
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          {t("subtitle")}
-        </p>
+        <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
+        <p className="text-muted-foreground mt-2 text-sm">{t("subtitle")}</p>
       </div>
 
       {/* Progress Steps */}
       <Card>
-        <div className="divide-y divide-border">
+        <div className="divide-border divide-y">
           {steps.map((step, index) => (
             <div
               key={index}
@@ -83,7 +76,7 @@ export default function PendingPage() {
                     ? "bg-success-500 text-white"
                     : step.active
                       ? "bg-primary text-white"
-                      : "bg-neutral-100 text-muted-foreground",
+                      : "text-muted-foreground bg-neutral-100",
                 )}
               >
                 <step.icon className="h-5 w-5" />
@@ -97,9 +90,7 @@ export default function PendingPage() {
                 >
                   {step.title}
                 </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {step.description}
-                </p>
+                <p className="text-muted-foreground mt-0.5 text-xs">{step.description}</p>
               </div>
             </div>
           ))}
@@ -109,7 +100,7 @@ export default function PendingPage() {
       {/* Info Box */}
       <Card className="bg-primary/5 border-primary/20">
         <CardContent className="p-5">
-          <p className="text-xs text-muted-foreground mb-1">Info</p>
+          <p className="text-muted-foreground mb-1 text-xs">Info</p>
           <p className="text-sm font-medium">{t("message")}</p>
         </CardContent>
       </Card>
@@ -117,12 +108,10 @@ export default function PendingPage() {
       {/* Current Status */}
       {profile && (
         <Card>
-          <CardContent className="p-5 flex items-center justify-between gap-4">
+          <CardContent className="flex items-center justify-between gap-4 p-5">
             <div>
-              <p className="text-xs text-muted-foreground mb-1.5">
-                {t("currentStatus")}
-              </p>
-              <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+              <p className="text-muted-foreground mb-1.5 text-xs">{t("currentStatus")}</p>
+              <span className="bg-primary/10 text-primary inline-flex items-center rounded-full px-3 py-1 text-sm font-medium">
                 {profile.status.replace("_", " ")}
               </span>
             </div>
@@ -131,10 +120,8 @@ export default function PendingPage() {
       )}
 
       {/* Approval time notice */}
-      <div className="text-center p-6 rounded-xl bg-neutral-50 border border-border">
-        <p className="text-xs text-muted-foreground">
-          {t("approvalTime")}
-        </p>
+      <div className="border-border rounded-xl border bg-neutral-50 p-6 text-center">
+        <p className="text-muted-foreground text-xs">{t("approvalTime")}</p>
       </div>
     </div>
   );

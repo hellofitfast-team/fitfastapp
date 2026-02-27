@@ -16,7 +16,7 @@ export default function AdminClientsPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="text-primary h-8 w-8 animate-spin" />
       </div>
     );
   }
@@ -37,10 +37,8 @@ export default function AdminClientsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-stone-900">
-          {t("clients")}
-        </h1>
-        <p className="text-sm text-stone-500 mt-1">
+        <h1 className="text-2xl font-bold tracking-tight text-stone-900">{t("clients")}</h1>
+        <p className="mt-1 text-sm text-stone-500">
           {clients.length} {t("totalClients").toLowerCase()}
         </p>
       </div>

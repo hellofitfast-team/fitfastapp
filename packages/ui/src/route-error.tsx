@@ -14,13 +14,7 @@ export interface RouteErrorProps {
   translationKey: string;
 }
 
-export function RouteError({
-  error,
-  reset,
-  feature,
-  route,
-  translationKey,
-}: RouteErrorProps) {
+export function RouteError({ error, reset, feature, route, translationKey }: RouteErrorProps) {
   const t = useTranslations(translationKey);
 
   useEffect(() => {
@@ -31,17 +25,15 @@ export function RouteError({
 
   return (
     <div className="flex min-h-[60vh] items-center justify-center p-4">
-      <div className="w-full max-w-md rounded-2xl border border-border bg-card shadow-lg">
+      <div className="border-border bg-card w-full max-w-md rounded-2xl border shadow-lg">
         <div className="space-y-5 p-8 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-error-500/10">
-            <AlertTriangle className="h-8 w-8 text-error-500" />
+          <div className="bg-error-500/10 mx-auto flex h-16 w-16 items-center justify-center rounded-full">
+            <AlertTriangle className="text-error-500 h-8 w-8" />
           </div>
-          <h1 className="font-bold text-xl">{t("title")}</h1>
-          <p className="text-sm text-muted-foreground">{t("description")}</p>
+          <h1 className="text-xl font-bold">{t("title")}</h1>
+          <p className="text-muted-foreground text-sm">{t("description")}</p>
           {error.digest && (
-            <p className="text-xs text-muted-foreground">
-              Error ID: {error.digest}
-            </p>
+            <p className="text-muted-foreground text-xs">Error ID: {error.digest}</p>
           )}
           <Button onClick={() => reset()} className="w-full">
             {t("retry")}

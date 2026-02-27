@@ -5,18 +5,18 @@
 /* FitFast Modern Clean Theme Configuration */
 @theme inline {
   /* Color Palette — softened from brutalist */
-  --color-cream: #FFFEF5;
+  --color-cream: #fffef5;
   --color-black: #000000;
-  --color-brand-orange: #FF3B00;
-  --color-brand-green: #00FF94;
+  --color-brand-orange: #ff3b00;
+  --color-brand-green: #00ff94;
 
   /* Primary Theme - Brand Orange */
-  --color-primary: #FF4500;
-  --color-primary-foreground: #FFFFFF;
-  --color-primary-light: #FF6633;
-  --color-primary-dark: #CC3700;
-  --color-accent: #FF4500;
-  --color-accent-foreground: #FFFFFF;
+  --color-primary: #ff4500;
+  --color-primary-foreground: #ffffff;
+  --color-primary-light: #ff6633;
+  --color-primary-dark: #cc3700;
+  --color-accent: #ff4500;
+  --color-accent-foreground: #ffffff;
 
   /* Neutral Colors */
   --color-neutral-50: #fafafa;
@@ -40,27 +40,29 @@
   --color-error-600: #dc2626;
 
   /* Feature-Specific Accent Colors */
-  --color-nutrition: #10B981;    /* Emerald — meals, diet */
-  --color-fitness: #F97316;      /* Orange — workouts, energy */
-  --color-streak: #F59E0B;       /* Amber — streaks, achievement */
-  --color-routine: #8B5CF6;      /* Violet — tracking, calendar */
+  --color-nutrition: #10b981; /* Emerald — meals, diet */
+  --color-fitness: #f97316; /* Orange — workouts, energy */
+  --color-streak: #f59e0b; /* Amber — streaks, achievement */
+  --color-routine: #8b5cf6; /* Violet — tracking, calendar */
 
   /* Background/Foreground — Modern Clean */
-  --color-background: #FAFAFA;
+  --color-background: #fafafa;
   --color-foreground: #171717;
-  --color-card: #FFFFFF;
+  --color-card: #ffffff;
   --color-card-foreground: #171717;
-  --color-surface-elevated: #FFFFFF;
-  --color-popover: #FFFFFF;
+  --color-surface-elevated: #ffffff;
+  --color-popover: #ffffff;
   --color-popover-foreground: #171717;
   --color-muted: var(--color-neutral-100);
   --color-muted-foreground: var(--color-neutral-500);
-  --color-border: #E8EAED;
+  --color-border: #e8eaed;
   --color-input: #d4d4d4;
-  --color-ring: #FF4500;
+  --color-ring: #ff4500;
 
   /* Fonts — aligned with marketing app */
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-sans:
+    "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol", "Noto Color Emoji";
   --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-arabic: "Alexandria", ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
@@ -93,11 +95,11 @@
   --shadow-lifted: 0 8px 32px 0 rgba(0, 0, 0, 0.08), 0 2px 8px 0 rgba(0, 0, 0, 0.04);
 
   /* Spacing Scale — consistent layout rhythm */
-  --spacing-page-x: 1rem;        /* Horizontal page padding (mobile) */
-  --spacing-page-x-lg: 1.5rem;   /* Horizontal page padding (desktop) */
+  --spacing-page-x: 1rem; /* Horizontal page padding (mobile) */
+  --spacing-page-x-lg: 1.5rem; /* Horizontal page padding (desktop) */
   --spacing-section-gap: 1.25rem; /* Gap between sections/widget groups */
-  --spacing-card-padding: 1rem;   /* Internal card padding */
-  --spacing-card-gap: 0.75rem;    /* Gap between cards in a grid */
+  --spacing-card-padding: 1rem; /* Internal card padding */
+  --spacing-card-gap: 0.75rem; /* Gap between cards in a grid */
 
   /* Typography Scale (reference — use Tailwind utility classes)
    * --------------------------------------------------
@@ -119,43 +121,71 @@
   --animate-slide-in-bottom: slideInFromBottom 0.3s ease-out both;
 
   @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   @keyframes slideUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   @keyframes slideDown {
-    from { opacity: 0; transform: translateY(-16px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(-16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   @keyframes scaleIn {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
   }
 
   @keyframes slideInFromBottom {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }
 
 /* IMPORTANT: Override dark mode - design is always the same */
 @media (prefers-color-scheme: dark) {
   @theme inline {
-    --color-background: #FAFAFA;
+    --color-background: #fafafa;
     --color-foreground: #171717;
-    --color-card: #FFFFFF;
+    --color-card: #ffffff;
     --color-card-foreground: #171717;
-    --color-popover: #FFFFFF;
+    --color-popover: #ffffff;
     --color-popover-foreground: #171717;
     --color-muted: var(--color-neutral-100);
     --color-muted-foreground: var(--color-neutral-500);
-    --color-border: #E8EAED;
+    --color-border: #e8eaed;
     --color-input: #d4d4d4;
   }
 }
@@ -179,11 +209,15 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  input, textarea, select, button {
+  input,
+  textarea,
+  select,
+  button {
     color: var(--color-foreground);
   }
 
-  input::placeholder, textarea::placeholder {
+  input::placeholder,
+  textarea::placeholder {
     color: var(--color-neutral-400);
   }
 }
@@ -257,18 +291,31 @@
 
 /* Infinite/looping animation keyframes — stay outside @theme (not entrance animations) */
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 @keyframes pulse-soft {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .animate-spin {

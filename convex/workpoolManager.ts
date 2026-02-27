@@ -26,11 +26,7 @@ export const enqueueMealPlan = internalMutation({
   },
   returns: v.string(),
   handler: async (ctx, args): Promise<string> => {
-    const workId = await aiWorkpool.enqueueAction(
-      ctx,
-      internal.ai.generateMealPlanInternal,
-      args,
-    );
+    const workId = await aiWorkpool.enqueueAction(ctx, internal.ai.generateMealPlanInternal, args);
     return workId as unknown as string;
   },
 });

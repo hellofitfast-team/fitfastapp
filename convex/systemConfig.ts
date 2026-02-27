@@ -3,9 +3,26 @@ import { query, mutation, internalQuery, internalAction } from "./_generated/ser
 import { internal } from "./_generated/api";
 import { getAuthUserId } from "./auth";
 
+const PUBLIC_CONFIG_KEYS = new Set([
+  "pricing",
+  "plans",
+  "paymentMethods",
+  "social_links",
+  "check_in_frequency_days",
+]);
+
 export const getConfig = query({
   args: { key: v.string() },
   handler: async (ctx, { key }) => {
+    if (!PUBLIC_CONFIG_KEYS.has(key)) {
+      const userId = await getAuthUserId(ctx);
+      if (!userId) throw new Error("Not authenticated");
+      const profile = await ctx.db
+        .query("profiles")
+        .withIndex("by_userId", (q) => q.eq("userId", userId))
+        .unique();
+      if (!profile?.isCoach) throw new Error("Not authorized");
+    }
     return ctx.db
       .query("systemConfig")
       .withIndex("by_key", (q) => q.eq("key", key))
@@ -55,19 +72,21 @@ export const getPlans = query({
       .query("systemConfig")
       .withIndex("by_key", (q) => q.eq("key", "plans"))
       .unique();
-    return (record?.value as Array<{
-      id: string;
-      name: string;
-      nameAr: string;
-      price: number;
-      currency: string;
-      duration: string;
-      durationAr: string;
-      features: string[];
-      featuresAr: string[];
-      badge?: string;
-      badgeAr?: string;
-    }>) ?? [];
+    return (
+      (record?.value as Array<{
+        id: string;
+        name: string;
+        nameAr: string;
+        price: number;
+        currency: string;
+        duration: string;
+        durationAr: string;
+        features: string[];
+        featuresAr: string[];
+        badge?: string;
+        badgeAr?: string;
+      }>) ?? []
+    );
   },
 });
 
@@ -128,12 +147,14 @@ export const getPaymentMethods = query({
       .query("systemConfig")
       .withIndex("by_key", (q) => q.eq("key", "paymentMethods"))
       .unique();
-    return (record?.value as Array<{
-      type: string;
-      accountName: string;
-      accountNumber: string;
-      instructions?: string;
-    }>) ?? [];
+    return (
+      (record?.value as Array<{
+        type: string;
+        accountName: string;
+        accountNumber: string;
+        instructions?: string;
+      }>) ?? []
+    );
   },
 });
 
@@ -194,9 +215,12 @@ export const setConfig = mutation({
     if (!profile?.isCoach) throw new Error("Not authorized");
 
     // Coerce string-typed numbers for keys that must be numeric
-    const storedValue = NUMERIC_CONFIG_KEYS.has(key) && typeof value === "string"
-      ? (value.trim() === "" || Number.isNaN(Number(value)) ? 14 : Number(value))
-      : value;
+    const storedValue =
+      NUMERIC_CONFIG_KEYS.has(key) && typeof value === "string"
+        ? value.trim() === "" || Number.isNaN(Number(value))
+          ? 14
+          : Number(value)
+        : value;
 
     const existing = await ctx.db
       .query("systemConfig")

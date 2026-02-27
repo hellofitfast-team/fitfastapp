@@ -19,7 +19,14 @@ import {
 import { cn } from "@fitfast/ui/cn";
 
 const CATEGORY_OPTIONS = [
-  "protein", "carb", "fat", "vegetable", "fruit", "dairy", "dessert", "recipe",
+  "protein",
+  "carb",
+  "fat",
+  "vegetable",
+  "fruit",
+  "dairy",
+  "dessert",
+  "recipe",
 ] as const;
 
 export function KnowledgeManager() {
@@ -40,7 +47,7 @@ export function KnowledgeManager() {
               : "text-stone-500 hover:text-stone-700",
           )}
         >
-          <BookOpen className="inline h-4 w-4 mr-1.5 -mt-0.5" />
+          <BookOpen className="-mt-0.5 mr-1.5 inline h-4 w-4" />
           {t("knowledgeTab")}
         </button>
         <button
@@ -52,16 +59,12 @@ export function KnowledgeManager() {
               : "text-stone-500 hover:text-stone-700",
           )}
         >
-          <UtensilsCrossed className="inline h-4 w-4 mr-1.5 -mt-0.5" />
+          <UtensilsCrossed className="-mt-0.5 mr-1.5 inline h-4 w-4" />
           {t("foodTab")}
         </button>
       </div>
 
-      {activeTab === "knowledge" ? (
-        <KnowledgeTab />
-      ) : (
-        <FoodTab />
-      )}
+      {activeTab === "knowledge" ? <KnowledgeTab /> : <FoodTab />}
     </div>
   );
 }
@@ -196,15 +199,15 @@ function KnowledgeTab() {
       <div className="flex gap-3">
         <button
           onClick={() => setShowAddText(!showAddText)}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary/90 transition-colors"
+          className="bg-primary hover:bg-primary/90 inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-colors"
         >
           <Plus className="h-4 w-4" />
           {t("addText")}
         </button>
         <label
           className={cn(
-            "inline-flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-4 py-2.5 text-sm font-medium hover:bg-stone-50 transition-colors cursor-pointer",
-            isUploading && "opacity-50 pointer-events-none",
+            "inline-flex cursor-pointer items-center gap-2 rounded-lg border border-stone-200 bg-white px-4 py-2.5 text-sm font-medium transition-colors hover:bg-stone-50",
+            isUploading && "pointer-events-none opacity-50",
           )}
         >
           {isUploading ? (
@@ -225,9 +228,7 @@ function KnowledgeTab() {
 
       {/* PDF Tag Selection (shown inline) */}
       <div>
-        <label className="text-xs font-medium text-stone-500 mb-1.5 block">
-          {t("selectTags")}
-        </label>
+        <label className="mb-1.5 block text-xs font-medium text-stone-500">{t("selectTags")}</label>
         <div className="flex flex-wrap gap-2">
           {TAG_OPTIONS.map((tag) => (
             <button
@@ -249,7 +250,7 @@ function KnowledgeTab() {
 
       {/* Add Text Form */}
       {showAddText && (
-        <div className="rounded-xl border border-stone-200 bg-white p-5 space-y-4">
+        <div className="space-y-4 rounded-xl border border-stone-200 bg-white p-5">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold">{t("addTextEntry")}</h3>
             <button
@@ -264,17 +265,17 @@ function KnowledgeTab() {
             placeholder={t("titlePlaceholder")}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="focus:ring-primary/20 focus:border-primary w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:ring-2 focus:outline-none"
           />
           <textarea
             placeholder={t("contentPlaceholder")}
             value={content}
             onChange={(e) => setContent(e.target.value)}
             rows={6}
-            className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-y"
+            className="focus:ring-primary/20 focus:border-primary w-full resize-y rounded-lg border border-stone-200 px-3 py-2 text-sm focus:ring-2 focus:outline-none"
           />
           <div>
-            <label className="text-xs font-medium text-stone-500 mb-1.5 block">
+            <label className="mb-1.5 block text-xs font-medium text-stone-500">
               {t("selectTags")}
             </label>
             <div className="flex flex-wrap gap-2">
@@ -298,7 +299,7 @@ function KnowledgeTab() {
           <button
             onClick={handleAddText}
             disabled={isSubmitting || !title.trim() || !content.trim()}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50 transition-colors"
+            className="bg-primary hover:bg-primary/90 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors disabled:opacity-50"
           >
             {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
             {t("save")}
@@ -313,11 +314,9 @@ function KnowledgeTab() {
         </div>
       ) : entries.length === 0 ? (
         <div className="rounded-xl border border-dashed border-stone-300 bg-stone-50 p-12 text-center">
-          <BookOpen className="h-10 w-10 mx-auto text-stone-400 mb-3" />
+          <BookOpen className="mx-auto mb-3 h-10 w-10 text-stone-400" />
           <h3 className="font-semibold text-stone-600">{t("emptyTitle")}</h3>
-          <p className="text-sm text-stone-500 mt-1 max-w-sm mx-auto">
-            {t("emptyDescription")}
-          </p>
+          <p className="mx-auto mt-1 max-w-sm text-sm text-stone-500">{t("emptyDescription")}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -327,15 +326,15 @@ function KnowledgeTab() {
               <div
                 key={entry._id}
                 className={cn(
-                  "rounded-xl border bg-white p-4 transition-colors cursor-pointer",
+                  "cursor-pointer rounded-xl border bg-white p-4 transition-colors",
                   isExpanded
-                    ? "border-primary/30 ring-1 ring-primary/10"
+                    ? "border-primary/30 ring-primary/10 ring-1"
                     : "border-stone-200 hover:border-stone-300",
                 )}
                 onClick={() => setExpandedId(isExpanded ? null : entry._id)}
               >
                 <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-3 min-w-0">
+                  <div className="flex min-w-0 items-start gap-3">
                     <div
                       className={cn(
                         "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
@@ -351,11 +350,9 @@ function KnowledgeTab() {
                       )}
                     </div>
                     <div className="min-w-0">
-                      <h3 className="font-semibold text-sm truncate">
-                        {entry.title}
-                      </h3>
-                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                        <span className="text-xs text-stone-500 uppercase font-medium">
+                      <h3 className="truncate text-sm font-semibold">{entry.title}</h3>
+                      <div className="mt-0.5 flex flex-wrap items-center gap-2">
+                        <span className="text-xs font-medium text-stone-500 uppercase">
                           {entry.type}
                         </span>
                         {entry.content && (
@@ -376,7 +373,7 @@ function KnowledgeTab() {
                         ))}
                       </div>
                       {entry.content && !isExpanded && (
-                        <p className="text-xs text-stone-500 mt-2 line-clamp-2">
+                        <p className="mt-2 line-clamp-2 text-xs text-stone-500">
                           {entry.content.slice(0, 200)}
                           {entry.content.length > 200 ? "..." : ""}
                         </p>
@@ -389,7 +386,7 @@ function KnowledgeTab() {
                         e.stopPropagation();
                         startEditing(entry);
                       }}
-                      className="rounded-lg p-2 text-stone-400 hover:text-primary hover:bg-primary/10 transition-colors"
+                      className="hover:text-primary hover:bg-primary/10 rounded-lg p-2 text-stone-400 transition-colors"
                     >
                       <Pencil className="h-4 w-4" />
                     </button>
@@ -399,7 +396,7 @@ function KnowledgeTab() {
                         handleDelete(entry._id);
                       }}
                       disabled={deletingId === entry._id}
-                      className="rounded-lg p-2 text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
+                      className="rounded-lg p-2 text-stone-400 transition-colors hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
                     >
                       {deletingId === entry._id ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -410,23 +407,23 @@ function KnowledgeTab() {
                   </div>
                 </div>
                 {isExpanded && editingId === entry._id ? (
-                  <div className="mt-3 pt-3 border-t border-stone-100 space-y-3">
+                  <div className="mt-3 space-y-3 border-t border-stone-100 pt-3">
                     <input
                       type="text"
                       value={editTitle}
                       onChange={(e) => setEditTitle(e.target.value)}
                       onClick={(e) => e.stopPropagation()}
-                      className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      className="focus:ring-primary/20 focus:border-primary w-full rounded-lg border border-stone-200 px-3 py-2 text-sm font-semibold focus:ring-2 focus:outline-none"
                     />
                     <textarea
                       value={editContent}
                       onChange={(e) => setEditContent(e.target.value)}
                       onClick={(e) => e.stopPropagation()}
                       rows={12}
-                      className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-y"
+                      className="focus:ring-primary/20 focus:border-primary w-full resize-y rounded-lg border border-stone-200 px-3 py-2 text-sm focus:ring-2 focus:outline-none"
                     />
                     <div>
-                      <label className="text-xs font-medium text-stone-500 mb-1.5 block">
+                      <label className="mb-1.5 block text-xs font-medium text-stone-500">
                         {t("selectTags")}
                       </label>
                       <div className="flex flex-wrap gap-2">
@@ -457,7 +454,7 @@ function KnowledgeTab() {
                           handleSaveEdit();
                         }}
                         disabled={isSavingEdit || !editTitle.trim()}
-                        className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                        className="bg-primary hover:bg-primary/90 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors disabled:opacity-50"
                       >
                         {isSavingEdit && <Loader2 className="h-4 w-4 animate-spin" />}
                         {t("save")}
@@ -467,15 +464,15 @@ function KnowledgeTab() {
                           e.stopPropagation();
                           cancelEditing();
                         }}
-                        className="rounded-lg border border-stone-200 px-4 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50 transition-colors"
+                        className="rounded-lg border border-stone-200 px-4 py-2 text-sm font-medium text-stone-600 transition-colors hover:bg-stone-50"
                       >
                         {t("cancel")}
                       </button>
                     </div>
                   </div>
                 ) : isExpanded && entry.content ? (
-                  <div className="mt-3 pt-3 border-t border-stone-100">
-                    <p className="text-sm text-stone-700 whitespace-pre-wrap leading-relaxed">
+                  <div className="mt-3 border-t border-stone-100 pt-3">
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap text-stone-700">
                       {entry.content}
                     </p>
                   </div>
@@ -536,19 +533,43 @@ function FoodTab() {
   const deleteFood = useMutation(api.foodDatabase.deleteFood);
 
   const FOOD_TAG_OPTIONS = [
-    "high_protein", "low_fat", "low_carb", "high_fiber",
-    "healthy_dessert", "junk_made_healthy", "comfort_food", "post_workout",
-    "egyptian", "middle_eastern", "international",
-    "quick_prep", "meal_prep_friendly",
-    "dairy_free", "gluten_free", "vegan", "vegetarian",
+    "high_protein",
+    "low_fat",
+    "low_carb",
+    "high_fiber",
+    "healthy_dessert",
+    "junk_made_healthy",
+    "comfort_food",
+    "post_workout",
+    "egyptian",
+    "middle_eastern",
+    "international",
+    "quick_prep",
+    "meal_prep_friendly",
+    "dairy_free",
+    "gluten_free",
+    "vegan",
+    "vegetarian",
   ];
 
   const resetForm = () => {
-    setFoodName(""); setFoodNameAr(""); setFoodCategory("protein"); setFoodTags([]);
-    setCal100(""); setPro100(""); setCarb100(""); setFat100("");
-    setServingSize(""); setCalServing(""); setProServing(""); setCarbServing(""); setFatServing("");
-    setIngredients(""); setInstructions("");
-    setShowAddForm(false); setIsRecipeMode(false);
+    setFoodName("");
+    setFoodNameAr("");
+    setFoodCategory("protein");
+    setFoodTags([]);
+    setCal100("");
+    setPro100("");
+    setCarb100("");
+    setFat100("");
+    setServingSize("");
+    setCalServing("");
+    setProServing("");
+    setCarbServing("");
+    setFatServing("");
+    setIngredients("");
+    setInstructions("");
+    setShowAddForm(false);
+    setIsRecipeMode(false);
   };
 
   const handleAdd = async () => {
@@ -568,18 +589,23 @@ function FoodTab() {
         },
         isRecipe: isRecipeMode,
         servingSize: isRecipeMode && servingSize ? servingSize : undefined,
-        perServing: isRecipeMode && calServing ? {
-          calories: parseFloat(calServing),
-          protein: parseFloat(proServing || "0"),
-          carbs: parseFloat(carbServing || "0"),
-          fat: parseFloat(fatServing || "0"),
-        } : undefined,
-        ingredients: isRecipeMode && ingredients.trim()
-          ? ingredients.trim().split("\n").filter(Boolean)
-          : undefined,
-        instructions: isRecipeMode && instructions.trim()
-          ? instructions.trim().split("\n").filter(Boolean)
-          : undefined,
+        perServing:
+          isRecipeMode && calServing
+            ? {
+                calories: parseFloat(calServing),
+                protein: parseFloat(proServing || "0"),
+                carbs: parseFloat(carbServing || "0"),
+                fat: parseFloat(fatServing || "0"),
+              }
+            : undefined,
+        ingredients:
+          isRecipeMode && ingredients.trim()
+            ? ingredients.trim().split("\n").filter(Boolean)
+            : undefined,
+        instructions:
+          isRecipeMode && instructions.trim()
+            ? instructions.trim().split("\n").filter(Boolean)
+            : undefined,
       });
       resetForm();
     } finally {
@@ -601,15 +627,21 @@ function FoodTab() {
       {/* Actions */}
       <div className="flex gap-3">
         <button
-          onClick={() => { setShowAddForm(true); setIsRecipeMode(false); }}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary/90 transition-colors"
+          onClick={() => {
+            setShowAddForm(true);
+            setIsRecipeMode(false);
+          }}
+          className="bg-primary hover:bg-primary/90 inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-colors"
         >
           <Plus className="h-4 w-4" />
           {t("addFood")}
         </button>
         <button
-          onClick={() => { setShowAddForm(true); setIsRecipeMode(true); }}
-          className="inline-flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-4 py-2.5 text-sm font-medium hover:bg-stone-50 transition-colors"
+          onClick={() => {
+            setShowAddForm(true);
+            setIsRecipeMode(true);
+          }}
+          className="inline-flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-4 py-2.5 text-sm font-medium transition-colors hover:bg-stone-50"
         >
           <Plus className="h-4 w-4" />
           {t("addRecipe")}
@@ -618,27 +650,29 @@ function FoodTab() {
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
+        <div className="relative min-w-[200px] flex-1">
+          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-stone-400" />
           <input
             type="text"
             placeholder={t("foodName") + "..."}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-lg border border-stone-200 pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="focus:ring-primary/20 focus:border-primary w-full rounded-lg border border-stone-200 py-2 pr-3 pl-9 text-sm focus:ring-2 focus:outline-none"
           />
         </div>
         <select
           value={filterCategory}
           onChange={(e) => setFilterCategory(e.target.value)}
-          className="rounded-lg border border-stone-200 px-3 py-2 text-sm bg-white"
+          className="rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm"
         >
           <option value="">{t("allCategories")}</option>
           {CATEGORY_OPTIONS.map((cat) => (
-            <option key={cat} value={cat}>{t(`categories.${cat}`)}</option>
+            <option key={cat} value={cat}>
+              {t(`categories.${cat}`)}
+            </option>
           ))}
         </select>
-        <div className="flex rounded-lg border border-stone-200 overflow-hidden">
+        <div className="flex overflow-hidden rounded-lg border border-stone-200">
           {(["all", "ingredient", "recipe"] as const).map((type) => (
             <button
               key={type}
@@ -650,7 +684,11 @@ function FoodTab() {
                   : "bg-white text-stone-600 hover:bg-stone-50",
               )}
             >
-              {type === "all" ? t("allItems") : type === "ingredient" ? t("ingredientsOnly") : t("recipesOnly")}
+              {type === "all"
+                ? t("allItems")
+                : type === "ingredient"
+                  ? t("ingredientsOnly")
+                  : t("recipesOnly")}
             </button>
           ))}
         </div>
@@ -658,7 +696,7 @@ function FoodTab() {
 
       {/* Add Form */}
       {showAddForm && (
-        <div className="rounded-xl border border-stone-200 bg-white p-5 space-y-4">
+        <div className="space-y-4 rounded-xl border border-stone-200 bg-white p-5">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold">{isRecipeMode ? t("addRecipe") : t("addFood")}</h3>
             <button onClick={resetForm} className="text-stone-400 hover:text-stone-600">
@@ -672,14 +710,14 @@ function FoodTab() {
               placeholder={t("foodName")}
               value={foodName}
               onChange={(e) => setFoodName(e.target.value)}
-              className="rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              className="focus:ring-primary/20 focus:border-primary rounded-lg border border-stone-200 px-3 py-2 text-sm focus:ring-2 focus:outline-none"
             />
             <input
               type="text"
               placeholder={t("foodNameAr")}
               value={foodNameAr}
               onChange={(e) => setFoodNameAr(e.target.value)}
-              className="rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              className="focus:ring-primary/20 focus:border-primary rounded-lg border border-stone-200 px-3 py-2 text-sm focus:ring-2 focus:outline-none"
               dir="rtl"
             />
           </div>
@@ -687,21 +725,49 @@ function FoodTab() {
           <select
             value={foodCategory}
             onChange={(e) => setFoodCategory(e.target.value)}
-            className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm bg-white"
+            className="w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm"
           >
             {CATEGORY_OPTIONS.map((cat) => (
-              <option key={cat} value={cat}>{t(`categories.${cat}`)}</option>
+              <option key={cat} value={cat}>
+                {t(`categories.${cat}`)}
+              </option>
             ))}
           </select>
 
           {/* Macros per 100g */}
           <div>
-            <label className="text-xs font-medium text-stone-500 mb-1.5 block">{t("per100g")}</label>
-            <div className="grid gap-2 grid-cols-4">
-              <input type="number" placeholder={t("caloriesPer100g")} value={cal100} onChange={(e) => setCal100(e.target.value)} className="rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
-              <input type="number" placeholder={t("proteinPer100g")} value={pro100} onChange={(e) => setPro100(e.target.value)} className="rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
-              <input type="number" placeholder={t("carbsPer100g")} value={carb100} onChange={(e) => setCarb100(e.target.value)} className="rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
-              <input type="number" placeholder={t("fatPer100g")} value={fat100} onChange={(e) => setFat100(e.target.value)} className="rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+            <label className="mb-1.5 block text-xs font-medium text-stone-500">
+              {t("per100g")}
+            </label>
+            <div className="grid grid-cols-4 gap-2">
+              <input
+                type="number"
+                placeholder={t("caloriesPer100g")}
+                value={cal100}
+                onChange={(e) => setCal100(e.target.value)}
+                className="focus:ring-primary/20 rounded-lg border border-stone-200 px-3 py-2 text-sm focus:ring-2 focus:outline-none"
+              />
+              <input
+                type="number"
+                placeholder={t("proteinPer100g")}
+                value={pro100}
+                onChange={(e) => setPro100(e.target.value)}
+                className="focus:ring-primary/20 rounded-lg border border-stone-200 px-3 py-2 text-sm focus:ring-2 focus:outline-none"
+              />
+              <input
+                type="number"
+                placeholder={t("carbsPer100g")}
+                value={carb100}
+                onChange={(e) => setCarb100(e.target.value)}
+                className="focus:ring-primary/20 rounded-lg border border-stone-200 px-3 py-2 text-sm focus:ring-2 focus:outline-none"
+              />
+              <input
+                type="number"
+                placeholder={t("fatPer100g")}
+                value={fat100}
+                onChange={(e) => setFat100(e.target.value)}
+                className="focus:ring-primary/20 rounded-lg border border-stone-200 px-3 py-2 text-sm focus:ring-2 focus:outline-none"
+              />
             </div>
           </div>
 
@@ -713,15 +779,41 @@ function FoodTab() {
                 placeholder={t("servingSize")}
                 value={servingSize}
                 onChange={(e) => setServingSize(e.target.value)}
-                className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className="focus:ring-primary/20 w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:ring-2 focus:outline-none"
               />
               <div>
-                <label className="text-xs font-medium text-stone-500 mb-1.5 block">{t("perServing")}</label>
-                <div className="grid gap-2 grid-cols-4">
-                  <input type="number" placeholder={t("caloriesPerServing")} value={calServing} onChange={(e) => setCalServing(e.target.value)} className="rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
-                  <input type="number" placeholder={t("proteinPerServing")} value={proServing} onChange={(e) => setProServing(e.target.value)} className="rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
-                  <input type="number" placeholder={t("carbsPerServing")} value={carbServing} onChange={(e) => setCarbServing(e.target.value)} className="rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
-                  <input type="number" placeholder={t("fatPerServing")} value={fatServing} onChange={(e) => setFatServing(e.target.value)} className="rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                <label className="mb-1.5 block text-xs font-medium text-stone-500">
+                  {t("perServing")}
+                </label>
+                <div className="grid grid-cols-4 gap-2">
+                  <input
+                    type="number"
+                    placeholder={t("caloriesPerServing")}
+                    value={calServing}
+                    onChange={(e) => setCalServing(e.target.value)}
+                    className="focus:ring-primary/20 rounded-lg border border-stone-200 px-3 py-2 text-sm focus:ring-2 focus:outline-none"
+                  />
+                  <input
+                    type="number"
+                    placeholder={t("proteinPerServing")}
+                    value={proServing}
+                    onChange={(e) => setProServing(e.target.value)}
+                    className="focus:ring-primary/20 rounded-lg border border-stone-200 px-3 py-2 text-sm focus:ring-2 focus:outline-none"
+                  />
+                  <input
+                    type="number"
+                    placeholder={t("carbsPerServing")}
+                    value={carbServing}
+                    onChange={(e) => setCarbServing(e.target.value)}
+                    className="focus:ring-primary/20 rounded-lg border border-stone-200 px-3 py-2 text-sm focus:ring-2 focus:outline-none"
+                  />
+                  <input
+                    type="number"
+                    placeholder={t("fatPerServing")}
+                    value={fatServing}
+                    onChange={(e) => setFatServing(e.target.value)}
+                    className="focus:ring-primary/20 rounded-lg border border-stone-200 px-3 py-2 text-sm focus:ring-2 focus:outline-none"
+                  />
                 </div>
               </div>
               <textarea
@@ -729,21 +821,23 @@ function FoodTab() {
                 value={ingredients}
                 onChange={(e) => setIngredients(e.target.value)}
                 rows={4}
-                className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-y"
+                className="focus:ring-primary/20 w-full resize-y rounded-lg border border-stone-200 px-3 py-2 text-sm focus:ring-2 focus:outline-none"
               />
               <textarea
                 placeholder={t("instructionsList")}
                 value={instructions}
                 onChange={(e) => setInstructions(e.target.value)}
                 rows={4}
-                className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-y"
+                className="focus:ring-primary/20 w-full resize-y rounded-lg border border-stone-200 px-3 py-2 text-sm focus:ring-2 focus:outline-none"
               />
             </>
           )}
 
           {/* Tags */}
           <div>
-            <label className="text-xs font-medium text-stone-500 mb-1.5 block">{t("foodTags")}</label>
+            <label className="mb-1.5 block text-xs font-medium text-stone-500">
+              {t("foodTags")}
+            </label>
             <div className="flex flex-wrap gap-1.5">
               {FOOD_TAG_OPTIONS.map((tag) => (
                 <button
@@ -770,7 +864,7 @@ function FoodTab() {
           <button
             onClick={handleAdd}
             disabled={isSubmitting || !foodName.trim() || !cal100}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50 transition-colors"
+            className="bg-primary hover:bg-primary/90 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors disabled:opacity-50"
           >
             {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
             {t("save")}
@@ -785,29 +879,30 @@ function FoodTab() {
         </div>
       ) : foods.length === 0 ? (
         <div className="rounded-xl border border-dashed border-stone-300 bg-stone-50 p-12 text-center">
-          <UtensilsCrossed className="h-10 w-10 mx-auto text-stone-400 mb-3" />
+          <UtensilsCrossed className="mx-auto mb-3 h-10 w-10 text-stone-400" />
           <h3 className="font-semibold text-stone-600">{t("emptyFoodTitle")}</h3>
-          <p className="text-sm text-stone-500 mt-1 max-w-sm mx-auto">
+          <p className="mx-auto mt-1 max-w-sm text-sm text-stone-500">
             {t("emptyFoodDescription")}
           </p>
         </div>
       ) : (
         <div className="space-y-2">
-          <p className="text-xs text-stone-500">{foods.length} {t("foodItems")}</p>
+          <p className="text-xs text-stone-500">
+            {foods.length} {t("foodItems")}
+          </p>
           {foods.map((food) => (
-            <div
-              key={food._id}
-              className="rounded-xl border border-stone-200 bg-white p-4"
-            >
+            <div key={food._id} className="rounded-xl border border-stone-200 bg-white p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-sm truncate">{food.name}</h3>
+                    <h3 className="truncate text-sm font-semibold">{food.name}</h3>
                     {food.nameAr && (
-                      <span className="text-xs text-stone-400" dir="rtl">{food.nameAr}</span>
+                      <span className="text-xs text-stone-400" dir="rtl">
+                        {food.nameAr}
+                      </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
                     <span className="rounded-full border border-stone-200 bg-stone-50 px-2 py-0.5 text-[10px] font-medium text-stone-600">
                       {t(`categories.${food.category}`)}
                     </span>
@@ -816,16 +911,18 @@ function FoodTab() {
                         {t("recipesOnly")}
                       </span>
                     )}
-                    <span className={cn(
-                      "rounded-full border px-2 py-0.5 text-[10px] font-medium",
-                      food.source === "coach"
-                        ? "border-orange-200 bg-orange-50 text-orange-700"
-                        : "border-green-200 bg-green-50 text-green-700",
-                    )}>
+                    <span
+                      className={cn(
+                        "rounded-full border px-2 py-0.5 text-[10px] font-medium",
+                        food.source === "coach"
+                          ? "border-orange-200 bg-orange-50 text-orange-700"
+                          : "border-green-200 bg-green-50 text-green-700",
+                      )}
+                    >
                       {food.source === "coach" ? t("coach") : t("verified")}
                     </span>
                   </div>
-                  <div className="flex gap-4 mt-2 text-xs text-stone-500">
+                  <div className="mt-2 flex gap-4 text-xs text-stone-500">
                     <span>{food.per100g.calories} kcal</span>
                     <span>P: {food.per100g.protein}g</span>
                     <span>C: {food.per100g.carbs}g</span>
@@ -833,7 +930,7 @@ function FoodTab() {
                     <span className="text-stone-400">({t("per100g")})</span>
                   </div>
                   {food.isRecipe && food.perServing && (
-                    <div className="flex gap-4 mt-0.5 text-xs text-stone-400">
+                    <div className="mt-0.5 flex gap-4 text-xs text-stone-400">
                       <span>{food.perServing.calories} kcal</span>
                       <span>P: {food.perServing.protein}g</span>
                       <span>C: {food.perServing.carbs}g</span>
@@ -845,7 +942,7 @@ function FoodTab() {
                 <button
                   onClick={() => handleDelete(food._id)}
                   disabled={deletingId === food._id}
-                  className="shrink-0 rounded-lg p-2 text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
+                  className="shrink-0 rounded-lg p-2 text-stone-400 transition-colors hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
                 >
                   {deletingId === food._id ? (
                     <Loader2 className="h-4 w-4 animate-spin" />

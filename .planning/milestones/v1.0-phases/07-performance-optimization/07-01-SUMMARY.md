@@ -85,23 +85,27 @@ Added server-side pagination to the admin clients list to prevent loading all pr
 ## Technical Implementation
 
 **Supabase Query Pattern:**
+
 ```typescript
 const { data: clients, count } = await supabase
   .from("profiles")
-  .select("id,full_name,phone,status,plan_tier,plan_start_date,plan_end_date,created_at",
-    { count: "estimated" })
+  .select("id,full_name,phone,status,plan_tier,plan_start_date,plan_end_date,created_at", {
+    count: "estimated",
+  })
   .eq("is_coach", false)
-  .order("created_at", { ascending: false })  // MUST come before .range()
+  .order("created_at", { ascending: false }) // MUST come before .range()
   .range(from, to);
 ```
 
 **URL State Management:**
+
 - Page and pageSize stored in URL search params (`?page=2&pageSize=50`)
 - Browser back/forward buttons work correctly
 - Changing page size resets to page 1 to avoid empty results
 - `useSearchParams` wrapped in `Suspense` to comply with Next.js requirements
 
 **Performance Characteristics:**
+
 - With 1000 clients at 25 per page: fetches only 25 rows instead of 1000 (97.5% reduction)
 - Estimated count is faster than exact count for large tables
 - Indexed on `created_at` and `is_coach` for efficient filtering and sorting
@@ -109,22 +113,26 @@ const { data: clients, count } = await supabase
 ## Behavior
 
 **Page Navigation:**
+
 - Previous/Next buttons navigate adjacent pages (disabled at boundaries)
 - Numbered page links for direct navigation
 - Smart display: always shows page 1, last page, current +/- 1 neighbor
 - Ellipsis (`...`) indicates gaps between page numbers
 
 **Page Size Selector:**
+
 - Dropdown with 10, 25, 50, 100 options
 - Changing size resets to page 1 and updates URL
 - Selection persists in URL for bookmarking/sharing
 
 **Client-Side Search:**
+
 - Search input filters within current page only (by design)
 - This is acceptable since coaches can adjust page size or navigate to find clients
 - Keeps implementation simple and avoids server-side search complexity
 
 **Total Count Display:**
+
 - Header shows total client count from query: "342 total clients"
 - Footer shows current range: "Showing 26-50 of 342"
 
@@ -135,6 +143,7 @@ None - plan executed exactly as written.
 ## Testing Notes
 
 **Manual Testing Required:**
+
 1. Visit `/en/admin/clients` - should show first 25 clients with pagination
 2. Click page 2 - URL should update to `?page=2`, show next 25 clients
 3. Change page size to 10 - URL should update to `?pageSize=10&page=1`, show 10 clients
@@ -143,6 +152,7 @@ None - plan executed exactly as written.
 6. Test in Arabic mode - all pagination text should be in Arabic with RTL layout
 
 **Performance Testing:**
+
 - With 100+ clients: verify only `pageSize` rows returned (check Network tab)
 - Verify query uses `.range(from, to)` in Supabase logs
 - Estimated count should be fast even with 1000+ rows
@@ -150,17 +160,20 @@ None - plan executed exactly as written.
 ## Integration Points
 
 **Depends On:**
+
 - Existing admin clients list UI
 - Supabase profiles table with `is_coach` column
 - shadcn/ui Select component
 - next-intl for translations
 
 **Provides:**
+
 - Scalable admin clients list (supports 1000+ clients)
 - Reusable PaginationControls component for other admin lists
 - URL-based pagination pattern for other pages
 
 **Affects:**
+
 - Admin clients page performance (significantly improved)
 - Database query load (reduced by 97.5% with 25 per page)
 - User experience (faster page loads, better navigation)
@@ -168,12 +181,14 @@ None - plan executed exactly as written.
 ## Performance Impact
 
 **Before:**
+
 - Fetched ALL profiles in single query (1000+ rows)
 - High memory usage
 - Slow initial render
 - Poor database performance
 
 **After:**
+
 - Fetches only requested page (10-100 rows)
 - Low memory usage
 - Fast initial render
@@ -181,6 +196,7 @@ None - plan executed exactly as written.
 - Scales to any number of clients
 
 **Database Optimization:**
+
 - Estimated count avoids full table scan
 - Range query uses indexed columns
 - Order by created_at (descending) shows newest clients first
@@ -188,6 +204,7 @@ None - plan executed exactly as written.
 ## Future Improvements
 
 **Potential Enhancements (not in scope):**
+
 - Server-side search across all clients (requires full-text search or filters)
 - Infinite scroll option (alternative to pagination)
 - Customizable sort columns (currently fixed to created_at desc)
@@ -199,16 +216,19 @@ None - plan executed exactly as written.
 Verifying all claimed files and commits exist:
 
 **Created Files:**
+
 - FOUND: src/components/ui/pagination.tsx
 - FOUND: src/app/[locale]/(admin)/admin/(panel)/clients/pagination-controls.tsx
 - FOUND: components.json
 
 **Modified Files:**
+
 - FOUND: src/app/[locale]/(admin)/admin/(panel)/clients/page.tsx
 - FOUND: src/messages/en.json
 - FOUND: src/messages/ar.json
 
 **Commits:**
+
 - FOUND: b54e967 (Task 1: add pagination component and controls)
 - FOUND: 256016e (Task 2: implement server-side pagination for admin clients)
 
