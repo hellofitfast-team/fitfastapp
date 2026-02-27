@@ -27,11 +27,11 @@ export function TrackingHeader({
         <span className="bg-primary/10 text-primary rounded-full px-3 py-1 text-xs font-semibold">
           {completionPercentage}% {t("complete")}
         </span>
-        <span className="rounded-full bg-[#10B981]/10 px-3 py-1 text-xs font-semibold text-[#10B981]">
+        <span className="bg-nutrition-500/10 text-nutrition-500 rounded-full px-3 py-1 text-xs font-semibold">
           {mealProgress.completed}/{mealProgress.total} {t("mealsCompleted")}
         </span>
         {workoutDone && (
-          <span className="rounded-full bg-[#F97316]/10 px-3 py-1 text-xs font-semibold text-[#F97316]">
+          <span className="bg-fitness-500/10 text-fitness-500 rounded-full px-3 py-1 text-xs font-semibold">
             {t("workoutCompleted")}
           </span>
         )}

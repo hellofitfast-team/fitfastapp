@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { User, Bell, Shield, CreditCard, LogOut, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
@@ -13,6 +13,31 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { cn } from "@fitfast/ui/cn";
 import { useToast } from "@/hooks/use-toast";
+
+function SettingsCard({
+  icon,
+  title,
+  children,
+  animationDelay = "0ms",
+}: {
+  icon: ReactNode;
+  title: string;
+  children: ReactNode;
+  animationDelay?: string;
+}) {
+  return (
+    <div
+      className="border-border bg-card shadow-card animate-slide-up overflow-hidden rounded-xl border"
+      style={{ animationDelay }}
+    >
+      <div className="border-border flex items-center gap-2 border-b bg-neutral-50/50 p-4">
+        {icon}
+        <h3 className="text-sm font-semibold">{title}</h3>
+      </div>
+      {children}
+    </div>
+  );
+}
 
 function createProfileSchema(t: (key: string) => string) {
   return z.object({
@@ -140,14 +165,11 @@ export default function SettingsPage() {
       </div>
 
       {/* Profile Settings */}
-      <div
-        className="border-border bg-card shadow-card animate-slide-up overflow-hidden rounded-xl border"
-        style={{ animationDelay: "0ms" }}
+      <SettingsCard
+        icon={<User className="text-primary h-4 w-4" />}
+        title={t("profile")}
+        animationDelay="0ms"
       >
-        <div className="border-border flex items-center gap-2 border-b bg-neutral-50/50 p-4">
-          <User className="text-primary h-4 w-4" />
-          <h3 className="text-sm font-semibold">{t("profile")}</h3>
-        </div>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-4">
           <div>
             <label className="mb-1.5 block text-sm font-medium">{t("email")}</label>
@@ -207,22 +229,19 @@ export default function SettingsPage() {
           <button
             type="submit"
             disabled={isSaving}
-            className="bg-primary hover:bg-primary/90 w-full rounded-lg py-2.5 text-sm font-semibold text-white transition-all active:scale-[0.97] disabled:opacity-50"
+            className="bg-primary hover:bg-primary/90 focus-visible:ring-ring w-full rounded-lg py-2.5 text-sm font-semibold text-white transition-all focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none active:scale-[0.97] disabled:opacity-50"
           >
             {isSaving ? tTracking("saving") : t("saveChanges")}
           </button>
         </form>
-      </div>
+      </SettingsCard>
 
       {/* Notifications */}
-      <div
-        className="border-border bg-card shadow-card animate-slide-up overflow-hidden rounded-xl border"
-        style={{ animationDelay: "50ms" }}
+      <SettingsCard
+        icon={<Bell className="text-primary h-4 w-4" />}
+        title={t("notifications")}
+        animationDelay="50ms"
       >
-        <div className="border-border flex items-center gap-2 border-b bg-neutral-50/50 p-4">
-          <Bell className="text-primary h-4 w-4" />
-          <h3 className="text-sm font-semibold">{t("notifications")}</h3>
-        </div>
         <div className="space-y-5 p-4">
           {notifError ? (
             <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
@@ -258,7 +277,7 @@ export default function SettingsPage() {
                     onClick={() => toggleSubscription()}
                     disabled={!isSupported || (permission === "denied" && !isSubscribed)}
                     className={cn(
-                      "relative h-7 w-12 rounded-full transition-colors",
+                      "focus-visible:ring-ring relative h-7 w-12 rounded-full transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
                       isSubscribed ? "bg-primary" : "bg-neutral-200",
                       (!isSupported || permission === "denied") && "cursor-not-allowed opacity-50",
                     )}
@@ -267,7 +286,7 @@ export default function SettingsPage() {
                   >
                     <span
                       className={cn(
-                        "absolute top-0.5 h-6 w-6 rounded-full bg-white shadow-sm transition-transform",
+                        "absolute top-0.5 h-6 w-6 rounded-full bg-white shadow-sm transition-transform duration-200",
                         isSubscribed ? "translate-x-5" : "translate-x-0.5",
                       )}
                     />
@@ -286,40 +305,34 @@ export default function SettingsPage() {
             </>
           )}
         </div>
-      </div>
+      </SettingsCard>
 
       {/* Account */}
-      <div
-        className="border-border bg-card shadow-card animate-slide-up overflow-hidden rounded-xl border"
-        style={{ animationDelay: "100ms" }}
+      <SettingsCard
+        icon={<Shield className="text-primary h-4 w-4" />}
+        title={t("account")}
+        animationDelay="100ms"
       >
-        <div className="border-border flex items-center gap-2 border-b bg-neutral-50/50 p-4">
-          <Shield className="text-primary h-4 w-4" />
-          <h3 className="text-sm font-semibold">{t("account")}</h3>
-        </div>
         <div className="space-y-3 p-4">
-          <button className="border-border w-full rounded-lg border py-2.5 text-sm font-medium transition-colors hover:bg-neutral-50">
+          <button className="focus-visible:ring-ring border-border w-full rounded-lg border py-2.5 text-sm font-medium transition-colors hover:bg-neutral-50 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none">
             {t("changePassword")}
           </button>
           <button
             onClick={() => signOut()}
-            className="border-error-500/30 bg-error-500/5 text-error-500 hover:bg-error-500/10 flex w-full items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-colors"
+            className="border-error-500/30 bg-error-500/5 text-error-500 hover:bg-error-500/10 focus-visible:ring-error-500/50 flex w-full items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
           >
             <LogOut className="h-4 w-4" />
             {t("signOut")}
           </button>
         </div>
-      </div>
+      </SettingsCard>
 
       {/* Plan Details */}
-      <div
-        className="border-border bg-card shadow-card animate-slide-up overflow-hidden rounded-xl border"
-        style={{ animationDelay: "150ms" }}
+      <SettingsCard
+        icon={<CreditCard className="text-primary h-4 w-4" />}
+        title={t("planDetails")}
+        animationDelay="150ms"
       >
-        <div className="border-border flex items-center gap-2 border-b bg-neutral-50/50 p-4">
-          <CreditCard className="text-primary h-4 w-4" />
-          <h3 className="text-sm font-semibold">{t("planDetails")}</h3>
-        </div>
         <div className="space-y-4 p-4">
           {profile?.planTier ? (
             <>
@@ -348,7 +361,7 @@ export default function SettingsPage() {
                   className={cn(
                     "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
                     profile.status === "active"
-                      ? "bg-[#10B981]/10 text-[#10B981]"
+                      ? "bg-nutrition-500/10 text-nutrition-500"
                       : profile.status === "expired"
                         ? "bg-error-500/10 text-error-500"
                         : "bg-amber-500/10 text-amber-600",
@@ -375,7 +388,7 @@ export default function SettingsPage() {
             <p className="text-muted-foreground py-4 text-center text-sm">{t("noPlan")}</p>
           )}
         </div>
-      </div>
+      </SettingsCard>
     </div>
   );
 }

@@ -367,7 +367,7 @@ export default function DashboardPage() {
             {t("dashboard.estDuration", { duration: todaysWorkout.duration })}
           </p>
           {todaysWorkout.done && (
-            <span className="inline-block rounded-full bg-[#F97316]/10 px-2 py-0.5 text-[10px] font-medium text-[#F97316]">
+            <span className="bg-fitness-500/10 text-fitness-500 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium">
               {t("dashboard.completedToday")}
             </span>
           )}
@@ -395,7 +395,7 @@ export default function DashboardPage() {
             dir={locale === "ar" ? "rtl" : "ltr"}
           >
             <div
-              className="h-full rounded-full bg-[#8B5CF6] transition-all"
+              className="bg-routine-500 h-full rounded-full transition-all"
               style={{ width: `${(planCurrentDay / planTotalDays) * 100}%` }}
             />
           </div>
@@ -531,8 +531,8 @@ export default function DashboardPage() {
           href="/check-in"
           className="group border-border bg-card shadow-card rounded-xl border p-5 transition-all hover:shadow-md active:scale-[0.97]"
         >
-          <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-[#FF4500]/12">
-            <ClipboardCheck className="h-5 w-5 text-[#FF4500]" />
+          <div className="bg-primary/12 mb-3 flex h-10 w-10 items-center justify-center rounded-lg">
+            <ClipboardCheck className="text-primary h-5 w-5" />
           </div>
           <p className="text-sm font-semibold">{t("checkIn.submitCheckIn")}</p>
           <p className="text-muted-foreground mt-0.5 text-xs">{t("checkIn.title")}</p>
@@ -541,8 +541,8 @@ export default function DashboardPage() {
           href="/progress"
           className="group border-border bg-card shadow-card rounded-xl border p-5 transition-all hover:shadow-md active:scale-[0.97]"
         >
-          <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-[#FF4500]/12">
-            <TrendingUp className="h-5 w-5 text-[#FF4500]" />
+          <div className="bg-primary/12 mb-3 flex h-10 w-10 items-center justify-center rounded-lg">
+            <TrendingUp className="text-primary h-5 w-5" />
           </div>
           <p className="text-sm font-semibold">{t("progress.title")}</p>
           <p className="text-muted-foreground mt-0.5 text-xs">{t("progress.weightHistory")}</p>

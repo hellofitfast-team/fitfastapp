@@ -21,7 +21,7 @@ export function DateProgress({
       {/* Date Picker */}
       <div className="border-border bg-card shadow-card overflow-hidden rounded-xl border">
         <div className="border-border flex items-center gap-2 border-b bg-neutral-50 p-3.5">
-          <Calendar className="h-4 w-4 text-[#8B5CF6]" />
+          <Calendar className="text-routine-500 h-4 w-4" />
           <span className="text-sm font-medium">{t("selectDate")}</span>
         </div>
         <div className="p-3.5">

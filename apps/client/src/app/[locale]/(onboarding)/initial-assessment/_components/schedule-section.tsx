@@ -86,7 +86,7 @@ export function ScheduleSection({
                   className={cn(
                     "flex h-12 flex-1 items-center justify-center rounded-lg text-sm font-semibold transition-all",
                     isSelected
-                      ? "bg-[#8B5CF6] text-white"
+                      ? "bg-routine-500 text-white"
                       : isDisabled
                         ? "cursor-not-allowed bg-neutral-50 text-stone-300"
                         : "text-muted-foreground cursor-pointer bg-neutral-100 hover:bg-neutral-200 active:scale-[0.97]",
@@ -138,7 +138,7 @@ export function ScheduleSection({
                 className={cn(
                   "flex items-center justify-center rounded-xl border-2 px-3 py-3 text-xs font-semibold tracking-wide uppercase transition-all",
                   isSelected
-                    ? "border-[#8B5CF6] bg-[#8B5CF6]/5 text-[#8B5CF6]"
+                    ? "border-routine-500 bg-routine-500/5 text-routine-500"
                     : "border-stone-200 text-stone-500 hover:border-stone-300",
                 )}
               >
@@ -168,7 +168,7 @@ export function ScheduleSection({
                 className={cn(
                   "flex items-center justify-center rounded-xl border-2 px-3 py-3 text-xs font-semibold tracking-wide uppercase transition-all",
                   isSelected
-                    ? "border-[#8B5CF6] bg-[#8B5CF6]/5 text-[#8B5CF6]"
+                    ? "border-routine-500 bg-routine-500/5 text-routine-500"
                     : "border-stone-200 text-stone-500 hover:border-stone-300",
                 )}
               >

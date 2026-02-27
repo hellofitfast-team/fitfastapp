@@ -257,7 +257,7 @@ export default function CheckInPage() {
       });
 
       // Generate new plans
-      const language = profile.language || "en";
+      const language = (locale === "ar" ? "ar" : "en") as "en" | "ar";
       const [mealResult, workoutResult] = await Promise.allSettled([
         generateMealPlan({ checkInId, language, planDuration: frequencyDays }),
         generateWorkoutPlan({ checkInId, language, planDuration: frequencyDays }),
@@ -328,6 +328,11 @@ export default function CheckInPage() {
         <>
           {/* Progress Steps */}
           <StepProgress currentStep={currentStep} steps={STEPS} />
+
+          {/* Screen reader announcement for current step */}
+          <div className="sr-only" aria-live="polite" role="status">
+            {t("stepOf", { current: currentStep, total: STEPS.length })}
+          </div>
 
           {/* Form with FormProvider — swipe to navigate steps */}
           <FormProvider {...methods}>

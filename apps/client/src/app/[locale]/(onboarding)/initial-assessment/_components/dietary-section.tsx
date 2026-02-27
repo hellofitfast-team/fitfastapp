@@ -91,7 +91,7 @@ export function DietarySection({
                 className={cn(
                   "flex items-center justify-center rounded-xl border-2 px-3 py-3 text-xs font-semibold tracking-wide uppercase transition-all",
                   isSelected
-                    ? "border-[#22C55E] bg-[#22C55E]/5 text-[#22C55E]"
+                    ? "border-success-500 bg-success-500/5 text-success-500"
                     : "border-stone-200 text-stone-500 hover:border-stone-300",
                 )}
               >

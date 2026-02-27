@@ -249,6 +249,7 @@
   "checkIn": {
     "title": "Check-in",
     "subtitle": "Let us know how you're doing",
+    "stepOf": "Step {current} of {total}",
     "weight": "Current Weight",
     "measurements": "Body Measurements",
     "chest": "Chest",

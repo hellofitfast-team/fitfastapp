@@ -21,6 +21,8 @@ import {
   XCircle,
   Zap,
   CreditCard,
+  Clock,
+  MinusCircle,
 } from "lucide-react";
 import { Link } from "@fitfast/i18n/navigation";
 import { formatDate } from "@/lib/utils";
@@ -99,10 +101,13 @@ function SignupPaymentCard({ signup }: { signup: SignupRecord }) {
       {/* Header row: status + date */}
       <div className="mb-3 flex items-center justify-between">
         <span
-          className={`inline-block rounded-full border px-2.5 py-0.5 text-xs font-medium ${
+          className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium ${
             statusBadge[signup.status] ?? statusBadge.pending
           }`}
         >
+          {signup.status === "pending" && <Clock className="h-3 w-3" />}
+          {signup.status === "approved" && <Check className="h-3 w-3" />}
+          {signup.status === "rejected" && <X className="h-3 w-3" />}
           {signup.status}
         </span>
         <span className="text-xs text-stone-400">

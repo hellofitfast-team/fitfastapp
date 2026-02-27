@@ -114,7 +114,7 @@ export default function TicketDetailPage() {
       case "open":
         return "bg-success-500/10 text-success-500";
       case "coach_responded":
-        return "bg-[#F59E0B]/10 text-[#F59E0B]";
+        return "bg-warning-500/10 text-warning-500";
       case "closed":
         return "bg-neutral-100 text-muted-foreground";
       default:

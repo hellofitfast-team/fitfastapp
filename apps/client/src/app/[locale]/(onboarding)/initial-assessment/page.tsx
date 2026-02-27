@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/hooks/use-auth";
@@ -23,6 +23,7 @@ export default function InitialAssessmentPage() {
   const t = useTranslations("onboarding.assessment");
   const tCommon = useTranslations("common");
   const tErrors = useTranslations("errors");
+  const locale = useLocale();
   const router = useRouter();
   const { profile, loading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
@@ -200,7 +201,7 @@ export default function InitialAssessmentPage() {
       const finalRestrictions = getFinalValues(selectedRestrictions, restrictionsOther);
       const finalEquipment = equipment === "other" ? equipmentOther.trim() : equipment;
 
-      const language = (profile.language || "en") as "en" | "ar";
+      const language = (locale === "ar" ? "ar" : "en") as "en" | "ar";
 
       await submitAssessment({
         goals: finalGoals.join(", "),

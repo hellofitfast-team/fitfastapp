@@ -102,7 +102,7 @@ export function BasicInfoSection({
                   className={cn(
                     "flex-1 rounded-lg border p-2.5 text-sm font-medium transition-colors",
                     gender === option.id
-                      ? "border-[#F97316]/30 bg-[#F97316]/8 text-[#F97316]"
+                      ? "border-fitness-500/30 bg-fitness-500/8 text-fitness-500"
                       : "border-border bg-card hover:bg-neutral-50",
                     isLoading
                       ? "cursor-not-allowed opacity-50"
@@ -137,7 +137,7 @@ export function BasicInfoSection({
               className={cn(
                 "flex items-center gap-3 rounded-lg border p-3.5 text-start transition-colors",
                 activityLevel === level.id
-                  ? "border-[#F97316]/30 bg-[#F97316]/8"
+                  ? "border-fitness-500/30 bg-fitness-500/8"
                   : "border-border bg-card hover:bg-neutral-50",
                 isLoading ? "cursor-not-allowed opacity-50" : "cursor-pointer active:scale-[0.97]",
               )}
@@ -146,7 +146,7 @@ export function BasicInfoSection({
                 className={cn(
                   "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-xs font-bold",
                   activityLevel === level.id
-                    ? "border-[#F97316]/30 bg-[#F97316]/12 text-[#F97316]"
+                    ? "border-fitness-500/30 bg-fitness-500/12 text-fitness-500"
                     : "border-border text-muted-foreground bg-neutral-50",
                 )}
               >
@@ -156,7 +156,7 @@ export function BasicInfoSection({
                 <span
                   className={cn(
                     "block text-sm font-semibold",
-                    activityLevel === level.id && "text-[#F97316]",
+                    activityLevel === level.id && "text-fitness-500",
                   )}
                 >
                   {t(`activityLevels.${level.id}`)}
@@ -188,7 +188,7 @@ export function BasicInfoSection({
               className={cn(
                 "flex items-center gap-3 rounded-lg border p-3.5 text-start transition-colors",
                 experienceLevel === level.id
-                  ? "border-[#F97316]/30 bg-[#F97316]/8"
+                  ? "border-fitness-500/30 bg-fitness-500/8"
                   : "border-border bg-card hover:bg-neutral-50",
                 isLoading ? "cursor-not-allowed opacity-50" : "cursor-pointer active:scale-[0.97]",
               )}
@@ -197,7 +197,7 @@ export function BasicInfoSection({
                 className={cn(
                   "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-xs font-bold",
                   experienceLevel === level.id
-                    ? "border-[#F97316]/30 bg-[#F97316]/12 text-[#F97316]"
+                    ? "border-fitness-500/30 bg-fitness-500/12 text-fitness-500"
                     : "border-border text-muted-foreground bg-neutral-50",
                 )}
               >
@@ -207,7 +207,7 @@ export function BasicInfoSection({
                 <span
                   className={cn(
                     "block text-sm font-semibold",
-                    experienceLevel === level.id && "text-[#F97316]",
+                    experienceLevel === level.id && "text-fitness-500",
                   )}
                 >
                   {level.label}
@@ -232,7 +232,7 @@ export function BasicInfoSection({
                 className={cn(
                   "flex items-center gap-3 rounded-lg border p-3.5 text-start transition-colors",
                   equipment === option.id
-                    ? "border-[#F97316]/30 bg-[#F97316]/8"
+                    ? "border-fitness-500/30 bg-fitness-500/8"
                     : "border-border bg-card hover:bg-neutral-50",
                   isLoading
                     ? "cursor-not-allowed opacity-50"
@@ -243,14 +243,17 @@ export function BasicInfoSection({
                   className={cn(
                     "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs",
                     equipment === option.id
-                      ? "border-[#F97316]/30 bg-[#F97316]/12 text-[#F97316]"
+                      ? "border-fitness-500/30 bg-fitness-500/12 text-fitness-500"
                       : "border-border text-muted-foreground bg-neutral-50",
                   )}
                 >
                   {equipment === option.id ? "✓" : ""}
                 </div>
                 <span
-                  className={cn("text-sm font-medium", equipment === option.id && "text-[#F97316]")}
+                  className={cn(
+                    "text-sm font-medium",
+                    equipment === option.id && "text-fitness-500",
+                  )}
                 >
                   {option.label}
                 </span>

@@ -17,7 +17,10 @@ import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { EmptyState } from "@fitfast/ui/empty-state";
-import { Skeleton } from "@fitfast/ui/skeleton";
+import { SkeletonTicketItem } from "@fitfast/ui/skeleton";
+import { Input } from "@fitfast/ui/input";
+import { Textarea } from "@fitfast/ui/textarea";
+import { FormField } from "@fitfast/ui/form-field";
 import { Link } from "@fitfast/i18n/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -63,7 +66,6 @@ function getTimeAgo(timestamp: number, locale: string): string {
 export default function TicketsPage() {
   const t = useTranslations("tickets");
   const tEmpty = useTranslations("emptyStates");
-  const tCheckIn = useTranslations("checkIn");
   const locale = useLocale();
   const { tickets, isLoading, error, createTicket } = useTickets();
   const generateUploadUrl = useMutation(api.storage.generateUploadUrl);
@@ -124,7 +126,7 @@ export default function TicketsPage() {
       case "open":
         return "bg-success-500/10 text-success-500";
       case "coach_responded":
-        return "bg-[#F59E0B]/10 text-[#F59E0B]";
+        return "bg-warning-500/10 text-warning-500";
       case "closed":
         return "bg-neutral-100 text-muted-foreground";
       default:
@@ -167,31 +169,20 @@ export default function TicketsPage() {
           <h2 className="text-sm font-semibold">{t("newTicket")}</h2>
         </div>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-4">
-          <div>
-            <label className="mb-1.5 block text-sm font-medium">{t("subject")}</label>
-            <input
-              type="text"
+          <FormField label={t("subject")} error={errors.subject?.message}>
+            <Input
               {...register("subject")}
               placeholder={t("subjectPlaceholder")}
-              className={cn(
-                "bg-card placeholder:text-muted-foreground focus:ring-ring h-11 w-full rounded-lg border px-3.5 text-sm transition-colors focus:ring-2 focus:outline-none",
-                errors.subject ? "border-error-500" : "border-input",
-              )}
+              error={!!errors.subject}
               aria-invalid={errors.subject ? "true" : "false"}
               disabled={isSubmitting}
             />
-            {errors.subject && (
-              <p className="text-error-500 mt-1 text-xs" role="alert">
-                {errors.subject.message}
-              </p>
-            )}
-          </div>
+          </FormField>
 
-          <div>
-            <label className="mb-1.5 block text-sm font-medium">{t("category")}</label>
+          <FormField label={t("category")}>
             <select
               {...register("category")}
-              className="border-input bg-card focus:ring-ring h-11 w-full cursor-pointer appearance-none rounded-lg border px-3.5 text-sm transition-colors focus:ring-2 focus:outline-none"
+              className="border-input bg-card focus:ring-ring h-11 w-full cursor-pointer appearance-none rounded-lg border px-3.5 text-sm transition-colors focus:ring-2 focus:ring-offset-1 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
               disabled={isSubmitting}
             >
               <option value="meal_issue">{t("categories.mealIssue")}</option>
@@ -200,23 +191,17 @@ export default function TicketsPage() {
               <option value="bug_report">{t("categories.bugReport")}</option>
               <option value="other">{t("categories.other")}</option>
             </select>
-          </div>
+          </FormField>
 
-          <div>
-            <label className="mb-1.5 block text-sm font-medium">{t("description")}</label>
-            <textarea
+          <FormField label={t("description")} optional>
+            <Textarea
               {...register("description")}
               placeholder={t("descriptionPlaceholder")}
-              className="border-input bg-card placeholder:text-muted-foreground focus:ring-ring min-h-[100px] w-full resize-none rounded-lg border p-3.5 text-sm transition-colors focus:ring-2 focus:outline-none"
               disabled={isSubmitting}
             />
-          </div>
+          </FormField>
 
-          <div>
-            <label className="mb-1.5 block text-sm font-medium">
-              {t("screenshot")}{" "}
-              <span className="text-muted-foreground font-normal">({tCheckIn("optional")})</span>
-            </label>
+          <FormField label={t("screenshot")} optional>
             <label className="border-border flex h-16 cursor-pointer items-center justify-center rounded-lg border border-dashed bg-neutral-50 transition-colors hover:bg-neutral-100">
               <input
                 type="file"
@@ -235,7 +220,7 @@ export default function TicketsPage() {
                 </span>
               </div>
             </label>
-          </div>
+          </FormField>
 
           <button
             type="submit"
@@ -264,15 +249,7 @@ export default function TicketsPage() {
         {isLoading ? (
           <div className="space-y-3">
             {[0, 1, 2].map((i) => (
-              <div key={i} className="border-border bg-card rounded-xl border p-4">
-                <div className="flex items-center gap-3">
-                  <Skeleton className="h-10 w-10 rounded-xl" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-4 w-48" />
-                    <Skeleton className="h-3 w-32" />
-                  </div>
-                </div>
-              </div>
+              <SkeletonTicketItem key={i} />
             ))}
           </div>
         ) : error ? (
@@ -308,7 +285,7 @@ export default function TicketsPage() {
                         ticket.status === "open"
                           ? "bg-success-500/10 text-success-500"
                           : ticket.status === "coach_responded"
-                            ? "bg-[#F59E0B]/10 text-[#F59E0B]"
+                            ? "bg-warning-500/10 text-warning-500"
                             : "text-muted-foreground bg-neutral-100",
                       )}
                     >

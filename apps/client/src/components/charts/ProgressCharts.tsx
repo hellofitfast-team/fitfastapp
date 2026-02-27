@@ -14,10 +14,10 @@ import { useTranslations, useLocale } from "next-intl";
 import { SectionCard } from "@fitfast/ui/section-card";
 
 const CHART_COLORS = {
-  primary: "#FF4500",
+  primary: "var(--color-primary)",
   background: "#ffffff",
   foreground: "#0a0a0a",
-  success: "#22c55e",
+  success: "var(--color-success-500)",
 } as const;
 
 interface WeightChartDatum {

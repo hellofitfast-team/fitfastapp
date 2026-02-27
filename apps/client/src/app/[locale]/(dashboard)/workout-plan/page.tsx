@@ -301,10 +301,10 @@ export default function WorkoutPlanPage() {
           <h1 className="text-2xl font-bold">{t("title")}</h1>
           <p className="text-muted-foreground mt-0.5 text-sm">{t("generating")}</p>
         </div>
-        <div className="rounded-xl border border-[#F97316]/30 bg-[#F97316]/5 p-5">
+        <div className="border-fitness-500/30 bg-fitness-500/5 rounded-xl border p-5">
           <div className="mb-3 flex items-center gap-2">
-            <Sparkles className="h-4 w-4 animate-pulse text-[#F97316]" />
-            <span className="text-sm font-semibold text-[#F97316]">{t("aiGenerating")}</span>
+            <Sparkles className="text-fitness-500 h-4 w-4 animate-pulse" />
+            <span className="text-fitness-500 text-sm font-semibold">{t("aiGenerating")}</span>
           </div>
           <pre className="text-muted-foreground max-h-96 overflow-y-auto font-sans text-sm leading-relaxed whitespace-pre-wrap">
             {streamedText}
@@ -362,10 +362,10 @@ export default function WorkoutPlanPage() {
 
       {/* Training Split Overview Card */}
       {planData.splitName && (
-        <div className="rounded-xl border border-[#F97316]/20 bg-gradient-to-r from-[#F97316]/5 to-[#F97316]/10 p-4">
+        <div className="border-fitness-500/20 from-fitness-500/5 to-fitness-500/10 rounded-xl border bg-gradient-to-r p-4">
           <div className="mb-1.5 flex items-center gap-2">
-            <Target className="h-4 w-4 text-[#F97316]" />
-            <span className="text-sm font-bold text-[#F97316]">{t("trainingSplit")}</span>
+            <Target className="text-fitness-500 h-4 w-4" />
+            <span className="text-fitness-500 text-sm font-bold">{t("trainingSplit")}</span>
           </div>
           <h3 className="text-lg font-bold">{planData.splitName}</h3>
           {planData.splitDescription && (
@@ -431,8 +431,8 @@ export default function WorkoutPlanPage() {
                 Array.isArray(dayPlan.warmup.exercises) &&
                 dayPlan.warmup.exercises.length > 0 && (
                   <div className="border-border bg-card shadow-card animate-slide-up overflow-hidden rounded-xl border">
-                    <div className="border-border flex items-center gap-2 border-b bg-[#F97316]/8 p-4">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-md bg-[#F97316]/12 text-xs font-bold text-[#F97316]">
+                    <div className="border-border bg-fitness-500/8 flex items-center gap-2 border-b p-4">
+                      <span className="bg-fitness-500/12 text-fitness-500 flex h-6 w-6 items-center justify-center rounded-md text-xs font-bold">
                         W
                       </span>
                       <h3 className="text-sm font-semibold">{t("warmup")}</h3>
@@ -468,16 +468,25 @@ export default function WorkoutPlanPage() {
                   return (
                     <div
                       key={index}
-                      className="border-border bg-card shadow-card animate-slide-up overflow-hidden rounded-xl border"
+                      className={cn(
+                        "bg-card shadow-card animate-slide-up overflow-hidden rounded-xl border transition-colors",
+                        isExpanded ? "border-primary/40 ring-primary/10 ring-2" : "border-border",
+                      )}
                       style={{ animationDelay: `${index * 50}ms` }}
                     >
                       {/* Exercise Header */}
                       <button
                         onClick={() => setExpandedExercise(isExpanded ? null : index)}
+                        aria-expanded={isExpanded}
                         className="flex w-full items-center justify-between gap-3 p-3.5 text-start transition-colors hover:bg-neutral-50 active:scale-[0.97]"
                       >
                         <div className="flex min-w-0 items-center gap-3">
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F97316]/10 text-xs font-bold text-[#F97316]">
+                          <div
+                            className={cn(
+                              "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-colors",
+                              isExpanded ? "bg-primary text-white" : "bg-fitness/10 text-fitness",
+                            )}
+                          >
                             {String(index + 1).padStart(2, "0")}
                           </div>
                           <div className="min-w-0">
@@ -490,14 +499,14 @@ export default function WorkoutPlanPage() {
                         <div className="flex shrink-0 items-center gap-2">
                           {/* Muscle group tags (WORK-03) */}
                           {exercise.targetMuscles && exercise.targetMuscles.length > 0 && (
-                            <span className="hidden rounded-full bg-[#F97316]/10 px-2 py-0.5 text-[10px] font-medium text-[#F97316] sm:inline-block">
+                            <span className="bg-fitness-500/10 text-fitness-500 hidden rounded-full px-2 py-0.5 text-[10px] font-medium sm:inline-block">
                               {exercise.targetMuscles.join(", ")}
                             </span>
                           )}
                           <ChevronDown
                             className={cn(
-                              "text-muted-foreground h-4 w-4 transition-transform duration-200",
-                              isExpanded && "rotate-180",
+                              "h-4 w-4 transition-all duration-200",
+                              isExpanded ? "text-primary rotate-180" : "text-muted-foreground",
                             )}
                           />
                         </div>
@@ -517,7 +526,7 @@ export default function WorkoutPlanPage() {
                               {exercise.targetMuscles.map((muscle: string, mi: number) => (
                                 <span
                                   key={mi}
-                                  className="rounded-full bg-[#F97316]/10 px-2 py-0.5 text-[10px] font-medium text-[#F97316]"
+                                  className="bg-fitness-500/10 text-fitness-500 rounded-full px-2 py-0.5 text-[10px] font-medium"
                                 >
                                   {muscle}
                                 </span>
@@ -543,7 +552,7 @@ export default function WorkoutPlanPage() {
 
                           {/* Equipment */}
                           {exercise.equipment && (
-                            <span className="inline-block rounded-md bg-[#F97316]/12 px-2.5 py-1 text-xs font-medium text-[#F97316]">
+                            <span className="bg-fitness-500/12 text-fitness-500 inline-block rounded-md px-2.5 py-1 text-xs font-medium">
                               {exercise.equipment}
                             </span>
                           )}
@@ -601,7 +610,7 @@ export default function WorkoutPlanPage() {
 
       {/* Progression Notes */}
       {planData.progressionNotes && (
-        <div className="rounded-xl border border-[#F97316]/20 bg-[#F97316]/8 p-4">
+        <div className="border-fitness-500/20 bg-fitness-500/8 rounded-xl border p-4">
           <p className="text-muted-foreground mb-1 text-xs font-medium">{t("progressionNotes")}</p>
           <p className="text-sm font-medium">{planData.progressionNotes}</p>
         </div>

@@ -14,6 +14,7 @@ import {
   Activity,
 } from "lucide-react";
 import { Link } from "@fitfast/i18n/navigation";
+import { Card, CardHeader, CardContent } from "@fitfast/ui/card";
 import gsap from "gsap";
 import {
   AreaChart,
@@ -27,12 +28,18 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+/**
+ * Chart color constants for Recharts (SVG fills don't support CSS custom properties).
+ * Each value maps to a design token — update both if the theme changes.
+ */
 const CHART_COLORS = {
-  primary: "#FF4500",
-  secondary: "#FF6633",
-  success: "#22c55e",
-  warning: "#f59e0b",
-  muted: "#e5e5e5",
+  primary: "#FF4500" /* --color-primary */,
+  secondary: "#FF6633" /* --color-primary-light */,
+  success: "#22c55e" /* --color-success / emerald-500 */,
+  warning: "#f59e0b" /* --color-warning / amber-500 */,
+  muted: "#e5e5e5" /* --color-muted / stone-200 */,
+  axis: "#a3a3a3" /* stone-400 */,
+  tooltipBorder: "#e5e5e5" /* stone-200 */,
 };
 
 function StatCard({
@@ -110,8 +117,8 @@ function ClientGrowthChart({
   }, [clients, locale, now]);
 
   return (
-    <div className="chart-section rounded-xl border border-stone-200 bg-white p-6">
-      <div className="mb-6 flex items-center justify-between">
+    <Card className="chart-section">
+      <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
         <div>
           <h2
             className="font-semibold text-stone-900"
@@ -124,45 +131,53 @@ function ClientGrowthChart({
         <div className="bg-primary/10 text-primary flex h-8 w-8 items-center justify-center rounded-lg">
           <TrendingUp className="h-4 w-4" />
         </div>
-      </div>
-      <ResponsiveContainer width="100%" height={220}>
-        <AreaChart data={chartData}>
-          <defs>
-            <linearGradient id="colorClients" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor={CHART_COLORS.primary} stopOpacity={0.15} />
-              <stop offset="95%" stopColor={CHART_COLORS.primary} stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.muted} />
-          <XAxis dataKey="name" stroke="#a3a3a3" fontSize={12} tickLine={false} axisLine={false} />
-          <YAxis
-            stroke="#a3a3a3"
-            fontSize={12}
-            tickLine={false}
-            axisLine={false}
-            allowDecimals={false}
-          />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: "#fff",
-              border: "1px solid #e5e5e5",
-              borderRadius: "12px",
-              fontSize: "13px",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-            }}
-          />
-          <Area
-            type="monotone"
-            dataKey="clients"
-            stroke={CHART_COLORS.primary}
-            strokeWidth={2.5}
-            fill="url(#colorClients)"
-            dot={{ fill: CHART_COLORS.primary, r: 4, strokeWidth: 0 }}
-            activeDot={{ r: 6, stroke: "#fff", strokeWidth: 2 }}
-          />
-        </AreaChart>
-      </ResponsiveContainer>
-    </div>
+      </CardHeader>
+      <CardContent>
+        <ResponsiveContainer width="100%" height={220}>
+          <AreaChart data={chartData}>
+            <defs>
+              <linearGradient id="colorClients" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={CHART_COLORS.primary} stopOpacity={0.15} />
+                <stop offset="95%" stopColor={CHART_COLORS.primary} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.muted} />
+            <XAxis
+              dataKey="name"
+              stroke={CHART_COLORS.axis}
+              fontSize={12}
+              tickLine={false}
+              axisLine={false}
+            />
+            <YAxis
+              stroke={CHART_COLORS.axis}
+              fontSize={12}
+              tickLine={false}
+              axisLine={false}
+              allowDecimals={false}
+            />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: "#fff",
+                border: `1px solid ${CHART_COLORS.tooltipBorder}`,
+                borderRadius: "12px",
+                fontSize: "13px",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+              }}
+            />
+            <Area
+              type="monotone"
+              dataKey="clients"
+              stroke={CHART_COLORS.primary}
+              strokeWidth={2.5}
+              fill="url(#colorClients)"
+              dot={{ fill: CHART_COLORS.primary, r: 4, strokeWidth: 0 }}
+              activeDot={{ r: 6, stroke: "#fff", strokeWidth: 2 }}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -195,8 +210,8 @@ function ActivityChart({
   }, [signups, tickets, now]);
 
   return (
-    <div className="chart-section rounded-xl border border-stone-200 bg-white p-6">
-      <div className="mb-6 flex items-center justify-between">
+    <Card className="chart-section">
+      <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
         <div>
           <h2
             className="font-semibold text-stone-900"
@@ -206,57 +221,68 @@ function ActivityChart({
           </h2>
           <p className="mt-0.5 text-xs text-stone-500">{t("lastFourWeeks") || "Last 4 weeks"}</p>
         </div>
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FF4500]/10 text-[#FF4500]">
+        <div className="bg-primary/10 text-primary flex h-8 w-8 items-center justify-center rounded-lg">
           <Activity className="h-4 w-4" />
         </div>
-      </div>
-      <ResponsiveContainer width="100%" height={220}>
-        <BarChart data={chartData} barGap={4}>
-          <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.muted} />
-          <XAxis dataKey="name" stroke="#a3a3a3" fontSize={12} tickLine={false} axisLine={false} />
-          <YAxis
-            stroke="#a3a3a3"
-            fontSize={12}
-            tickLine={false}
-            axisLine={false}
-            allowDecimals={false}
-          />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: "#fff",
-              border: "1px solid #e5e5e5",
-              borderRadius: "12px",
-              fontSize: "13px",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-            }}
-          />
-          <Bar
-            dataKey="signups"
-            fill={CHART_COLORS.primary}
-            radius={[6, 6, 0, 0]}
-            maxBarSize={32}
-            name={t("signups")}
-          />
-          <Bar
-            dataKey="tickets"
-            fill={CHART_COLORS.secondary}
-            radius={[6, 6, 0, 0]}
-            maxBarSize={32}
-            name={t("openTickets")}
-          />
-        </BarChart>
-      </ResponsiveContainer>
-      <div className="mt-4 flex items-center justify-center gap-6">
-        <div className="flex items-center gap-2 text-xs text-stone-500">
-          <span className="bg-primary h-2.5 w-2.5 rounded-full" />
-          {t("signups")}
+      </CardHeader>
+      <CardContent>
+        <ResponsiveContainer width="100%" height={220}>
+          <BarChart data={chartData} barGap={4}>
+            <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.muted} />
+            <XAxis
+              dataKey="name"
+              stroke={CHART_COLORS.axis}
+              fontSize={12}
+              tickLine={false}
+              axisLine={false}
+            />
+            <YAxis
+              stroke={CHART_COLORS.axis}
+              fontSize={12}
+              tickLine={false}
+              axisLine={false}
+              allowDecimals={false}
+            />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: "#fff",
+                border: `1px solid ${CHART_COLORS.tooltipBorder}`,
+                borderRadius: "12px",
+                fontSize: "13px",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+              }}
+            />
+            <Bar
+              dataKey="signups"
+              fill={CHART_COLORS.primary}
+              radius={[6, 6, 0, 0]}
+              maxBarSize={32}
+              name={t("signups")}
+            />
+            <Bar
+              dataKey="tickets"
+              fill={CHART_COLORS.secondary}
+              radius={[6, 6, 0, 0]}
+              maxBarSize={32}
+              name={t("openTickets")}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+        <div className="mt-4 flex items-center justify-center gap-6">
+          <div className="flex items-center gap-2 text-xs text-stone-500">
+            <span className="bg-primary h-2.5 w-2.5 rounded-full" />
+            {t("signups")}
+          </div>
+          <div className="flex items-center gap-2 text-xs text-stone-500">
+            <span
+              className="h-2.5 w-2.5 rounded-full"
+              style={{ backgroundColor: CHART_COLORS.secondary }}
+            />
+            {t("openTickets")}
+          </div>
         </div>
-        <div className="flex items-center gap-2 text-xs text-stone-500">
-          <span className="h-2.5 w-2.5 rounded-full bg-[#FF6633]" />
-          {t("openTickets")}
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -390,8 +416,8 @@ export default function AdminDashboardPage() {
       {/* Quick actions */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {/* Pending signups preview */}
-        <div className="quick-action rounded-xl border border-stone-200 bg-white p-6">
-          <div className="mb-4 flex items-center justify-between">
+        <Card className="quick-action">
+          <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
             <h2 className="font-semibold text-stone-900">{t("pendingSignups")}</h2>
             <Link
               href="/signups"
@@ -399,19 +425,21 @@ export default function AdminDashboardPage() {
             >
               {t("viewAll")}
             </Link>
-          </div>
-          {pendingSignupsCount === 0 ? (
-            <p className="text-sm text-stone-400">{t("noActivity")}</p>
-          ) : (
-            <p className="text-sm font-medium text-red-600">
-              {pendingSignupsCount} {t("pendingSignups").toLowerCase()}
-            </p>
-          )}
-        </div>
+          </CardHeader>
+          <CardContent>
+            {pendingSignupsCount === 0 ? (
+              <p className="text-sm text-stone-400">{t("noActivity")}</p>
+            ) : (
+              <p className="text-sm font-medium text-red-600">
+                {pendingSignupsCount} {t("pendingSignups").toLowerCase()}
+              </p>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Open tickets preview */}
-        <div className="quick-action rounded-xl border border-stone-200 bg-white p-6">
-          <div className="mb-4 flex items-center justify-between">
+        <Card className="quick-action">
+          <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
             <h2 className="font-semibold text-stone-900">{t("openTickets")}</h2>
             <Link
               href="/tickets"
@@ -419,15 +447,17 @@ export default function AdminDashboardPage() {
             >
               {t("viewAll")}
             </Link>
-          </div>
-          {openTicketsCount === 0 ? (
-            <p className="text-sm text-stone-400">{t("noActivity")}</p>
-          ) : (
-            <p className="text-sm font-medium text-red-600">
-              {openTicketsCount} {t("openTickets").toLowerCase()}
-            </p>
-          )}
-        </div>
+          </CardHeader>
+          <CardContent>
+            {openTicketsCount === 0 ? (
+              <p className="text-sm text-stone-400">{t("noActivity")}</p>
+            ) : (
+              <p className="text-sm font-medium text-red-600">
+                {openTicketsCount} {t("openTickets").toLowerCase()}
+              </p>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

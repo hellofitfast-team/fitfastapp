@@ -1,14 +1,33 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { Link } from "@fitfast/i18n/navigation";
-import { Users, Search, ArrowRight, Zap, X, Loader2 } from "lucide-react";
+import {
+  Users,
+  Search,
+  ArrowRight,
+  Zap,
+  X,
+  Loader2,
+  CheckCircle2,
+  Clock,
+  XCircle,
+  MinusCircle,
+} from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@fitfast/ui/dialog";
 
 interface Client {
   id: string;
@@ -29,6 +48,14 @@ const statusStyles: Record<string, string> = {
   expired: "bg-red-50 text-red-700 border-red-200",
 };
 
+/** Status icon for colorblind accessibility */
+const STATUS_ICONS: Record<string, typeof CheckCircle2> = {
+  active: CheckCircle2,
+  pending_approval: Clock,
+  inactive: MinusCircle,
+  expired: XCircle,
+};
+
 const tierLabels: Record<string, string> = {
   monthly: "Monthly",
   quarterly: "Quarterly",
@@ -37,52 +64,19 @@ const tierLabels: Record<string, string> = {
   "12_months": "Annual",
 };
 
-function RejectModal({ client, onClose }: { client: Client; onClose: () => void }) {
+function RejectModal({
+  client,
+  open,
+  onOpenChange,
+}: {
+  client: Client;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
   const rejectClient = useMutation(api.profiles.rejectClient);
   const [reason, setReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    textareaRef.current?.focus();
-  }, []);
-
-  // Close on Escape
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !isSubmitting) onClose();
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [onClose, isSubmitting]);
-
-  // Focus trap — keep Tab within the modal
-  useEffect(() => {
-    const modal = document.querySelector('[role="dialog"]');
-    if (!modal) return;
-    const focusable = modal.querySelectorAll<HTMLElement>(
-      'button, textarea, input, [tabindex]:not([tabindex="-1"])',
-    );
-    if (focusable.length === 0) return;
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    const handleTab = (e: KeyboardEvent) => {
-      if (e.key !== "Tab") return;
-      if (e.shiftKey) {
-        if (document.activeElement === first) {
-          e.preventDefault();
-          last.focus();
-        }
-      } else {
-        if (document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
-        }
-      }
-    };
-    document.addEventListener("keydown", handleTab);
-    return () => document.removeEventListener("keydown", handleTab);
-  }, []);
 
   const handleSubmit = async () => {
     if (!reason.trim()) return;
@@ -97,7 +91,7 @@ function RejectModal({ client, onClose }: { client: Client; onClose: () => void 
         description: `${client.fullName} has been rejected and removed.`,
         variant: "success",
       });
-      onClose();
+      onOpenChange(false);
     } catch (err) {
       console.error("Reject failed:", err); // Sentry captures this
       toast({
@@ -110,42 +104,28 @@ function RejectModal({ client, onClose }: { client: Client; onClose: () => void 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={() => {
-          if (!isSubmitting) onClose();
+    <Dialog
+      open={open}
+      onOpenChange={(value) => {
+        if (!isSubmitting) onOpenChange(value);
+      }}
+    >
+      <DialogContent
+        className="max-w-md"
+        onOpenAutoFocus={(e) => {
+          e.preventDefault();
+          textareaRef.current?.focus();
         }}
-      />
-
-      {/* Modal panel */}
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="client-modal-title"
-        className="relative z-10 w-full max-w-md rounded-xl border border-stone-200 bg-white p-6 shadow-xl"
       >
-        {/* Close button */}
-        <button
-          onClick={() => {
-            if (!isSubmitting) onClose();
-          }}
-          className="absolute end-4 top-4 rounded-md p-1 text-stone-400 transition-colors hover:text-stone-600"
-        >
-          <X className="h-4 w-4" />
-        </button>
-
-        {/* Header */}
-        <h2 id="client-modal-title" className="pe-8 text-lg font-semibold text-stone-900">
-          Reject {client.fullName ?? "Client"}
-        </h2>
-        <p className="mt-1 text-sm text-stone-500">
-          This will remove the client and send them a rejection email with your reason.
-        </p>
+        <DialogHeader>
+          <DialogTitle>Reject {client.fullName ?? "Client"}</DialogTitle>
+          <DialogDescription>
+            This will remove the client and send them a rejection email with your reason.
+          </DialogDescription>
+        </DialogHeader>
 
         {/* Reason input */}
-        <div className="mt-4 space-y-1.5">
+        <div className="space-y-1.5">
           <label className="text-xs font-medium text-stone-500">Rejection Reason</label>
           <textarea
             ref={textareaRef}
@@ -157,10 +137,9 @@ function RejectModal({ client, onClose }: { client: Client; onClose: () => void 
           />
         </div>
 
-        {/* Actions */}
-        <div className="mt-4 flex justify-end gap-2">
+        <DialogFooter>
           <button
-            onClick={onClose}
+            onClick={() => onOpenChange(false)}
             disabled={isSubmitting}
             className="rounded-lg border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-600 transition-colors hover:bg-stone-50 disabled:opacity-50"
           >
@@ -178,9 +157,9 @@ function RejectModal({ client, onClose }: { client: Client; onClose: () => void 
             )}
             Reject Client
           </button>
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -239,7 +218,7 @@ export function ClientsList({ clients }: { clients: Client[] }) {
               {filtered.map((client) => (
                 <tr
                   key={client.id}
-                  className="border-b border-stone-100 transition-colors last:border-0 hover:bg-stone-50/50"
+                  className="border-b border-stone-100 transition-colors last:border-0 focus-within:bg-stone-50 hover:bg-stone-50/50"
                 >
                   <td className="px-4 py-4">
                     <p className="text-sm font-medium text-stone-900">{client.fullName ?? "---"}</p>
@@ -251,13 +230,19 @@ export function ClientsList({ clients }: { clients: Client[] }) {
                     </span>
                   </td>
                   <td className="px-4 py-4">
-                    <span
-                      className={`inline-block rounded-full border px-2.5 py-1 text-xs font-medium ${
-                        statusStyles[client.status ?? ""] ?? statusStyles.inactive
-                      }`}
-                    >
-                      {client.status?.replace("_", " ") ?? "unknown"}
-                    </span>
+                    {(() => {
+                      const StatusIcon = STATUS_ICONS[client.status ?? ""] ?? MinusCircle;
+                      return (
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium ${
+                            statusStyles[client.status ?? ""] ?? statusStyles.inactive
+                          }`}
+                        >
+                          <StatusIcon className="h-3 w-3" />
+                          {client.status?.replace("_", " ") ?? "unknown"}
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td className="px-4 py-4 text-xs text-stone-500">
                     {client.planEndDate ? formatDate(client.planEndDate, locale) : "---"}
@@ -298,7 +283,15 @@ export function ClientsList({ clients }: { clients: Client[] }) {
       )}
 
       {/* Rejection modal */}
-      {rejectTarget && <RejectModal client={rejectTarget} onClose={() => setRejectTarget(null)} />}
+      {rejectTarget && (
+        <RejectModal
+          client={rejectTarget}
+          open={!!rejectTarget}
+          onOpenChange={(open) => {
+            if (!open) setRejectTarget(null);
+          }}
+        />
+      )}
     </div>
   );
 }

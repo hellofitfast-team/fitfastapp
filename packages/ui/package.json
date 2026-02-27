@@ -28,6 +28,7 @@
     "./select": "./src/select.tsx",
     "./separator": "./src/separator.tsx",
     "./skeleton": "./src/skeleton.tsx",
+    "./switch": "./src/switch.tsx",
     "./slider": "./src/slider.tsx",
     "./tabs": "./src/tabs.tsx",
     "./textarea": "./src/textarea.tsx",

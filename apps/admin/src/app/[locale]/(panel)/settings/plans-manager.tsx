@@ -81,6 +81,7 @@ export function PlansManager() {
   const [plans, setPlans] = useState<Plan[] | null>(null);
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [invalidFields, setInvalidFields] = useState<Set<string>>(new Set());
   // Track which AR name fields the coach has manually edited (skip auto-translate for those)
   const manualArEdits = useRef<Set<string>>(new Set());
   // Track which plan names are currently being translated
@@ -216,21 +217,30 @@ export function PlansManager() {
 
   const handleSave = async () => {
     setValidationError(null);
+    const newInvalid = new Set<string>();
 
     // Validate
     for (const plan of plans) {
       if (!plan.name.trim()) {
         setValidationError(`Plan "${plan.name || "Unnamed"}" requires an English name.`);
-        throw new Error("Validation failed");
+        newInvalid.add(`${plan.id}:name`);
       }
       if (plan.price <= 0) {
-        setValidationError(`Plan "${plan.name}" must have a price greater than 0.`);
-        throw new Error("Validation failed");
+        if (!validationError) {
+          setValidationError(`Plan "${plan.name || "Unnamed"}" must have a price greater than 0.`);
+        }
+        newInvalid.add(`${plan.id}:price`);
       }
       if (plan.features.length === 0) {
-        setValidationError(`Plan "${plan.name}" needs at least one feature.`);
-        throw new Error("Validation failed");
+        if (!validationError) {
+          setValidationError(`Plan "${plan.name || "Unnamed"}" needs at least one feature.`);
+        }
+        newInvalid.add(`${plan.id}:features`);
       }
+    }
+    setInvalidFields(newInvalid);
+    if (newInvalid.size > 0) {
+      throw new Error("Validation failed");
     }
 
     try {
@@ -292,12 +302,17 @@ export function PlansManager() {
                   onChange={(e) => {
                     const val = e.target.value;
                     handlePlanChange(plan.id, "name", val);
+                    invalidFields.delete(`${plan.id}:name`);
                     // EN name changed — allow auto-translate again
                     manualArEdits.current.delete(plan.id);
                     autoTranslateName(plan.id, val);
                   }}
                   placeholder={t("planNamePlaceholder")}
-                  className="focus:ring-primary/20 focus:border-primary h-10 w-full rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm text-stone-900 transition-all placeholder:text-stone-400 focus:ring-2 focus:outline-none"
+                  className={`focus:ring-primary/20 focus:border-primary h-10 w-full rounded-lg border bg-stone-50 px-3 text-sm text-stone-900 transition-all placeholder:text-stone-400 focus:ring-2 focus:outline-none ${
+                    invalidFields.has(`${plan.id}:name`)
+                      ? "border-red-400 focus:border-red-400 focus:ring-red-200"
+                      : "border-stone-200"
+                  }`}
                 />
               </div>
               <div>
@@ -335,9 +350,16 @@ export function PlansManager() {
                   type="number"
                   min="0"
                   value={plan.price}
-                  onChange={(e) => handlePlanChange(plan.id, "price", Number(e.target.value))}
+                  onChange={(e) => {
+                    handlePlanChange(plan.id, "price", Number(e.target.value));
+                    invalidFields.delete(`${plan.id}:price`);
+                  }}
                   placeholder={t("pricePlaceholder")}
-                  className="focus:ring-primary/20 focus:border-primary h-10 w-full rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm text-stone-900 transition-all placeholder:text-stone-400 focus:ring-2 focus:outline-none"
+                  className={`focus:ring-primary/20 focus:border-primary h-10 w-full rounded-lg border bg-stone-50 px-3 text-sm text-stone-900 transition-all placeholder:text-stone-400 focus:ring-2 focus:outline-none ${
+                    invalidFields.has(`${plan.id}:price`)
+                      ? "border-red-400 focus:border-red-400 focus:ring-red-200"
+                      : "border-stone-200"
+                  }`}
                 />
               </div>
               <div>
@@ -409,8 +431,15 @@ export function PlansManager() {
 
             {/* Features — selectable chips */}
             <div>
-              <label className="mb-2 block text-xs font-medium text-stone-500">
+              <label
+                className={`mb-2 block text-xs font-medium ${
+                  invalidFields.has(`${plan.id}:features`) ? "text-red-500" : "text-stone-500"
+                }`}
+              >
                 {t("features")}
+                {invalidFields.has(`${plan.id}:features`) && (
+                  <span className="ms-1 font-normal">(at least one required)</span>
+                )}
               </label>
               <div className="flex flex-wrap gap-2">
                 {FEATURE_CATALOG.map((feat, fi) => {

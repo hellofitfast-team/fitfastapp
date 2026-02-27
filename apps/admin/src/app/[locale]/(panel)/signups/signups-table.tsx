@@ -218,7 +218,7 @@ export function SignupsTable() {
             return (
               <tr
                 key={signup._id}
-                className="border-b border-stone-100 transition-colors last:border-0 hover:bg-stone-50/50"
+                className="border-b border-stone-100 transition-colors last:border-0 focus-within:bg-stone-50 hover:bg-stone-50/50"
               >
                 <td colSpan={5} className="p-0">
                   <div className="grid grid-cols-[1fr_auto_auto_auto_auto] items-center">

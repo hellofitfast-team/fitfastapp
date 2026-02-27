@@ -244,6 +244,7 @@
   "checkIn": {
     "title": "المتابعة",
     "subtitle": "أخبرنا كيف حالك",
+    "stepOf": "الخطوة {current} من {total}",
     "weight": "الوزن الحالي",
     "measurements": "قياسات الجسم",
     "chest": "الصدر",

@@ -129,7 +129,7 @@ export default function MealPlanPage() {
     setIsGenerating(true);
     setGenerateError(null);
     try {
-      const language = (profile?.language || locale || "en") as "en" | "ar";
+      const language = (locale === "ar" ? "ar" : "en") as "en" | "ar";
       await generateMealPlan({ language, planDuration, isInitialGeneration: true });
     } catch (err) {
       console.error("Meal plan generation failed:", err); // Sentry captures this
@@ -208,10 +208,10 @@ export default function MealPlanPage() {
           <h1 className="text-2xl font-bold">{t("title")}</h1>
           <p className="text-muted-foreground mt-0.5 text-sm">{t("generating")}</p>
         </div>
-        <div className="rounded-xl border border-[#10B981]/30 bg-[#10B981]/5 p-5">
+        <div className="border-nutrition-500/30 bg-nutrition-500/5 rounded-xl border p-5">
           <div className="mb-3 flex items-center gap-2">
-            <Sparkles className="h-4 w-4 animate-pulse text-[#10B981]" />
-            <span className="text-sm font-semibold text-[#10B981]">{t("aiGenerating")}</span>
+            <Sparkles className="text-nutrition-500 h-4 w-4 animate-pulse" />
+            <span className="text-nutrition-500 text-sm font-semibold">{t("aiGenerating")}</span>
           </div>
           <pre className="text-muted-foreground max-h-96 overflow-y-auto font-sans text-sm leading-relaxed whitespace-pre-wrap">
             {streamedText}
@@ -348,16 +348,16 @@ export default function MealPlanPage() {
       {/* Daily Nutrition Summary */}
       {dailyTotals && (
         <div className="scrollbar-hide flex gap-2 overflow-x-auto">
-          <span className="flex-shrink-0 rounded-full bg-[#10B981]/10 px-3 py-1.5 text-xs font-semibold text-[#10B981]">
+          <span className="bg-nutrition-500/10 text-nutrition-500 flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold">
             {dailyTotals.calories} {t("calories")}
           </span>
-          <span className="flex-shrink-0 rounded-full bg-[#10B981]/10 px-3 py-1.5 text-xs font-semibold text-[#10B981]">
+          <span className="bg-nutrition-500/10 text-nutrition-500 flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold">
             {dailyTotals.protein}g {t("protein")}
           </span>
-          <span className="flex-shrink-0 rounded-full bg-[#10B981]/10 px-3 py-1.5 text-xs font-semibold text-[#10B981]">
+          <span className="bg-nutrition-500/10 text-nutrition-500 flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold">
             {dailyTotals.carbs}g {t("carbs")}
           </span>
-          <span className="flex-shrink-0 rounded-full bg-[#10B981]/10 px-3 py-1.5 text-xs font-semibold text-[#10B981]">
+          <span className="bg-nutrition-500/10 text-nutrition-500 flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold">
             {dailyTotals.fat}g {t("fat")}
           </span>
         </div>
@@ -374,16 +374,25 @@ export default function MealPlanPage() {
             return (
               <div
                 key={index}
-                className="border-border bg-card shadow-card animate-slide-up overflow-hidden rounded-xl border"
+                className={cn(
+                  "bg-card shadow-card animate-slide-up overflow-hidden rounded-xl border transition-colors",
+                  isExpanded ? "border-primary/40 ring-primary/10 ring-2" : "border-border",
+                )}
                 style={{ animationDelay: `${index * 50}ms` }}
               >
                 {/* Meal Header */}
                 <button
                   onClick={() => setExpandedMeal(isExpanded ? null : index)}
+                  aria-expanded={isExpanded}
                   className="flex w-full items-center justify-between gap-3 p-4 text-start transition-colors hover:bg-neutral-50 active:scale-[0.97]"
                 >
                   <div className="flex min-w-0 items-center gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#10B981]/12 text-xs font-bold text-[#10B981]">
+                    <div
+                      className={cn(
+                        "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-colors",
+                        isExpanded ? "bg-primary text-white" : "bg-neutral-100 text-neutral-500",
+                      )}
+                    >
                       {String(index + 1).padStart(2, "0")}
                     </div>
                     <div className="min-w-0">
@@ -400,13 +409,13 @@ export default function MealPlanPage() {
                         &#8596; {meal.alternatives!.length}
                       </span>
                     )}
-                    <span className="text-sm font-semibold text-[#10B981]">
+                    <span className="text-nutrition-500 text-sm font-semibold">
                       {meal.calories} {t("kcal")}
                     </span>
                     <ChevronDown
                       className={cn(
-                        "text-muted-foreground h-4 w-4 transition-transform duration-200",
-                        isExpanded && "rotate-180",
+                        "h-4 w-4 transition-all duration-200",
+                        isExpanded ? "text-primary rotate-180" : "text-muted-foreground",
                       )}
                     />
                   </div>
@@ -416,7 +425,7 @@ export default function MealPlanPage() {
                 <div
                   className={cn(
                     "overflow-hidden transition-all duration-200 ease-in-out",
-                    isExpanded ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0",
+                    isExpanded ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0",
                   )}
                 >
                   <div className="border-border space-y-4 border-t px-4 pt-4 pb-4">
@@ -441,7 +450,7 @@ export default function MealPlanPage() {
                           {(Array.isArray(meal.ingredients) ? meal.ingredients : []).map(
                             (ingredient: string, i: number) => (
                               <li key={i} className="flex items-start gap-2">
-                                <span className="mt-0.5 text-[#10B981]">&#8226;</span>
+                                <span className="text-nutrition-500 mt-0.5">&#8226;</span>
                                 {ingredient}
                               </li>
                             ),
@@ -458,7 +467,7 @@ export default function MealPlanPage() {
                           {(Array.isArray(meal.instructions) ? meal.instructions : []).map(
                             (instruction: string, i: number) => (
                               <li key={i} className="flex items-start gap-2.5">
-                                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#10B981]/12 text-[10px] font-bold text-[#10B981]">
+                                <span className="bg-nutrition-500/12 text-nutrition-500 mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
                                   {i + 1}
                                 </span>
                                 {instruction}
@@ -473,13 +482,13 @@ export default function MealPlanPage() {
                     {hasAlternatives && (
                       <div>
                         <h4 className="mb-2 text-sm font-semibold">{t("alternatives")}</h4>
-                        <div className="space-y-1.5 rounded-lg border border-dashed border-[#10B981]/30 bg-[#10B981]/5 p-3">
+                        <div className="border-nutrition-500/30 bg-nutrition-500/5 space-y-1.5 rounded-lg border border-dashed p-3">
                           {meal.alternatives!.map((alt, i) => {
                             if (typeof alt === "string") {
                               // Old format: plain string
                               return (
                                 <div key={i} className="flex items-start gap-2 text-sm">
-                                  <span className="text-[#10B981]">&#8596;</span>
+                                  <span className="text-nutrition-500">&#8596;</span>
                                   {alt}
                                 </div>
                               );
@@ -504,26 +513,29 @@ export default function MealPlanPage() {
                             return (
                               <div
                                 key={i}
-                                className="overflow-hidden rounded-md border border-[#10B981]/20 bg-white/60"
+                                className="border-nutrition-500/20 overflow-hidden rounded-md border bg-white/60"
                               >
                                 {/* Collapsed header */}
                                 <button
                                   onClick={toggleAlt}
-                                  className="flex w-full items-center justify-between gap-2 px-3 py-2 text-start transition-colors hover:bg-[#10B981]/5"
+                                  aria-expanded={isAltExpanded}
+                                  className="hover:bg-nutrition-500/5 flex w-full items-center justify-between gap-2 px-3 py-2 text-start transition-colors"
                                 >
                                   <div className="flex min-w-0 items-center gap-2">
-                                    <span className="shrink-0 text-sm text-[#10B981]">&#8596;</span>
+                                    <span className="text-nutrition-500 shrink-0 text-sm">
+                                      &#8596;
+                                    </span>
                                     <span className="truncate text-sm font-medium">
                                       {normalizedAlt.name}
                                     </span>
                                   </div>
                                   <div className="flex shrink-0 items-center gap-2">
-                                    <span className="rounded-full bg-[#10B981]/10 px-2 py-0.5 text-[10px] font-semibold text-[#10B981]">
+                                    <span className="bg-nutrition-500/10 text-nutrition-500 rounded-full px-2 py-0.5 text-[10px] font-semibold">
                                       {normalizedAlt.calories} {t("kcal")}
                                     </span>
                                     <ChevronDown
                                       className={cn(
-                                        "h-3.5 w-3.5 text-[#10B981]/60 transition-transform duration-150",
+                                        "text-nutrition-500/60 h-3.5 w-3.5 transition-transform duration-150",
                                         isAltExpanded && "rotate-180",
                                       )}
                                     />
@@ -539,16 +551,16 @@ export default function MealPlanPage() {
                                       : "max-h-0 opacity-0",
                                   )}
                                 >
-                                  <div className="space-y-3 border-t border-[#10B981]/15 px-3 pt-2 pb-3">
+                                  <div className="border-nutrition-500/15 space-y-3 border-t px-3 pt-2 pb-3">
                                     {/* Macro chips */}
                                     <div className="flex flex-wrap gap-1.5">
-                                      <span className="rounded-md bg-[#10B981]/10 px-2 py-0.5 text-[10px] font-medium text-[#10B981]">
+                                      <span className="bg-nutrition-500/10 text-nutrition-500 rounded-md px-2 py-0.5 text-[10px] font-medium">
                                         {t("protein")}: {normalizedAlt.protein}g
                                       </span>
-                                      <span className="rounded-md bg-[#10B981]/10 px-2 py-0.5 text-[10px] font-medium text-[#10B981]">
+                                      <span className="bg-nutrition-500/10 text-nutrition-500 rounded-md px-2 py-0.5 text-[10px] font-medium">
                                         {t("carbs")}: {normalizedAlt.carbs}g
                                       </span>
-                                      <span className="rounded-md bg-[#10B981]/10 px-2 py-0.5 text-[10px] font-medium text-[#10B981]">
+                                      <span className="bg-nutrition-500/10 text-nutrition-500 rounded-md px-2 py-0.5 text-[10px] font-medium">
                                         {t("fat")}: {normalizedAlt.fat}g
                                       </span>
                                     </div>
@@ -563,7 +575,7 @@ export default function MealPlanPage() {
                                           {normalizedAlt.ingredients.map(
                                             (ingredient: string, j: number) => (
                                               <li key={j} className="flex items-start gap-1.5">
-                                                <span className="mt-0.5 text-[#10B981]">
+                                                <span className="text-nutrition-500 mt-0.5">
                                                   &#8226;
                                                 </span>
                                                 {ingredient}
@@ -584,7 +596,7 @@ export default function MealPlanPage() {
                                           {normalizedAlt.instructions.map(
                                             (instruction: string, j: number) => (
                                               <li key={j} className="flex items-start gap-1.5">
-                                                <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#10B981]/12 text-[9px] font-bold text-[#10B981]">
+                                                <span className="bg-nutrition-500/12 text-nutrition-500 mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-bold">
                                                   {j + 1}
                                                 </span>
                                                 {instruction}

@@ -42,7 +42,10 @@ export function DashboardShell({ children, userName, daysUntilExpiry }: Dashboar
       <InstallPrompt />
 
       {/* Main content area */}
-      <main className="relative z-0 flex-1 overflow-x-hidden overflow-y-auto pb-[calc(var(--height-bottom-nav)+max(0.5rem,env(safe-area-inset-bottom))+0.75rem)] lg:pb-0">
+      <main
+        aria-label="Main content"
+        className="relative z-0 flex-1 overflow-x-hidden overflow-y-auto pb-[calc(var(--height-bottom-nav)+max(0.5rem,env(safe-area-inset-bottom))+0.75rem)] lg:pb-0"
+      >
         {children}
       </main>
 

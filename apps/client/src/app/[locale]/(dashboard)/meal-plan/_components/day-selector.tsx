@@ -14,8 +14,8 @@ interface DaySelectorProps {
 }
 
 const ACTIVE_STYLES = {
-  nutrition: "bg-[#10B981] text-white",
-  fitness: "bg-[#F97316] text-white",
+  nutrition: "bg-primary text-white shadow-md",
+  fitness: "bg-primary text-white shadow-md",
 } as const;
 
 export function DaySelector({

@@ -62,7 +62,7 @@ export function MobileHeader({ userName }: MobileHeaderProps) {
   };
 
   return (
-    <header className="border-border bg-card/95 sticky top-0 z-[var(--z-header)] border-b pt-[env(safe-area-inset-top)] backdrop-blur-md lg:hidden">
+    <header className="border-border bg-card sticky top-0 z-[var(--z-header)] border-b pt-[env(safe-area-inset-top)] lg:hidden">
       <div className="flex h-[var(--height-header)] items-center justify-between px-4">
         {/* Left side — Greeting or Title */}
         {isDashboard && userName ? (
