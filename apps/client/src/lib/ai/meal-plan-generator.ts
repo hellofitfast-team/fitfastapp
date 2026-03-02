@@ -4,6 +4,11 @@ import type { InitialAssessment, Profile, CheckIn } from "@/types/convex";
 import { MealPlanSchema, type ValidatedMealPlan } from "@/lib/validation";
 import { AIGenerationError } from "@/lib/errors";
 import * as Sentry from "@sentry/nextjs";
+import {
+  AI_MAX_OUTPUT_TOKENS,
+  AI_MAX_RETRIES,
+  AI_DEFAULT_PLAN_DURATION_DAYS,
+} from "@/lib/constants";
 
 export interface MealPlanGenerationParams {
   profile: Profile;
@@ -55,7 +60,13 @@ export interface GeneratedMealPlan {
 export async function generateMealPlan(
   params: MealPlanGenerationParams,
 ): Promise<ValidatedMealPlan> {
-  const { profile, assessment, checkIn, language, planDuration = 7 } = params;
+  const {
+    profile,
+    assessment,
+    checkIn,
+    language,
+    planDuration = AI_DEFAULT_PLAN_DURATION_DAYS,
+  } = params;
 
   const isArabic = language === "ar";
 
@@ -115,8 +126,8 @@ RECENT CHECK-IN DATA:
       system: systemPrompt,
       prompt: userPrompt,
       temperature: 0.7,
-      maxOutputTokens: 6000,
-      maxRetries: 3,
+      maxOutputTokens: AI_MAX_OUTPUT_TOKENS,
+      maxRetries: AI_MAX_RETRIES,
     });
 
     Sentry.addBreadcrumb({

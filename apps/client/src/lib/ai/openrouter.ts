@@ -7,6 +7,7 @@ import "server-only";
 import { createLogger } from "@fitfast/config/logger";
 import { withRetry, AIGenerationError } from "@/lib/errors";
 import * as Sentry from "@sentry/nextjs";
+import { AI_MODEL, AI_REQUEST_TIMEOUT_MS, RETRY_MAX_ATTEMPTS } from "@/lib/constants";
 
 const log = createLogger("openrouter");
 
@@ -33,7 +34,7 @@ export interface OpenRouterResponse {
 }
 
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
-const MODEL = "deepseek/deepseek-chat"; // DeepSeek V3
+const MODEL = AI_MODEL;
 
 export class OpenRouterClient {
   private apiKey: string;
@@ -64,7 +65,7 @@ export class OpenRouterClient {
     return withRetry(
       async () => {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
+        const timeoutId = setTimeout(() => controller.abort(), AI_REQUEST_TIMEOUT_MS);
 
         try {
           const response = await fetch(OPENROUTER_API_URL, {
@@ -102,7 +103,10 @@ export class OpenRouterClient {
           return data.choices[0].message.content;
         } catch (error) {
           if (error instanceof Error && error.name === "AbortError") {
-            throw new AIGenerationError("OpenRouter request timed out after 30s", "openrouter");
+            throw new AIGenerationError(
+              `OpenRouter request timed out after ${AI_REQUEST_TIMEOUT_MS / 1000}s`,
+              "openrouter",
+            );
           }
           throw error;
         } finally {
@@ -110,7 +114,7 @@ export class OpenRouterClient {
         }
       },
       {
-        maxAttempts: 3,
+        maxAttempts: RETRY_MAX_ATTEMPTS,
         operationName: "openrouter-chat",
         shouldRetry: (error) => {
           // Don't retry on client errors (4xx)

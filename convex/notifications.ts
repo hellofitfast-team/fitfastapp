@@ -6,11 +6,16 @@ import { internal } from "./_generated/api";
 import { ActionRetrier } from "@convex-dev/action-retrier";
 import { components } from "./_generated/api";
 import webpush from "web-push";
+import {
+  NOTIFICATION_MAX_RETRIES,
+  NOTIFICATION_INITIAL_BACKOFF_MS,
+  NOTIFICATION_BACKOFF_BASE,
+} from "./constants";
 
 const retrier = new ActionRetrier(components.actionRetrier, {
-  initialBackoffMs: 1000,
-  base: 2,
-  maxFailures: 3,
+  initialBackoffMs: NOTIFICATION_INITIAL_BACKOFF_MS,
+  base: NOTIFICATION_BACKOFF_BASE,
+  maxFailures: NOTIFICATION_MAX_RETRIES,
 });
 
 function getWebPushConfig() {

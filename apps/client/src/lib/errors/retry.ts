@@ -1,6 +1,12 @@
 import { backOff } from "exponential-backoff";
 import * as Sentry from "@sentry/nextjs";
 import { RetryError } from "./types";
+import {
+  RETRY_MAX_ATTEMPTS,
+  RETRY_INITIAL_DELAY_MS,
+  RETRY_BACKOFF_MULTIPLIER,
+  RETRY_MAX_DELAY_MS,
+} from "@/lib/constants";
 
 /**
  * Wraps any async operation with exponential backoff retry logic.
@@ -70,7 +76,7 @@ export async function withRetry<T>(
     shouldRetry?: (error: Error) => boolean;
   },
 ): Promise<T> {
-  const maxAttempts = options?.maxAttempts ?? 3;
+  const maxAttempts = options?.maxAttempts ?? RETRY_MAX_ATTEMPTS;
   const operationName = options?.operationName ?? "operation";
   const shouldRetry = options?.shouldRetry ?? (() => true);
 
@@ -80,9 +86,9 @@ export async function withRetry<T>(
   try {
     return await backOff(operation, {
       numOfAttempts: maxAttempts,
-      startingDelay: 1000, // 1 second
-      timeMultiple: 2, // Exponential: 1s, 2s, 4s
-      maxDelay: 5000, // Cap at 5 seconds
+      startingDelay: RETRY_INITIAL_DELAY_MS,
+      timeMultiple: RETRY_BACKOFF_MULTIPLIER,
+      maxDelay: RETRY_MAX_DELAY_MS,
       jitter: "full", // Full jitter to prevent thundering herd
       retry: (error: Error, currentAttempt: number) => {
         // Update closure state

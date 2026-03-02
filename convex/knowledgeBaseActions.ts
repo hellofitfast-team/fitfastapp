@@ -5,10 +5,11 @@ import { action, internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getAuthUserId } from "./auth";
 import { getRagClient } from "./ragManager";
+import { RAG_CHUNK_SIZE_WORDS, RAG_CHUNK_OVERLAP_WORDS } from "./constants";
 
 const NAMESPACE = "coach_knowledge";
-const CHUNK_SIZE = 500; // words per chunk
-const CHUNK_OVERLAP = 50; // words overlap
+const CHUNK_SIZE = RAG_CHUNK_SIZE_WORDS;
+const CHUNK_OVERLAP = RAG_CHUNK_OVERLAP_WORDS;
 
 function chunkText(text: string): string[] {
   const words = text.split(/\s+/);

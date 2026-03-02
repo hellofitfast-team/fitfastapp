@@ -4,6 +4,7 @@ import { useMemo, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { Camera, Upload, X } from "lucide-react";
 import { SectionCard } from "@fitfast/ui/section-card";
+import { MAX_CHECK_IN_PHOTOS, MAX_UPLOAD_SIZE_MB } from "@/lib/constants";
 
 interface PhotosStepProps {
   uploadedPhotos: File[];
@@ -23,7 +24,14 @@ export function PhotosStep({ uploadedPhotos, onPhotoChange, onRemovePhoto }: Pho
   }, [photoUrls]);
 
   return (
-    <SectionCard icon={Camera} title={t("photos")} description={t("maxPhotos")}>
+    <SectionCard
+      icon={Camera}
+      title={t("photos")}
+      description={t("maxPhotos", {
+        maxPhotos: MAX_CHECK_IN_PHOTOS,
+        maxFileMB: MAX_UPLOAD_SIZE_MB,
+      })}
+    >
       <input
         type="file"
         id="photo-upload"
@@ -31,7 +39,7 @@ export function PhotosStep({ uploadedPhotos, onPhotoChange, onRemovePhoto }: Pho
         multiple
         onChange={onPhotoChange}
         className="hidden"
-        disabled={uploadedPhotos.length >= 4}
+        disabled={uploadedPhotos.length >= MAX_CHECK_IN_PHOTOS}
       />
 
       {uploadedPhotos.length === 0 ? (
@@ -41,7 +49,9 @@ export function PhotosStep({ uploadedPhotos, onPhotoChange, onRemovePhoto }: Pho
         >
           <Upload className="text-muted-foreground/50 mb-3 h-8 w-8" />
           <p className="text-sm font-semibold">{t("uploadPhotos")}</p>
-          <p className="text-muted-foreground mt-1 text-xs">{t("fileTypes")}</p>
+          <p className="text-muted-foreground mt-1 text-xs">
+            {t("fileTypes", { maxFileMB: MAX_UPLOAD_SIZE_MB })}
+          </p>
         </label>
       ) : (
         <div className="space-y-4">
@@ -66,7 +76,7 @@ export function PhotosStep({ uploadedPhotos, onPhotoChange, onRemovePhoto }: Pho
               </div>
             ))}
           </div>
-          {uploadedPhotos.length < 4 && (
+          {uploadedPhotos.length < MAX_CHECK_IN_PHOTOS && (
             <label
               htmlFor="photo-upload"
               className="border-border flex h-12 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed bg-neutral-50 transition-colors hover:bg-neutral-100"

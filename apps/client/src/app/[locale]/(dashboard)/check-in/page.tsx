@@ -15,6 +15,7 @@ import { useCheckInLock } from "@/hooks/use-check-in-lock";
 import { useToast } from "@/hooks/use-toast";
 import { Weight, Dumbbell, UtensilsCrossed, Camera, ClipboardCheck, Loader2 } from "lucide-react";
 import * as Sentry from "@sentry/nextjs";
+import { MAX_UPLOAD_SIZE_BYTES, MAX_UPLOAD_SIZE_MB, MAX_CHECK_IN_PHOTOS } from "@/lib/constants";
 
 import { CheckInLocked } from "./_components/check-in-locked";
 import { StepProgress } from "./_components/step-progress";
@@ -116,18 +117,18 @@ export default function CheckInPage() {
     const files = Array.from(e.target.files || []);
     const validFiles = files.filter((file) => {
       const isImage = file.type.startsWith("image/");
-      const isUnder5MB = file.size <= 5 * 1024 * 1024;
+      const isUnder5MB = file.size <= MAX_UPLOAD_SIZE_BYTES;
       if (!isImage || !isUnder5MB) {
         toast({
           title: t("invalidFile"),
-          description: t("invalidFileDescription"),
+          description: t("invalidFileDescription", { maxFileMB: MAX_UPLOAD_SIZE_MB }),
           variant: "destructive",
         });
         return false;
       }
       return true;
     });
-    setUploadedPhotos((prev) => [...prev, ...validFiles].slice(0, 4));
+    setUploadedPhotos((prev) => [...prev, ...validFiles].slice(0, MAX_CHECK_IN_PHOTOS));
   };
 
   const removePhoto = (index: number) => {

@@ -8,6 +8,7 @@ import { Button } from "@fitfast/ui/button";
 import { cn } from "@fitfast/ui/cn";
 import { Upload, Check, Loader2, CreditCard, ImageIcon } from "lucide-react";
 import { useParams } from "next/navigation";
+import { MAX_UPLOAD_SIZE_BYTES } from "@/lib/constants";
 import type { Id } from "@/convex/_generated/dataModel";
 
 export function RenewalCheckout() {
@@ -59,7 +60,7 @@ export function RenewalCheckout() {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) return; // 5MB max
+    if (file.size > MAX_UPLOAD_SIZE_BYTES) return;
 
     setUploading(true);
     try {

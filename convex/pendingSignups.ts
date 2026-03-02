@@ -4,6 +4,7 @@ import { internal } from "./_generated/api";
 import { getAuthUserId } from "./auth";
 import { pendingSignupsCount } from "./adminStats";
 import { rateLimiter } from "./rateLimiter";
+import { INVITE_EXPIRATION_DAYS } from "./constants";
 
 export const getPendingSignups = query({
   args: {},
@@ -149,7 +150,7 @@ export const approveSignup = mutation({
     // Generate a secure invite token
     const inviteToken =
       crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
-    const inviteExpiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days
+    const inviteExpiresAt = Date.now() + INVITE_EXPIRATION_DAYS * 24 * 60 * 60 * 1000;
 
     await ctx.db.patch(signupId, {
       status: "approved",

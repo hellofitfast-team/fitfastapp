@@ -6,6 +6,8 @@
  * This runs in code (not the LLM) because LLMs can't do math reliably.
  */
 
+import { NUTRITION } from "./constants";
+
 export type ActivityLevel = "sedentary" | "lightly_active" | "moderately_active" | "very_active";
 
 interface NutritionInput {
@@ -75,8 +77,8 @@ function getLifestyleMultiplier(activityLevel?: ActivityLevel): number {
  */
 function getActivityMultiplier(trainingDaysPerWeek: number, activityLevel?: ActivityLevel): number {
   const baseMultiplier = getLifestyleMultiplier(activityLevel);
-  const exerciseBonus = trainingDaysPerWeek * 0.05;
-  return Math.min(1.9, baseMultiplier + exerciseBonus);
+  const exerciseBonus = trainingDaysPerWeek * NUTRITION.exerciseBonusPerDay;
+  return Math.min(NUTRITION.maxActivityMultiplier, baseMultiplier + exerciseBonus);
 }
 
 /**
@@ -89,17 +91,17 @@ function getGoalMultiplier(goal: string): number {
     normalized.includes("fatloss") ||
     normalized.includes("cutting")
   ) {
-    return 0.8; // 20% deficit
+    return NUTRITION.goalMultipliers.deficit;
   }
   if (
     normalized.includes("musclegain") ||
     normalized.includes("bulking") ||
     normalized.includes("massbuilding")
   ) {
-    return 1.1; // 10% surplus
+    return NUTRITION.goalMultipliers.surplus;
   }
   // body_recomposition, general_fitness, maintenance, etc.
-  return 1.0;
+  return NUTRITION.goalMultipliers.maintenance;
 }
 
 /**
@@ -115,12 +117,12 @@ function getProteinPerKg(goal: string): number {
     normalized.includes("fatloss") ||
     normalized.includes("cutting")
   ) {
-    return 2.0;
+    return NUTRITION.proteinPerKg.cutting;
   }
   if (normalized.includes("musclegain") || normalized.includes("bulking")) {
-    return 1.8;
+    return NUTRITION.proteinPerKg.bulking;
   }
-  return 1.6;
+  return NUTRITION.proteinPerKg.general;
 }
 
 export function calculateNutritionTargets(input: NutritionInput): NutritionTargets {
@@ -131,17 +133,17 @@ export function calculateNutritionTargets(input: NutritionInput): NutritionTarge
   const tdee = Math.round(bmr * activityMultiplier);
 
   const goalMultiplier = getGoalMultiplier(goal);
-  const minCalories = gender === "male" ? 1500 : 1200;
+  const minCalories = gender === "male" ? NUTRITION.minCalories.male : NUTRITION.minCalories.female;
   const calories = Math.max(minCalories, Math.round(tdee * goalMultiplier));
 
   // Macros (ISSN guidelines)
   const proteinPerKg = getProteinPerKg(goal);
   const protein = Math.round(weightKg * proteinPerKg);
-  const fat = Math.round(weightKg * 0.9); // 0.8-1.0 g/kg, use 0.9 middle ground
+  const fat = Math.round(weightKg * NUTRITION.fatPerKg);
 
   // Carbs fill remaining calories: (calories - protein*4 - fat*9) / 4
   const remainingCalories = calories - protein * 4 - fat * 9;
-  const carbs = Math.max(50, Math.round(remainingCalories / 4)); // Min 50g carbs
+  const carbs = Math.max(NUTRITION.minCarbsG, Math.round(remainingCalories / 4));
 
   return { bmr, tdee, calories, protein, carbs, fat, proteinPerKg, minCalories };
 }

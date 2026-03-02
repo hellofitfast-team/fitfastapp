@@ -30,7 +30,7 @@
     },
     "plansGenerating": {
       "title": "Generating Your Plans...",
-      "description": "Our AI is creating your personalized meal and workout plans. This usually takes 2-3 minutes. This page will update automatically."
+      "description": "Our AI is creating your personalized meal and workout plans. This usually takes a few minutes. This page will update automatically."
     },
     "noMealPlan": {
       "title": "No Meal Plan Yet",
@@ -39,7 +39,7 @@
     },
     "mealPlanGenerating": {
       "title": "Generating Your Meal Plan...",
-      "description": "Our AI is creating your personalized meal plan. This usually takes 2-3 minutes. This page will update automatically."
+      "description": "Our AI is creating your personalized meal plan. This usually takes a few minutes. This page will update automatically."
     },
     "noWorkoutPlan": {
       "title": "No Workout Plan Yet",
@@ -48,11 +48,11 @@
     },
     "workoutPlanGenerating": {
       "title": "Generating Your Workout Plan...",
-      "description": "Our AI is creating your personalized workout plan. This usually takes 2-3 minutes. This page will update automatically."
+      "description": "Our AI is creating your personalized workout plan. This usually takes a few minutes. This page will update automatically."
     },
     "noTickets": {
       "title": "No Support Tickets",
-      "description": "Having an issue with your plan? Submit a ticket and your coach will respond within 24 hours.",
+      "description": "Having an issue with your plan? Submit a ticket and your coach will respond as soon as possible.",
       "action": "Your coach is here to help"
     },
     "noCheckIns": {
@@ -278,11 +278,11 @@
     "addMorePhotos": "Add More Photos",
     "submitting": "Submitting...",
     "allIn": "All in",
-    "maxPhotos": "Optional, max 4 photos, 5MB each",
-    "fileTypes": "PNG, JPG up to 5MB",
+    "maxPhotos": "Optional, max {maxPhotos} photos, {maxFileMB}MB each",
+    "fileTypes": "PNG, JPG up to {maxFileMB}MB",
     "uploaded": "uploaded",
     "invalidFile": "Invalid file",
-    "invalidFileDescription": "Please upload images under 5MB",
+    "invalidFileDescription": "Please upload images under {maxFileMB}MB",
     "authRequired": "Authentication required",
     "authRequiredDescription": "Please sign in to submit check-in",
     "submissionFailed": "Submission failed",
@@ -432,7 +432,7 @@
     "questions": {
       "checkInFrequency": {
         "q": "How often should I check in?",
-        "a": "You should submit a check-in every 14 days. This allows your coach to track your progress and adjust your meal and workout plans accordingly."
+        "a": "You should submit a check-in every {days} days. This allows your coach to track your progress and adjust your meal and workout plans accordingly."
       },
       "changeMeals": {
         "q": "Can I change meals in my meal plan?",
@@ -786,7 +786,7 @@
     "expired": {
       "title": "Subscription Expired",
       "subtitle": "Your subscription has ended",
-      "dataWarning": "Your data will be retained for 90 days. After that, it will be permanently deleted.",
+      "dataWarning": "Your data will be retained for {days} days. After that, it will be permanently deleted.",
       "renewButton": "Renew Subscription",
       "logoutButton": "Log Out",
       "contactCoach": "Contact your coach for help"

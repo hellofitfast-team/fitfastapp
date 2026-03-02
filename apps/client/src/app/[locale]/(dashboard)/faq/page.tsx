@@ -3,12 +3,13 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
-import { useQuery } from "convex/react";
+import { useConvexAuth, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Search, ChevronDown, MessageSquarePlus } from "lucide-react";
 import { Link } from "@fitfast/i18n/navigation";
 import { Skeleton } from "@fitfast/ui/skeleton";
 import { cn } from "@fitfast/ui/cn";
+import { DEFAULT_CHECK_IN_FREQUENCY_DAYS } from "@/lib/constants";
 
 const faqKeys = [
   "checkInFrequency",
@@ -27,8 +28,11 @@ export default function FAQPage() {
   const locale = (params.locale as string) || "en";
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+  const { isAuthenticated } = useConvexAuth();
 
   const dbFaqs = useQuery(api.faqs.getFAQs, { language: locale as "en" | "ar" });
+  const lockStatus = useQuery(api.checkIns.getLockStatus, isAuthenticated ? {} : "skip");
+  const frequencyDays = lockStatus?.frequencyDays ?? DEFAULT_CHECK_IN_FREQUENCY_DAYS;
   const isLoading = dbFaqs === undefined;
 
   const faqs =
@@ -38,7 +42,7 @@ export default function FAQPage() {
         ? faqKeys.map((key) => ({
             key,
             question: t(`questions.${key}.q`),
-            answer: t(`questions.${key}.a`),
+            answer: t(`questions.${key}.a`, { days: frequencyDays }),
           }))
         : [];
 

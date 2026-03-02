@@ -3,6 +3,7 @@ import { components } from "./_generated/api";
 import { internalMutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
+import { MAX_AI_CONCURRENCY } from "./constants";
 
 /**
  * Singleton Workpool for AI generation actions.
@@ -10,7 +11,7 @@ import { v } from "convex/values";
  * submit check-ins simultaneously. Excess requests queue automatically.
  */
 export const aiWorkpool = new Workpool(components.aiWorkpool, {
-  maxParallelism: 5,
+  maxParallelism: MAX_AI_CONCURRENCY,
 });
 
 // ---------------------------------------------------------------------------

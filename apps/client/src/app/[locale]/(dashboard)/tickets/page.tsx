@@ -22,6 +22,7 @@ import { Input } from "@fitfast/ui/input";
 import { Textarea } from "@fitfast/ui/textarea";
 import { FormField } from "@fitfast/ui/form-field";
 import { Link } from "@fitfast/i18n/navigation";
+import { MAX_UPLOAD_SIZE_BYTES } from "@/lib/constants";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -211,7 +212,7 @@ export default function TicketsPage() {
                 className="hidden"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
-                  if (file && file.size <= 5 * 1024 * 1024) setScreenshotFile(file);
+                  if (file && file.size <= MAX_UPLOAD_SIZE_BYTES) setScreenshotFile(file);
                 }}
                 disabled={isSubmitting || isUploading}
               />

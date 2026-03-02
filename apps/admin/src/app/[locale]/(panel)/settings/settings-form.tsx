@@ -98,7 +98,7 @@ export function AdminSettingsForm() {
           </div>
           <div>
             <h2 className="text-sm font-semibold text-stone-900">{tSettings("pricingPlans")}</h2>
-            <p className="mt-0.5 text-xs text-stone-400">{t("configurePlans")}</p>
+            <p className="mt-0.5 text-xs text-stone-400">{t("configurePlans", { maxPlans: 4 })}</p>
           </div>
         </div>
         <PlansManager />

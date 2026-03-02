@@ -4,6 +4,8 @@
  * This is deterministic — same inputs always produce the same split.
  */
 
+import { DEFAULT_CHECK_IN_FREQUENCY_DAYS } from "./constants";
+
 export interface WorkoutSplit {
   splitType: string;
   splitName: string;
@@ -139,7 +141,7 @@ function generateDayLabels(splitType: string, totalDays: number): { en: string[]
 export function selectWorkoutSplit(
   experienceLevel: ExperienceLevel | undefined,
   daysPerWeek: number,
-  totalPlanDays: number = 14,
+  totalPlanDays: number = DEFAULT_CHECK_IN_FREQUENCY_DAYS,
 ): WorkoutSplit {
   const exp = experienceLevel || "beginner";
   let splitType: string;

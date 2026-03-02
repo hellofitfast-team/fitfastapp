@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { useConvexAuth, useQuery, useMutation, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -35,10 +35,12 @@ const DURATION_OPTIONS = [
 ] as const;
 
 // ── Predefined feature catalog (chips) ───────────────────────────────────────
-const FEATURE_CATALOG: { en: string; ar: string }[] = [
+// Index 2 is a placeholder — replaced dynamically inside the component based on
+// the coach-configured check-in frequency (see buildFeatureCatalog).
+const FEATURE_CATALOG_BASE: { en: string; ar: string }[] = [
   { en: "AI-personalized meal plans", ar: "خطط وجبات مخصصة بالذكاء الاصطناعي" },
   { en: "AI-personalized workout plans", ar: "خطط تمارين مخصصة بالذكاء الاصطناعي" },
-  { en: "Bi-weekly check-ins with your coach", ar: "متابعة مع المدرب كل أسبوعين" },
+  { en: "Check-ins every 14 days with your coach", ar: "متابعة مع المدرب كل 14 يومًا" }, // placeholder
   { en: "Daily meal & workout tracking", ar: "تتبع يومي للوجبات والتمارين" },
   { en: "Progress charts & analytics", ar: "رسوم بيانية وتحليلات للتقدم" },
   { en: "Direct coach support via tickets", ar: "دعم مباشر من المدرب عبر التذاكر" },
@@ -54,10 +56,19 @@ const FEATURE_CATALOG: { en: string; ar: string }[] = [
   { en: "FAQ & help center", ar: "الأسئلة الشائعة ومركز المساعدة" },
 ];
 
+function buildFeatureCatalog(freqDays: number): { en: string; ar: string }[] {
+  const catalog = [...FEATURE_CATALOG_BASE];
+  catalog[2] = {
+    en: `Check-ins every ${freqDays} days with your coach`,
+    ar: `متابعة مع المدرب كل ${freqDays} يومًا`,
+  };
+  return catalog;
+}
+
 // First 8 features are selected by default; the rest are opt-in
 const DEFAULT_SELECTED_COUNT = 8;
 
-const emptyPlan = (): Plan => ({
+const emptyPlan = (featureCatalog: { en: string; ar: string }[]): Plan => ({
   id: generateId(),
   name: "",
   nameAr: "",
@@ -65,8 +76,8 @@ const emptyPlan = (): Plan => ({
   currency: "EGP",
   duration: "1 month",
   durationAr: "شهر واحد",
-  features: FEATURE_CATALOG.slice(0, DEFAULT_SELECTED_COUNT).map((f) => f.en),
-  featuresAr: FEATURE_CATALOG.slice(0, DEFAULT_SELECTED_COUNT).map((f) => f.ar),
+  features: featureCatalog.slice(0, DEFAULT_SELECTED_COUNT).map((f) => f.en),
+  featuresAr: featureCatalog.slice(0, DEFAULT_SELECTED_COUNT).map((f) => f.ar),
   badge: undefined,
   badgeAr: undefined,
 });
@@ -75,8 +86,15 @@ export function PlansManager() {
   const t = useTranslations("settings");
   const { isAuthenticated } = useConvexAuth();
   const serverPlans = useQuery(api.systemConfig.getPlans, isAuthenticated ? {} : "skip");
+  const checkInConfig = useQuery(
+    api.systemConfig.getConfig,
+    isAuthenticated ? { key: "check_in_frequency_days" } : "skip",
+  );
   const updatePlans = useMutation(api.systemConfig.updatePlans);
   const translateAction = useAction(api.ai.translateToArabic);
+
+  const freqDays = Number(checkInConfig?.value) || 14;
+  const FEATURE_CATALOG = useMemo(() => buildFeatureCatalog(freqDays), [freqDays]);
 
   const [plans, setPlans] = useState<Plan[] | null>(null);
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
@@ -154,7 +172,7 @@ export function PlansManager() {
 
   const handleAddPlan = () => {
     if (plans.length >= MAX_PLANS) return;
-    const newPlan = emptyPlan();
+    const newPlan = emptyPlan(FEATURE_CATALOG);
     // Inherit feature selection from the first plan so they stay consistent
     if (plans.length > 0) {
       newPlan.features = [...plans[0].features];
@@ -481,7 +499,9 @@ export function PlansManager() {
           {t("addPlan")}
         </button>
       ) : (
-        <p className="text-center text-xs text-stone-400">{t("maxPlansReached")}</p>
+        <p className="text-center text-xs text-stone-400">
+          {t("maxPlansReached", { maxPlans: MAX_PLANS })}
+        </p>
       )}
 
       {/* Validation error */}

@@ -3,6 +3,7 @@ import { internalMutation } from "./_generated/server";
 import { type Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { workflow } from "./workflowManager";
+import { DEFAULT_CHECK_IN_FREQUENCY_DAYS } from "./constants";
 
 /**
  * Internal mutation: writes the check-in record.
@@ -71,7 +72,7 @@ export const checkInAndGeneratePlans = workflow.define({
   },
   handler: async (
     step,
-    { userId, language, planDuration = 14, ...checkInFields },
+    { userId, language, planDuration = DEFAULT_CHECK_IN_FREQUENCY_DAYS, ...checkInFields },
   ): Promise<{
     checkInId: Id<"checkIns">;
     mealPlanId: Id<"mealPlans">;

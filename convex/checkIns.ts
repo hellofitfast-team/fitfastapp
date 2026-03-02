@@ -3,6 +3,7 @@ import { query, mutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getAuthUserId } from "./auth";
 import { getCheckInFrequencyDays } from "./helpers";
+import { DEFAULT_CHECK_IN_FREQUENCY_DAYS } from "./constants";
 import { rateLimiter } from "./rateLimiter";
 import { workflow } from "./workflowManager";
 
@@ -38,7 +39,12 @@ export const getLockStatus = query({
   args: {},
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
-    if (!userId) return { isLocked: false, nextCheckInDate: null, frequencyDays: 14 };
+    if (!userId)
+      return {
+        isLocked: false,
+        nextCheckInDate: null,
+        frequencyDays: DEFAULT_CHECK_IN_FREQUENCY_DAYS,
+      };
 
     const frequencyDays = await getCheckInFrequencyDays(ctx);
 

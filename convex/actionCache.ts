@@ -4,6 +4,7 @@ import { ActionCache } from "@convex-dev/action-cache";
 import { components, internal } from "./_generated/api";
 import { action } from "./_generated/server";
 import { v } from "convex/values";
+import { FAQ_CACHE_TTL_MS, PRICING_CACHE_TTL_MS } from "./constants";
 
 /**
  * Read-through caches for rarely-changing data.
@@ -18,13 +19,13 @@ import { v } from "convex/values";
 const faqCache = new ActionCache(components.actionCache, {
   action: internal.faqs.getFAQsUncached,
   name: "faqs-v1",
-  ttl: 60 * 60 * 1000, // 1 hour
+  ttl: FAQ_CACHE_TTL_MS,
 });
 
 const pricingCache = new ActionCache(components.actionCache, {
   action: internal.systemConfig.getPricingUncached,
   name: "pricing-v1",
-  ttl: 30 * 60 * 1000, // 30 minutes
+  ttl: PRICING_CACHE_TTL_MS,
 });
 
 /**

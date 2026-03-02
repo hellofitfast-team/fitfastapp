@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { query, mutation, internalQuery, internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getAuthUserId } from "./auth";
+import { DEFAULT_CHECK_IN_FREQUENCY_DAYS } from "./constants";
 
 const PUBLIC_CONFIG_KEYS = new Set([
   "pricing",
@@ -229,7 +230,7 @@ export const setConfig = mutation({
     const storedValue =
       NUMERIC_CONFIG_KEYS.has(key) && typeof value === "string"
         ? value.trim() === "" || Number.isNaN(Number(value))
-          ? 14
+          ? DEFAULT_CHECK_IN_FREQUENCY_DAYS
           : Number(value)
         : value;
 

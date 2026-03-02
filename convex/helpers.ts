@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { internalQuery } from "./_generated/server";
+import { DEFAULT_CHECK_IN_FREQUENCY_DAYS } from "./constants";
 
 /**
  * Fetch the coach-configured check-in frequency from systemConfig.
@@ -12,8 +13,8 @@ export async function getCheckInFrequencyDays(ctx: { db: any }): Promise<number>
     .withIndex("by_key", (q: any) => q.eq("key", "check_in_frequency_days"))
     .unique();
   const raw = config?.value;
-  if (raw == null) return 14;
-  return typeof raw === "number" ? raw : Number(raw) || 14;
+  if (raw == null) return DEFAULT_CHECK_IN_FREQUENCY_DAYS;
+  return typeof raw === "number" ? raw : Number(raw) || DEFAULT_CHECK_IN_FREQUENCY_DAYS;
 }
 
 // Internal queries used by AI actions to fetch data

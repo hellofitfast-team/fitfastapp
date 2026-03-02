@@ -9,6 +9,7 @@ import { useAuthActions } from "@convex-dev/auth/react";
 import { AlertTriangle, LogOut } from "lucide-react";
 import { Button } from "@fitfast/ui/button";
 import { RenewalCheckout } from "@/components/renewal/renewal-checkout";
+import { DATA_RETENTION_DAYS } from "@/lib/constants";
 
 export default function ExpiredPage() {
   const t = useTranslations("subscription.expired");
@@ -47,7 +48,7 @@ export default function ExpiredPage() {
         <h2 className="mb-1 text-xl font-bold">{t("title")}</h2>
         <p className="text-muted-foreground mb-3 text-sm">{t("subtitle")}</p>
         <p className="inline-block rounded-lg bg-amber-100 px-3 py-2 text-xs text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
-          {t("dataWarning")}
+          {t("dataWarning", { days: DATA_RETENTION_DAYS })}
         </p>
       </div>
 

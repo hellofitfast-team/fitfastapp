@@ -3,6 +3,7 @@
 import { useTranslations, useLocale } from "next-intl";
 import { Lock, Calendar } from "lucide-react";
 import { toLocalDigits } from "@/lib/utils";
+import { DEFAULT_CHECK_IN_FREQUENCY_DAYS } from "@/lib/constants";
 
 interface CheckInLockedProps {
   nextCheckInDate: Date;
@@ -13,7 +14,7 @@ interface CheckInLockedProps {
 export function CheckInLocked({
   nextCheckInDate,
   daysUntilNextCheckIn,
-  frequencyDays = 14,
+  frequencyDays = DEFAULT_CHECK_IN_FREQUENCY_DAYS,
 }: CheckInLockedProps) {
   const t = useTranslations("checkIn");
   const locale = useLocale();
