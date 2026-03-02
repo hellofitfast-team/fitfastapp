@@ -211,7 +211,8 @@
     "coachNotes": "Coach Notes",
     "kcal": "KCAL",
     "aiGenerating": "AI is crafting your meal plan...",
-    "calorieExplanation": "Your daily target is {calories} kcal ({protein}g protein) based on your profile and {trainingDays} training days/week."
+    "calorieExplanation": "AI aims for around {calories} kcal/day ({protein}g protein) based on your profile and {trainingDays} training days/week. Actual meals may vary slightly.",
+    "dayLabel": "Day {n}"
   },
   "workouts": {
     "title": "Workout Plan",
@@ -631,12 +632,36 @@
       "medicalConditions": "Medical Conditions",
       "injuries": "Current Injuries",
       "exerciseHistory": "Exercise History",
+      "basicInfo": "Basic Information",
+      "currentWeightLabel": "Current Weight",
+      "heightLabel": "Height",
+      "ageLabel": "Age",
+      "genderLabel": "Gender",
+      "genders": {
+        "male": "Male",
+        "female": "Female"
+      },
       "experienceLevel": "Experience Level",
       "levels": {
         "beginner": "Beginner",
+        "beginner_desc": "New to fitness",
         "intermediate": "Intermediate",
-        "advanced": "Advanced"
+        "intermediate_desc": "1-2 years",
+        "advanced": "Advanced",
+        "advanced_desc": "3+ years"
       },
+      "equipmentTitle": "Available Equipment",
+      "equipmentOptions": {
+        "full_gym": "Full Gym Access",
+        "home_basic": "Home (Basic: Dumbbells, Mat)",
+        "home_advanced": "Home (Advanced: Bench, Barbell)",
+        "bodyweight": "Bodyweight Only",
+        "resistance_bands": "Resistance Bands",
+        "other": "Other"
+      },
+      "equipmentOtherPlaceholder": "Describe your equipment...",
+      "otherOption": "Other",
+      "specifyPlaceholder": "Please specify...",
       "steps": {
         "goals": "Goals",
         "bodyInfo": "Body Info",

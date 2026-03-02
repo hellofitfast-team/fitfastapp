@@ -17,6 +17,10 @@ package-lock.json
 /.playwright-mcp
 playwright-report/
 blob-report/
+e2e/.test-email.txt
+e2e/.tmp-*
+e2e/reports/
+e2e-screenshots/
 
 # next.js
 .next/
