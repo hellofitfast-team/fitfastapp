@@ -7,7 +7,7 @@ import "server-only";
 import { createLogger } from "@fitfast/config/logger";
 import { withRetry, AIGenerationError } from "@/lib/errors";
 import * as Sentry from "@sentry/nextjs";
-import { AI_MODEL, AI_REQUEST_TIMEOUT_MS, RETRY_MAX_ATTEMPTS } from "@/lib/constants";
+import { AI_MODEL as MODEL, AI_REQUEST_TIMEOUT_MS, RETRY_MAX_ATTEMPTS } from "@/lib/constants";
 
 const log = createLogger("openrouter");
 
@@ -34,7 +34,6 @@ export interface OpenRouterResponse {
 }
 
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
-const MODEL = AI_MODEL;
 
 export class OpenRouterClient {
   private apiKey: string;

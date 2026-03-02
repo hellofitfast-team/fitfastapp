@@ -2,9 +2,7 @@ import { v } from "convex/values";
 import { internalQuery, internalMutation, internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
-import { DATA_RETENTION_DAYS } from "./constants";
-
-const RETENTION_DAYS = DATA_RETENTION_DAYS;
+import { DATA_RETENTION_DAYS as RETENTION_DAYS } from "./constants";
 
 // ---------------------------------------------------------------------------
 // Find users whose data should be purged (inactive > 90 days)

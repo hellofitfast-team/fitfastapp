@@ -6,6 +6,7 @@ import { useConvexAuth, useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Calendar, DollarSign, Share2, Wallet } from "lucide-react";
 import * as Sentry from "@sentry/nextjs";
+import { MAX_PRICING_PLANS } from "@/convex/constants";
 import { PlansManager } from "./plans-manager";
 import { PaymentMethodsManager } from "./payment-methods-manager";
 import { SocialLinksManager } from "./social-links-manager";
@@ -98,7 +99,9 @@ export function AdminSettingsForm() {
           </div>
           <div>
             <h2 className="text-sm font-semibold text-stone-900">{tSettings("pricingPlans")}</h2>
-            <p className="mt-0.5 text-xs text-stone-400">{t("configurePlans", { maxPlans: 4 })}</p>
+            <p className="mt-0.5 text-xs text-stone-400">
+              {t("configurePlans", { maxPlans: MAX_PRICING_PLANS })}
+            </p>
           </div>
         </div>
         <PlansManager />

@@ -6,6 +6,7 @@ import { useConvexAuth, useQuery, useMutation, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Plus, Trash2, GripVertical, Check, Loader2 } from "lucide-react";
 import * as Sentry from "@sentry/nextjs";
+import { MAX_PRICING_PLANS } from "@/convex/constants";
 import { SaveButton } from "./save-button";
 
 type Plan = {
@@ -22,7 +23,7 @@ type Plan = {
   badgeAr?: string;
 };
 
-const MAX_PLANS = 4;
+const MAX_PLANS = MAX_PRICING_PLANS;
 
 function generateId() {
   return `plan_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -35,12 +36,13 @@ const DURATION_OPTIONS = [
 ] as const;
 
 // ── Predefined feature catalog (chips) ───────────────────────────────────────
-// Index 2 is a placeholder — replaced dynamically inside the component based on
-// the coach-configured check-in frequency (see buildFeatureCatalog).
-const FEATURE_CATALOG_BASE: { en: string; ar: string }[] = [
+// The "CHECK_IN_FREQUENCY" entry is replaced dynamically inside the component
+// based on the coach-configured check-in frequency (see buildFeatureCatalog).
+const CHECK_IN_FREQUENCY_PLACEHOLDER = "CHECK_IN_FREQUENCY";
+const FEATURE_CATALOG_BASE: { id?: string; en: string; ar: string }[] = [
   { en: "AI-personalized meal plans", ar: "خطط وجبات مخصصة بالذكاء الاصطناعي" },
   { en: "AI-personalized workout plans", ar: "خطط تمارين مخصصة بالذكاء الاصطناعي" },
-  { en: "Check-ins every 14 days with your coach", ar: "متابعة مع المدرب كل 14 يومًا" }, // placeholder
+  { id: CHECK_IN_FREQUENCY_PLACEHOLDER, en: "", ar: "" }, // replaced by buildFeatureCatalog
   { en: "Daily meal & workout tracking", ar: "تتبع يومي للوجبات والتمارين" },
   { en: "Progress charts & analytics", ar: "رسوم بيانية وتحليلات للتقدم" },
   { en: "Direct coach support via tickets", ar: "دعم مباشر من المدرب عبر التذاكر" },
@@ -57,12 +59,14 @@ const FEATURE_CATALOG_BASE: { en: string; ar: string }[] = [
 ];
 
 function buildFeatureCatalog(freqDays: number): { en: string; ar: string }[] {
-  const catalog = [...FEATURE_CATALOG_BASE];
-  catalog[2] = {
-    en: `Check-ins every ${freqDays} days with your coach`,
-    ar: `متابعة مع المدرب كل ${freqDays} يومًا`,
-  };
-  return catalog;
+  return FEATURE_CATALOG_BASE.map((entry) =>
+    entry.id === CHECK_IN_FREQUENCY_PLACEHOLDER
+      ? {
+          en: `Check-ins every ${freqDays} days with your coach`,
+          ar: `متابعة مع المدرب كل ${freqDays} يومًا`,
+        }
+      : entry,
+  );
 }
 
 // First 8 features are selected by default; the rest are opt-in

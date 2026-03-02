@@ -117,8 +117,8 @@ export default function CheckInPage() {
     const files = Array.from(e.target.files || []);
     const validFiles = files.filter((file) => {
       const isImage = file.type.startsWith("image/");
-      const isUnder5MB = file.size <= MAX_UPLOAD_SIZE_BYTES;
-      if (!isImage || !isUnder5MB) {
+      const isUnderSizeLimit = file.size <= MAX_UPLOAD_SIZE_BYTES;
+      if (!isImage || !isUnderSizeLimit) {
         toast({
           title: t("invalidFile"),
           description: t("invalidFileDescription", { maxFileMB: MAX_UPLOAD_SIZE_MB }),

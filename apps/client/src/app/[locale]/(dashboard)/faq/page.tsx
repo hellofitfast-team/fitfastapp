@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
-import { useConvexAuth, useQuery } from "convex/react";
+import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Search, ChevronDown, MessageSquarePlus } from "lucide-react";
 import { Link } from "@fitfast/i18n/navigation";
@@ -28,11 +28,11 @@ export default function FAQPage() {
   const locale = (params.locale as string) || "en";
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
-  const { isAuthenticated } = useConvexAuth();
 
   const dbFaqs = useQuery(api.faqs.getFAQs, { language: locale as "en" | "ar" });
-  const lockStatus = useQuery(api.checkIns.getLockStatus, isAuthenticated ? {} : "skip");
-  const frequencyDays = lockStatus?.frequencyDays ?? DEFAULT_CHECK_IN_FREQUENCY_DAYS;
+  // check_in_frequency_days is in PUBLIC_CONFIG_KEYS — no auth required
+  const freqConfig = useQuery(api.systemConfig.getConfig, { key: "check_in_frequency_days" });
+  const frequencyDays = Number(freqConfig?.value) || DEFAULT_CHECK_IN_FREQUENCY_DAYS;
   const isLoading = dbFaqs === undefined;
 
   const faqs =

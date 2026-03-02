@@ -1,5 +1,6 @@
 import "server-only";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+import { AI_MODEL } from "@/lib/constants";
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL;
 if (!appUrl) {
@@ -14,7 +15,7 @@ const openrouter = createOpenRouter({
   },
 });
 
-export const DEEPSEEK_MODEL = "deepseek/deepseek-chat";
+export const DEEPSEEK_MODEL = AI_MODEL;
 export const QWEN_VISION_MODEL = "qwen/qwen2.5-vl-72b-instruct";
 
 export function getModel(modelId: string = DEEPSEEK_MODEL) {
