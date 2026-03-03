@@ -161,7 +161,7 @@ export function CheckoutForm({ selectedPlan, onSuccess }: CheckoutFormProps) {
       if (!uploadUrl || typeof uploadUrl !== "string") throw new Error("Invalid upload response");
 
       const uploadResponse = await fetch(uploadUrl, {
-        method: "PUT",
+        method: "POST",
         body: screenshotFile,
         headers: {
           "Content-Type": screenshotFile.type,
