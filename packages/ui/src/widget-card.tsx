@@ -74,10 +74,15 @@ export function WidgetCard({
             <p
               className={cn(
                 "mt-1 text-xs font-medium",
-                trend.direction === "up" && "text-success-600",
-                trend.direction === "down" && "text-error-500",
                 trend.direction === "neutral" && "text-muted-foreground",
               )}
+              style={
+                trend.direction === "up"
+                  ? { color: "var(--color-success-600)" }
+                  : trend.direction === "down"
+                    ? { color: "var(--color-error-500)" }
+                    : undefined
+              }
             >
               {trend.direction === "up" && "\u2191 "}
               {trend.direction === "down" && "\u2193 "}
