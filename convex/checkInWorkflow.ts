@@ -104,57 +104,21 @@ export const submitCheckInInternal = internalMutation({
 export const checkInAndGeneratePlans = workflow.define({
   args: {
     userId: v.string(),
+    checkInId: v.id("checkIns"),
     language: v.union(v.literal("en"), v.literal("ar")),
     planDuration: v.optional(v.number()),
-    weight: v.optional(v.number()),
-    measurementMethod: v.optional(v.union(v.literal("manual"), v.literal("inbody"))),
-    measurements: v.optional(
-      v.object({
-        chest: v.optional(v.number()),
-        waist: v.optional(v.number()),
-        hips: v.optional(v.number()),
-        arms: v.optional(v.number()),
-        thighs: v.optional(v.number()),
-      }),
-    ),
-    inBodyStorageId: v.optional(v.id("_storage")),
-    inBodyData: v.optional(
-      v.object({
-        bodyFatPercentage: v.optional(v.number()),
-        leanBodyMass: v.optional(v.number()),
-        skeletalMuscleMass: v.optional(v.number()),
-        bmi: v.optional(v.number()),
-        visceralFatLevel: v.optional(v.number()),
-        basalMetabolicRate: v.optional(v.number()),
-        totalBodyWater: v.optional(v.number()),
-      }),
-    ),
-    workoutPerformance: v.optional(v.string()),
-    energyLevel: v.optional(v.number()),
-    sleepQuality: v.optional(v.number()),
-    dietaryAdherence: v.optional(v.number()),
-    newInjuries: v.optional(v.string()),
-    progressPhotoIds: v.optional(v.array(v.id("_storage"))),
-    progressPhotoFront: v.optional(v.id("_storage")),
-    progressPhotoBack: v.optional(v.id("_storage")),
-    progressPhotoSide: v.optional(v.id("_storage")),
-    notes: v.optional(v.string()),
   },
   handler: async (
     step,
-    { userId, language, planDuration = DEFAULT_CHECK_IN_FREQUENCY_DAYS, ...checkInFields },
+    { userId, checkInId, language, planDuration = DEFAULT_CHECK_IN_FREQUENCY_DAYS },
   ): Promise<{
     checkInId: Id<"checkIns">;
     mealPlanId: Id<"mealPlans">;
     workoutPlanId: Id<"workoutPlans">;
   }> => {
-    // Step 1: Persist the check-in record
-    const checkInId = await step.runMutation(internal.checkInWorkflow.submitCheckInInternal, {
-      userId,
-      ...checkInFields,
-    });
+    // Check-in record already created by startCheckInWorkflow mutation
 
-    // Steps 2 & 3: Enqueue both AI generations via Workpool (max 5 concurrent)
+    // Steps 1 & 2: Enqueue both AI generations via Workpool (max 5 concurrent)
     const [mealWorkId, workoutWorkId] = await Promise.all([
       step.runMutation(internal.workpoolManager.enqueueMealPlan, {
         userId,
@@ -217,12 +181,20 @@ export const checkInAndGeneratePlans = workflow.define({
       );
     }
 
-    // Extract plan IDs from workpool results
-    const mealPlanId = (mealStatus as Record<string, unknown>)?.result as Id<"mealPlans">;
-    const workoutPlanId = (workoutStatus as Record<string, unknown>)?.result as Id<"workoutPlans">;
+    // Look up generated plans by checkInId (workpool status doesn't include return values)
+    const mealPlanId = await step.runQuery(internal.mealPlans.getIdByCheckIn, {
+      userId,
+      checkInId,
+    });
+    const workoutPlanId = await step.runQuery(internal.workoutPlans.getIdByCheckIn, {
+      userId,
+      checkInId,
+    });
 
     if (!mealPlanId || !workoutPlanId) {
-      throw new Error("AI plan generation failed in workpool");
+      throw new Error(
+        `Plans not found after generation (checkInId: ${checkInId}, meal: ${!!mealPlanId}, workout: ${!!workoutPlanId})`,
+      );
     }
 
     // Step 6: Notify user via push (best-effort — plans are already saved)

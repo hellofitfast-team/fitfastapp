@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { query, internalMutation } from "./_generated/server";
+import { query, internalMutation, internalQuery } from "./_generated/server";
 import { getAuthUserId } from "./auth";
 
 export const getCurrentPlan = query({
@@ -62,6 +62,19 @@ export const getPlansByUserId = query({
       .withIndex("by_userId", (q) => q.eq("userId", userId))
       .order("desc")
       .collect();
+  },
+});
+
+// Internal: look up a plan by checkInId (used by workflow after workpool finishes)
+export const getIdByCheckIn = internalQuery({
+  args: { userId: v.string(), checkInId: v.id("checkIns") },
+  handler: async (ctx, { userId, checkInId }) => {
+    const plans = await ctx.db
+      .query("workoutPlans")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .order("desc")
+      .take(5);
+    return plans.find((p) => p.checkInId === checkInId)?._id ?? null;
   },
 });
 

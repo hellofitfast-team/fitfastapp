@@ -218,11 +218,26 @@ export const startCheckInWorkflow = mutation({
     // Use configured frequency as default plan duration if not explicitly provided
     const resolvedPlanDuration = planDuration ?? frequencyDays;
 
+    // Create check-in record synchronously so getLockStatus sees it immediately
+    const checkInId = await ctx.db.insert("checkIns", {
+      userId,
+      submittedAt: Date.now(),
+      ...checkInFields,
+    });
+
+    // Schedule InBody OCR if photo was uploaded
+    if (checkInFields.inBodyStorageId && checkInFields.measurementMethod === "inbody") {
+      await ctx.scheduler.runAfter(0, internal.ocrExtraction.extractInBodyData, {
+        checkInId,
+        storageId: checkInFields.inBodyStorageId,
+      });
+    }
+
     const workflowId = await workflow.start(ctx, internal.checkInWorkflow.checkInAndGeneratePlans, {
       userId,
+      checkInId,
       language,
       planDuration: resolvedPlanDuration,
-      ...checkInFields,
     });
 
     return workflowId;
