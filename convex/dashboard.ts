@@ -78,7 +78,10 @@ export const getDashboardData = query({
       anchorTime = planTimes.length > 0 ? Math.min(...planTimes) : null;
     }
     if (!anchorTime) {
-      anchorTime = assessment?._creationTime ?? null;
+      const GENERATION_WINDOW_MS = 10 * 60 * 1000;
+      if (assessment && Date.now() - assessment._creationTime < GENERATION_WINDOW_MS) {
+        anchorTime = assessment._creationTime;
+      }
     }
     if (anchorTime) {
       const nextDate = new Date(anchorTime);

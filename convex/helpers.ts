@@ -14,8 +14,9 @@ export async function getCheckInFrequencyDays(ctx: { db: any }): Promise<number>
     .unique();
   const raw = config?.value;
   if (raw == null) return DEFAULT_CHECK_IN_FREQUENCY_DAYS;
-  const num = typeof raw === "number" ? raw : Number(raw) || DEFAULT_CHECK_IN_FREQUENCY_DAYS;
-  return num > 0 ? num : DEFAULT_CHECK_IN_FREQUENCY_DAYS;
+  const num = typeof raw === "number" ? raw : Number(raw);
+  // 0 means "no lock" (useful for testing); NaN or negative falls back to default
+  return num >= 0 && !isNaN(num) ? num : DEFAULT_CHECK_IN_FREQUENCY_DAYS;
 }
 
 // Internal queries used by AI actions to fetch data

@@ -8,6 +8,7 @@ import { getAuthUserId } from "./auth";
 import { type ClientContext, formatContextForPrompt } from "./clientContext";
 import { calculateNutritionTargets, type NutritionTargets } from "./nutritionEngine";
 import { selectWorkoutSplit, type WorkoutSplit } from "./workoutSplitEngine";
+import { getRagClient } from "./ragManager";
 import {
   MEAL_OUTPUT_TOKENS_EN,
   MEAL_OUTPUT_TOKENS_AR,
@@ -15,7 +16,6 @@ import {
   WORKOUT_OUTPUT_TOKENS_AR,
   PLAN_GENERATION_TIMEOUT_MS,
   PLAN_GENERATION_MAX_RETRIES,
-  RAG_SEARCH_TIMEOUT_MS,
 } from "./constants";
 
 // ---------------------------------------------------------------------------
@@ -336,24 +336,27 @@ async function getCoachKnowledgeContext(
 
   // Filter by relevant tags so meal prompts get nutrition docs and workout prompts get training docs
   const tags = planType === "meal" ? ["nutrition", "general"] : ["workout", "recovery", "general"];
+  const filters = tags.map((tag) => ({ name: "tag" as const, value: tag }));
 
   try {
-    const chunks: string[] = await Promise.race([
-      ctx.runAction(internal.knowledgeBaseActions.searchKnowledge, {
-        query: clientContext,
-        limit: 5,
-        tags,
-      }),
-      new Promise<string[]>((_, reject) =>
-        setTimeout(() => reject(new Error("RAG search timeout")), RAG_SEARCH_TIMEOUT_MS),
-      ),
-    ]);
+    // Use text search (keyword-based) — no embedding API call, zero hang risk.
+    // Coach knowledge base is small (<100 entries), so keyword matching on
+    // tags + content is sufficient and eliminates the OpenRouter embed() bottleneck.
+    const rag = getRagClient();
+    const searchResult = await rag.search(ctx, {
+      namespace: "coach_knowledge",
+      query: clientContext,
+      limit: 5,
+      filters,
+      searchType: "text",
+    });
 
+    const chunks = searchResult.results.map((r) => r.content.map((c) => c.text).join("\n"));
     if (chunks.length === 0) return "";
 
     return `\nCOACH'S TRAINING PHILOSOPHY & GUIDELINES:\n${chunks.join("\n\n")}`;
   } catch {
-    // Knowledge base timeout, empty, or not initialized — continue without RAG context
+    // Knowledge base empty or not initialized — continue without RAG context
     return "";
   }
 }

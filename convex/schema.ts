@@ -289,6 +289,7 @@ export default defineSchema({
     reviewedAt: v.optional(v.number()),
     rejectionReason: v.optional(v.string()),
     inviteToken: v.optional(v.string()),
+    inviteExpiresAt: v.optional(v.number()),
   })
     .index("by_status", ["status"])
     .index("by_email", ["email"])

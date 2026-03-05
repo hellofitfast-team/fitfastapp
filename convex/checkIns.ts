@@ -91,12 +91,16 @@ export const getLockStatus = query({
     }
 
     if (!anchorTime) {
-      // No plans yet — use assessment creation time (plans may still be generating async)
+      // No plans yet — use assessment as anchor ONLY if recent (plans still generating).
+      // If assessment is old but no plans exist, they were deleted or failed — don't lock.
+      const GENERATION_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
       const assessment = await ctx.db
         .query("initialAssessments")
         .withIndex("by_userId", (q) => q.eq("userId", userId))
         .first();
-      anchorTime = assessment?._creationTime ?? null;
+      if (assessment && Date.now() - assessment._creationTime < GENERATION_WINDOW_MS) {
+        anchorTime = assessment._creationTime;
+      }
     }
 
     if (!anchorTime) return { isLocked: false, nextCheckInDate: null, frequencyDays };

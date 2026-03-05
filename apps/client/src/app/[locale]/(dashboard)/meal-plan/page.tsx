@@ -135,10 +135,11 @@ export default function MealPlanPage() {
   // Generate meal plan action + plan duration config
   const generateMealPlan = useAction(api.ai.generateMealPlan);
   const frequencyConfig = useQuery(api.systemConfig.getConfig, { key: "check_in_frequency_days" });
-  const planDuration =
+  const rawDuration =
     typeof frequencyConfig?.value === "number"
       ? frequencyConfig.value
       : Number(frequencyConfig?.value) || 10;
+  const planDuration = rawDuration > 0 ? rawDuration : 10;
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [generationTimedOut, setGenerationTimedOut] = useState(false);

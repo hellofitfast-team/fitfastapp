@@ -35,10 +35,11 @@ export default function InitialAssessmentPage() {
 
   // Fetch admin-configured cycle duration for initial plan generation
   const frequencyConfig = useQuery(api.systemConfig.getConfig, { key: "check_in_frequency_days" });
-  const planDuration =
+  const rawDuration =
     typeof frequencyConfig?.value === "number"
       ? frequencyConfig.value
       : Number(frequencyConfig?.value) || 10;
+  const planDuration = rawDuration > 0 ? rawDuration : 10;
 
   // Step labels from translations
   const STEP_LABELS = [
