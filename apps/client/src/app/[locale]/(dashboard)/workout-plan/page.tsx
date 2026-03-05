@@ -267,7 +267,7 @@ export default function WorkoutPlanPage() {
           (new Date(workoutPlan.endDate).getTime() - new Date(workoutPlan.startDate).getTime()) /
             86400000,
         )
-      : 14;
+      : 10;
 
   // Detect rest days for DaySelector
   // eslint-disable-next-line react-hooks/preserve-manual-memoization -- compiler infers subset; all 3 deps are needed
@@ -376,7 +376,7 @@ export default function WorkoutPlanPage() {
         </div>
       )}
 
-      {/* Day Selector (1-14) (WORK-01) */}
+      {/* Day Selector (1-10) (WORK-01) */}
       <DaySelector
         totalDays={totalDays}
         selectedDay={selectedDay}

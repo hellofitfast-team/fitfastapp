@@ -20,7 +20,7 @@ export function useCheckInLock() {
     isLocked: lockStatus?.isLocked ?? false,
     nextCheckInDate,
     daysUntilNextCheckIn,
-    frequencyDays: lockStatus?.frequencyDays ?? 14,
+    frequencyDays: lockStatus?.frequencyDays ?? 10,
     isLoadingLockStatus: isAuthenticated && lockStatus === undefined,
   };
 }

@@ -4,7 +4,7 @@ import { DEFAULT_CHECK_IN_FREQUENCY_DAYS } from "./constants";
 
 /**
  * Fetch the coach-configured check-in frequency from systemConfig.
- * Falls back to 14 days if not configured.
+ * Falls back to DEFAULT_CHECK_IN_FREQUENCY_DAYS if not configured.
  * Works in any context with direct DB access (queries, mutations).
  */
 export async function getCheckInFrequencyDays(ctx: { db: any }): Promise<number> {
@@ -14,7 +14,8 @@ export async function getCheckInFrequencyDays(ctx: { db: any }): Promise<number>
     .unique();
   const raw = config?.value;
   if (raw == null) return DEFAULT_CHECK_IN_FREQUENCY_DAYS;
-  return typeof raw === "number" ? raw : Number(raw) || DEFAULT_CHECK_IN_FREQUENCY_DAYS;
+  const num = typeof raw === "number" ? raw : Number(raw) || DEFAULT_CHECK_IN_FREQUENCY_DAYS;
+  return num > 0 ? num : DEFAULT_CHECK_IN_FREQUENCY_DAYS;
 }
 
 // Internal queries used by AI actions to fetch data

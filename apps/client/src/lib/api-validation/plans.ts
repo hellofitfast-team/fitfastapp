@@ -6,7 +6,7 @@ import { z } from "zod";
  */
 export const GeneratePlanSchema = z.object({
   checkInId: z.string().uuid().optional(),
-  planDuration: z.coerce.number().int().min(7).max(30).default(14),
+  planDuration: z.coerce.number().int().min(7).max(30).default(10),
 });
 
 export type GeneratePlanInput = z.infer<typeof GeneratePlanSchema>;

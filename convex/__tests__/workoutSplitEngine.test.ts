@@ -132,10 +132,10 @@ describe("selectWorkoutSplit", () => {
       expect(result.dayLabelsAr).toEqual(["دفع", "سحب", "أرجل", "دفع", "سحب", "أرجل", "راحة"]);
     });
 
-    it("defaults totalPlanDays to 14", () => {
+    it("defaults totalPlanDays to 10", () => {
       const result = selectWorkoutSplit("beginner", 3);
-      expect(result.dayLabels).toHaveLength(14);
-      expect(result.dayLabelsAr).toHaveLength(14);
+      expect(result.dayLabels).toHaveLength(10);
+      expect(result.dayLabelsAr).toHaveLength(10);
     });
   });
 

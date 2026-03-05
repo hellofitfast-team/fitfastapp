@@ -6,7 +6,7 @@
  */
 
 // ── Check-in & Scheduling ──────────────────────────────────────────────────
-export const DEFAULT_CHECK_IN_FREQUENCY_DAYS = 14;
+export const DEFAULT_CHECK_IN_FREQUENCY_DAYS = 10;
 
 // ── Data Retention ─────────────────────────────────────────────────────────
 export const DATA_RETENTION_DAYS = 90;

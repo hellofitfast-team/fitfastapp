@@ -410,6 +410,9 @@ async function generateMealPlanHandler(
     planDuration: number;
   },
 ): Promise<Id<"mealPlans">> {
+  // Defense in depth: ensure planDuration is always at least 1
+  const safeDuration = Math.max(planDuration, 1);
+
   const clientCtx = await fetchClientContextWithRetry(ctx, userId, checkInId);
 
   // Pre-calculate nutrition targets deterministically
@@ -534,7 +537,7 @@ IMPORTANT: Respond ONLY with valid JSON. No markdown, no code blocks, just raw J
 
   const mealOutputTokens = isArabic ? MEAL_OUTPUT_TOKENS_AR : MEAL_OUTPUT_TOKENS_EN;
 
-  const userPrompt = `Create a ${planDuration}-day meal plan ${isArabic ? "ENTIRELY IN ARABIC" : "in English"}:
+  const userPrompt = `Create a ${safeDuration}-day meal plan ${isArabic ? "ENTIRELY IN ARABIC" : "in English"}:
 
 CLIENT PROFILE:
 ${contextBlock}
@@ -560,7 +563,7 @@ Return a JSON object with this structure:
         }
       ]
     },
-    ...up to "day${planDuration}"
+    ...up to "day${safeDuration}"
   },
   "notes": "string"
 }
@@ -587,7 +590,7 @@ Daily meal macros MUST sum to the targets above (±5% tolerance). Respond ONLY w
     console.warn(
       `[AI] Meal plan truncated for user ${userId} (finishReason=length, ${result.text.length} chars). Retrying with simplified prompt.`,
     );
-    const retryPrompt = `Create a ${planDuration}-day meal plan ${isArabic ? "ENTIRELY IN ARABIC" : "in English"}:
+    const retryPrompt = `Create a ${safeDuration}-day meal plan ${isArabic ? "ENTIRELY IN ARABIC" : "in English"}:
 
 CLIENT PROFILE:
 ${contextBlock}
@@ -601,7 +604,7 @@ IMPORTANT: Keep output concise to avoid truncation.
 - NO alternatives
 - Short ingredient descriptions
 
-Return JSON: { "dailyTargets": {...}, "weeklyPlan": { "day1": { "dailyTotals": {...}, "meals": [{ "name", "type", "calories", "protein", "carbs", "fat", "ingredients": [...], "instructions": [...] }] }, ...up to "day${planDuration}" }, "notes": "string" }
+Return JSON: { "dailyTargets": {...}, "weeklyPlan": { "day1": { "dailyTotals": {...}, "meals": [{ "name", "type", "calories", "protein", "carbs", "fat", "ingredients": [...], "instructions": [...] }] }, ...up to "day${safeDuration}" }, "notes": "string" }
 Respond ONLY with valid JSON.`;
 
     result = await generateText({
@@ -646,7 +649,7 @@ Respond ONLY with valid JSON.`;
   console.log(`[AI] Meal plan generated in ${durationMs}ms for user ${userId}`);
 
   const startDate = new Date().toISOString().split("T")[0]!;
-  const endDate = new Date(Date.now() + planDuration * 24 * 60 * 60 * 1000)
+  const endDate = new Date(Date.now() + safeDuration * 24 * 60 * 60 * 1000)
     .toISOString()
     .split("T")[0]!;
 
@@ -676,6 +679,9 @@ async function generateWorkoutPlanHandler(
     planDuration: number;
   },
 ): Promise<Id<"workoutPlans">> {
+  // Defense in depth: ensure planDuration is always at least 1
+  const safeDuration = Math.max(planDuration, 1);
+
   const clientCtx = await fetchClientContextWithRetry(ctx, userId, checkInId);
 
   const startTime = Date.now();
@@ -686,7 +692,7 @@ async function generateWorkoutPlanHandler(
   const split: WorkoutSplit = selectWorkoutSplit(
     assessment.experienceLevel as "beginner" | "intermediate" | "advanced" | undefined,
     trainingDays,
-    planDuration,
+    safeDuration,
   );
 
   // Fetch coach knowledge context via RAG (filtered to workout/recovery/general docs)
@@ -701,7 +707,7 @@ async function generateWorkoutPlanHandler(
 
   const contextBlock = formatContextForPrompt(clientCtx);
   const dayLabelsStr = (isArabic ? split.dayLabelsAr : split.dayLabels)
-    .slice(0, planDuration)
+    .slice(0, safeDuration)
     .join(" → ");
 
   const systemPrompt = `You are an expert certified personal trainer and exercise physiologist. Create personalized workout plans grounded in evidence-based exercise science.
@@ -785,7 +791,7 @@ IMPORTANT: Respond ONLY with valid JSON. No markdown, no code blocks, just raw J
 
   const workoutOutputTokens = isArabic ? WORKOUT_OUTPUT_TOKENS_AR : WORKOUT_OUTPUT_TOKENS_EN;
 
-  const userPrompt = `Create a ${planDuration}-day workout plan ${isArabic ? "ENTIRELY IN ARABIC" : "in English"}:
+  const userPrompt = `Create a ${safeDuration}-day workout plan ${isArabic ? "ENTIRELY IN ARABIC" : "in English"}:
 
 CLIENT PROFILE:
 ${contextBlock}
@@ -811,7 +817,7 @@ Return a JSON object with this EXACT structure (include ALL fields for every exe
       "cooldown": { "exercises": [{ "name": "Chest stretch", "duration": 30, "instructions": ["..."] }] }
     },
     "day2": { "restDay": true, "workoutName": "Rest Day" },
-    ...up to "day${planDuration}"
+    ...up to "day${safeDuration}"
   },
   "progressionNotes": "string",
   "safetyTips": ["string"]
@@ -839,7 +845,7 @@ Rest days only need: restDay=true, workoutName. Respond ONLY with valid JSON.`;
     console.warn(
       `[AI] Workout plan truncated for user ${userId} (finishReason=length, ${result.text.length} chars). Retrying simplified.`,
     );
-    const retryPrompt = `Create a ${planDuration}-day workout plan ${isArabic ? "ENTIRELY IN ARABIC" : "in English"}:
+    const retryPrompt = `Create a ${safeDuration}-day workout plan ${isArabic ? "ENTIRELY IN ARABIC" : "in English"}:
 
 CLIENT PROFILE:
 ${contextBlock}
@@ -894,7 +900,7 @@ Respond ONLY with valid JSON.`;
   console.log(`[AI] Workout plan generated in ${durationMs}ms for user ${userId}`);
 
   const startDate = new Date().toISOString().split("T")[0]!;
-  const endDate = new Date(Date.now() + planDuration * 24 * 60 * 60 * 1000)
+  const endDate = new Date(Date.now() + safeDuration * 24 * 60 * 60 * 1000)
     .toISOString()
     .split("T")[0]!;
 

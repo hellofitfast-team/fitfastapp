@@ -42,8 +42,8 @@ The coach account has `isCoach: true` in its profile, which grants admin panel a
 If starting fresh, you may need to set default system configuration:
 
 ```bash
-# Set default check-in frequency (14 days)
-npx convex run systemConfig:setConfig '{"key":"check_in_frequency_days","value":14}'
+# Set default check-in frequency (10 days)
+npx convex run systemConfig:setConfig '{"key":"check_in_frequency_days","value":10}'
 ```
 
 Plans, payment methods, and social links can be configured through the admin panel UI after login.

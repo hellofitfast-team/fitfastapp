@@ -76,7 +76,7 @@
 
 ### 1.4 AI Cost Per Client Per Month
 
-Plans are generated on check-in (every 14 days = ~2x/month).
+Plans are generated on check-in (every 10 days = ~3x/month).
 Each check-in triggers 1 meal plan + 1 workout plan.
 
 | Component                  | Frequency | Cost/event | Monthly cost |

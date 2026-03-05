@@ -18,7 +18,7 @@ export const MAX_PRICING_PLANS = 4; // also in convex/constants.ts
 // ── AI Generation ──────────────────────────────────────────────────────────
 export const AI_MAX_OUTPUT_TOKENS = 6000;
 export const AI_MAX_RETRIES = 3;
-export const AI_DEFAULT_PLAN_DURATION_DAYS = 14; // must match convex/constants.ts DEFAULT_CHECK_IN_FREQUENCY_DAYS
+export const AI_DEFAULT_PLAN_DURATION_DAYS = 10; // must match convex/constants.ts DEFAULT_CHECK_IN_FREQUENCY_DAYS
 export const AI_MODEL = "deepseek/deepseek-v3.2";
 export const AI_REQUEST_TIMEOUT_MS = 30_000;
 
@@ -32,4 +32,4 @@ export const RETRY_MAX_DELAY_MS = 5000;
 export const DATA_RETENTION_DAYS = 90; // also in convex/constants.ts
 
 // ── Check-in Defaults ──────────────────────────────────────────────────────
-export const DEFAULT_CHECK_IN_FREQUENCY_DAYS = 14;
+export const DEFAULT_CHECK_IN_FREQUENCY_DAYS = 10;

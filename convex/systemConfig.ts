@@ -226,13 +226,16 @@ export const setConfig = mutation({
       .unique();
     if (!profile?.isCoach) throw new Error("Not authorized");
 
-    // Coerce string-typed numbers for keys that must be numeric
-    const storedValue =
-      NUMERIC_CONFIG_KEYS.has(key) && typeof value === "string"
+    // Coerce string-typed numbers for keys that must be numeric, clamped to min 1
+    const storedValue = NUMERIC_CONFIG_KEYS.has(key)
+      ? typeof value === "string"
         ? value.trim() === "" || Number.isNaN(Number(value))
           ? DEFAULT_CHECK_IN_FREQUENCY_DAYS
-          : Number(value)
-        : value;
+          : Math.max(1, Number(value))
+        : typeof value === "number"
+          ? Math.max(1, value)
+          : DEFAULT_CHECK_IN_FREQUENCY_DAYS
+      : value;
 
     const existing = await ctx.db
       .query("systemConfig")

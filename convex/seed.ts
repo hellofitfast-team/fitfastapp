@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery } from "./_generated/server";
+import { DEFAULT_CHECK_IN_FREQUENCY_DAYS } from "./constants";
 
 // ============================================================================
 // Helper queries (previously seedDemo_helpers.ts)
@@ -558,8 +559,10 @@ export const fixConfigTypes = internalMutation({
       .withIndex("by_key", (q: any) => q.eq("key", "check_in_frequency_days"))
       .unique();
     if (config && typeof config.value === "string") {
-      await ctx.db.patch(config._id, { value: Number(config.value) || 14 });
-      return `Fixed: "${config.value}" → ${Number(config.value) || 14}`;
+      await ctx.db.patch(config._id, {
+        value: Number(config.value) || DEFAULT_CHECK_IN_FREQUENCY_DAYS,
+      });
+      return `Fixed: "${config.value}" → ${Number(config.value) || DEFAULT_CHECK_IN_FREQUENCY_DAYS}`;
     }
     return `No fix needed — value is already ${typeof config?.value}: ${config?.value}`;
   },
@@ -1064,10 +1067,12 @@ export const populateExpiredUser = internalMutation({
  * Simulate a client who has completed initial assessment, received their first
  * plans, and is now ready for their first check-in.
  *
- * Strategy: insert assessment + minimal fake plans, then set check_in_frequency_days
- * to 0 so the lock expires immediately (since _creationTime can't be backdated).
- * After testing, reset frequency back to 14 via admin Settings or:
+ * ⚠️  WARNING: This sets check_in_frequency_days to 0, which breaks plan generation
+ * and check-in locking if not restored. ALWAYS run restoreCheckInFrequency afterward:
  *   npx convex run seed:restoreCheckInFrequency
+ *
+ * Prefer `seed:unlockCheckIn` instead — it achieves the same result without
+ * touching the frequency config (just deletes recent check-ins/plans).
  *
  * Run: npx convex run seed:simulateReadyForCheckIn '{"email":"client@fitfast.app"}'
  */
@@ -1133,7 +1138,9 @@ export const simulateReadyForCheckIn = internalMutation({
 
     // 4. Insert minimal fake plans (so dashboard renders)
     const today = new Date().toISOString().split("T")[0]!;
-    const endDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]!;
+    const endDate = new Date(Date.now() + DEFAULT_CHECK_IN_FREQUENCY_DAYS * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0]!;
 
     const fakeMealPlan = {
       dailyTargets: { calories: 2200, protein: 165, carbs: 248, fat: 73 },
@@ -1280,7 +1287,7 @@ export const simulateReadyForCheckIn = internalMutation({
 });
 
 /**
- * Restore check_in_frequency_days back to 14 after testing.
+ * Restore check_in_frequency_days back to default after testing.
  *
  * Run: npx convex run seed:restoreCheckInFrequency
  */
@@ -1293,8 +1300,8 @@ export const restoreCheckInFrequency = internalMutation({
       .unique();
     if (config) {
       const prev = config.value;
-      await ctx.db.patch(config._id, { value: 14 });
-      return `Restored check_in_frequency_days: ${prev} → 14`;
+      await ctx.db.patch(config._id, { value: DEFAULT_CHECK_IN_FREQUENCY_DAYS });
+      return `Restored check_in_frequency_days: ${prev} → ${DEFAULT_CHECK_IN_FREQUENCY_DAYS}`;
     }
     return "No config found";
   },

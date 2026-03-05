@@ -138,7 +138,7 @@ export default function MealPlanPage() {
   const planDuration =
     typeof frequencyConfig?.value === "number"
       ? frequencyConfig.value
-      : Number(frequencyConfig?.value) || 14;
+      : Number(frequencyConfig?.value) || 10;
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
 
@@ -319,7 +319,7 @@ export default function MealPlanPage() {
           (new Date(mealPlan.endDate).getTime() - new Date(mealPlan.startDate).getTime()) /
             86400000,
         )
-      : 14;
+      : 10;
   const dayPlan = resolveDayPlan(planData.weeklyPlan, selectedDay, mealPlan.startDate);
 
   // Normalize meals to handle both old (nested macros) and new (flat) formats
@@ -347,7 +347,7 @@ export default function MealPlanPage() {
         </p>
       </div>
 
-      {/* Day Selector (1-14) */}
+      {/* Day Selector (1-10) */}
       <DaySelector
         totalDays={totalDays}
         selectedDay={selectedDay}

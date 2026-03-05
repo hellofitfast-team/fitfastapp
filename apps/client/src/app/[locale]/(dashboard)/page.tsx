@@ -242,7 +242,7 @@ export default function DashboardPage() {
       ? Math.ceil(
           (new Date(mealPlanEndDate).getTime() - new Date(mealPlanStartDate).getTime()) / 86400000,
         )
-      : 14;
+      : 10;
   const planCurrentDay = mealPlanStartDate
     ? Math.min(
         planTotalDays,

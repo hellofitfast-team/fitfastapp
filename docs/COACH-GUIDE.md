@@ -318,7 +318,7 @@ Under the **Payment Methods** section:
 
 ### Check-In Frequency
 
-- Set the number of days between client check-ins (default: 14 days).
+- Set the number of days between client check-ins (default: 10 days).
 - Valid range: 7 to 30 days.
 - This applies globally to all clients.
 - After each check-in, the client's next check-in is locked for this many days.

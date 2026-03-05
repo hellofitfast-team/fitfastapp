@@ -32,7 +32,7 @@ describe("useCheckInLock", () => {
     expect(result.current.isLocked).toBe(false);
     expect(result.current.nextCheckInDate).toBeNull();
     expect(result.current.daysUntilNextCheckIn).toBe(0);
-    expect(result.current.frequencyDays).toBe(14);
+    expect(result.current.frequencyDays).toBe(10);
     expect(result.current.isLoadingLockStatus).toBe(false);
   });
 
@@ -45,7 +45,7 @@ describe("useCheckInLock", () => {
     expect(result.current.isLoadingLockStatus).toBe(true);
     // Defaults while loading
     expect(result.current.isLocked).toBe(false);
-    expect(result.current.frequencyDays).toBe(14);
+    expect(result.current.frequencyDays).toBe(10);
   });
 
   it("returns unlocked state when server says not locked", () => {
@@ -53,7 +53,7 @@ describe("useCheckInLock", () => {
     mocks.useQuery.mockReturnValue({
       isLocked: false,
       nextCheckInDate: null,
-      frequencyDays: 14,
+      frequencyDays: 10,
     });
 
     const { result } = renderHook(() => useCheckInLock());
@@ -61,7 +61,7 @@ describe("useCheckInLock", () => {
     expect(result.current.isLocked).toBe(false);
     expect(result.current.nextCheckInDate).toBeNull();
     expect(result.current.daysUntilNextCheckIn).toBe(0);
-    expect(result.current.frequencyDays).toBe(14);
+    expect(result.current.frequencyDays).toBe(10);
     expect(result.current.isLoadingLockStatus).toBe(false);
   });
 
@@ -74,7 +74,7 @@ describe("useCheckInLock", () => {
     mocks.useQuery.mockReturnValue({
       isLocked: true,
       nextCheckInDate: nextDate,
-      frequencyDays: 14,
+      frequencyDays: 10,
     });
 
     const { result } = renderHook(() => useCheckInLock());
@@ -82,7 +82,7 @@ describe("useCheckInLock", () => {
     expect(result.current.isLocked).toBe(true);
     expect(result.current.nextCheckInDate).toEqual(new Date(nextDate));
     expect(result.current.daysUntilNextCheckIn).toBe(7);
-    expect(result.current.frequencyDays).toBe(14);
+    expect(result.current.frequencyDays).toBe(10);
   });
 
   it("uses Math.ceil for partial days (3.5 days rounds up to 4)", () => {
@@ -116,7 +116,7 @@ describe("useCheckInLock", () => {
     mocks.useQuery.mockReturnValue({
       isLocked: true,
       nextCheckInDate: nextDate.toISOString(),
-      frequencyDays: 14,
+      frequencyDays: 10,
     });
 
     const { result } = renderHook(() => useCheckInLock());
@@ -134,7 +134,7 @@ describe("useCheckInLock", () => {
     mocks.useQuery.mockReturnValue({
       isLocked: true,
       nextCheckInDate: nextDate,
-      frequencyDays: 14,
+      frequencyDays: 10,
     });
 
     const { result } = renderHook(() => useCheckInLock());
@@ -151,7 +151,7 @@ describe("useCheckInLock", () => {
     mocks.useQuery.mockReturnValue({
       isLocked: false,
       nextCheckInDate: "2026-03-08T12:00:00Z",
-      frequencyDays: 14,
+      frequencyDays: 10,
     });
 
     const { result } = renderHook(() => useCheckInLock());

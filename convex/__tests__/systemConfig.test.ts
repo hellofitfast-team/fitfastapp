@@ -203,7 +203,7 @@ describe("systemConfig", () => {
       expect(typeof result!.value).toBe("number");
     });
 
-    it("defaults to 14 for invalid string on check_in_frequency_days", async () => {
+    it("defaults to fallback for invalid string on check_in_frequency_days", async () => {
       const t = convexTest(schema, modules);
       await seedCoach(t);
 
@@ -216,10 +216,10 @@ describe("systemConfig", () => {
       const result = await t.query(api.systemConfig.getConfig, {
         key: "check_in_frequency_days",
       });
-      expect(result!.value).toBe(14);
+      expect(result!.value).toBe(10);
     });
 
-    it("defaults to 14 for empty string on check_in_frequency_days", async () => {
+    it("defaults to fallback for empty string on check_in_frequency_days", async () => {
       const t = convexTest(schema, modules);
       await seedCoach(t);
 
@@ -232,7 +232,55 @@ describe("systemConfig", () => {
       const result = await t.query(api.systemConfig.getConfig, {
         key: "check_in_frequency_days",
       });
-      expect(result!.value).toBe(14);
+      expect(result!.value).toBe(10);
+    });
+
+    it("clamps 0 to 1 for check_in_frequency_days", async () => {
+      const t = convexTest(schema, modules);
+      await seedCoach(t);
+
+      const asCoach = t.withIdentity({ subject: "coach1" });
+      await asCoach.mutation(api.systemConfig.setConfig, {
+        key: "check_in_frequency_days",
+        value: 0,
+      });
+
+      const result = await t.query(api.systemConfig.getConfig, {
+        key: "check_in_frequency_days",
+      });
+      expect(result!.value).toBe(1);
+    });
+
+    it("clamps negative to 1 for check_in_frequency_days", async () => {
+      const t = convexTest(schema, modules);
+      await seedCoach(t);
+
+      const asCoach = t.withIdentity({ subject: "coach1" });
+      await asCoach.mutation(api.systemConfig.setConfig, {
+        key: "check_in_frequency_days",
+        value: -5,
+      });
+
+      const result = await t.query(api.systemConfig.getConfig, {
+        key: "check_in_frequency_days",
+      });
+      expect(result!.value).toBe(1);
+    });
+
+    it("clamps string '0' to 1 for check_in_frequency_days", async () => {
+      const t = convexTest(schema, modules);
+      await seedCoach(t);
+
+      const asCoach = t.withIdentity({ subject: "coach1" });
+      await asCoach.mutation(api.systemConfig.setConfig, {
+        key: "check_in_frequency_days",
+        value: "0",
+      });
+
+      const result = await t.query(api.systemConfig.getConfig, {
+        key: "check_in_frequency_days",
+      });
+      expect(result!.value).toBe(1);
     });
 
     it("stores number directly for check_in_frequency_days", async () => {

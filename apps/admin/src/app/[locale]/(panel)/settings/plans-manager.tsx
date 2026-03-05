@@ -97,7 +97,7 @@ export function PlansManager() {
   const updatePlans = useMutation(api.systemConfig.updatePlans);
   const translateAction = useAction(api.ai.translateToArabic);
 
-  const freqDays = Number(checkInConfig?.value) || 14;
+  const freqDays = Number(checkInConfig?.value) || 10;
   const FEATURE_CATALOG = useMemo(() => buildFeatureCatalog(freqDays), [freqDays]);
 
   const [plans, setPlans] = useState<Plan[] | null>(null);

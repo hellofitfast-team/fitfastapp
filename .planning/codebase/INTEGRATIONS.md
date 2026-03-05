@@ -32,7 +32,7 @@
     - `src/components/pwa/OneSignalProvider.tsx` - Initializes SDK and handles subscription
     - `src/components/pwa/OneSignalIdentity.tsx` - Links OneSignal user to Supabase ID
     - `src/app/api/admin/notifications/send/route.ts` - Coach sends notifications
-    - Check-in reminders (triggered automatically every 14 days)
+    - Check-in reminders (triggered automatically every 10 days)
 
 **Error Tracking & Monitoring:**
 

@@ -38,7 +38,7 @@ export default function InitialAssessmentPage() {
   const planDuration =
     typeof frequencyConfig?.value === "number"
       ? frequencyConfig.value
-      : Number(frequencyConfig?.value) || 14;
+      : Number(frequencyConfig?.value) || 10;
 
   // Step labels from translations
   const STEP_LABELS = [

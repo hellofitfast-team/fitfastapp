@@ -30,7 +30,7 @@ export function AdminSettingsForm() {
 
   const [checkInDays, setCheckInDays] = useState<string | null>(null);
 
-  const effectiveCheckInDays = checkInDays ?? String(checkInConfig?.value ?? "14");
+  const effectiveCheckInDays = checkInDays ?? String(checkInConfig?.value ?? "10");
 
   if (checkInConfig === undefined) {
     return null;
@@ -40,7 +40,7 @@ export function AdminSettingsForm() {
     try {
       await setConfig({
         key: "check_in_frequency_days",
-        value: Number(effectiveCheckInDays) || 14,
+        value: Number(effectiveCheckInDays) || 10,
       });
     } catch (error) {
       Sentry.captureException(error, {
