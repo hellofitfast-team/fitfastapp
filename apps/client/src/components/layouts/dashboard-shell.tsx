@@ -37,9 +37,6 @@ export function DashboardShell({ children, userName, daysUntilExpiry }: Dashboar
       {/* Mobile header */}
       <MobileHeader userName={userName} />
 
-      {/* PWA install banner — inline between header and content */}
-      <InstallPrompt />
-
       {/* Main content area */}
       <main
         aria-label="Main content"
@@ -50,6 +47,9 @@ export function DashboardShell({ children, userName, daysUntilExpiry }: Dashboar
 
       {/* Mobile bottom navigation */}
       <BottomNav onMoreClick={() => setMoreMenuOpen(true)} />
+
+      {/* PWA install pill — floats above bottom nav */}
+      <InstallPrompt />
 
       {/* More menu bottom sheet */}
       <MoreMenu open={moreMenuOpen} onOpenChange={setMoreMenuOpen} />

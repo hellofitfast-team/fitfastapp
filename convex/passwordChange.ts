@@ -15,6 +15,17 @@ export const changePassword = action({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
+    // Rate limit: 3 password changes per hour (brute-force protection)
+    const { ok, retryAfter } = await ctx.runMutation(internal.rateLimiter.checkRateLimit, {
+      name: "changePassword",
+      key: userId,
+    });
+    if (!ok) {
+      throw new Error(
+        `Too many password change attempts — try again in ${Math.ceil(retryAfter / 1000)}s`,
+      );
+    }
+
     if (newPassword.length < 8) {
       throw new Error("New password must be at least 8 characters");
     }

@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getAuthUserId } from "./auth";
+import { rateLimiter } from "./rateLimiter";
 
 export const getMyAssessment = query({
   args: {},
@@ -93,7 +94,30 @@ export const submitAssessment = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
+    // Rate limit: 5 assessment submissions per day per user
+    const { ok, retryAfter } = await rateLimiter.limit(ctx, "submitAssessment", { key: userId });
+    if (!ok) {
+      throw new Error(
+        `Too many submissions — try again in ${Math.ceil((retryAfter ?? 0) / 1000)}s`,
+      );
+    }
+
     const { generatePlans, ...assessmentData } = args;
+
+    // Guard: prevent generatePlans=true if user already has plans (initial generation only)
+    if (generatePlans) {
+      const existingMealPlan = await ctx.db
+        .query("mealPlans")
+        .withIndex("by_userId", (q: any) => q.eq("userId", userId))
+        .first();
+      const existingWorkoutPlan = await ctx.db
+        .query("workoutPlans")
+        .withIndex("by_userId", (q: any) => q.eq("userId", userId))
+        .first();
+      if (existingMealPlan || existingWorkoutPlan) {
+        throw new Error("Plans already exist — use check-in to generate updated plans");
+      }
+    }
 
     // Check if assessment already exists
     const existing = await ctx.db

@@ -22,6 +22,15 @@ export const sendToIndividual = action({
     });
     if (!profile?.isCoach) throw new Error("Not authorized");
 
+    // Rate limit: 50 individual notifications per day per coach
+    const { ok, retryAfter } = await ctx.runMutation(internal.rateLimiter.checkRateLimit, {
+      name: "sendNotification",
+      key: coachId,
+    });
+    if (!ok) {
+      throw new Error(`Too many notifications — try again in ${Math.ceil(retryAfter / 1000)}s`);
+    }
+
     // Check global toggle
     const config = await ctx.runQuery(internal.systemConfig.getConfigInternal, {
       key: "notifications_enabled",
@@ -107,6 +116,17 @@ export const broadcastToAllActive = action({
       userId: coachId,
     });
     if (!profile?.isCoach) throw new Error("Not authorized");
+
+    // Rate limit: 5 broadcasts per day per coach
+    const broadcastLimit = await ctx.runMutation(internal.rateLimiter.checkRateLimit, {
+      name: "broadcastNotification",
+      key: coachId,
+    });
+    if (!broadcastLimit.ok) {
+      throw new Error(
+        `Too many broadcasts — try again in ${Math.ceil(broadcastLimit.retryAfter / 1000)}s`,
+      );
+    }
 
     // Check global toggle
     const config = await ctx.runQuery(internal.systemConfig.getConfigInternal, {

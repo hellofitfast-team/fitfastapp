@@ -2,10 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Download, X } from "lucide-react";
+import { Download } from "lucide-react";
 import { Button } from "@fitfast/ui/button";
-
-const SESSION_DISMISS_KEY = "fitfast-install-dismissed";
+import { useKeyboardVisible } from "@/hooks/useKeyboardVisible";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -14,19 +13,17 @@ interface BeforeInstallPromptEvent extends Event {
 
 export function InstallPrompt() {
   const t = useTranslations("pwa");
+  const keyboardVisible = useKeyboardVisible();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showIos, setShowIos] = useState(false);
-  const [dismissed, setDismissed] = useState(true); // hidden by default until check
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    // Already installed as PWA?
+    // Already installed as PWA — hide permanently
     if (window.matchMedia("(display-mode: standalone)").matches) return;
 
-    // Session-only dismiss check
-    if (sessionStorage.getItem(SESSION_DISMISS_KEY)) return;
-
     // eslint-disable-next-line react-hooks/set-state-in-effect -- sync with browser install state
-    setDismissed(false);
+    setVisible(true);
 
     // iOS detection (Safari on iOS doesn't fire beforeinstallprompt)
     // iPadOS 13+ reports as "Macintosh" so also check maxTouchPoints
@@ -57,45 +54,30 @@ export function InstallPrompt() {
     const { outcome } = await deferredPrompt.userChoice;
     if (outcome === "accepted") {
       setDeferredPrompt(null);
+      setVisible(false);
     }
-    dismiss();
   };
 
-  const dismiss = () => {
-    sessionStorage.setItem(SESSION_DISMISS_KEY, "1");
-    setDismissed(true);
-  };
-
-  // Nothing to show
-  if (dismissed || (!deferredPrompt && !showIos)) return null;
+  // Hidden: not ready, keyboard open, or already installed
+  if (!visible || keyboardVisible || (!deferredPrompt && !showIos)) return null;
 
   return (
-    <div className="border-primary/10 bg-primary/5 relative z-0 flex items-center gap-3 border-b px-4 py-2.5 lg:hidden">
-      {/* App icon */}
-      <div className="bg-primary/10 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg">
-        <Download className="text-primary h-4 w-4" />
-      </div>
+    <div className="bg-card/95 fixed inset-x-0 bottom-[calc(var(--height-bottom-nav)+max(0.5rem,env(safe-area-inset-bottom))+1rem)] z-[var(--z-bottom-nav)] mx-auto flex w-fit items-center gap-2.5 rounded-full px-4 py-2 shadow-lg backdrop-blur-md lg:hidden">
+      <Download className="text-primary h-4 w-4 shrink-0" />
 
-      {/* Text */}
-      <p className="min-w-0 flex-1 truncate text-xs font-medium">
+      <p className="max-w-[200px] truncate text-xs font-medium">
         {showIos ? t("iosInstructions") : t("installDescription")}
       </p>
 
-      {/* Install button (not shown on iOS — they use share sheet) */}
       {!showIos && (
-        <Button onClick={handleInstall} size="sm" className="h-8 shrink-0 px-3 text-xs">
+        <Button
+          onClick={handleInstall}
+          size="sm"
+          className="h-7 shrink-0 rounded-full px-3 text-xs"
+        >
           {t("installButton")}
         </Button>
       )}
-
-      {/* Dismiss (session only) */}
-      <button
-        onClick={dismiss}
-        className="hover:bg-primary/10 shrink-0 rounded-md p-1 transition-colors"
-        aria-label="Dismiss"
-      >
-        <X className="text-muted-foreground h-3.5 w-3.5" />
-      </button>
     </div>
   );
 }

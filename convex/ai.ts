@@ -467,9 +467,9 @@ async function generateMealPlanHandler(
   // Fetch coach knowledge context via RAG (filtered to nutrition/general docs)
   const knowledgeSection = await getCoachKnowledgeContext(ctx, assessment, "meal");
 
-  // Fetch food database reference for the AI prompt
-  const foodReference: string = await ctx.runQuery(
-    internal.foodDatabase.getFoodReferenceForPrompt,
+  // Fetch food database reference (cached 1h — rarely changes)
+  const foodReference: string = await ctx.runAction(
+    internal.actionCache.getFoodReferenceCached,
     {},
   );
 

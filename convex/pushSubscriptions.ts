@@ -74,14 +74,23 @@ export const saveSubscription = mutation({
       .unique();
 
     if (existing) {
-      await ctx.db.patch(existing._id, {
-        userId,
-        p256dh,
-        auth,
-        isActive: true,
-        updatedAt: Date.now(),
-      });
-      return existing._id;
+      if (existing.userId !== userId) {
+        // Endpoint belongs to another user — deactivate old subscription
+        await ctx.db.patch(existing._id, {
+          isActive: false,
+          updatedAt: Date.now(),
+        });
+        // Fall through to create a new subscription for the current user
+      } else {
+        // Same user — update in place
+        await ctx.db.patch(existing._id, {
+          p256dh,
+          auth,
+          isActive: true,
+          updatedAt: Date.now(),
+        });
+        return existing._id;
+      }
     }
 
     return ctx.db.insert("pushSubscriptions", {

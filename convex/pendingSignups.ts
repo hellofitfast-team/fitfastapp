@@ -287,6 +287,9 @@ export const getMyPendingRenewal = query({
 // Invite token validation — used by client app accept-invite page
 // ---------------------------------------------------------------------------
 
+// NOTE: Convex queries cannot call rateLimiter.limit (it requires mutation/write context).
+// Token enumeration is mitigated by: 64-char random tokens (infeasible to brute-force),
+// minimized response data, and the token being invalidated after use (markInviteUsed).
 export const validateInviteToken = query({
   args: { token: v.string() },
   handler: async (ctx, { token }) => {
@@ -297,11 +300,10 @@ export const validateInviteToken = query({
 
     if (!signup) return null;
 
+    // Minimized response — only return what the accept-invite page needs
     return {
       email: signup.email,
       fullName: signup.fullName,
-      planTier: signup.planTier,
-      signupId: signup._id,
     };
   },
 });

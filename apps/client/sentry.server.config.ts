@@ -22,6 +22,26 @@ Sentry.init({
     }),
   ],
 
+  // Scrub PII from error events before sending to Sentry
+  beforeSend(event) {
+    const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
+    if (event.exception?.values) {
+      for (const ex of event.exception.values) {
+        if (ex.value) {
+          ex.value = ex.value.replace(emailRegex, "[email]");
+        }
+      }
+    }
+    if (event.breadcrumbs) {
+      for (const bc of event.breadcrumbs) {
+        if (bc.message) {
+          bc.message = bc.message.replace(emailRegex, "[email]");
+        }
+      }
+    }
+    return event;
+  },
+
   // Scrub PII from structured logs before sending to Sentry
   beforeSendLog(log) {
     const sensitiveKeys = [

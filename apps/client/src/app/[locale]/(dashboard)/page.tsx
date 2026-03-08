@@ -82,26 +82,13 @@ export default function DashboardPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [activeCardIndex, setActiveCardIndex] = useState(0);
-  const autoScrollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
   const scrollToIndex = useCallback((index: number) => {
+    const container = scrollRef.current;
     const card = cardRefs.current[index];
-    card?.scrollIntoView({ behavior: "smooth", inline: "center" });
+    if (!container || !card) return;
+    // Use scrollLeft instead of scrollIntoView to avoid vertical page scroll on mobile
+    container.scrollTo({ left: card.offsetLeft - container.offsetLeft, behavior: "smooth" });
   }, []);
-
-  // Auto-scroll carousel every 4 seconds
-  useEffect(() => {
-    autoScrollRef.current = setInterval(() => {
-      setActiveCardIndex((prev) => {
-        const next = (prev + 1) % 4;
-        scrollToIndex(next);
-        return next;
-      });
-    }, 4000);
-    return () => {
-      if (autoScrollRef.current) clearInterval(autoScrollRef.current);
-    };
-  }, [scrollToIndex]);
 
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;

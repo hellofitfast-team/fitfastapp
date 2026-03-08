@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { internalQuery } from "./_generated/server";
+import { getAuthUserId } from "./auth";
 import { DEFAULT_CHECK_IN_FREQUENCY_DAYS } from "./constants";
 
 /**
@@ -17,6 +18,22 @@ export async function getCheckInFrequencyDays(ctx: { db: any }): Promise<number>
   const num = typeof raw === "number" ? raw : Number(raw);
   // 0 means "no lock" (useful for testing); NaN or negative falls back to default
   return num >= 0 && !isNaN(num) ? num : DEFAULT_CHECK_IN_FREQUENCY_DAYS;
+}
+
+/**
+ * Require the current user to be an authenticated coach.
+ * Throws if not authenticated or not a coach.
+ * Works in queries, mutations, and any context with direct DB access.
+ */
+export async function requireCoach(ctx: { db: any; auth: any }): Promise<string> {
+  const userId = await getAuthUserId(ctx);
+  if (!userId) throw new Error("Not authenticated");
+  const profile = await ctx.db
+    .query("profiles")
+    .withIndex("by_userId", (q: any) => q.eq("userId", userId))
+    .unique();
+  if (!profile?.isCoach) throw new Error("Not authorized");
+  return userId;
 }
 
 // Internal queries used by AI actions to fetch data

@@ -134,51 +134,48 @@ export const checkInAndGeneratePlans = workflow.define({
       }),
     ]);
 
-    // Steps 4 & 5: Poll workpool until both finish
-    // Workpool states: "pending" | "running" | "finished".
-    // Bounded polling prevents infinite hangs if workpool entry is lost or action crashes.
+    // Steps 4 & 5: Poll workpool until both finish (interleaved for efficiency)
     const MAX_POLL_ATTEMPTS = 60;
+    let mealDone = false;
+    let workoutDone = false;
+    let pollCount = 0;
 
-    let mealStatus = await step.runQuery(internal.workpoolManager.getWorkStatus, {
-      workId: mealWorkId,
-    });
-    let mealPollCount = 0;
-    while (mealStatus?.state !== "finished") {
-      mealPollCount++;
-      if (mealStatus === null) {
-        throw new Error(`Meal plan workpool entry lost (workId: ${mealWorkId})`);
-      }
-      if (mealPollCount >= MAX_POLL_ATTEMPTS) {
+    while (!mealDone || !workoutDone) {
+      pollCount++;
+      if (pollCount > MAX_POLL_ATTEMPTS) {
         throw new Error(
-          `Meal plan generation timed out after ${MAX_POLL_ATTEMPTS} poll attempts (last state: ${mealStatus?.state})`,
+          `Plan generation timed out after ${MAX_POLL_ATTEMPTS} poll attempts (meal: ${mealDone ? "done" : "pending"}, workout: ${workoutDone ? "done" : "pending"})`,
         );
       }
-      mealStatus = await step.runQuery(
-        internal.workpoolManager.getWorkStatus,
-        { workId: mealWorkId },
-        { runAfter: 5000 },
-      );
-    }
 
-    let workoutStatus = await step.runQuery(internal.workpoolManager.getWorkStatus, {
-      workId: workoutWorkId,
-    });
-    let workoutPollCount = 0;
-    while (workoutStatus?.state !== "finished") {
-      workoutPollCount++;
-      if (workoutStatus === null) {
-        throw new Error(`Workout plan workpool entry lost (workId: ${workoutWorkId})`);
-      }
-      if (workoutPollCount >= MAX_POLL_ATTEMPTS) {
-        throw new Error(
-          `Workout plan generation timed out after ${MAX_POLL_ATTEMPTS} poll attempts (last state: ${workoutStatus?.state})`,
+      if (!mealDone) {
+        const mealStatus = await step.runQuery(
+          internal.workpoolManager.getWorkStatus,
+          { workId: mealWorkId },
+          pollCount === 1 ? undefined : { runAfter: 3000 },
         );
+        if (mealStatus === null) {
+          throw new Error(`Meal plan workpool entry lost (workId: ${mealWorkId})`);
+        }
+        if (mealStatus.state === "finished") {
+          mealDone = true;
+        }
       }
-      workoutStatus = await step.runQuery(
-        internal.workpoolManager.getWorkStatus,
-        { workId: workoutWorkId },
-        { runAfter: 5000 },
-      );
+
+      if (!workoutDone) {
+        const workoutStatus = await step.runQuery(
+          internal.workpoolManager.getWorkStatus,
+          { workId: workoutWorkId },
+          // Always delay after first poll — avoid rapid no-delay polling when meal finishes first
+          pollCount === 1 ? undefined : { runAfter: 3000 },
+        );
+        if (workoutStatus === null) {
+          throw new Error(`Workout plan workpool entry lost (workId: ${workoutWorkId})`);
+        }
+        if (workoutStatus.state === "finished") {
+          workoutDone = true;
+        }
+      }
     }
 
     // Look up generated plans by checkInId (workpool status doesn't include return values)

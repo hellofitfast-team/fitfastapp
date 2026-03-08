@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { query, mutation, internalQuery, internalMutation } from "./_generated/server";
 import { getAuthUserId } from "./auth";
+import { requireCoach } from "./helpers";
 
 // ---------------------------------------------------------------------------
 // Public queries
@@ -35,7 +36,7 @@ export const listFoods = query({
         if (isRecipe !== undefined) sq = sq.eq("isRecipe", isRecipe);
         return sq;
       });
-      return searchBuilder.collect();
+      return searchBuilder.take(200);
     }
 
     // Filtered list
@@ -43,17 +44,17 @@ export const listFoods = query({
       return ctx.db
         .query("foodDatabase")
         .withIndex("by_category", (q) => q.eq("category", category))
-        .collect();
+        .take(200);
     }
 
     if (isRecipe !== undefined) {
       return ctx.db
         .query("foodDatabase")
         .withIndex("by_isRecipe", (q) => q.eq("isRecipe", isRecipe))
-        .collect();
+        .take(200);
     }
 
-    return ctx.db.query("foodDatabase").collect();
+    return ctx.db.query("foodDatabase").take(200);
   },
 });
 
@@ -144,14 +145,7 @@ export const addFood = mutation({
     instructions: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
-
-    const profile = await ctx.db
-      .query("profiles")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .unique();
-    if (!profile?.isCoach) throw new Error("Not authorized");
+    await requireCoach(ctx);
 
     const now = Date.now();
     return ctx.db.insert("foodDatabase", {
@@ -167,14 +161,7 @@ export const addFood = mutation({
 export const deleteFood = mutation({
   args: { foodId: v.id("foodDatabase") },
   handler: async (ctx, { foodId }) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
-
-    const profile = await ctx.db
-      .query("profiles")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .unique();
-    if (!profile?.isCoach) throw new Error("Not authorized");
+    await requireCoach(ctx);
 
     await ctx.db.delete(foodId);
   },

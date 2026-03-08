@@ -5,7 +5,14 @@ import { auth } from "./auth";
 import { rateLimiter } from "./rateLimiter";
 
 function getAllowedOrigin(): string {
-  return process.env.MARKETING_SITE_URL ?? "*";
+  const origin = process.env.MARKETING_SITE_URL;
+  if (!origin) {
+    console.error(
+      "MARKETING_SITE_URL environment variable is not set — CORS will reject all cross-origin requests",
+    );
+    return "https://fitfast.app";
+  }
+  return origin;
 }
 
 const http = httpRouter();

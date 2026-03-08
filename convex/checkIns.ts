@@ -7,6 +7,20 @@ import { DEFAULT_CHECK_IN_FREQUENCY_DAYS } from "./constants";
 import { rateLimiter } from "./rateLimiter";
 import { workflow } from "./workflowManager";
 
+/** Validate check-in free-text fields to prevent database bloat / token cost inflation */
+function validateCheckInStrings(fields: {
+  workoutPerformance?: string;
+  newInjuries?: string;
+  notes?: string;
+}) {
+  if (fields.workoutPerformance && fields.workoutPerformance.length > 2000)
+    throw new Error("Workout performance too long (max 2000 characters)");
+  if (fields.newInjuries && fields.newInjuries.length > 1000)
+    throw new Error("New injuries too long (max 1000 characters)");
+  if (fields.notes && fields.notes.length > 2000)
+    throw new Error("Notes too long (max 2000 characters)");
+}
+
 /** Shared InBody data validator — reused across check-in mutations and workflow */
 export const inBodyDataValidator = v.object({
   bodyFatPercentage: v.optional(v.number()),
@@ -155,6 +169,8 @@ export const submitCheckIn = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
+    validateCheckInStrings(args);
+
     const { ok, retryAfter } = await rateLimiter.limit(ctx, "submitCheckIn", { key: userId });
     if (!ok) {
       throw new Error(`Too many check-ins — try again in ${Math.ceil((retryAfter ?? 0) / 1000)}s`);
@@ -202,6 +218,8 @@ export const startCheckInWorkflow = mutation({
   handler: async (ctx, { language, planDuration, ...checkInFields }): Promise<string> => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
+
+    validateCheckInStrings(checkInFields);
 
     // Guard 1: max 3 check-in attempts per day (anti-spam)
     const checkInLimit = await rateLimiter.limit(ctx, "submitCheckIn", { key: userId });

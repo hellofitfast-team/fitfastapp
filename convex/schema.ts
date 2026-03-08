@@ -269,7 +269,11 @@ export default defineSchema({
     .index("by_userId", ["userId"])
     .index("by_userId_status", ["userId", "status"])
     .index("by_status", ["status"])
-    .index("by_updatedAt", ["updatedAt"]),
+    .index("by_updatedAt", ["updatedAt"])
+    .searchIndex("search_subject", {
+      searchField: "subject",
+      filterFields: ["status", "userId"],
+    }),
 
   faqs: defineTable({
     question: v.string(),

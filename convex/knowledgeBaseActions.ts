@@ -12,15 +12,87 @@ import {
 
 const NAMESPACE = "coach_knowledge";
 
-function chunkText(text: string): string[] {
-  const words = text.split(/\s+/);
-  const chunks: string[] = [];
+/**
+ * Split text into sentences using common sentence-ending punctuation.
+ * Handles abbreviations and decimal numbers gracefully.
+ */
+function splitSentences(text: string): string[] {
+  // Split on sentence-ending punctuation (including Arabic ؟ and ؛) followed by
+  // whitespace + uppercase Latin or Arabic letter. Avoids splitting on abbreviations like "Dr.".
+  const sentences = text.split(/(?<=[.!?\u061F\u061B])\s+(?=[A-Z\u0621-\u064A])/);
+  return sentences.filter((s) => s.trim().length > 0);
+}
 
-  for (let i = 0; i < words.length; i += CHUNK_SIZE - CHUNK_OVERLAP) {
-    const chunk = words.slice(i, i + CHUNK_SIZE).join(" ");
-    if (chunk.trim()) {
-      chunks.push(chunk);
+/**
+ * Chunk text with sentence-boundary awareness for better semantic coherence.
+ * Groups complete sentences into chunks of ~CHUNK_SIZE words with CHUNK_OVERLAP overlap.
+ * Falls back to word-level splitting for very long sentences.
+ */
+function chunkText(text: string): string[] {
+  const sentences = splitSentences(text);
+
+  // Fallback: if sentence splitting produces a single chunk, use word-level splitting
+  if (sentences.length <= 1) {
+    const words = text.split(/\s+/);
+    if (words.length <= CHUNK_SIZE) return [text.trim()].filter(Boolean);
+
+    const chunks: string[] = [];
+    for (let i = 0; i < words.length; i += CHUNK_SIZE - CHUNK_OVERLAP) {
+      const chunk = words.slice(i, i + CHUNK_SIZE).join(" ");
+      if (chunk.trim()) chunks.push(chunk);
     }
+    return chunks.length > 0 ? chunks : [text];
+  }
+
+  const chunks: string[] = [];
+  let currentChunk: string[] = [];
+  let currentWordCount = 0;
+
+  for (const sentence of sentences) {
+    const sentenceWordCount = sentence.split(/\s+/).length;
+
+    // If a single sentence exceeds chunk size, split it by words
+    if (sentenceWordCount > CHUNK_SIZE) {
+      // Flush current chunk first
+      if (currentChunk.length > 0) {
+        chunks.push(currentChunk.join(" "));
+        currentChunk = [];
+        currentWordCount = 0;
+      }
+      // Word-level split for oversized sentence
+      const words = sentence.split(/\s+/);
+      for (let i = 0; i < words.length; i += CHUNK_SIZE - CHUNK_OVERLAP) {
+        const chunk = words.slice(i, i + CHUNK_SIZE).join(" ");
+        if (chunk.trim()) chunks.push(chunk);
+      }
+      continue;
+    }
+
+    // Would adding this sentence exceed the chunk size?
+    if (currentWordCount + sentenceWordCount > CHUNK_SIZE && currentChunk.length > 0) {
+      chunks.push(currentChunk.join(" "));
+
+      // Overlap: keep the last few sentences that fit within CHUNK_OVERLAP words
+      const overlapSentences: string[] = [];
+      let overlapWords = 0;
+      for (let i = currentChunk.length - 1; i >= 0; i--) {
+        const words = currentChunk[i].split(/\s+/).length;
+        if (overlapWords + words > CHUNK_OVERLAP) break;
+        overlapSentences.unshift(currentChunk[i]);
+        overlapWords += words;
+      }
+
+      currentChunk = overlapSentences;
+      currentWordCount = overlapWords;
+    }
+
+    currentChunk.push(sentence);
+    currentWordCount += sentenceWordCount;
+  }
+
+  // Flush remaining
+  if (currentChunk.length > 0) {
+    chunks.push(currentChunk.join(" "));
   }
 
   return chunks.length > 0 ? chunks : [text];

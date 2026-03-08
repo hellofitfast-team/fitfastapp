@@ -18,6 +18,26 @@ Sentry.init({
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
   debug: false,
 
+  // Scrub PII from error events before sending to Sentry
+  beforeSend(event) {
+    const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
+    if (event.exception?.values) {
+      for (const ex of event.exception.values) {
+        if (ex.value) {
+          ex.value = ex.value.replace(emailRegex, "[email]");
+        }
+      }
+    }
+    if (event.breadcrumbs) {
+      for (const bc of event.breadcrumbs) {
+        if (bc.message) {
+          bc.message = bc.message.replace(emailRegex, "[email]");
+        }
+      }
+    }
+    return event;
+  },
+
   // Only send errors in production
   enabled: process.env.NODE_ENV === "production",
 });

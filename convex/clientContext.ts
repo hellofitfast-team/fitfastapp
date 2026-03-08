@@ -150,20 +150,31 @@ export function formatContextForPrompt(ctx: ClientContext): string {
 
   // ── Static data ──
   if (a) {
-    parts.push(`GOALS: ${a.goals || "Not specified"}`);
+    parts.push(`GOALS: ${sanitizeForPrompt(a.goals || "", 300) || "Not specified"}`);
     parts.push(`BODY: ${a.currentWeight}kg, ${a.height}cm`);
     parts.push(`AGE: ${a.age || "Not specified"}`);
     parts.push(`GENDER: ${a.gender || "Not specified"}`);
     parts.push(`EXPERIENCE: ${a.experienceLevel || "Not specified"}`);
     parts.push(`SCHEDULE: ${JSON.stringify(a.scheduleAvailability || {})}`);
-    parts.push(`CUISINE PREFERENCES: ${a.foodPreferences?.join(", ") || "None"}`);
-    parts.push(`ALLERGIES: ${a.allergies?.join(", ") || "None"}`);
-    parts.push(`DIETARY RESTRICTIONS: ${a.dietaryRestrictions?.join(", ") || "None"}`);
-    parts.push(`MEDICAL CONDITIONS: ${a.medicalConditions?.join(", ") || "None"}`);
-    parts.push(`INJURIES: ${a.injuries?.join(", ") || "None"}`);
+    parts.push(
+      `CUISINE PREFERENCES: ${a.foodPreferences?.map((x) => sanitizeForPrompt(x, 100)).join(", ") || "None"}`,
+    );
+    parts.push(
+      `ALLERGIES: ${a.allergies?.map((x) => sanitizeForPrompt(x, 100)).join(", ") || "None"}`,
+    );
+    parts.push(
+      `DIETARY RESTRICTIONS: ${a.dietaryRestrictions?.map((x) => sanitizeForPrompt(x, 100)).join(", ") || "None"}`,
+    );
+    parts.push(
+      `MEDICAL CONDITIONS: ${a.medicalConditions?.map((x) => sanitizeForPrompt(x, 100)).join(", ") || "None"}`,
+    );
+    parts.push(
+      `INJURIES: ${a.injuries?.map((x) => sanitizeForPrompt(x, 100)).join(", ") || "None"}`,
+    );
     if (a.lifestyleHabits) {
       const habits = a.lifestyleHabits as Record<string, unknown>;
-      if (habits.equipment) parts.push(`EQUIPMENT: ${habits.equipment}`);
+      if (habits.equipment)
+        parts.push(`EQUIPMENT: ${sanitizeForPrompt(String(habits.equipment), 200)}`);
       if (habits.mealsPerDay) parts.push(`MEALS PER DAY: ${habits.mealsPerDay}`);
     }
   }

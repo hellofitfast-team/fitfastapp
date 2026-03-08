@@ -21,6 +21,7 @@ export const RAG_CHUNK_OVERLAP_WORDS = 50;
 // ── Caching (ActionCache TTLs) ─────────────────────────────────────────────
 export const FAQ_CACHE_TTL_MS = 3_600_000; // 1 hour
 export const PRICING_CACHE_TTL_MS = 1_800_000; // 30 min
+export const FOOD_REF_CACHE_TTL_MS = 3_600_000; // 1 hour
 
 // ── Notifications (ActionRetrier) ──────────────────────────────────────────
 export const NOTIFICATION_MAX_RETRIES = 5;

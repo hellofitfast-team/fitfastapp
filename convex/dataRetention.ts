@@ -83,7 +83,7 @@ export const cascadeDeleteUser = internalMutation({
 });
 
 // ---------------------------------------------------------------------------
-// Orchestrator action — finds expired users and deletes them one by one
+// Orchestrator action — finds expired users and deletes them in parallel batches
 // ---------------------------------------------------------------------------
 
 export const runRetentionCleanup = internalAction({
@@ -94,19 +94,34 @@ export const runRetentionCleanup = internalAction({
       {},
     );
 
+    if (expiredUsers.length === 0) return;
+
+    const BATCH_SIZE = 5;
     const failures: string[] = [];
-    for (const { userId, profileId } of expiredUsers) {
-      try {
-        await ctx.runMutation(internal.dataRetention.cascadeDeleteUser, {
-          userId,
-          profileId,
-        });
-      } catch (err) {
-        const rawMsg = err instanceof Error ? err.message : String(err);
-        const msg = rawMsg.replace(userId, "[REDACTED]");
-        failures.push(`profile:${profileId}: ${msg}`);
+
+    // Process in parallel batches to avoid overwhelming Convex
+    for (let i = 0; i < expiredUsers.length; i += BATCH_SIZE) {
+      const batch = expiredUsers.slice(i, i + BATCH_SIZE);
+      const results = await Promise.allSettled(
+        batch.map(({ userId, profileId }) =>
+          ctx.runMutation(internal.dataRetention.cascadeDeleteUser, {
+            userId,
+            profileId,
+          }),
+        ),
+      );
+
+      for (let j = 0; j < results.length; j++) {
+        const result = results[j];
+        if (result.status === "rejected") {
+          const rawMsg =
+            result.reason instanceof Error ? result.reason.message : String(result.reason);
+          const msg = rawMsg.replace(batch[j].userId, "[REDACTED]");
+          failures.push(`profile:${batch[j].profileId}: ${msg}`);
+        }
       }
     }
+
     if (failures.length > 0) {
       console.error(
         `[DataRetention:runRetentionCleanup] ${failures.length}/${expiredUsers.length} deletions failed`,

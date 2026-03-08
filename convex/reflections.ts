@@ -24,6 +24,9 @@ export const saveReflection = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
+    // String length guard — prevent database bloat
+    if (reflection.length > 3000) throw new Error("Reflection too long (max 3000 characters)");
+
     const existing = await ctx.db
       .query("dailyReflections")
       .withIndex("by_userId_date", (q) => q.eq("userId", userId).eq("date", date))

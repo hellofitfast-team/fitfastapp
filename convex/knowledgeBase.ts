@@ -1,22 +1,7 @@
 import { v } from "convex/values";
 import { query, mutation, internalMutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { getAuthUserId } from "./auth";
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-async function requireCoach(ctx: any): Promise<string> {
-  const userId = await getAuthUserId(ctx);
-  if (!userId) throw new Error("Not authenticated");
-  const profile = await ctx.db
-    .query("profiles")
-    .withIndex("by_userId", (q: any) => q.eq("userId", userId))
-    .unique();
-  if (!profile?.isCoach) throw new Error("Not authorized");
-  return userId;
-}
+import { requireCoach } from "./helpers";
 
 // ---------------------------------------------------------------------------
 // Queries & Mutations (run in Convex runtime — no "use node")
@@ -38,6 +23,10 @@ export const addTextEntry = mutation({
   },
   handler: async (ctx, { title, content, tags }) => {
     await requireCoach(ctx);
+
+    // String length guards — prevent database bloat
+    if (title.length > 500) throw new Error("Title too long (max 500 characters)");
+    if (content.length > 50000) throw new Error("Content too long (max 50000 characters)");
 
     const id = await ctx.db.insert("coachKnowledge", {
       title,
@@ -66,6 +55,10 @@ export const updateKnowledgeEntry = mutation({
   },
   handler: async (ctx, { entryId, title, content, tags }) => {
     await requireCoach(ctx);
+
+    // String length guards — prevent database bloat
+    if (title.length > 500) throw new Error("Title too long (max 500 characters)");
+    if (content.length > 50000) throw new Error("Content too long (max 50000 characters)");
 
     const entry = await ctx.db.get(entryId);
     if (!entry) throw new Error("Entry not found");

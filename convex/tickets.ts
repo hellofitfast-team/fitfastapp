@@ -2,7 +2,9 @@ import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getAuthUserId } from "./auth";
+import { requireCoach } from "./helpers";
 import { openTicketsCount } from "./adminStats";
+import { rateLimiter } from "./rateLimiter";
 
 export const getMyTickets = query({
   args: {},
@@ -21,17 +23,30 @@ export const getMyTickets = query({
 export const getAllTickets = query({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
-
-    const profile = await ctx.db
-      .query("profiles")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .unique();
-    if (!profile?.isCoach) throw new Error("Not authorized");
+    await requireCoach(ctx);
 
     // Capped at 200 most recent tickets to prevent unbounded live subscriptions
     return ctx.db.query("tickets").withIndex("by_updatedAt").order("desc").take(200);
+  },
+});
+
+export const searchTickets = query({
+  args: {
+    search: v.string(),
+    status: v.optional(
+      v.union(v.literal("open"), v.literal("coach_responded"), v.literal("closed")),
+    ),
+  },
+  handler: async (ctx, { search, status }) => {
+    await requireCoach(ctx);
+
+    let searchBuilder = ctx.db.query("tickets").withSearchIndex("search_subject", (q) => {
+      let sq = q.search("subject", search);
+      if (status) sq = sq.eq("status", status);
+      return sq;
+    });
+
+    return searchBuilder.take(50);
   },
 });
 
@@ -92,6 +107,17 @@ export const createTicket = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
+    // Rate limit: 10 tickets per day per user
+    const { ok, retryAfter } = await rateLimiter.limit(ctx, "createTicket", { key: userId });
+    if (!ok) {
+      throw new Error(`Too many tickets — try again in ${Math.ceil((retryAfter ?? 0) / 1000)}s`);
+    }
+
+    // String length guards — prevent database bloat
+    if (args.subject.length > 200) throw new Error("Subject too long (max 200 characters)");
+    if (args.description && args.description.length > 3000)
+      throw new Error("Description too long (max 3000 characters)");
+
     const messages = args.description
       ? [{ sender: "client" as const, message: args.description, timestamp: Date.now() }]
       : [];
@@ -122,6 +148,15 @@ export const replyToTicket = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
+    // Rate limit: 20 replies per day per user
+    const { ok, retryAfter } = await rateLimiter.limit(ctx, "replyToTicket", { key: userId });
+    if (!ok) {
+      throw new Error(`Too many replies — try again in ${Math.ceil((retryAfter ?? 0) / 1000)}s`);
+    }
+
+    // String length guard — prevent database bloat
+    if (message.length > 3000) throw new Error("Message too long (max 3000 characters)");
+
     const ticket = await ctx.db.get(ticketId);
     if (!ticket) throw new Error("Ticket not found");
     if (ticket.userId !== userId) throw new Error("Not authorized");
@@ -140,14 +175,10 @@ export const respondToTicket = mutation({
     message: v.string(),
   },
   handler: async (ctx, { ticketId, message }) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    await requireCoach(ctx);
 
-    const profile = await ctx.db
-      .query("profiles")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .unique();
-    if (!profile?.isCoach) throw new Error("Not authorized");
+    // String length guard — prevent database bloat
+    if (message.length > 3000) throw new Error("Message too long (max 3000 characters)");
 
     const ticket = await ctx.db.get(ticketId);
     if (!ticket) throw new Error("Ticket not found");
