@@ -247,6 +247,9 @@ importers:
       react:
         specifier: ^19.2.3
         version: 19.2.4
+      react-body-highlighter:
+        specifier: ^2.0.5
+        version: 2.0.5(react@19.2.4)
       react-dom:
         specifier: ^19.2.3
         version: 19.2.4(react@19.2.4)
@@ -8038,6 +8041,15 @@ packages:
     resolution: {integrity: sha512-vYl3iOX+4CKUWuxGi9Ukhie6fsqXqS9FE2Zaic4tNFD2N2QQaXOMFbuKK4QmDHC0JO6B1Zp41J0LpT0oR68amQ==}
     dependencies:
       safe-buffer: 5.2.1
+    dev: false
+
+  /react-body-highlighter@2.0.5(react@19.2.4):
+    resolution: {integrity: sha512-yt37177vKIc+8TGxQw//G/3ah2aw/3E0g1oDt4N+46fMLVZ9BSelhc9S7kiwEkJRvYc3RyUSr9453uMJnvtxRg==}
+    engines: {node: '>=10'}
+    peerDependencies:
+      react: '>=16'
+    dependencies:
+      react: 19.2.4
     dev: false
 
   /react-dom@19.2.4(react@19.2.4):

@@ -25,6 +25,7 @@
     "next": "^16.1.6",
     "next-intl": "^4.8.2",
     "react": "^19.2.3",
+    "react-body-highlighter": "^2.0.5",
     "react-dom": "^19.2.3",
     "react-hook-form": "^7.71.1",
     "react-swipeable": "^7.0.2",

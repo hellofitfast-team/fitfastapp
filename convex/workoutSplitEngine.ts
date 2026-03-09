@@ -54,6 +54,41 @@ const SPLITS: Record<string, Omit<WorkoutSplit, "dayLabels" | "dayLabelsAr">> = 
     splitDescriptionAr:
       "تقسيم دفع/سحب/أرجل مكرر مرتين أسبوعياً لأقصى حجم تدريبي. للمتقدمين مع ٦ أيام تدريب.",
   },
+  arnold: {
+    splitType: "arnold",
+    splitName: "Arnold Split",
+    splitNameAr: "تقسيم أرنولد",
+    splitDescription:
+      "Chest and back together, shoulders and arms together, then legs. A classic advanced split for high volume.",
+    splitDescriptionAr:
+      "صدر وظهر معاً، أكتاف وذراعين معاً، ثم أرجل. تقسيم كلاسيكي متقدم لحجم تدريبي عالي.",
+  },
+  anterior_posterior: {
+    splitType: "anterior_posterior",
+    splitName: "Anterior / Posterior",
+    splitNameAr: "أمامي / خلفي",
+    splitDescription:
+      "Front body muscles one day (chest, quads, shoulders), back body the next (back, hamstrings, glutes). Balanced push-pull approach.",
+    splitDescriptionAr:
+      "عضلات الجسم الأمامية يوم (صدر، فخذ أمامي، أكتاف)، والخلفية اليوم التالي (ظهر، فخذ خلفي، مؤخرة). نهج متوازن.",
+  },
+  bro_split: {
+    splitType: "bro_split",
+    splitName: "Bro Split",
+    splitNameAr: "تقسيم العضلة الواحدة",
+    splitDescription:
+      "One major muscle group per day: chest, back, shoulders, arms, legs. Maximum focus and volume per body part.",
+    splitDescriptionAr:
+      "مجموعة عضلية رئيسية واحدة كل يوم: صدر، ظهر، أكتاف، ذراعين، أرجل. أقصى تركيز وحجم لكل جزء.",
+  },
+  phul: {
+    splitType: "phul",
+    splitName: "PHUL (Power / Hypertrophy)",
+    splitNameAr: "قوة / تضخيم",
+    splitDescription:
+      "Power Upper and Lower days for strength, then Hypertrophy Upper and Lower days for size. Best of both worlds.",
+    splitDescriptionAr: "أيام قوة للجزء العلوي والسفلي، ثم أيام تضخيم. الأفضل من العالمين.",
+  },
 };
 
 /**
@@ -118,6 +153,69 @@ function generateDayLabels(splitType: string, totalDays: number): { en: string[]
         }
         break;
       }
+      case "arnold": {
+        // Chest+Back → Shoulders+Arms → Legs → repeat, 1 rest every 3 training days
+        const arnoldCycle = i % 4;
+        if (arnoldCycle === 3) {
+          labels.en.push("Rest");
+          labels.ar.push("راحة");
+        } else {
+          const arnoldEn = ["Chest+Back", "Shoulders+Arms", "Legs"];
+          const arnoldAr = ["صدر+ظهر", "أكتاف+ذراعين", "أرجل"];
+          labels.en.push(arnoldEn[arnoldCycle]!);
+          labels.ar.push(arnoldAr[arnoldCycle]!);
+        }
+        break;
+      }
+      case "anterior_posterior": {
+        // Anterior → Posterior → Rest → repeat
+        const apCycle = i % 3;
+        if (apCycle === 0) {
+          labels.en.push("Anterior");
+          labels.ar.push("أمامي");
+        } else if (apCycle === 1) {
+          labels.en.push("Posterior");
+          labels.ar.push("خلفي");
+        } else {
+          labels.en.push("Rest");
+          labels.ar.push("راحة");
+        }
+        break;
+      }
+      case "bro_split": {
+        // Chest → Back → Shoulders → Arms → Legs → Rest → repeat
+        const broCycle = i % 6;
+        if (broCycle === 5) {
+          labels.en.push("Rest");
+          labels.ar.push("راحة");
+        } else {
+          const broEn = ["Chest", "Back", "Shoulders", "Arms", "Legs"];
+          const broAr = ["صدر", "ظهر", "أكتاف", "ذراعين", "أرجل"];
+          labels.en.push(broEn[broCycle]!);
+          labels.ar.push(broAr[broCycle]!);
+        }
+        break;
+      }
+      case "phul": {
+        // Power Upper → Power Lower → Rest → Hypertrophy Upper → Hypertrophy Lower → Rest → repeat
+        const phulCycle = i % 6;
+        if (phulCycle === 2 || phulCycle === 5) {
+          labels.en.push("Rest");
+          labels.ar.push("راحة");
+        } else {
+          const phulEn = [
+            "Power Upper",
+            "Power Lower",
+            "",
+            "Hypertrophy Upper",
+            "Hypertrophy Lower",
+          ];
+          const phulAr = ["قوة علوي", "قوة سفلي", "", "تضخيم علوي", "تضخيم سفلي"];
+          labels.en.push(phulEn[phulCycle]!);
+          labels.ar.push(phulAr[phulCycle]!);
+        }
+        break;
+      }
       default: {
         labels.en.push(`Day ${i + 1}`);
         labels.ar.push(`يوم ${i + 1}`);
@@ -132,11 +230,11 @@ function generateDayLabels(splitType: string, totalDays: number): { en: string[]
  * Select the optimal workout split based on experience level and training days.
  *
  * Decision matrix:
- * | Experience   | 2-3 days    | 4 days      | 5-6 days        |
- * |-------------|-------------|-------------|-----------------|
- * | Beginner    | Full Body   | Full Body   | Upper/Lower     |
- * | Intermediate| Full Body   | Upper/Lower | Push/Pull/Legs  |
- * | Advanced    | Upper/Lower | PPL         | PPL 2×          |
+ * | Experience   | 2-3 days    | 4 days      | 5 days              | 6 days          |
+ * |-------------|-------------|-------------|---------------------|-----------------|
+ * | Beginner    | Full Body   | Full Body   | Upper/Lower         | Upper/Lower     |
+ * | Intermediate| Full Body   | PHUL        | Anterior/Posterior  | Push/Pull/Legs  |
+ * | Advanced    | Upper/Lower | PPL         | Bro Split           | Arnold          |
  */
 export function selectWorkoutSplit(
   experienceLevel: ExperienceLevel | undefined,
@@ -150,13 +248,17 @@ export function selectWorkoutSplit(
     splitType = exp === "advanced" ? "upper_lower" : "full_body";
   } else if (daysPerWeek === 4) {
     if (exp === "beginner") splitType = "full_body";
-    else if (exp === "intermediate") splitType = "upper_lower";
+    else if (exp === "intermediate") splitType = "phul";
     else splitType = "push_pull_legs";
+  } else if (daysPerWeek === 5) {
+    if (exp === "beginner") splitType = "upper_lower";
+    else if (exp === "intermediate") splitType = "anterior_posterior";
+    else splitType = "bro_split";
   } else {
-    // 5-6 days
+    // 6+ days
     if (exp === "beginner") splitType = "upper_lower";
     else if (exp === "intermediate") splitType = "push_pull_legs";
-    else splitType = "ppl_2x";
+    else splitType = "arnold";
   }
 
   const split = SPLITS[splitType]!;

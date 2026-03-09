@@ -13,12 +13,14 @@ import {
   AlertTriangle,
   Sparkles,
   ChevronDown,
+  ArrowLeftRight,
 } from "lucide-react";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { cn } from "@fitfast/ui/cn";
-import { useQuery, useAction } from "convex/react";
+import { useQuery, useAction, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { usePlanStream } from "@/hooks/use-plan-stream";
+import { MuscleMap } from "@/components/workout/MuscleMap";
 import { EmptyState } from "@fitfast/ui/empty-state";
 import { WidgetCard } from "@fitfast/ui/widget-card";
 import { DaySelector } from "../meal-plan/_components/day-selector";
@@ -200,6 +202,8 @@ export default function WorkoutPlanPage() {
   const locale = useLocale();
   const { workoutPlan, isLoading, error } = useCurrentWorkoutPlan();
   const assessment = useQuery(api.assessments.getMyAssessment);
+  const swapExercise = useMutation(api.workoutPlans.swapExercise);
+  const [swappingKey, setSwappingKey] = useState<string | null>(null);
   const [now] = useState(() => Date.now());
   const [selectedDay, setSelectedDay] = useState(0);
   const [expandedExercise, setExpandedExercise] = useState<number | null>(0);
@@ -467,6 +471,19 @@ export default function WorkoutPlanPage() {
                 </div>
               </WidgetCard>
 
+              {/* Day target muscles visualization */}
+              {dayPlan.targetMuscles && dayPlan.targetMuscles.length > 0 && (
+                <div className="border-border bg-card shadow-card animate-slide-up rounded-xl border p-4">
+                  <p className="text-muted-foreground mb-2 text-center text-xs font-medium">
+                    {t("targetMuscles")}
+                  </p>
+                  <MuscleMap
+                    targetMuscles={dayPlan.targetMuscles}
+                    className="flex justify-center"
+                  />
+                </div>
+              )}
+
               {/* Warmup */}
               {dayPlan.warmup &&
                 Array.isArray(dayPlan.warmup.exercises) &&
@@ -555,6 +572,42 @@ export default function WorkoutPlanPage() {
                         </div>
                       </button>
 
+                      {/* Swap Exercise Button */}
+                      {isExpanded && workoutPlan && (
+                        <div className="border-border flex justify-end border-t px-3.5 py-2">
+                          <button
+                            type="button"
+                            disabled={swappingKey === `${selectedDay}-${index}`}
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              const key = `${selectedDay}-${index}`;
+                              setSwappingKey(key);
+                              try {
+                                await swapExercise({
+                                  planId: workoutPlan._id,
+                                  dayKey: `day${selectedDay + 1}`,
+                                  exerciseIndex: index,
+                                });
+                              } catch (err) {
+                                console.error("Swap failed:", err);
+                              } finally {
+                                setSwappingKey(null);
+                              }
+                            }}
+                            className="text-fitness hover:bg-fitness/10 flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-50"
+                          >
+                            {swappingKey === `${selectedDay}-${index}` ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <ArrowLeftRight className="h-3.5 w-3.5" />
+                            )}
+                            {swappingKey === `${selectedDay}-${index}`
+                              ? t("swapping")
+                              : t("swapExercise")}
+                          </button>
+                        </div>
+                      )}
+
                       {/* Expanded Content (WORK-04) */}
                       <div
                         className={cn(
@@ -563,6 +616,14 @@ export default function WorkoutPlanPage() {
                         )}
                       >
                         <div className="border-border space-y-3 border-t px-3.5 pt-3 pb-3.5">
+                          {/* Muscle body map visualization */}
+                          {exercise.targetMuscles && exercise.targetMuscles.length > 0 && (
+                            <MuscleMap
+                              targetMuscles={exercise.targetMuscles}
+                              className="flex justify-center"
+                            />
+                          )}
+
                           {/* Muscle tags (visible on mobile when expanded) */}
                           {exercise.targetMuscles && exercise.targetMuscles.length > 0 && (
                             <div className="flex flex-wrap gap-1 sm:hidden">
