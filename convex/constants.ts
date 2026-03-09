@@ -12,7 +12,7 @@ export const DEFAULT_CHECK_IN_FREQUENCY_DAYS = 10;
 export const DATA_RETENTION_DAYS = 90;
 
 // ── AI Workpool ────────────────────────────────────────────────────────────
-export const MAX_AI_CONCURRENCY = 5;
+export const MAX_AI_CONCURRENCY = 10;
 
 // ── RAG Chunking ───────────────────────────────────────────────────────────
 export const RAG_CHUNK_SIZE_WORDS = 500;
@@ -69,5 +69,5 @@ export const MEAL_OUTPUT_TOKENS_EN = 12000;
 export const MEAL_OUTPUT_TOKENS_AR = 16000;
 export const WORKOUT_OUTPUT_TOKENS_EN = 16000;
 export const WORKOUT_OUTPUT_TOKENS_AR = 20000;
-export const PLAN_GENERATION_TIMEOUT_MS = 240_000; // 4 minutes
+export const PLAN_GENERATION_TIMEOUT_MS = 120_000; // 2 minutes
 export const PLAN_GENERATION_MAX_RETRIES = 2;

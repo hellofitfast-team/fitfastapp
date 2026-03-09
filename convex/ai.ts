@@ -22,8 +22,8 @@ import {
 // AI Model Configuration
 // ---------------------------------------------------------------------------
 
-/** Plan generation + translation model (text-only, GPT-5 class at budget pricing) */
-const PLAN_MODEL = "deepseek/deepseek-v3.2";
+/** Plan generation + translation model — Gemini 2.5 Flash Lite for speed (~360 tok/s) */
+const PLAN_MODEL = "google/gemini-2.5-flash-lite";
 
 // ---------------------------------------------------------------------------
 // Robust JSON extraction & repair

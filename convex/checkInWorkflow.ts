@@ -135,7 +135,7 @@ export const checkInAndGeneratePlans = workflow.define({
     ]);
 
     // Steps 4 & 5: Poll workpool until both finish (interleaved for efficiency)
-    const MAX_POLL_ATTEMPTS = 60;
+    const MAX_POLL_ATTEMPTS = 80;
     let mealDone = false;
     let workoutDone = false;
     let pollCount = 0;
@@ -152,7 +152,7 @@ export const checkInAndGeneratePlans = workflow.define({
         const mealStatus = await step.runQuery(
           internal.workpoolManager.getWorkStatus,
           { workId: mealWorkId },
-          pollCount === 1 ? undefined : { runAfter: 3000 },
+          pollCount === 1 ? undefined : { runAfter: 1500 },
         );
         if (mealStatus === null) {
           throw new Error(`Meal plan workpool entry lost (workId: ${mealWorkId})`);
@@ -167,7 +167,7 @@ export const checkInAndGeneratePlans = workflow.define({
           internal.workpoolManager.getWorkStatus,
           { workId: workoutWorkId },
           // Always delay after first poll — avoid rapid no-delay polling when meal finishes first
-          pollCount === 1 ? undefined : { runAfter: 3000 },
+          pollCount === 1 ? undefined : { runAfter: 1500 },
         );
         if (workoutStatus === null) {
           throw new Error(`Workout plan workpool entry lost (workId: ${workoutWorkId})`);
