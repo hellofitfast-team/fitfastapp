@@ -2,7 +2,11 @@ import { v } from "convex/values";
 import { query, mutation, internalQuery, internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getAuthUserId } from "./auth";
-import { DEFAULT_CHECK_IN_FREQUENCY_DAYS } from "./constants";
+import {
+  DEFAULT_CHECK_IN_FREQUENCY_DAYS,
+  MIN_PLAN_DURATION_DAYS,
+  MAX_PLAN_DURATION_DAYS,
+} from "./constants";
 
 const PUBLIC_CONFIG_KEYS = new Set([
   "pricing",
@@ -10,6 +14,8 @@ const PUBLIC_CONFIG_KEYS = new Set([
   "paymentMethods",
   "social_links",
   "check_in_frequency_days",
+  "meal_plan_duration_days",
+  "workout_plan_duration_days",
 ]);
 
 export const getConfig = query({
@@ -209,7 +215,11 @@ export const updatePaymentMethods = mutation({
 });
 
 // Keys whose values must always be stored as numbers
-const NUMERIC_CONFIG_KEYS = new Set(["check_in_frequency_days"]);
+const NUMERIC_CONFIG_KEYS = new Set([
+  "check_in_frequency_days",
+  "meal_plan_duration_days",
+  "workout_plan_duration_days",
+]);
 
 export const setConfig = mutation({
   args: {
@@ -226,16 +236,26 @@ export const setConfig = mutation({
       .unique();
     if (!profile?.isCoach) throw new Error("Not authorized");
 
-    // Coerce string-typed numbers for keys that must be numeric, clamped to min 1
-    const storedValue = NUMERIC_CONFIG_KEYS.has(key)
-      ? typeof value === "string"
-        ? value.trim() === "" || Number.isNaN(Number(value))
-          ? DEFAULT_CHECK_IN_FREQUENCY_DAYS
-          : Math.max(1, Number(value))
-        : typeof value === "number"
-          ? Math.max(1, value)
-          : DEFAULT_CHECK_IN_FREQUENCY_DAYS
-      : value;
+    // Coerce string-typed numbers for keys that must be numeric
+    let storedValue = value;
+    if (NUMERIC_CONFIG_KEYS.has(key)) {
+      const fallback = DEFAULT_CHECK_IN_FREQUENCY_DAYS;
+      const num =
+        typeof value === "string"
+          ? value.trim() === "" || Number.isNaN(Number(value))
+            ? fallback
+            : Number(value)
+          : typeof value === "number"
+            ? value
+            : fallback;
+
+      // Plan duration keys: clamp to [MIN, MAX]; others: clamp to min 1
+      const isPlanDuration =
+        key === "meal_plan_duration_days" || key === "workout_plan_duration_days";
+      storedValue = isPlanDuration
+        ? Math.min(MAX_PLAN_DURATION_DAYS, Math.max(MIN_PLAN_DURATION_DAYS, num))
+        : Math.max(1, num);
+    }
 
     const existing = await ctx.db
       .query("systemConfig")

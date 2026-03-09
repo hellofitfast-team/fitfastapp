@@ -26,6 +26,18 @@ export const getStreamBody = internalQuery({
   },
 });
 
+/** Append a text chunk to an in-progress stream (used by AI action during streamText) */
+export const appendChunk = internalMutation({
+  args: { streamId: v.string(), text: v.string(), final: v.boolean() },
+  handler: async (ctx, { streamId, text, final }) => {
+    await ctx.runMutation(components.persistentTextStreaming.lib.addChunk, {
+      streamId: streamId as any,
+      text,
+      final,
+    });
+  },
+});
+
 // Public query for client-side streaming UI — requires auth
 export const getStreamBodyPublic = query({
   args: { streamId: v.string() },

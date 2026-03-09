@@ -8,6 +8,7 @@ import { getAuthUserId } from "./auth";
 import { type ClientContext, formatContextForPrompt } from "./clientContext";
 import { calculateNutritionTargets, type NutritionTargets } from "./nutritionEngine";
 import { selectWorkoutSplit, type WorkoutSplit } from "./workoutSplitEngine";
+import { generateWorkoutPlan as buildWorkoutPlan, parseInjuries } from "./workoutPlanEngine";
 import { getRagClient } from "./ragManager";
 import {
   MEAL_OUTPUT_TOKENS_EN,
@@ -111,7 +112,8 @@ interface ValidationWarning {
     | "zero_value"
     | "missing_exercises"
     | "missing_warmup_cooldown"
-    | "totals_corrected";
+    | "totals_corrected"
+    | "alt_macro_scaled";
   day?: string;
   message: string;
 }
@@ -153,6 +155,40 @@ function validateAndCorrectMealPlan(
           day: dayKey,
           message: `Meal "${meal.name}" has 0 protein`,
         });
+      }
+
+      // Validate and correct alternatives' macros
+      if (Array.isArray(meal.alternatives)) {
+        const mealCal = Number(meal.calories) || 0;
+        for (const alt of meal.alternatives) {
+          if (!alt || typeof alt !== "object") continue;
+          // Per-alternative macro cross-check: P*4 + C*4 + F*9 should ≈ claimed calories
+          const altCal = Number(alt.calories) || 0;
+          const computedAltCal =
+            (Number(alt.protein) || 0) * 4 +
+            (Number(alt.carbs) || 0) * 4 +
+            (Number(alt.fat) || 0) * 9;
+          if (altCal > 0 && Math.abs(computedAltCal - altCal) > 30) {
+            alt.calories = Math.round(computedAltCal);
+          }
+          // Scale alternative if >10% off from parent meal calories
+          const correctedAltCal = Number(alt.calories) || 0;
+          if (mealCal > 0 && correctedAltCal > 0) {
+            const altDiff = Math.abs(correctedAltCal - mealCal) / mealCal;
+            if (altDiff > 0.1) {
+              const altScale = mealCal / correctedAltCal;
+              alt.calories = Math.round(correctedAltCal * altScale);
+              alt.protein = Math.round((Number(alt.protein) || 0) * altScale);
+              alt.carbs = Math.round((Number(alt.carbs) || 0) * altScale);
+              alt.fat = Math.round((Number(alt.fat) || 0) * altScale);
+              warnings.push({
+                type: "alt_macro_scaled",
+                day: dayKey,
+                message: `Alt "${alt.name}" for "${meal.name}" scaled by ${altScale.toFixed(2)}x to match meal calories`,
+              });
+            }
+          }
+        }
       }
     }
 
@@ -477,7 +513,7 @@ async function generateMealPlanHandler(
 
   const { google } = await import("@ai-sdk/google");
   const { createDeepSeek } = await import("@ai-sdk/deepseek");
-  const { generateText } = await import("ai");
+  const { generateText, streamText } = await import("ai");
   const isArabic = language === "ar";
 
   const contextBlock = formatContextForPrompt(clientCtx);
@@ -507,7 +543,7 @@ GUIDELINES:
 2. Each meal must have accurate macros that sum to the daily totals above
 3. Use locally available, affordable ingredients
 4. Include specific measurements (grams, cups, tablespoons) and cooking instructions with times/temperatures
-5. Each meal must have 1 alternative with matching macros (±10% calories)
+5. Each meal MUST have exactly 3 alternatives with matching macros (±10% calories each)
 6. If adherence data is provided, adjust meal complexity accordingly
 7. If weight trend shows stall (>2 weeks same weight on fat loss), slightly increase protein and reduce carbs
 8. Vary meals across days — avoid repeating the same meal more than twice per week
@@ -524,7 +560,7 @@ ${contextBlock}
 
 DAILY NUTRITION TARGETS: ${nutritionTargets.calories} kcal | ${nutritionTargets.protein}g protein | ${nutritionTargets.carbs}g carbs | ${nutritionTargets.fat}g fat
 
-Be concise — short ingredient lists (3-5 per meal), 1-2 instruction steps, 1 alternative per meal.
+Be concise — short ingredient lists (3-5 per meal), 1-2 instruction steps, 3 alternatives per meal.
 
 Return a JSON object with this structure:
 {
@@ -539,7 +575,7 @@ Return a JSON object with this structure:
           "calories": number, "protein": number, "carbs": number, "fat": number,
           "ingredients": ["string with amount"],
           "instructions": ["step with time/temp"],
-          "alternatives": [{ same fields as meal, without alternatives }]
+          "alternatives": [{ same fields as meal, without alternatives }]  // exactly 3 alternatives per meal
         }
       ]
     },
@@ -547,7 +583,7 @@ Return a JSON object with this structure:
   },
   "notes": "string"
 }
-Each meal MUST have: name, type, calories, protein, carbs, fat, ingredients, instructions, alternatives (1 per meal).
+Each meal MUST have: name, type, calories, protein, carbs, fat, ingredients, instructions, alternatives (exactly 3 per meal, each with ±10% calorie match).
 Keep instructions to 1-2 steps with cooking times. Keep ingredient lists to 3-5 items.
 Daily meal macros MUST sum to the targets above (±5% tolerance). Respond ONLY with valid JSON.`;
 
@@ -564,25 +600,65 @@ Daily meal macros MUST sum to the targets above (±5% tolerance). Respond ONLY w
     maxRetries: PLAN_GENERATION_MAX_RETRIES,
   };
 
+  // Use streaming to push progress chunks to the client in real-time
   let result;
-  try {
-    result = await generateText({
-      model: google(PLAN_MODEL_PRIMARY),
+  const streamChunkSize = 500; // Flush every ~500 chars
+
+  async function streamAndCollect(
+    model: Parameters<typeof streamText>[0]["model"],
+  ): Promise<{ text: string; finishReason: string }> {
+    const streamResult = streamText({
+      model,
       ...generateParams,
       abortSignal: AbortSignal.timeout(halfTimeout),
     });
+    let fullText = "";
+    let lastFlushed = 0;
+    for await (const chunk of streamResult.textStream) {
+      fullText += chunk;
+      if (fullText.length - lastFlushed > streamChunkSize) {
+        await ctx.runMutation(internal.streamingManager.appendChunk, {
+          streamId,
+          text: fullText.substring(lastFlushed),
+          final: false,
+        });
+        lastFlushed = fullText.length;
+      }
+    }
+    // Flush remainder
+    if (fullText.length > lastFlushed) {
+      await ctx.runMutation(internal.streamingManager.appendChunk, {
+        streamId,
+        text: fullText.substring(lastFlushed),
+        final: true,
+      });
+    } else {
+      await ctx.runMutation(internal.streamingManager.appendChunk, {
+        streamId,
+        text: "",
+        final: true,
+      });
+    }
+    const finishReason = await streamResult.finishReason;
+    return { text: fullText, finishReason };
+  }
+
+  try {
+    result = await streamAndCollect(google(PLAN_MODEL_PRIMARY));
   } catch (primaryErr) {
     console.warn(
-      `[AI] Primary model (Gemini) failed for meal plan, falling back to DeepSeek: ${primaryErr}`,
+      `[AI] Primary model (Gemini) streaming failed for meal plan, falling back to DeepSeek: ${primaryErr}`,
     );
     const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
     if (!deepseekApiKey) throw new Error("DEEPSEEK_API_KEY environment variable is not set");
     const deepseek = createDeepSeek({ apiKey: deepseekApiKey });
-    result = await generateText({
+    // Fallback uses batch generateText (simpler, more reliable)
+    const batchResult = await generateText({
       model: deepseek(PLAN_MODEL_FALLBACK),
       ...generateParams,
       abortSignal: AbortSignal.timeout(halfTimeout),
     });
+    result = { text: batchResult.text, finishReason: batchResult.finishReason };
   }
 
   // --- Truncation detection + retry with reduced scope ---
@@ -608,7 +684,7 @@ Return JSON: { "dailyTargets": {...}, "weeklyPlan": { "day1": { "dailyTotals": {
 Respond ONLY with valid JSON.`;
 
     try {
-      result = await generateText({
+      const retryResult = await generateText({
         model: google(PLAN_MODEL_PRIMARY),
         system: systemPrompt,
         prompt: retryPrompt,
@@ -617,11 +693,12 @@ Respond ONLY with valid JSON.`;
         maxRetries: 1,
         abortSignal: AbortSignal.timeout(halfTimeout),
       });
+      result = { text: retryResult.text, finishReason: retryResult.finishReason };
     } catch {
       const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
       if (!deepseekApiKey) throw new Error("DEEPSEEK_API_KEY environment variable is not set");
       const deepseek = createDeepSeek({ apiKey: deepseekApiKey });
-      result = await generateText({
+      const retryResult = await generateText({
         model: deepseek(PLAN_MODEL_FALLBACK),
         system: systemPrompt,
         prompt: retryPrompt,
@@ -630,6 +707,7 @@ Respond ONLY with valid JSON.`;
         maxRetries: 1,
         abortSignal: AbortSignal.timeout(halfTimeout),
       });
+      result = { text: retryResult.text, finishReason: retryResult.finishReason };
     }
   }
 
@@ -694,199 +772,89 @@ async function generateWorkoutPlanHandler(
     planDuration: number;
   },
 ): Promise<Id<"workoutPlans">> {
-  // Defense in depth: ensure planDuration is always at least 1
   const safeDuration = Math.max(planDuration, 1);
-
-  const clientCtx = await fetchClientContextWithRetry(ctx, userId, checkInId);
-
   const startTime = Date.now();
-  // Pre-select workout split deterministically
+
+  // Fetch client context + exercise database in parallel
+  const [clientCtx, exercises] = await Promise.all([
+    fetchClientContextWithRetry(ctx, userId, checkInId),
+    ctx.runQuery(internal.exerciseDatabase.getActiveExercises, {}),
+  ]);
+
   const assessment = clientCtx.assessment!;
   const scheduleData = assessment.scheduleAvailability as { days?: string[] } | null;
   const trainingDays = Math.max(1, scheduleData?.days?.length ?? 4);
-  const split: WorkoutSplit = selectWorkoutSplit(
+
+  // Deterministic split selection (same logic as before)
+  const split = selectWorkoutSplit(
     assessment.experienceLevel as "beginner" | "intermediate" | "advanced" | undefined,
     trainingDays,
     safeDuration,
   );
 
-  // Fetch coach knowledge context via RAG (filtered to workout/recovery/general docs)
-  const knowledgeSection = await getCoachKnowledgeContext(ctx, assessment, "workout");
+  // Get previous plan for progressive overload
+  const previousPlan = await ctx.runQuery(internal.workoutPlans.getCurrentPlanInternal, { userId });
 
-  const { google } = await import("@ai-sdk/google");
-  const { createDeepSeek } = await import("@ai-sdk/deepseek");
-  const { generateText } = await import("ai");
-  const isArabic = language === "ar";
+  // Parse injuries from assessment + latest check-in
+  const latestCheckIn = clientCtx.checkInHistory?.[0] ?? null;
+  const injuries = parseInjuries(assessment, latestCheckIn);
 
-  const contextBlock = formatContextForPrompt(clientCtx);
-  const dayLabelsStr = (isArabic ? split.dayLabelsAr : split.dayLabels)
-    .slice(0, safeDuration)
-    .join(" → ");
+  // Compute adherence/energy/sleep from check-in history
+  const recentCheckIns = clientCtx.checkInHistory ?? [];
+  const avgAdherence =
+    recentCheckIns.length > 0
+      ? recentCheckIns.reduce(
+          (s: number, c: Record<string, unknown>) => s + (Number(c.dietaryAdherence) || 75),
+          0,
+        ) / recentCheckIns.length
+      : null;
+  const avgEnergy =
+    recentCheckIns.length > 0
+      ? recentCheckIns.reduce(
+          (s: number, c: Record<string, unknown>) => s + (Number(c.energyLevel) || 7),
+          0,
+        ) / recentCheckIns.length
+      : null;
+  const avgSleep =
+    recentCheckIns.length > 0
+      ? recentCheckIns.reduce(
+          (s: number, c: Record<string, unknown>) => s + (Number(c.sleepQuality) || 7),
+          0,
+        ) / recentCheckIns.length
+      : null;
 
-  const systemPrompt = `You are an expert certified personal trainer. Create personalized workout plans.
+  // Generate deterministic plan from exercise database
+  const planData = buildWorkoutPlan(exercises as any[], {
+    split,
+    planDuration: safeDuration,
+    experienceLevel:
+      (assessment.experienceLevel as "beginner" | "intermediate" | "advanced") ?? "intermediate",
+    goal: assessment.goals ?? "hypertrophy",
+    trainingDaysPerWeek: trainingDays,
+    injuries,
+    adherenceLevel: avgAdherence,
+    energyLevel: avgEnergy,
+    sleepQuality: avgSleep,
+    previousPlan: previousPlan?.planData ?? null,
+    language,
+    availableEquipment: (assessment.lifestyleHabits as any)?.equipment
+      ? [(assessment.lifestyleHabits as any).equipment]
+      : undefined,
+  });
 
-TRAINING STRUCTURE (pre-selected based on client data — follow this split exactly):
-- Split: ${isArabic ? split.splitNameAr : split.splitName}
-- Training days per week: ${trainingDays}
-- Day-by-day labels for the plan: ${dayLabelsStr}
-- Follow the day labels above: if a day says "Rest", make it a rest day. If it says "Push", program push exercises (chest, shoulders, triceps), etc.
-
-GUIDELINES:
-1. Consider experience level, fitness goals, injuries, and medical conditions
-2. Respect schedule availability and session duration preferences
-3. Include warm-up (5-10 min) and cool-down (5 min) for every training day
-4. Compound movements first, then isolation exercises
-5. Provide clear, safe instructions with form cues for each exercise
-6. If workout adherence data is provided, adjust volume accordingly
-7. If energy/sleep averages are low (<5/10), reduce volume by 20%
-8. If client has injuries: substitute with pain-free alternatives
-${isArabic ? "ALL content MUST be in Arabic language." : ""}${knowledgeSection}
-IMPORTANT: Respond ONLY with valid JSON. No markdown, no code blocks, just raw JSON.`;
-
-  const workoutOutputTokens = isArabic ? WORKOUT_OUTPUT_TOKENS_AR : WORKOUT_OUTPUT_TOKENS_EN;
-
-  const userPrompt = `Create a ${safeDuration}-day workout plan ${isArabic ? "ENTIRELY IN ARABIC" : "in English"}:
-
-CLIENT PROFILE:
-${contextBlock}
-
-TRAINING SPLIT: ${isArabic ? split.splitNameAr : split.splitName}
-DAY LABELS: ${dayLabelsStr}
-
-Be concise — 1-2 instructions per exercise, short warmup/cooldown.
-
-Return a JSON object with this EXACT structure (include ALL fields for every exercise):
-{
-  "splitType": "${split.splitType}",
-  "splitName": "${isArabic ? split.splitNameAr : split.splitName}",
-  "splitDescription": "${isArabic ? split.splitDescriptionAr : split.splitDescription}",
-  "weeklyPlan": {
-    "day1": {
-      "workoutName": "Upper Body Strength",
-      "duration": 45,
-      "targetMuscles": ["chest", "shoulders"],
-      "restDay": false,
-      "warmup": { "exercises": [{ "name": "Arm circles", "duration": 30, "instructions": ["..."] }] },
-      "exercises": [{ "name": "Bench Press", "sets": 3, "reps": "10", "restBetweenSets": "60s", "targetMuscles": ["chest"], "instructions": ["..."] }],
-      "cooldown": { "exercises": [{ "name": "Chest stretch", "duration": 30, "instructions": ["..."] }] }
-    },
-    "day2": { "restDay": true, "workoutName": "Rest Day" },
-    ...up to "day${safeDuration}"
-  },
-  "progressionNotes": "string",
-  "safetyTips": ["string"]
-}
-Each workout day MUST have: workoutName, duration, targetMuscles, restDay, warmup, exercises, cooldown.
-Each exercise MUST have: name, sets, reps, restBetweenSets, targetMuscles, instructions (1 concise step).
-Rest days only need: restDay=true, workoutName. Respond ONLY with valid JSON.`;
-
-  // Create stream for live progress
+  // Create stream and mark it done immediately (backward compat)
   const streamId: string = await ctx.runMutation(internal.streamingManager.createStream, {});
-
-  // --- Attempt with primary model (direct Google) + fallback (direct DeepSeek) ---
-  const halfTimeout = PLAN_GENERATION_TIMEOUT_MS / 2;
-  const generateParams = {
-    system: systemPrompt,
-    prompt: userPrompt,
-    temperature: 0.4,
-    maxOutputTokens: workoutOutputTokens,
-    maxRetries: PLAN_GENERATION_MAX_RETRIES,
-  };
-
-  let result;
-  try {
-    result = await generateText({
-      model: google(PLAN_MODEL_PRIMARY),
-      ...generateParams,
-      abortSignal: AbortSignal.timeout(halfTimeout),
-    });
-  } catch (primaryErr) {
-    console.warn(
-      `[AI] Primary model (Gemini) failed for workout plan, falling back to DeepSeek: ${primaryErr}`,
-    );
-    const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
-    if (!deepseekApiKey) throw new Error("DEEPSEEK_API_KEY environment variable is not set");
-    const deepseek = createDeepSeek({ apiKey: deepseekApiKey });
-    result = await generateText({
-      model: deepseek(PLAN_MODEL_FALLBACK),
-      ...generateParams,
-      abortSignal: AbortSignal.timeout(halfTimeout),
-    });
-  }
-
-  // --- Truncation detection + retry with reduced scope ---
-  if (result.finishReason === "length") {
-    console.warn(
-      `[AI] Workout plan truncated for user ${userId} (finishReason=length, ${result.text.length} chars). Retrying simplified.`,
-    );
-    const retryPrompt = `Create a ${safeDuration}-day workout plan ${isArabic ? "ENTIRELY IN ARABIC" : "in English"}:
-
-CLIENT PROFILE:
-${contextBlock}
-
-TRAINING SPLIT: ${isArabic ? split.splitNameAr : split.splitName}
-DAY LABELS: ${dayLabelsStr}
-
-IMPORTANT: Keep output SHORT. 4-5 exercises per training day, 1 instruction per exercise, minimal warmup/cooldown (2 exercises each).
-
-Return JSON: { "splitType": "...", "splitName": "...", "splitDescription": "...", "weeklyPlan": { "day1": { "workoutName", "duration", "targetMuscles", "restDay": false, "warmup": { "exercises": [...] }, "exercises": [...], "cooldown": { "exercises": [...] } }, ... }, "progressionNotes": "...", "safetyTips": [...] }
-Respond ONLY with valid JSON.`;
-
-    try {
-      result = await generateText({
-        model: google(PLAN_MODEL_PRIMARY),
-        system: systemPrompt,
-        prompt: retryPrompt,
-        temperature: 0.3,
-        maxOutputTokens: WORKOUT_OUTPUT_TOKENS_AR,
-        maxRetries: 1,
-        abortSignal: AbortSignal.timeout(halfTimeout),
-      });
-    } catch {
-      const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
-      if (!deepseekApiKey) throw new Error("DEEPSEEK_API_KEY environment variable is not set");
-      const deepseek = createDeepSeek({ apiKey: deepseekApiKey });
-      result = await generateText({
-        model: deepseek(PLAN_MODEL_FALLBACK),
-        system: systemPrompt,
-        prompt: retryPrompt,
-        temperature: 0.3,
-        maxOutputTokens: WORKOUT_OUTPUT_TOKENS_AR,
-        maxRetries: 1,
-        abortSignal: AbortSignal.timeout(halfTimeout),
-      });
-    }
-  }
-
-  let planData: Record<string, unknown>;
-  try {
-    planData = extractJSON(result.text);
-  } catch {
-    console.error(
-      `[AI] Workout plan JSON parse failed for user ${userId}. Text length: ${result.text.length}, finish reason: ${result.finishReason}. First 500 chars: ${result.text.slice(0, 500)}`,
-    );
-    if (result.finishReason === "length") {
-      throw new Error(
-        "Workout plan too long for AI model output limit. Try reducing plan duration.",
-      );
-    }
-    throw new Error(
-      `Workout plan generation failed: AI returned invalid JSON (finish reason: ${result.finishReason})`,
-    );
-  }
-
-  // Post-generation validation
-  const workoutWarnings = validateWorkoutPlan(planData);
-  if (workoutWarnings.length > 0) {
-    planData.validationWarnings = workoutWarnings;
-    console.warn(
-      `[AI] Workout plan validation: ${workoutWarnings.length} warnings for user ${userId}`,
-      workoutWarnings,
-    );
-  }
+  // Mark stream as complete right away since generation is instant
+  await ctx.runMutation(internal.streamingManager.appendChunk, {
+    streamId,
+    text: JSON.stringify(planData),
+    final: true,
+  });
 
   const durationMs = Date.now() - startTime;
-  console.log(`[AI] Workout plan generated in ${durationMs}ms for user ${userId}`);
+  console.log(
+    `[Engine] Workout plan generated in ${durationMs}ms for user ${userId} (deterministic, ${exercises.length} exercises in DB)`,
+  );
 
   const startDate = new Date().toISOString().split("T")[0]!;
   const endDate = new Date(Date.now() + safeDuration * 24 * 60 * 60 * 1000)
@@ -897,7 +865,6 @@ Respond ONLY with valid JSON.`;
     userId,
     checkInId,
     planData,
-    aiGeneratedContent: result.text,
     streamId,
     language,
     startDate,
@@ -919,7 +886,7 @@ export const generateMealPlanInternal = internalAction({
   returns: v.id("mealPlans"),
   handler: async (ctx, { userId, checkInId, language, planDuration }): Promise<Id<"mealPlans">> => {
     const resolvedDuration: number =
-      planDuration ?? (await ctx.runQuery(internal.helpers.getCheckInFrequencyInternal));
+      planDuration ?? (await ctx.runQuery(internal.helpers.getMealPlanDurationInternal));
     return generateMealPlanHandler(ctx, {
       userId,
       checkInId,
@@ -942,7 +909,7 @@ export const generateWorkoutPlanInternal = internalAction({
     { userId, checkInId, language, planDuration },
   ): Promise<Id<"workoutPlans">> => {
     const resolvedDuration: number =
-      planDuration ?? (await ctx.runQuery(internal.helpers.getCheckInFrequencyInternal));
+      planDuration ?? (await ctx.runQuery(internal.helpers.getWorkoutPlanDurationInternal));
     return generateWorkoutPlanHandler(ctx, {
       userId,
       checkInId,
@@ -1004,7 +971,7 @@ export const generateMealPlan = action({
     await checkPlanGenerationLimit(ctx, userId, isInitialGeneration);
 
     const resolvedDuration =
-      planDuration ?? (await ctx.runQuery(internal.helpers.getCheckInFrequencyInternal));
+      planDuration ?? (await ctx.runQuery(internal.helpers.getMealPlanDurationInternal));
     return generateMealPlanHandler(ctx, {
       userId,
       checkInId,
@@ -1032,7 +999,7 @@ export const generateWorkoutPlan = action({
     await checkPlanGenerationLimit(ctx, userId, isInitialGeneration);
 
     const resolvedDuration =
-      planDuration ?? (await ctx.runQuery(internal.helpers.getCheckInFrequencyInternal));
+      planDuration ?? (await ctx.runQuery(internal.helpers.getWorkoutPlanDurationInternal));
     return generateWorkoutPlanHandler(ctx, {
       userId,
       checkInId,

@@ -2,7 +2,11 @@ import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getAuthUserId } from "./auth";
-import { getCheckInFrequencyDays } from "./helpers";
+import {
+  getCheckInFrequencyDays,
+  getMealPlanDurationDays,
+  getWorkoutPlanDurationDays,
+} from "./helpers";
 import { DEFAULT_CHECK_IN_FREQUENCY_DAYS } from "./constants";
 import { rateLimiter } from "./rateLimiter";
 import { workflow } from "./workflowManager";
@@ -246,8 +250,9 @@ export const startCheckInWorkflow = mutation({
       throw new Error("Plan generation limit reached for this cycle");
     }
 
-    // Use configured frequency as default plan duration if not explicitly provided
-    const resolvedPlanDuration = planDuration ?? frequencyDays;
+    // Resolve separate durations for meal and workout plans
+    const mealPlanDuration = await getMealPlanDurationDays(ctx);
+    const workoutPlanDuration = await getWorkoutPlanDurationDays(ctx);
 
     // Create check-in record synchronously so getLockStatus sees it immediately
     const checkInId = await ctx.db.insert("checkIns", {
@@ -268,7 +273,8 @@ export const startCheckInWorkflow = mutation({
       userId,
       checkInId,
       language,
-      planDuration: resolvedPlanDuration,
+      mealPlanDuration,
+      workoutPlanDuration,
     });
 
     return workflowId;

@@ -107,16 +107,28 @@ export const checkInAndGeneratePlans = workflow.define({
     checkInId: v.id("checkIns"),
     language: v.union(v.literal("en"), v.literal("ar")),
     planDuration: v.optional(v.number()),
+    mealPlanDuration: v.optional(v.number()),
+    workoutPlanDuration: v.optional(v.number()),
   },
   handler: async (
     step,
-    { userId, checkInId, language, planDuration = DEFAULT_CHECK_IN_FREQUENCY_DAYS },
+    {
+      userId,
+      checkInId,
+      language,
+      planDuration = DEFAULT_CHECK_IN_FREQUENCY_DAYS,
+      mealPlanDuration,
+      workoutPlanDuration,
+    },
   ): Promise<{
     checkInId: Id<"checkIns">;
     mealPlanId: Id<"mealPlans">;
     workoutPlanId: Id<"workoutPlans">;
   }> => {
     // Check-in record already created by startCheckInWorkflow mutation
+    // Use specific durations if provided, otherwise fall back to legacy planDuration
+    const effectiveMealDuration = mealPlanDuration ?? planDuration;
+    const effectiveWorkoutDuration = workoutPlanDuration ?? planDuration;
 
     // Steps 1 & 2: Enqueue both AI generations via Workpool (max 5 concurrent)
     const [mealWorkId, workoutWorkId] = await Promise.all([
@@ -124,13 +136,13 @@ export const checkInAndGeneratePlans = workflow.define({
         userId,
         checkInId,
         language,
-        planDuration,
+        planDuration: effectiveMealDuration,
       }),
       step.runMutation(internal.workpoolManager.enqueueWorkoutPlan, {
         userId,
         checkInId,
         language,
-        planDuration,
+        planDuration: effectiveWorkoutDuration,
       }),
     ]);
 
