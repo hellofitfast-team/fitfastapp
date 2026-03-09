@@ -36,6 +36,16 @@ export default convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
     return response;
   }
 
+  // Device language detection: when no locale prefix exists (e.g. visiting "/"),
+  // let next-intl read the Accept-Language header and redirect to /ar/ or /en/.
+  // This makes Arabic-device users land on Arabic automatically.
+  const hasLocalePrefix = /^\/(en|ar)(\/|$)/.test(pathname);
+  if (!hasLocalePrefix) {
+    const response = intlMiddleware(request);
+    response.headers.set("x-request-id", requestId);
+    return response;
+  }
+
   if (isPublicRoute(pathname)) {
     const response = intlMiddleware(request);
     response.headers.set("x-request-id", requestId);

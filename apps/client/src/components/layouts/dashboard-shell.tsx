@@ -1,6 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useLocale } from "next-intl";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { useProfile } from "@/hooks/use-profile";
 import { MobileHeader } from "./mobile-header";
 import { DesktopTopNav } from "./desktop-top-nav";
 import { BottomNav } from "./bottom-nav";
@@ -16,6 +20,19 @@ interface DashboardShellProps {
 export function DashboardShell({ children, userName, daysUntilExpiry }: DashboardShellProps) {
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const hasBanner = daysUntilExpiry !== null && daysUntilExpiry !== undefined;
+
+  // Sync profile.language with the detected/chosen UI locale
+  const locale = useLocale();
+  const { profile } = useProfile();
+  const updateProfile = useMutation(api.profiles.updateProfile);
+  const hasSynced = useRef(false);
+
+  useEffect(() => {
+    if (profile && profile.language !== locale && !hasSynced.current) {
+      hasSynced.current = true;
+      updateProfile({ language: locale as "en" | "ar" });
+    }
+  }, [locale, profile, updateProfile]);
 
   return (
     <div className="bg-background text-foreground selection:bg-primary selection:text-primary-foreground flex min-h-dvh flex-col">
