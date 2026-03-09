@@ -7,7 +7,7 @@
     "dev:client": "turbo dev --filter=@fitfast/client",
     "dev:admin": "turbo dev --filter=@fitfast/admin",
     "dev:marketing": "turbo dev --filter=@fitfast/marketing",
-    "build": "turbo build",
+    "build": "npx convex deploy && turbo build",
     "lint": "turbo lint",
     "type-check": "turbo type-check",
     "format": "prettier --write .",
