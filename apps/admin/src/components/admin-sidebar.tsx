@@ -12,6 +12,7 @@ import {
   BookOpen,
   Bell,
   Settings,
+  Dumbbell,
   X,
   LucideIcon,
 } from "lucide-react";
@@ -63,6 +64,7 @@ const adminNavItems = [
   { href: "/tickets", icon: MessageSquare, labelKey: "adminNav.tickets" },
   { href: "/faqs", icon: HelpCircle, labelKey: "adminNav.faqs" },
   { href: "/knowledge", icon: BookOpen, labelKey: "adminNav.knowledge" },
+  { href: "/exercises", icon: Dumbbell, labelKey: "adminNav.exercises" },
   { href: "/notifications", icon: Bell, labelKey: "adminNav.notifications" },
   { href: "/settings", icon: Settings, labelKey: "adminNav.settings" },
 ];
