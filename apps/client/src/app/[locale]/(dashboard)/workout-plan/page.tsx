@@ -277,6 +277,19 @@ export default function WorkoutPlanPage() {
         )
       : 10;
 
+  // Pre-compute current day's exercises for the media hook (must run before early returns)
+  const currentDayExercises = (() => {
+    if (!workoutPlan?.planData) return [];
+    const pd = (needsTranslation && hasTranslation
+      ? workoutPlan.translatedPlanData
+      : workoutPlan.planData) as unknown as GeneratedWorkoutPlan & { splitType?: string };
+    if (!pd?.weeklyPlan) return [];
+    const raw = resolveDayPlan(pd.weeklyPlan, selectedDay, workoutPlan.startDate);
+    const day = normalizeWorkoutDay(raw);
+    return day?.exercises ?? [];
+  })();
+  const exerciseMedia = useExerciseMedia(currentDayExercises);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -345,9 +358,6 @@ export default function WorkoutPlanPage() {
   };
   const rawDayPlan = resolveDayPlan(planData.weeklyPlan, selectedDay, workoutPlan.startDate);
   const dayPlan = normalizeWorkoutDay(rawDayPlan);
-
-  // Fetch exercise GIF media for current day's exercises
-  const exerciseMedia = useExerciseMedia(dayPlan?.exercises ?? []);
 
   // Find next workout for rest day preview
   const findNextWorkout = () => {
