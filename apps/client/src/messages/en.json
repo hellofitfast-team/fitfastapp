@@ -952,6 +952,21 @@
       "description": "We couldn't load the admin tickets. Please try again.",
       "retry": "TRY AGAIN"
     },
+    "workoutPlan": {
+      "title": "WORKOUT PLAN ERROR",
+      "description": "We couldn't load your workout plan. Please try again.",
+      "retry": "TRY AGAIN"
+    },
+    "mealPlan": {
+      "title": "MEAL PLAN ERROR",
+      "description": "We couldn't load your meal plan. Please try again.",
+      "retry": "TRY AGAIN"
+    },
+    "faq": {
+      "title": "FAQ ERROR",
+      "description": "We couldn't load the FAQs. Please try again.",
+      "retry": "TRY AGAIN"
+    },
     "adminPanel": {
       "title": "ADMIN ERROR",
       "description": "Something went wrong in the admin panel. Please try again.",
