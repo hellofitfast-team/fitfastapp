@@ -22,8 +22,10 @@ import {
 // AI Model Configuration
 // ---------------------------------------------------------------------------
 
-/** Plan generation + translation model — Gemini 2.5 Flash Lite for speed (~360 tok/s) */
-const PLAN_MODEL = "google/gemini-2.5-flash-lite";
+/** Primary plan generation model — direct Google API (no OpenRouter routing overhead) */
+const PLAN_MODEL_PRIMARY = "gemini-2.5-flash-lite";
+/** Fallback model — direct DeepSeek API, used when primary is congested/unavailable */
+const PLAN_MODEL_FALLBACK = "deepseek-chat";
 
 // ---------------------------------------------------------------------------
 // Robust JSON extraction & repair
@@ -473,16 +475,14 @@ async function generateMealPlanHandler(
     {},
   );
 
-  const { createOpenRouter } = await import("@openrouter/ai-sdk-provider");
+  const { google } = await import("@ai-sdk/google");
+  const { createDeepSeek } = await import("@ai-sdk/deepseek");
   const { generateText } = await import("ai");
-  const apiKey = process.env.OPENROUTER_API_KEY;
-  if (!apiKey) throw new Error("OPENROUTER_API_KEY environment variable is not set");
-  const openrouter = createOpenRouter({ apiKey });
   const isArabic = language === "ar";
 
   const contextBlock = formatContextForPrompt(clientCtx);
 
-  const systemPrompt = `You are an expert sports nutritionist and meal planning AI specializing in ${isArabic ? "Middle Eastern and Egyptian cuisine" : "international cuisine"}. Create personalized meal plans grounded in evidence-based nutrition science.
+  const systemPrompt = `You are an expert sports nutritionist and meal planning AI specializing in ${isArabic ? "Middle Eastern and Egyptian cuisine" : "international cuisine"}. Create personalized meal plans.
 HARD CONSTRAINT: All meals MUST be halal. Never include pork, alcohol, or non-halal meat. This is non-negotiable.
 
 NUTRITION CONSTRAINTS (calculated from client data via Mifflin-St Jeor — DO NOT deviate):
@@ -496,35 +496,6 @@ NUTRITION CONSTRAINTS (calculated from client data via Mifflin-St Jeor — DO NO
 - MINIMUM daily calories: ${nutritionTargets.minCalories} kcal — NEVER go below this
 - Distribute calories across 4-5 meals (breakfast, snack, lunch, snack, dinner)
 
-EVIDENCE-BASED NUTRITION SCIENCE (apply these principles):
-Protein Timing & Distribution:
-- Distribute protein evenly across meals (0.3-0.5g/kg per meal) for optimal muscle protein synthesis (MPS)
-- Include 20-40g protein per meal; leucine threshold is ~2.5g per sitting
-- Post-workout meal should be protein-rich within 2 hours of training
-
-Fat Quality:
-- Prioritize unsaturated fats: olive oil, avocado, nuts, fatty fish
-- Omega-3 sources: salmon, sardines, walnuts, flaxseed (aim 1-2g EPA+DHA daily for anti-inflammatory benefits)
-- Keep saturated fat below 10% of total calories
-
-Carbohydrate Strategy:
-- Complex carbs for sustained energy: oats, brown rice, sweet potato, whole wheat
-- Simple carbs acceptable post-workout (fruit, white rice) for glycogen replenishment
-- Fiber target: 25-35g/day from vegetables, legumes, whole grains
-- For fat loss: place more carbs around workout times (carb cycling lite)
-
-Micronutrient Awareness:
-- Iron: include red meat, lentils, spinach (especially important for females)
-- Calcium: dairy, fortified alternatives, leafy greens
-- Vitamin D: eggs, fatty fish, fortified foods (common deficiency in MENA region)
-- Magnesium: nuts, seeds, dark chocolate, leafy greens (supports sleep and recovery)
-- Hydration: recommend 35ml/kg body weight daily + 500ml per workout hour
-
-Meal Complexity by Adherence:
-- High adherence (>80%): detailed recipes with multiple ingredients
-- Medium adherence (50-80%): moderate complexity, familiar foods
-- Low adherence (<50%): extremely simple meals, minimal prep, grab-and-go options
-
 Egyptian/MENA Staple Foods (prefer these when culturally appropriate):
 - Proteins: eggs, chicken breast, beef, lentils, fava beans (foul), white cheese, labneh, Greek yogurt
 - Carbs: baladi bread, rice, sweet potato, oats, freekeh, couscous
@@ -535,8 +506,8 @@ GUIDELINES:
 1. Consider food preferences, allergies, and dietary restrictions
 2. Each meal must have accurate macros that sum to the daily totals above
 3. Use locally available, affordable ingredients
-4. Include specific measurements (grams, cups, tablespoons) and detailed cooking instructions with cooking times, temperatures, and practical tips (e.g. "Cook on medium heat for 3-4 minutes per side until golden", "Bake at 180°C/350°F for 20 minutes", "Soak overnight in the fridge")
-5. Each meal must have 1-2 fully detailed alternatives with name, type, calories, protein, carbs, fat, ingredients, and instructions. Alternatives should match the main meal's calories within ±10%.
+4. Include specific measurements (grams, cups, tablespoons) and cooking instructions with times/temperatures
+5. Each meal must have 1 alternative with matching macros (±10% calories)
 6. If adherence data is provided, adjust meal complexity accordingly
 7. If weight trend shows stall (>2 weeks same weight on fat loss), slightly increase protein and reduce carbs
 8. Vary meals across days — avoid repeating the same meal more than twice per week
@@ -583,16 +554,36 @@ Daily meal macros MUST sum to the targets above (±5% tolerance). Respond ONLY w
   // Create stream for live progress
   const streamId: string = await ctx.runMutation(internal.streamingManager.createStream, {});
 
-  // --- Attempt 1: full plan ---
-  let result = await generateText({
-    model: openrouter(PLAN_MODEL),
+  // --- Attempt with primary model (direct Google) + fallback (direct DeepSeek) ---
+  const halfTimeout = PLAN_GENERATION_TIMEOUT_MS / 2;
+  const generateParams = {
     system: systemPrompt,
     prompt: userPrompt,
     temperature: 0.4,
     maxOutputTokens: mealOutputTokens,
     maxRetries: PLAN_GENERATION_MAX_RETRIES,
-    abortSignal: AbortSignal.timeout(PLAN_GENERATION_TIMEOUT_MS),
-  });
+  };
+
+  let result;
+  try {
+    result = await generateText({
+      model: google(PLAN_MODEL_PRIMARY),
+      ...generateParams,
+      abortSignal: AbortSignal.timeout(halfTimeout),
+    });
+  } catch (primaryErr) {
+    console.warn(
+      `[AI] Primary model (Gemini) failed for meal plan, falling back to DeepSeek: ${primaryErr}`,
+    );
+    const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
+    if (!deepseekApiKey) throw new Error("DEEPSEEK_API_KEY environment variable is not set");
+    const deepseek = createDeepSeek({ apiKey: deepseekApiKey });
+    result = await generateText({
+      model: deepseek(PLAN_MODEL_FALLBACK),
+      ...generateParams,
+      abortSignal: AbortSignal.timeout(halfTimeout),
+    });
+  }
 
   // --- Truncation detection + retry with reduced scope ---
   if (result.finishReason === "length") {
@@ -616,15 +607,30 @@ IMPORTANT: Keep output concise to avoid truncation.
 Return JSON: { "dailyTargets": {...}, "weeklyPlan": { "day1": { "dailyTotals": {...}, "meals": [{ "name", "type", "calories", "protein", "carbs", "fat", "ingredients": [...], "instructions": [...] }] }, ...up to "day${safeDuration}" }, "notes": "string" }
 Respond ONLY with valid JSON.`;
 
-    result = await generateText({
-      model: openrouter(PLAN_MODEL),
-      system: systemPrompt,
-      prompt: retryPrompt,
-      temperature: 0.3,
-      maxOutputTokens: MEAL_OUTPUT_TOKENS_AR, // Use larger budget for retry
-      maxRetries: 1,
-      abortSignal: AbortSignal.timeout(PLAN_GENERATION_TIMEOUT_MS),
-    });
+    try {
+      result = await generateText({
+        model: google(PLAN_MODEL_PRIMARY),
+        system: systemPrompt,
+        prompt: retryPrompt,
+        temperature: 0.3,
+        maxOutputTokens: MEAL_OUTPUT_TOKENS_AR,
+        maxRetries: 1,
+        abortSignal: AbortSignal.timeout(halfTimeout),
+      });
+    } catch {
+      const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
+      if (!deepseekApiKey) throw new Error("DEEPSEEK_API_KEY environment variable is not set");
+      const deepseek = createDeepSeek({ apiKey: deepseekApiKey });
+      result = await generateText({
+        model: deepseek(PLAN_MODEL_FALLBACK),
+        system: systemPrompt,
+        prompt: retryPrompt,
+        temperature: 0.3,
+        maxOutputTokens: MEAL_OUTPUT_TOKENS_AR,
+        maxRetries: 1,
+        abortSignal: AbortSignal.timeout(halfTimeout),
+      });
+    }
   }
 
   let planData: Record<string, unknown>;
@@ -707,11 +713,9 @@ async function generateWorkoutPlanHandler(
   // Fetch coach knowledge context via RAG (filtered to workout/recovery/general docs)
   const knowledgeSection = await getCoachKnowledgeContext(ctx, assessment, "workout");
 
-  const { createOpenRouter } = await import("@openrouter/ai-sdk-provider");
+  const { google } = await import("@ai-sdk/google");
+  const { createDeepSeek } = await import("@ai-sdk/deepseek");
   const { generateText } = await import("ai");
-  const apiKey = process.env.OPENROUTER_API_KEY;
-  if (!apiKey) throw new Error("OPENROUTER_API_KEY environment variable is not set");
-  const openrouter = createOpenRouter({ apiKey });
   const isArabic = language === "ar";
 
   const contextBlock = formatContextForPrompt(clientCtx);
@@ -719,7 +723,7 @@ async function generateWorkoutPlanHandler(
     .slice(0, safeDuration)
     .join(" → ");
 
-  const systemPrompt = `You are an expert certified personal trainer and exercise physiologist. Create personalized workout plans grounded in evidence-based exercise science.
+  const systemPrompt = `You are an expert certified personal trainer. Create personalized workout plans.
 
 TRAINING STRUCTURE (pre-selected based on client data — follow this split exactly):
 - Split: ${isArabic ? split.splitNameAr : split.splitName}
@@ -727,74 +731,15 @@ TRAINING STRUCTURE (pre-selected based on client data — follow this split exac
 - Day-by-day labels for the plan: ${dayLabelsStr}
 - Follow the day labels above: if a day says "Rest", make it a rest day. If it says "Push", program push exercises (chest, shoulders, triceps), etc.
 
-EXERCISE SCIENCE REFERENCE (apply these principles):
-
-Progressive Overload:
-- Each plan cycle should progress from the previous: more weight, more reps, or more sets
-- Beginners: add reps first (8→10→12), then increase weight and reset to 8
-- Intermediate/Advanced: use periodization — alternate heavy (3-6 reps) and moderate (8-12 reps) weeks
-
-Volume Landmarks (sets per muscle group per week):
-- Minimum Effective Volume (MEV): 8-10 sets/muscle/week
-- Maximum Recoverable Volume (MRV): 15-20 sets/muscle/week for most people
-- Beginners: start at MEV (8-10 sets). Advanced: approach MRV (15-20 sets)
-- Distribute volume across 2+ sessions per muscle when possible
-
-Rep Ranges by Goal:
-- Strength: 3-6 reps, 80-90% 1RM, 3-5 sets, 2-3 min rest
-- Hypertrophy: 8-12 reps, 65-80% 1RM, 3-4 sets, 60-90s rest
-- Endurance/Conditioning: 15-20 reps, 50-65% 1RM, 2-3 sets, 30-60s rest
-- Fat loss programs: use hypertrophy ranges with shorter rest (45-60s) for metabolic effect
-
-Exercise Selection Hierarchy:
-1. Compound movements FIRST (squat, deadlift, bench press, row, overhead press, pull-up)
-2. Then accessory compounds (lunges, incline press, lat pulldown, cable row)
-3. Then isolation exercises (curls, lateral raises, tricep extensions, leg curls)
-- Beginners: 80% compound, 20% isolation
-- Advanced: 60% compound, 40% isolation
-
-Muscle Group Pairings for Split Types:
-- Push day: chest (bench, incline press, flyes), shoulders (overhead press, lateral raises), triceps (pushdowns, overhead extensions)
-- Pull day: back (rows, pulldowns, face pulls), biceps (curls, hammer curls), rear delts
-- Legs day: quads (squats, leg press, lunges), hamstrings (RDL, leg curl), glutes (hip thrust), calves
-- Upper day: chest + back + shoulders + arms
-- Lower day: quads + hamstrings + glutes + calves + core
-- Full body: 1 push + 1 pull + 1 leg + 1 core per session
-
-Warm-Up Protocol (5-10 minutes):
-- 2-3 min general cardio (jumping jacks, light jog, jump rope)
-- Dynamic stretches targeting session's muscle groups
-- 1-2 warm-up sets of the first exercise at 50% and 75% working weight
-
-Cool-Down Protocol (5 minutes):
-- Static stretches for worked muscles (hold 20-30 seconds each)
-- Deep breathing / relaxation
-
-Rest Day Programming:
-- Light activity encouraged: walking, yoga, swimming
-- Active recovery helps reduce DOMS and improve circulation
-
-Safety & Injury Prevention:
-- Always cue proper form in instructions (e.g., "keep back straight", "knees track over toes")
-- If client has knee issues: avoid deep squats, prefer leg press and partial ROM
-- If client has shoulder issues: avoid behind-neck press, prefer neutral grip pressing
-- If client has back issues: avoid heavy deadlifts, prefer hip hinge machines and core stability work
-- New injuries reported: remove aggravating exercises, substitute with pain-free alternatives
-
-Adaptation by Adherence:
-- High adherence (>80%): full program with progressive overload
-- Medium adherence (50-80%): reduce to 3-4 exercises per session, focus on compounds
-- Low adherence (<50%): minimalist program — 2-3 compound exercises only, 20-30 min sessions
-
 GUIDELINES:
-1. Consider experience level and fitness goals
-2. Account for injuries or medical conditions
-3. Respect schedule availability and session duration preferences
-4. Include warm-up and cool-down for every training day
-5. Provide clear, safe instructions for each exercise including form cues
+1. Consider experience level, fitness goals, injuries, and medical conditions
+2. Respect schedule availability and session duration preferences
+3. Include warm-up (5-10 min) and cool-down (5 min) for every training day
+4. Compound movements first, then isolation exercises
+5. Provide clear, safe instructions with form cues for each exercise
 6. If workout adherence data is provided, adjust volume accordingly
-7. If energy/sleep averages are low (<5/10), reduce volume by 20% and intensity
-8. Each exercise instruction should include: starting position, movement, breathing pattern
+7. If energy/sleep averages are low (<5/10), reduce volume by 20%
+8. If client has injuries: substitute with pain-free alternatives
 ${isArabic ? "ALL content MUST be in Arabic language." : ""}${knowledgeSection}
 IMPORTANT: Respond ONLY with valid JSON. No markdown, no code blocks, just raw JSON.`;
 
@@ -838,16 +783,36 @@ Rest days only need: restDay=true, workoutName. Respond ONLY with valid JSON.`;
   // Create stream for live progress
   const streamId: string = await ctx.runMutation(internal.streamingManager.createStream, {});
 
-  // --- Attempt 1: full plan ---
-  let result = await generateText({
-    model: openrouter(PLAN_MODEL),
+  // --- Attempt with primary model (direct Google) + fallback (direct DeepSeek) ---
+  const halfTimeout = PLAN_GENERATION_TIMEOUT_MS / 2;
+  const generateParams = {
     system: systemPrompt,
     prompt: userPrompt,
     temperature: 0.4,
     maxOutputTokens: workoutOutputTokens,
     maxRetries: PLAN_GENERATION_MAX_RETRIES,
-    abortSignal: AbortSignal.timeout(PLAN_GENERATION_TIMEOUT_MS),
-  });
+  };
+
+  let result;
+  try {
+    result = await generateText({
+      model: google(PLAN_MODEL_PRIMARY),
+      ...generateParams,
+      abortSignal: AbortSignal.timeout(halfTimeout),
+    });
+  } catch (primaryErr) {
+    console.warn(
+      `[AI] Primary model (Gemini) failed for workout plan, falling back to DeepSeek: ${primaryErr}`,
+    );
+    const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
+    if (!deepseekApiKey) throw new Error("DEEPSEEK_API_KEY environment variable is not set");
+    const deepseek = createDeepSeek({ apiKey: deepseekApiKey });
+    result = await generateText({
+      model: deepseek(PLAN_MODEL_FALLBACK),
+      ...generateParams,
+      abortSignal: AbortSignal.timeout(halfTimeout),
+    });
+  }
 
   // --- Truncation detection + retry with reduced scope ---
   if (result.finishReason === "length") {
@@ -867,15 +832,30 @@ IMPORTANT: Keep output SHORT. 4-5 exercises per training day, 1 instruction per 
 Return JSON: { "splitType": "...", "splitName": "...", "splitDescription": "...", "weeklyPlan": { "day1": { "workoutName", "duration", "targetMuscles", "restDay": false, "warmup": { "exercises": [...] }, "exercises": [...], "cooldown": { "exercises": [...] } }, ... }, "progressionNotes": "...", "safetyTips": [...] }
 Respond ONLY with valid JSON.`;
 
-    result = await generateText({
-      model: openrouter(PLAN_MODEL),
-      system: systemPrompt,
-      prompt: retryPrompt,
-      temperature: 0.3,
-      maxOutputTokens: WORKOUT_OUTPUT_TOKENS_AR, // Use larger budget for retry
-      maxRetries: 1,
-      abortSignal: AbortSignal.timeout(PLAN_GENERATION_TIMEOUT_MS),
-    });
+    try {
+      result = await generateText({
+        model: google(PLAN_MODEL_PRIMARY),
+        system: systemPrompt,
+        prompt: retryPrompt,
+        temperature: 0.3,
+        maxOutputTokens: WORKOUT_OUTPUT_TOKENS_AR,
+        maxRetries: 1,
+        abortSignal: AbortSignal.timeout(halfTimeout),
+      });
+    } catch {
+      const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
+      if (!deepseekApiKey) throw new Error("DEEPSEEK_API_KEY environment variable is not set");
+      const deepseek = createDeepSeek({ apiKey: deepseekApiKey });
+      result = await generateText({
+        model: deepseek(PLAN_MODEL_FALLBACK),
+        system: systemPrompt,
+        prompt: retryPrompt,
+        temperature: 0.3,
+        maxOutputTokens: WORKOUT_OUTPUT_TOKENS_AR,
+        maxRetries: 1,
+        abortSignal: AbortSignal.timeout(halfTimeout),
+      });
+    }
   }
 
   let planData: Record<string, unknown>;
@@ -1077,13 +1057,10 @@ export const translatePlanContent = internalAction({
     targetLanguage: v.union(v.literal("en"), v.literal("ar")),
   },
   handler: async (ctx, args) => {
-    const { createOpenRouter } = await import("@openrouter/ai-sdk-provider");
+    const { google } = await import("@ai-sdk/google");
+    const { createDeepSeek } = await import("@ai-sdk/deepseek");
     const { generateText } = await import("ai");
 
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) throw new Error("OPENROUTER_API_KEY not set");
-
-    const openrouter = createOpenRouter({ apiKey });
     const sourceName = LANGUAGE_NAMES[args.sourceLanguage];
     const targetName = LANGUAGE_NAMES[args.targetLanguage];
 
@@ -1096,14 +1073,13 @@ export const translatePlanContent = internalAction({
           ? WORKOUT_OUTPUT_TOKENS_AR
           : WORKOUT_OUTPUT_TOKENS_EN;
 
-    const { text: raw } = await generateText({
-      model: openrouter(PLAN_MODEL),
+    const halfTimeout = PLAN_GENERATION_TIMEOUT_MS / 2;
+    const translateParams = {
       maxOutputTokens: maxTokens,
       temperature: 0.3,
-      abortSignal: AbortSignal.timeout(PLAN_GENERATION_TIMEOUT_MS),
       messages: [
         {
-          role: "system",
+          role: "system" as const,
           content:
             `You are a professional fitness content translator. Translate all human-readable text values in the JSON below from ${sourceName} to ${targetName}. ` +
             `Keep ALL JSON keys, numbers, booleans, and structure EXACTLY the same. ` +
@@ -1111,9 +1087,32 @@ export const translatePlanContent = internalAction({
             `Do NOT translate JSON keys like "name", "type", "calories", "day1", etc. Do NOT change any numeric values. ` +
             `Return ONLY valid JSON with the exact same structure.`,
         },
-        { role: "user", content: JSON.stringify(args.planData) },
+        { role: "user" as const, content: JSON.stringify(args.planData) },
       ],
-    });
+    };
+
+    let raw: string;
+    try {
+      const res = await generateText({
+        model: google(PLAN_MODEL_PRIMARY),
+        ...translateParams,
+        abortSignal: AbortSignal.timeout(halfTimeout),
+      });
+      raw = res.text;
+    } catch (primaryErr) {
+      console.warn(
+        `[AI] Primary model (Gemini) failed for translation, falling back to DeepSeek: ${primaryErr}`,
+      );
+      const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
+      if (!deepseekApiKey) throw new Error("DEEPSEEK_API_KEY environment variable is not set");
+      const deepseek = createDeepSeek({ apiKey: deepseekApiKey });
+      const res = await generateText({
+        model: deepseek(PLAN_MODEL_FALLBACK),
+        ...translateParams,
+        abortSignal: AbortSignal.timeout(halfTimeout),
+      });
+      raw = res.text;
+    }
 
     const translatedData = extractJSON(raw);
 
@@ -1146,32 +1145,50 @@ export const translateToArabic = action({
     // Truncate input to prevent abuse (translation is for short UI strings)
     const truncatedText = text.slice(0, 500);
 
-    const { createOpenRouter } = await import("@openrouter/ai-sdk-provider");
+    const { google } = await import("@ai-sdk/google");
+    const { createDeepSeek } = await import("@ai-sdk/deepseek");
     const { generateText } = await import("ai");
 
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) throw new Error("OPENROUTER_API_KEY environment variable is not set");
-
-    const openrouter = createOpenRouter({ apiKey });
+    const translateMessages = [
+      {
+        role: "system" as const,
+        content:
+          "You are a professional Arabic translator for a fitness coaching app. " +
+          "Translate the given English text into natural, modern Arabic as it would be used in fitness/gym marketing in Egypt. " +
+          "Do NOT do literal word-for-word translation. Use the Arabic word or phrase that conveys the same meaning and feeling. " +
+          "For example: 'Starter' → 'مبتدئ', 'Premium' → 'مميز', 'Pro' → 'احترافي', 'Ultimate' → 'شامل'. " +
+          "Return ONLY the Arabic translation, nothing else.",
+      },
+      { role: "user" as const, content: truncatedText },
+    ];
 
     try {
-      const { text: translated } = await generateText({
-        model: openrouter(PLAN_MODEL),
-        maxOutputTokens: 100,
-        temperature: 0.3,
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are a professional Arabic translator for a fitness coaching app. " +
-              "Translate the given English text into natural, modern Arabic as it would be used in fitness/gym marketing in Egypt. " +
-              "Do NOT do literal word-for-word translation. Use the Arabic word or phrase that conveys the same meaning and feeling. " +
-              "For example: 'Starter' → 'مبتدئ', 'Premium' → 'مميز', 'Pro' → 'احترافي', 'Ultimate' → 'شامل'. " +
-              "Return ONLY the Arabic translation, nothing else.",
-          },
-          { role: "user", content: truncatedText },
-        ],
-      });
+      let translated: string;
+      try {
+        const res = await generateText({
+          model: google(PLAN_MODEL_PRIMARY),
+          maxOutputTokens: 100,
+          temperature: 0.3,
+          messages: translateMessages,
+          abortSignal: AbortSignal.timeout(30_000),
+        });
+        translated = res.text;
+      } catch (primaryErr) {
+        console.warn(
+          `[AI] Primary model (Gemini) failed for Arabic translation, falling back to DeepSeek: ${primaryErr}`,
+        );
+        const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
+        if (!deepseekApiKey) throw new Error("DEEPSEEK_API_KEY environment variable is not set");
+        const deepseek = createDeepSeek({ apiKey: deepseekApiKey });
+        const res = await generateText({
+          model: deepseek(PLAN_MODEL_FALLBACK),
+          maxOutputTokens: 100,
+          temperature: 0.3,
+          messages: translateMessages,
+          abortSignal: AbortSignal.timeout(30_000),
+        });
+        translated = res.text;
+      }
 
       return translated.trim();
     } catch (err) {

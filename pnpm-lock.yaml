@@ -8,6 +8,12 @@ importers:
 
   .:
     dependencies:
+      '@ai-sdk/deepseek':
+        specifier: ^2.0.24
+        version: 2.0.24(zod@4.3.6)
+      '@ai-sdk/google':
+        specifier: ^3.0.43
+        version: 3.0.43(zod@4.3.6)
       '@convex-dev/action-cache':
         specifier: ^0.3.0
         version: 0.3.0(convex@1.31.7)
@@ -472,6 +478,17 @@ packages:
     resolution: {integrity: sha512-Elp+iwUx5rN5+Y8xLt5/GRoG20WGoDCQ/1Fb+1LiGtvwbDavuSk0jhD/eZdckHAuzcDzccnkv+rEjyWfRx18gg==}
     dev: true
 
+  /@ai-sdk/deepseek@2.0.24(zod@4.3.6):
+    resolution: {integrity: sha512-4vOEekW4TAYVHN0qgiwoUOQZhguGwZBiEw8LDeUmpWBm07QkLRAtxYCaSoMiA4hZZojao5mj6NRGEBW1CnDPtg==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+    dependencies:
+      '@ai-sdk/provider': 3.0.8
+      '@ai-sdk/provider-utils': 4.0.19(zod@4.3.6)
+      zod: 4.3.6
+    dev: false
+
   /@ai-sdk/gateway@3.0.46(zod@4.3.6):
     resolution: {integrity: sha512-zH1UbNRjG5woOXXFOrVCZraqZuFTtmPvLardMGcgLkzpxKV0U3tAGoyWKSZ862H+eBJfI/Hf2yj/zzGJcCkycg==}
     engines: {node: '>=18'}
@@ -484,8 +501,31 @@ packages:
       zod: 4.3.6
     dev: false
 
+  /@ai-sdk/google@3.0.43(zod@4.3.6):
+    resolution: {integrity: sha512-NGCgP5g8HBxrNdxvF8Dhww+UKfqAkZAmyYBvbu9YLoBkzAmGKDBGhVptN/oXPB5Vm0jggMdoLycZ8JReQM8Zqg==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+    dependencies:
+      '@ai-sdk/provider': 3.0.8
+      '@ai-sdk/provider-utils': 4.0.19(zod@4.3.6)
+      zod: 4.3.6
+    dev: false
+
   /@ai-sdk/provider-utils@4.0.15(zod@4.3.6):
     resolution: {integrity: sha512-8XiKWbemmCbvNN0CLR9u3PQiet4gtEVIrX4zzLxnCj06AwsEDJwJVBbKrEI4t6qE8XRSIvU2irka0dcpziKW6w==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+    dependencies:
+      '@ai-sdk/provider': 3.0.8
+      '@standard-schema/spec': 1.1.0
+      eventsource-parser: 3.0.6
+      zod: 4.3.6
+    dev: false
+
+  /@ai-sdk/provider-utils@4.0.19(zod@4.3.6):
+    resolution: {integrity: sha512-3eG55CrSWCu2SXlqq2QCsFjo3+E7+Gmg7i/oRVoSZzIodTuDSfLb3MRje67xE9RFea73Zao7Lm4mADIfUETKGg==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
