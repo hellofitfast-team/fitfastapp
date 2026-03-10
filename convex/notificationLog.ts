@@ -15,7 +15,7 @@ export const getNotificationLogs = query({
       .unique();
     if (!profile?.isCoach) throw new Error("Not authorized");
 
-    return ctx.db.query("notificationLog").withIndex("by_sentAt").order("desc").take(50);
+    return ctx.db.query("notificationLog").withIndex("by_sentAt").order("desc").take(200);
   },
 });
 

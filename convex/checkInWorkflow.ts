@@ -206,7 +206,8 @@ export const checkInAndGeneratePlans = workflow.define({
       );
     }
 
-    // Step 6: Notify user via push (best-effort — plans are already saved)
+    // Step 6: Notify user via push with email fallback (best-effort — plans are already saved)
+    // Email fallback is handled inside sendPlanReadyNotification (matches sendReminderToUser pattern)
     try {
       await step.runAction(internal.notifications.sendPlanReadyNotification, {
         userId,
@@ -215,17 +216,7 @@ export const checkInAndGeneratePlans = workflow.define({
       });
     } catch (err) {
       console.error(
-        `[Workflow] Push notification failed for user ${userId}, continuing to email fallback`,
-        err,
-      );
-    }
-
-    // Step 7: Email fallback — sends only if user has no active push subscription
-    try {
-      await step.runAction(internal.email.sendPlanReadyEmail, { userId });
-    } catch (err) {
-      console.error(
-        `[Workflow] Email fallback failed for user ${userId}. Plans are saved — user will see them in-app.`,
+        `[Workflow] Notification failed for user ${userId}. Plans are saved — user will see them in-app.`,
         err,
       );
     }

@@ -14,6 +14,11 @@ export const sendToIndividual = action({
     body: v.string(),
   },
   handler: async (ctx, { userId, title, body }) => {
+    const trimmedTitle = title.trim();
+    const trimmedBody = body.trim();
+    if (!trimmedTitle || trimmedTitle.length > 50) throw new Error("Title must be 1-50 characters");
+    if (!trimmedBody || trimmedBody.length > 150) throw new Error("Body must be 1-150 characters");
+
     const coachId = await getAuthUserId(ctx);
     if (!coachId) throw new Error("Not authenticated");
 
@@ -109,6 +114,11 @@ export const broadcastToAllActive = action({
     body: v.string(),
   },
   handler: async (ctx, { title, body }) => {
+    const trimmedTitle = title.trim();
+    const trimmedBody = body.trim();
+    if (!trimmedTitle || trimmedTitle.length > 50) throw new Error("Title must be 1-50 characters");
+    if (!trimmedBody || trimmedBody.length > 150) throw new Error("Body must be 1-150 characters");
+
     const coachId = await getAuthUserId(ctx);
     if (!coachId) throw new Error("Not authenticated");
 
@@ -145,7 +155,7 @@ export const broadcastToAllActive = action({
         body,
         recipientCount: 0,
         sentBy: coachId,
-        status: "sent",
+        status: "partial",
       });
       return { sent: 0, failed: 0 };
     }

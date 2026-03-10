@@ -50,7 +50,8 @@ self.addEventListener("push", (event) => {
   if (event.data) {
     try {
       data = event.data.json();
-    } catch {
+    } catch (parseError) {
+      console.warn("[SW] Push payload parse error:", parseError);
       data.body = event.data.text();
     }
   }

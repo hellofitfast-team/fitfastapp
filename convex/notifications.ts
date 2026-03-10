@@ -61,41 +61,47 @@ export const sendPlanReadyNotification = internalAction({
       ctx.runQuery(internal.pushSubscriptions.getSubscriptionByUserId, { userId }),
     ]);
     if (!enabled) return;
-    if (!subscription?.isActive || !subscription.endpoint) return;
 
     const title = "FitFast";
     const body = "Your new meal and workout plans are ready!";
 
-    try {
-      await retrier.run(ctx, internal.notifications.sendPushToEndpoint, {
-        endpoint: subscription.endpoint,
-        p256dh: subscription.p256dh,
-        auth: subscription.auth,
-        title,
-        body,
-        url: "/",
-      });
+    if (subscription?.isActive && subscription.endpoint) {
+      try {
+        await retrier.run(ctx, internal.notifications.sendPushToEndpoint, {
+          endpoint: subscription.endpoint,
+          p256dh: subscription.p256dh,
+          auth: subscription.auth,
+          title,
+          body,
+          url: "/",
+        });
 
-      await ctx.runMutation(internal.notificationLog.logNotification, {
-        type: "plan_ready",
-        title,
-        body,
-        recipientCount: 1,
-        recipientUserId: userId,
-        sentBy: "system",
-        status: "sent",
-      });
-    } catch {
-      await ctx.runMutation(internal.notificationLog.logNotification, {
-        type: "plan_ready",
-        title,
-        body,
-        recipientCount: 1,
-        recipientUserId: userId,
-        sentBy: "system",
-        status: "failed",
-        failedCount: 1,
-      });
+        await ctx.runMutation(internal.notificationLog.logNotification, {
+          type: "plan_ready",
+          title,
+          body,
+          recipientCount: 1,
+          recipientUserId: userId,
+          sentBy: "system",
+          status: "sent",
+        });
+      } catch {
+        await ctx.runMutation(internal.notificationLog.logNotification, {
+          type: "plan_ready",
+          title,
+          body,
+          recipientCount: 1,
+          recipientUserId: userId,
+          sentBy: "system",
+          status: "failed",
+          failedCount: 1,
+        });
+        // Push failed — fall back to email
+        await ctx.runAction(internal.email.sendPlanReadyEmail, { userId, force: true });
+      }
+    } else {
+      // No push subscription — fall back to email
+      await ctx.runAction(internal.email.sendPlanReadyEmail, { userId, force: true });
     }
   },
 });

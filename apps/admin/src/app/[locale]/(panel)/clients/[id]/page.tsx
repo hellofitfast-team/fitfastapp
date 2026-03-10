@@ -38,6 +38,10 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@fitfast/ui/dialog";
+import { ActivityCard } from "./_components/activity-card";
+import { SupportCard } from "./_components/support-card";
+import { CheckInHistoryCard } from "./_components/checkin-history-card";
+import { ProgressCard } from "./_components/progress-card";
 
 const tierOptions = [
   { value: "monthly" as const, months: 1 },
@@ -170,6 +174,11 @@ export default function ClientDetailPage() {
           userId: userId,
         }
       : "skip",
+  );
+
+  const insights = useQuery(
+    api.clientInsights.getClientInsights,
+    isAuthenticated ? { userId } : "skip",
   );
 
   // Fetch all signup records (payment history) by email
@@ -611,6 +620,30 @@ export default function ClientDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Insights cards — only for active/expired clients with data */}
+      {insights && (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-2">
+          <ActivityCard
+            lastCheckInDate={insights.lastCheckInDate}
+            checkInCount={insights.checkInCount}
+            expectedCheckIns={insights.expectedCheckIns}
+            pushSubscriptionActive={insights.pushSubscriptionActive}
+          />
+          <SupportCard
+            openTicketsCount={insights.openTicketsCount}
+            totalTicketsCount={insights.totalTicketsCount}
+            lastTicketDate={insights.lastTicketDate}
+          />
+          <CheckInHistoryCard checkInHistory={insights.checkInHistory} />
+          <ProgressCard
+            initialWeight={insights.initialWeight}
+            latestWeight={insights.latestWeight}
+            mealCompletionRate={insights.mealCompletionRate}
+            workoutCompletionRate={insights.workoutCompletionRate}
+          />
+        </div>
+      )}
 
       {/* Actions card */}
       {profile.status === "pending_approval" && (

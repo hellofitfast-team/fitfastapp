@@ -225,13 +225,15 @@ export const sendWelcomeEmail = internalAction({
 });
 
 export const sendPlanReadyEmail = internalAction({
-  args: { userId: v.string() },
-  handler: async (ctx, { userId }): Promise<void> => {
-    // Skip email if user has active push subscription
-    const subscription = await ctx.runQuery(internal.pushSubscriptions.getSubscriptionByUserId, {
-      userId,
-    });
-    if (subscription?.isActive) return;
+  args: { userId: v.string(), force: v.optional(v.boolean()) },
+  handler: async (ctx, { userId, force }): Promise<void> => {
+    // Skip email if user has active push subscription (unless forced by push failure fallback)
+    if (!force) {
+      const subscription = await ctx.runQuery(internal.pushSubscriptions.getSubscriptionByUserId, {
+        userId,
+      });
+      if (subscription?.isActive) return;
+    }
 
     const profile = await ctx.runQuery(internal.helpers.getProfileInternal, { userId });
     if (!profile?.email) return;
