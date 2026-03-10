@@ -10,6 +10,14 @@ const withBundleAnalyzer = bundleAnalyzer({
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
+  generateBuildId: async () => {
+    return process.env.VERCEL_GIT_COMMIT_SHA || crypto.randomUUID();
+  },
+
+  env: {
+    NEXT_PUBLIC_BUILD_ID: process.env.VERCEL_GIT_COMMIT_SHA || "dev",
+  },
+
   experimental: {
     optimizePackageImports: [
       "lucide-react",
@@ -65,6 +73,15 @@ const nextConfig: NextConfig = {
               "frame-src 'self'",
               "frame-ancestors 'none'",
             ].join("; "),
+          },
+        ],
+      },
+      {
+        source: "/api/version",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-store, no-cache, must-revalidate",
           },
         ],
       },

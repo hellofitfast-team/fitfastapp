@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
+import { useVersionCheck } from "@/hooks/use-version-check";
 
 export function ServiceWorkerRegistration() {
+  useVersionCheck();
+
   useEffect(() => {
     if (!("serviceWorker" in navigator) || !navigator.serviceWorker) return;
 
