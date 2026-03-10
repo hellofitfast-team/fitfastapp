@@ -479,6 +479,26 @@
       "title": "ADMIN ERROR",
       "description": "Something went wrong in the admin panel. Please try again.",
       "retry": "TRY AGAIN"
+    },
+    "clients": {
+      "title": "CLIENTS ERROR",
+      "description": "We couldn't load the clients page. Please try again.",
+      "retry": "TRY AGAIN"
+    },
+    "faqs": {
+      "title": "FAQS ERROR",
+      "description": "We couldn't load the FAQs page. Please try again.",
+      "retry": "TRY AGAIN"
+    },
+    "knowledge": {
+      "title": "KNOWLEDGE BASE ERROR",
+      "description": "We couldn't load the knowledge base. Please try again.",
+      "retry": "TRY AGAIN"
+    },
+    "notifications": {
+      "title": "NOTIFICATIONS ERROR",
+      "description": "We couldn't load the notifications page. Please try again.",
+      "retry": "TRY AGAIN"
     }
   },
   "emptyStates": {
