@@ -1,16 +1,18 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { requireCoach } from "./helpers";
 
 // ---------------------------------------------------------------------------
 // One-time helpers for the exercise image upload script.
-// These are public mutations so the external Node.js script can call them
-// via ConvexHttpClient. Safe to remove after images are populated.
+// Called via ConvexHttpClient from external Node.js script (must be logged in
+// as coach). Safe to remove after images are populated.
 // ---------------------------------------------------------------------------
 
 /** Returns a pre-signed upload URL for Convex storage. */
 export const generateUploadUrl = mutation({
   args: {},
   handler: async (ctx) => {
+    await requireCoach(ctx);
     return await ctx.storage.generateUploadUrl();
   },
 });
@@ -22,6 +24,7 @@ export const linkImageToExercise = mutation({
     storageId: v.id("_storage"),
   },
   handler: async (ctx, { exerciseName, storageId }) => {
+    await requireCoach(ctx);
     const exercise = await ctx.db
       .query("exerciseDatabase")
       .filter((q) => q.eq(q.field("name"), exerciseName))
