@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 import { useAuth } from "@/hooks/use-auth";
 import { useSwipeable } from "react-swipeable";
 import { ArrowRight, ArrowLeft, Loader2 } from "lucide-react";
@@ -35,14 +36,6 @@ export default function InitialAssessmentPage() {
   const submitAssessment = useMutation(api.assessments.submitAssessment);
   const updateProfile = useMutation(api.profiles.updateProfile);
   const generateUploadUrl = useMutation(api.storage.generateUploadUrl);
-
-  // Fetch admin-configured cycle duration for initial plan generation
-  const frequencyConfig = useQuery(api.systemConfig.getConfig, { key: "check_in_frequency_days" });
-  const rawDuration =
-    typeof frequencyConfig?.value === "number"
-      ? frequencyConfig.value
-      : Number(frequencyConfig?.value) || 10;
-  const planDuration = rawDuration > 0 ? rawDuration : 10;
 
   // Step labels from translations
   const STEP_LABELS = [
@@ -230,7 +223,7 @@ export default function InitialAssessmentPage() {
       const language = (locale === "ar" ? "ar" : "en") as "en" | "ar";
 
       // Upload InBody file to storage if present
-      let inBodyStorageId: string | undefined;
+      let inBodyStorageId: Id<"_storage"> | undefined;
       if (measurementMethod === "inbody" && inBodyFile) {
         const uploadUrl = await generateUploadUrl({});
         const result = await fetch(uploadUrl, {
@@ -238,9 +231,10 @@ export default function InitialAssessmentPage() {
           headers: { "Content-Type": inBodyFile.type },
           body: inBodyFile,
         });
-        if (!result.ok) throw new Error("Failed to upload InBody file");
-        const { storageId } = await result.json();
-        inBodyStorageId = storageId;
+        if (!result.ok) throw new Error(`Failed to upload InBody file (${result.status})`);
+        const json = await result.json().catch(() => null);
+        if (!json?.storageId) throw new Error("Upload succeeded but no storageId returned");
+        inBodyStorageId = json.storageId as Id<"_storage">;
       }
 
       // Build measurements from manual input
@@ -277,7 +271,7 @@ export default function InitialAssessmentPage() {
         exerciseHistory: finalEquipment,
         measurements,
         measurementMethod,
-        inBodyStorageId: inBodyStorageId as any,
+        inBodyStorageId,
         femaleHealth:
           gender === "female" && Object.keys(femaleHealth).length > 0 ? femaleHealth : undefined,
         lifestyleHabits: {
@@ -285,7 +279,7 @@ export default function InitialAssessmentPage() {
           mealsPerDay: mealsPerDay ? parseInt(mealsPerDay) : undefined,
         },
         // Schedule server-side plan generation (survives client navigation)
-        generatePlans: { language, planDuration },
+        generatePlans: { language },
       });
 
       // Update profile status to active
@@ -377,7 +371,10 @@ export default function InitialAssessmentPage() {
                 age={age}
                 setAge={setAge}
                 gender={gender}
-                setGender={setGender}
+                setGender={(g: string) => {
+                  setGender(g);
+                  if (g !== "female") setFemaleHealth({});
+                }}
                 activityLevel={activityLevel}
                 setActivityLevel={setActivityLevel}
                 experienceLevel={experienceLevel}

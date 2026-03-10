@@ -356,10 +356,11 @@ function selectExercisesForDay(
 
   if (input.sessionDuration && input.sessionDuration > 0) {
     // Target the client's preferred session duration
-    // Formula: duration = 5 (warmup) + exercises * sets * 1.5 + 5 (cooldown)
-    // So: exercises = (duration - 10) / (sets * 1.5)
+    // Formula: duration = 5 (warmup) + exercises * sets * avgTimePerSet + 5 (cooldown)
+    // avgTimePerSet ~2.2 min accounts for work (~45s) + rest (60-120s avg ~90s)
+    // So: exercises = (duration - 10) / (sets * 2.2)
     const availableMins = input.sessionDuration - 10; // subtract warmup + cooldown
-    count = Math.max(range.min, Math.round(availableMins / (gp.sets * 1.5)));
+    count = Math.max(range.min, Math.round(availableMins / (gp.sets * 2.2)));
   } else {
     count = range.max;
   }

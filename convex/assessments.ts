@@ -107,7 +107,7 @@ export const submitAssessment = mutation({
     generatePlans: v.optional(
       v.object({
         language: v.union(v.literal("en"), v.literal("ar")),
-        planDuration: v.number(),
+        planDuration: v.optional(v.number()),
       }),
     ),
   },
@@ -123,7 +123,12 @@ export const submitAssessment = mutation({
       );
     }
 
-    const { generatePlans, ...assessmentData } = args;
+    const { generatePlans, femaleHealth: rawFemaleHealth, ...restData } = args;
+    // Strip femaleHealth if gender is not female (defense-in-depth)
+    const assessmentData = {
+      ...restData,
+      ...(restData.gender === "female" && rawFemaleHealth ? { femaleHealth: rawFemaleHealth } : {}),
+    };
 
     // Guard: prevent generatePlans=true if user already has plans (initial generation only)
     if (generatePlans) {
