@@ -24,6 +24,8 @@ interface ClientInsights {
   totalTicketsCount: number;
   lastTicketDate: number | null;
   pushSubscriptionActive: boolean;
+  assessmentVersion: number;
+  lastAssessmentChangeDate: number | null;
 }
 
 /** Aggregates all coach-relevant insight data for a client in one query. */
@@ -32,37 +34,50 @@ export const getClientInsights = query({
   handler: async (ctx, { userId }): Promise<ClientInsights> => {
     await requireCoach(ctx);
 
-    const [checkIns, tickets, subscription, mealCompletions, workoutCompletions, profile, config] =
-      await Promise.all([
-        ctx.db
-          .query("checkIns")
-          .withIndex("by_userId", (q) => q.eq("userId", userId))
-          .collect(),
-        ctx.db
-          .query("tickets")
-          .withIndex("by_userId", (q) => q.eq("userId", userId))
-          .collect(),
-        ctx.db
-          .query("pushSubscriptions")
-          .withIndex("by_userId", (q) => q.eq("userId", userId))
-          .first(),
-        ctx.db
-          .query("mealCompletions")
-          .withIndex("by_userId_date", (q) => q.eq("userId", userId))
-          .collect(),
-        ctx.db
-          .query("workoutCompletions")
-          .withIndex("by_userId_date", (q) => q.eq("userId", userId))
-          .collect(),
-        ctx.db
-          .query("profiles")
-          .withIndex("by_userId", (q) => q.eq("userId", userId))
-          .unique(),
-        ctx.db
-          .query("systemConfig")
-          .withIndex("by_key", (q) => q.eq("key", "check_in_frequency_days"))
-          .unique(),
-      ]);
+    const [
+      checkIns,
+      tickets,
+      subscription,
+      mealCompletions,
+      workoutCompletions,
+      profile,
+      config,
+      latestHistoryEntry,
+    ] = await Promise.all([
+      ctx.db
+        .query("checkIns")
+        .withIndex("by_userId", (q) => q.eq("userId", userId))
+        .collect(),
+      ctx.db
+        .query("tickets")
+        .withIndex("by_userId", (q) => q.eq("userId", userId))
+        .collect(),
+      ctx.db
+        .query("pushSubscriptions")
+        .withIndex("by_userId", (q) => q.eq("userId", userId))
+        .first(),
+      ctx.db
+        .query("mealCompletions")
+        .withIndex("by_userId_date", (q) => q.eq("userId", userId))
+        .collect(),
+      ctx.db
+        .query("workoutCompletions")
+        .withIndex("by_userId_date", (q) => q.eq("userId", userId))
+        .collect(),
+      ctx.db
+        .query("profiles")
+        .withIndex("by_userId", (q) => q.eq("userId", userId))
+        .unique(),
+      ctx.db
+        .query("systemConfig")
+        .withIndex("by_key", (q) => q.eq("key", "check_in_frequency_days"))
+        .unique(),
+      ctx.db
+        .query("assessmentHistory")
+        .withIndex("by_userId", (q) => q.eq("userId", userId))
+        .order("desc")
+        .first(),
+    ]);
 
     // Sort check-ins by date descending
     const sortedCheckIns = checkIns.sort(
@@ -142,6 +157,8 @@ export const getClientInsights = query({
       totalTicketsCount: tickets.length,
       lastTicketDate,
       pushSubscriptionActive: subscription?.isActive ?? false,
+      assessmentVersion: (latestHistoryEntry?.versionNumber ?? 0) + 1,
+      lastAssessmentChangeDate: latestHistoryEntry?.createdAt ?? null,
     };
   },
 });

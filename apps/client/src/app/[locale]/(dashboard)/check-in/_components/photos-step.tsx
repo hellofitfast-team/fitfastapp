@@ -53,7 +53,6 @@ export function PhotosStep({ progressPhotos, onPhotoChange }: PhotosStepProps) {
               type="file"
               id={`photo-${position}`}
               accept="image/*"
-              capture="environment"
               onChange={(e) => {
                 const file = e.target.files?.[0] ?? null;
                 onPhotoChange(position, file);

@@ -89,6 +89,7 @@ export const savePlanInternal = internalMutation({
     language: v.union(v.literal("en"), v.literal("ar")),
     startDate: v.string(),
     endDate: v.string(),
+    assessmentVersion: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     return ctx.db.insert("workoutPlans", args);

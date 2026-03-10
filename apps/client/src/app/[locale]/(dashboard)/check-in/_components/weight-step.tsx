@@ -134,7 +134,6 @@ export function WeightStep({ inBodyFile, onInBodyFileChange }: WeightStepProps) 
             type="file"
             id="inbody-upload"
             accept="image/*"
-            capture="environment"
             onChange={(e) => {
               const file = e.target.files?.[0] ?? null;
               onInBodyFileChange(file);

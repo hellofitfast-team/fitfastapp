@@ -10,6 +10,7 @@ export interface ClientContext {
   profile: Doc<"profiles">;
   assessment: Doc<"initialAssessments"> | null;
   assessmentChanges: string[] | null;
+  assessmentVersion: number;
   currentCheckIn: Doc<"checkIns"> | null;
   checkInHistory: Doc<"checkIns">[];
   adherence: {
@@ -117,6 +118,7 @@ export const buildClientContext = internalQuery({
       profile,
       assessment,
       assessmentChanges: latestHistory?.changedFields ?? null,
+      assessmentVersion: (latestHistory?.versionNumber ?? 0) + 1,
       currentCheckIn,
       checkInHistory,
       adherence: { meal: mealAdherence, workout: workoutAdherence },

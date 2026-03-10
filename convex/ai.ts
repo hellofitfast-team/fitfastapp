@@ -440,6 +440,151 @@ async function fetchClientContextWithRetry(
 }
 
 // ---------------------------------------------------------------------------
+// Demo mode — mock meal plan when no AI API keys are configured
+// ---------------------------------------------------------------------------
+
+async function generateDemoMealPlan(
+  ctx: ActionCtx,
+  {
+    userId,
+    checkInId,
+    language,
+    safeDuration,
+    clientCtx,
+  }: {
+    userId: string;
+    checkInId?: Id<"checkIns">;
+    language: "en" | "ar";
+    safeDuration: number;
+    clientCtx: ClientContext;
+  },
+): Promise<Id<"mealPlans">> {
+  const assessment = clientCtx.assessment!;
+  const isArabic = language === "ar";
+  const nutritionTargets = calculateNutritionTargets({
+    weightKg: assessment.currentWeight ?? 75,
+    heightCm: assessment.height ?? 170,
+    age: assessment.age ?? 30,
+    gender: assessment.gender === "female" ? "female" : "male",
+    trainingDaysPerWeek: Math.max(1, (assessment.scheduleAvailability as any)?.days?.length ?? 4),
+    goal: assessment.goals?.split(",")[0]?.trim() ?? "general_fitness",
+    activityLevel: (assessment as any).activityLevel ?? undefined,
+  });
+
+  const makeMeal = (name: string, nameAr: string, type: string, calPct: number) => {
+    const cal = Math.round(nutritionTargets.calories * calPct);
+    const pro = Math.round(nutritionTargets.protein * calPct);
+    const carb = Math.round(nutritionTargets.carbs * calPct);
+    const fat = Math.round(nutritionTargets.fat * calPct);
+    return {
+      name: isArabic ? nameAr : name,
+      type,
+      calories: cal,
+      protein: pro,
+      carbs: carb,
+      fat,
+      ingredients: isArabic
+        ? ["بيض - 3 حبات", "خبز بلدي - 1", "جبنة بيضاء - 50 جم"]
+        : ["3 eggs", "1 baladi bread", "50g white cheese"],
+      instructions: isArabic ? ["اطبخ المكونات حسب الرغبة"] : ["Cook ingredients as preferred"],
+      alternatives: [
+        {
+          name: isArabic ? "بديل 1" : "Alternative 1",
+          type,
+          calories: cal,
+          protein: pro,
+          carbs: carb,
+          fat,
+          ingredients: isArabic
+            ? ["شوفان - 60 جم", "لبن - 200 مل", "موز - 1"]
+            : ["60g oats", "200ml milk", "1 banana"],
+          instructions: isArabic ? ["اخلط المكونات"] : ["Mix ingredients"],
+        },
+        {
+          name: isArabic ? "بديل 2" : "Alternative 2",
+          type,
+          calories: cal,
+          protein: pro,
+          carbs: carb,
+          fat,
+          ingredients: isArabic
+            ? ["فول - 200 جم", "طحينة - 1 م.ك", "خبز - 1"]
+            : ["200g fava beans", "1 tbsp tahini", "1 bread"],
+          instructions: isArabic ? ["سخن الفول وقدمه"] : ["Heat beans and serve"],
+        },
+        {
+          name: isArabic ? "بديل 3" : "Alternative 3",
+          type,
+          calories: cal,
+          protein: pro,
+          carbs: carb,
+          fat,
+          ingredients: isArabic
+            ? ["زبادي يوناني - 200 جم", "عسل - 1 م.ك", "مكسرات - 30 جم"]
+            : ["200g Greek yogurt", "1 tbsp honey", "30g nuts"],
+          instructions: isArabic ? ["اخلط وقدم"] : ["Mix and serve"],
+        },
+      ],
+    };
+  };
+
+  const weeklyPlan: Record<string, unknown> = {};
+  for (let d = 1; d <= safeDuration; d++) {
+    weeklyPlan[`day${d}`] = {
+      dailyTotals: {
+        calories: nutritionTargets.calories,
+        protein: nutritionTargets.protein,
+        carbs: nutritionTargets.carbs,
+        fat: nutritionTargets.fat,
+      },
+      meals: [
+        makeMeal("Breakfast", "فطور", "breakfast", 0.25),
+        makeMeal("Morning Snack", "سناك صباحي", "snack", 0.1),
+        makeMeal("Lunch", "غداء", "lunch", 0.3),
+        makeMeal("Afternoon Snack", "سناك مسائي", "snack", 0.1),
+        makeMeal("Dinner", "عشاء", "dinner", 0.25),
+      ],
+    };
+  }
+
+  const planData = {
+    dailyTargets: {
+      calories: nutritionTargets.calories,
+      protein: nutritionTargets.protein,
+      carbs: nutritionTargets.carbs,
+      fat: nutritionTargets.fat,
+    },
+    weeklyPlan,
+    notes: isArabic
+      ? "⚠️ خطة تجريبية — سيتم إنشاء خطة مخصصة بالذكاء الاصطناعي عند تفعيل المفتاح"
+      : "⚠️ Demo plan — a personalized AI plan will be generated once API keys are configured",
+  };
+
+  const streamId: string = await ctx.runMutation(internal.streamingManager.createStream, {});
+  await ctx.runMutation(internal.streamingManager.appendChunk, {
+    streamId,
+    text: JSON.stringify(planData),
+    final: true,
+  });
+
+  const startDate = new Date().toISOString().split("T")[0]!;
+  const endDate = new Date(Date.now() + safeDuration * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .split("T")[0]!;
+
+  return ctx.runMutation(internal.mealPlans.savePlanInternal, {
+    userId,
+    checkInId,
+    planData,
+    streamId,
+    language,
+    startDate,
+    endDate,
+    assessmentVersion: clientCtx.assessmentVersion,
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Shared generation logic
 // ---------------------------------------------------------------------------
 
@@ -459,6 +604,17 @@ async function generateMealPlanHandler(
 ): Promise<Id<"mealPlans">> {
   // Defense in depth: ensure planDuration is always at least 1
   const safeDuration = Math.max(planDuration, 1);
+
+  // --- DEMO MODE: skip AI when no API keys are configured ---
+  const hasGoogleKey = !!process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+  const hasDeepSeekKey = !!process.env.DEEPSEEK_API_KEY;
+  if (!hasGoogleKey && !hasDeepSeekKey) {
+    console.warn(
+      `[AI] DEMO MODE: No AI API keys configured — generating mock meal plan for user ${userId}`,
+    );
+    const clientCtx = await fetchClientContextWithRetry(ctx, userId, checkInId);
+    return generateDemoMealPlan(ctx, { userId, checkInId, language, safeDuration, clientCtx });
+  }
 
   const clientCtx = await fetchClientContextWithRetry(ctx, userId, checkInId);
 
@@ -764,6 +920,7 @@ Respond ONLY with valid JSON.`;
     language,
     startDate,
     endDate,
+    assessmentVersion: clientCtx.assessmentVersion,
   });
 }
 
@@ -873,6 +1030,7 @@ async function generateWorkoutPlanHandler(
     language,
     startDate,
     endDate,
+    assessmentVersion: clientCtx.assessmentVersion,
   });
 }
 

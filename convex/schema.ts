@@ -86,6 +86,7 @@ export default defineSchema({
     userId: v.string(),
     assessmentSnapshot: v.any(),
     changedFields: v.array(v.string()),
+    previousValues: v.optional(v.any()),
     versionNumber: v.number(),
     createdAt: v.number(),
   }).index("by_userId", ["userId"]),
@@ -198,6 +199,7 @@ export default defineSchema({
     language: languageValidator,
     startDate: v.string(),
     endDate: v.string(),
+    assessmentVersion: v.optional(v.number()),
     translatedPlanData: v.optional(v.any()),
     translatedLanguage: v.optional(languageValidator),
   })
@@ -213,6 +215,7 @@ export default defineSchema({
     language: languageValidator,
     startDate: v.string(),
     endDate: v.string(),
+    assessmentVersion: v.optional(v.number()),
     translatedPlanData: v.optional(v.any()),
     translatedLanguage: v.optional(languageValidator),
   })

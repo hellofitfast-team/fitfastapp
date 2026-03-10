@@ -700,6 +700,21 @@
     "lastTicket": "Last Ticket",
     "noTickets": "No tickets"
   },
+  "assessmentHistory": {
+    "title": "Assessment History",
+    "currentVersion": "Current: v{version}",
+    "noChanges": "No profile changes recorded",
+    "versionBadge": "v{from} → v{to}",
+    "fieldsChanged": "{count} fields changed",
+    "showChanges": "Show changes",
+    "hideChanges": "Hide changes",
+    "showAll": "Show all ({count})",
+    "showLess": "Show less",
+    "initialAssessment": "Initial assessment",
+    "notSet": "Not set",
+    "added": "Added",
+    "removed": "Removed"
+  },
   "assessmentDetails": {
     "showMore": "Show more details",
     "showLess": "Show less",

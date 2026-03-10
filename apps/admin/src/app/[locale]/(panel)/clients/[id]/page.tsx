@@ -43,6 +43,7 @@ import { ActivityCard } from "./_components/activity-card";
 import { SupportCard } from "./_components/support-card";
 import { CheckInHistoryCard } from "./_components/checkin-history-card";
 import { ProgressCard } from "./_components/progress-card";
+import { AssessmentHistoryCard } from "./_components/assessment-history-card";
 
 const tierOptions = [
   { value: "monthly" as const, months: 1 },
@@ -412,6 +413,11 @@ export default function ClientDetailPage() {
 
   const insights = useQuery(
     api.clientInsights.getClientInsights,
+    isAuthenticated ? { userId } : "skip",
+  );
+
+  const assessmentHistory = useQuery(
+    api.assessments.getAssessmentHistory,
     isAuthenticated ? { userId } : "skip",
   );
 
@@ -845,6 +851,12 @@ export default function ClientDetailPage() {
             mealCompletionRate={insights.mealCompletionRate}
             workoutCompletionRate={insights.workoutCompletionRate}
           />
+          {assessmentHistory && assessmentHistory.length > 0 && (
+            <AssessmentHistoryCard
+              history={assessmentHistory}
+              currentVersion={insights.assessmentVersion}
+            />
+          )}
         </div>
       )}
 

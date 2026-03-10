@@ -700,6 +700,21 @@
     "lastTicket": "آخر تذكرة",
     "noTickets": "لا توجد تذاكر"
   },
+  "assessmentHistory": {
+    "title": "سجل التقييمات",
+    "currentVersion": "الحالي: v{version}",
+    "noChanges": "لا توجد تغييرات مسجلة",
+    "versionBadge": "v{from} → v{to}",
+    "fieldsChanged": "{count} حقول تغيرت",
+    "showChanges": "عرض التغييرات",
+    "hideChanges": "إخفاء التغييرات",
+    "showAll": "عرض الكل ({count})",
+    "showLess": "عرض أقل",
+    "initialAssessment": "التقييم الأولي",
+    "notSet": "غير محدد",
+    "added": "مضاف",
+    "removed": "محذوف"
+  },
   "assessmentDetails": {
     "showMore": "عرض المزيد من التفاصيل",
     "showLess": "عرض أقل",

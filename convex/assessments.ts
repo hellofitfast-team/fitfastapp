@@ -3,6 +3,7 @@ import { query, mutation, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getAuthUserId } from "./auth";
 import { rateLimiter } from "./rateLimiter";
+import { requireCoach } from "./helpers";
 import { inBodyDataValidator } from "./checkIns";
 
 export const getMyAssessment = query({
@@ -141,17 +142,26 @@ export const submitAssessment = mutation({
       }
 
       if (changedFields.length > 0) {
-        // Count existing history entries for version number
-        const historyEntries = await ctx.db
+        // O(1) version counting — get latest version instead of loading all entries
+        const latestHistory = await ctx.db
           .query("assessmentHistory")
           .withIndex("by_userId", (q) => q.eq("userId", userId))
-          .collect();
+          .order("desc")
+          .first();
+        const nextVersion = (latestHistory?.versionNumber ?? 0) + 1;
+
+        // Extract old values for changelog display
+        const previousValues: Record<string, unknown> = {};
+        for (const field of changedFields) {
+          previousValues[field] = (existing as Record<string, unknown>)[field];
+        }
 
         await ctx.db.insert("assessmentHistory", {
           userId,
           assessmentSnapshot: { ...existing },
           changedFields,
-          versionNumber: historyEntries.length + 1,
+          previousValues,
+          versionNumber: nextVersion,
           createdAt: Date.now(),
         });
       }
@@ -188,6 +198,19 @@ export const submitAssessment = mutation({
     }
 
     return assessmentId;
+  },
+});
+
+/** Coach query: fetch assessment change history for a client (reverse chronological). */
+export const getAssessmentHistory = query({
+  args: { userId: v.string() },
+  handler: async (ctx, { userId }) => {
+    await requireCoach(ctx);
+    return ctx.db
+      .query("assessmentHistory")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .order("desc")
+      .collect();
   },
 });
 

@@ -147,7 +147,6 @@ export function MeasurementsSection({
             type="file"
             id="assessment-inbody-upload"
             accept="image/*"
-            capture="environment"
             onChange={(e) => {
               const file = e.target.files?.[0] ?? null;
               onInBodyFileChange(file);
