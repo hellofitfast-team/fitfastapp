@@ -302,7 +302,7 @@ function selectExercisesForDay(
       equipmentAvailable(ex, input.availableEquipment),
   );
 
-  // Fallback: if too few exercises pass the strict filter, relax difficulty constraint
+  // Fallback 1: if too few exercises pass the strict filter, relax difficulty constraint
   if (eligible.length < 6) {
     eligible = allExercises.filter(
       (ex) =>
@@ -313,6 +313,19 @@ function selectExercisesForDay(
           ex.category === "cardio") &&
         !hasInjuryConflict(ex, input.injuries) &&
         equipmentAvailable(ex, input.availableEquipment),
+    );
+  }
+
+  // Fallback 2: if still too few, also relax equipment constraint
+  if (eligible.length < 6) {
+    eligible = allExercises.filter(
+      (ex) =>
+        ex.isActive &&
+        (ex.category === "compound" ||
+          ex.category === "accessory" ||
+          ex.category === "isolation" ||
+          ex.category === "cardio") &&
+        !hasInjuryConflict(ex, input.injuries),
     );
   }
 

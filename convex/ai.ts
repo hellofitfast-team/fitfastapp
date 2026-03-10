@@ -1105,7 +1105,25 @@ async function generateWorkoutPlanHandler(
     availableEquipment: (() => {
       const eq = (assessment.lifestyleHabits as any)?.equipment;
       if (!eq) return undefined;
-      return Array.isArray(eq) ? eq : [eq];
+      if (Array.isArray(eq)) return eq;
+      if (typeof eq !== "string") return undefined;
+      // Semantic mapping: assessment stores "home"/"gym" but exercises use specific equipment names
+      const EQUIPMENT_MAP: Record<string, string[]> = {
+        home: ["dumbbells", "resistance_band", "pull_up_bar"],
+        gym: [
+          "barbell",
+          "dumbbells",
+          "cable_machine",
+          "machines",
+          "bench",
+          "pull_up_bar",
+          "ez_bar",
+        ],
+        full_gym: [], // empty = allow all
+        limited: ["dumbbells", "resistance_band"],
+      };
+      const mapped = EQUIPMENT_MAP[eq.toLowerCase()];
+      return mapped !== undefined ? (mapped.length === 0 ? undefined : mapped) : undefined;
     })(),
     gender: assessment.gender === "female" ? "female" : "male",
     femaleHealth:
