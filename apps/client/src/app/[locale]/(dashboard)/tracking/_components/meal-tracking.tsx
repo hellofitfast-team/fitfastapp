@@ -184,6 +184,7 @@ export const MealTracking = memo(function MealTracking({
                         <button
                           type="button"
                           onClick={() => setExpandedMeal(isExpanded ? null : index)}
+                          aria-expanded={isExpanded}
                           className="text-nutrition bg-nutrition/8 hover:bg-nutrition/15 rounded-md px-2 py-0.5 text-xs font-medium transition-colors"
                         >
                           {meal.ingredients.length} {tMeals("ingredients")} {isExpanded ? "▲" : "▼"}
@@ -229,7 +230,7 @@ export const MealTracking = memo(function MealTracking({
                       {/* Notes */}
                       <textarea
                         placeholder={t("addNotes")}
-                        value={mealNotes[index] || completion?.notes || ""}
+                        value={mealNotes[index] ?? completion?.notes ?? ""}
                         onChange={(e) =>
                           onMealNotesChange({ ...mealNotes, [index]: e.target.value })
                         }

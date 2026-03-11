@@ -262,7 +262,7 @@ const ExerciseCard = memo(function ExerciseCard({
   onOpenHistory,
 }: ExerciseCardProps) {
   const t = useTranslations("tracking");
-  const [savingSet, setSavingSet] = useState<number | null>(null);
+  const [savingSets, setSavingSets] = useState<Set<number>>(new Set());
 
   const completedSets = log?.sets.filter((s) => s.completed).length ?? 0;
   const totalSets = exercise.sets;
@@ -271,7 +271,7 @@ const ExerciseCard = memo(function ExerciseCard({
   /** Toggle a single set's completion, sending current weight/reps with it */
   const handleSetToggle = useCallback(
     async (setIndex: number) => {
-      setSavingSet(setIndex);
+      setSavingSets((prev) => new Set(prev).add(setIndex));
       try {
         const existingSet = log?.sets.find((s) => s.setIndex === setIndex);
         await onLogSet({
@@ -281,7 +281,11 @@ const ExerciseCard = memo(function ExerciseCard({
           completed: !(existingSet?.completed ?? false),
         });
       } finally {
-        setSavingSet(null);
+        setSavingSets((prev) => {
+          const next = new Set(prev);
+          next.delete(setIndex);
+          return next;
+        });
       }
     },
     [log, lastSession, onLogSet],
@@ -290,7 +294,7 @@ const ExerciseCard = memo(function ExerciseCard({
   /** Update weight for a specific set (debounced by user pressing checkmark) */
   const handleWeightChange = useCallback(
     async (setIndex: number, weight: number | undefined) => {
-      setSavingSet(setIndex);
+      setSavingSets((prev) => new Set(prev).add(setIndex));
       try {
         const existingSet = log?.sets.find((s) => s.setIndex === setIndex);
         await onLogSet({
@@ -300,7 +304,11 @@ const ExerciseCard = memo(function ExerciseCard({
           completed: existingSet?.completed ?? false,
         });
       } finally {
-        setSavingSet(null);
+        setSavingSets((prev) => {
+          const next = new Set(prev);
+          next.delete(setIndex);
+          return next;
+        });
       }
     },
     [log, onLogSet],
@@ -309,7 +317,7 @@ const ExerciseCard = memo(function ExerciseCard({
   /** Update reps for a specific set */
   const handleRepsChange = useCallback(
     async (setIndex: number, reps: number | undefined) => {
-      setSavingSet(setIndex);
+      setSavingSets((prev) => new Set(prev).add(setIndex));
       try {
         const existingSet = log?.sets.find((s) => s.setIndex === setIndex);
         await onLogSet({
@@ -319,7 +327,11 @@ const ExerciseCard = memo(function ExerciseCard({
           completed: existingSet?.completed ?? false,
         });
       } finally {
-        setSavingSet(null);
+        setSavingSets((prev) => {
+          const next = new Set(prev);
+          next.delete(setIndex);
+          return next;
+        });
       }
     },
     [log, lastSession, onLogSet],
@@ -332,8 +344,19 @@ const ExerciseCard = memo(function ExerciseCard({
         isExerciseDone ? "border-fitness/30 bg-fitness/5" : "border-border bg-card",
       )}
     >
-      {/* Collapsed header */}
-      <button type="button" onClick={onToggleExpand} className="flex w-full items-center gap-3 p-3">
+      {/* Collapsed header — div instead of button to avoid nesting interactive elements */}
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={onToggleExpand}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onToggleExpand();
+          }
+        }}
+        className="flex w-full cursor-pointer items-center gap-3 p-3"
+      >
         {/* Completion indicator */}
         <div
           className={cn(
@@ -383,7 +406,7 @@ const ExerciseCard = memo(function ExerciseCard({
             <ChevronDown className="text-muted-foreground h-4 w-4" />
           )}
         </div>
-      </button>
+      </div>
 
       {/* Expanded set-by-set logging */}
       {isExpanded && (
@@ -401,7 +424,7 @@ const ExerciseCard = memo(function ExerciseCard({
           {Array.from({ length: totalSets }, (_, setIdx) => {
             const existingSet = log?.sets.find((s) => s.setIndex === setIdx);
             const isCompleted = existingSet?.completed ?? false;
-            const isSaving = savingSet === setIdx;
+            const isSaving = savingSets.has(setIdx);
 
             return (
               <SetRow
@@ -504,7 +527,8 @@ const SetRow = memo(function SetRow({
         value={localWeight}
         onChange={(e) => setLocalWeight(e.target.value)}
         onBlur={() => {
-          const val = localWeight === "" ? undefined : Number(localWeight);
+          const parsed = Number(localWeight);
+          const val = localWeight === "" || Number.isNaN(parsed) ? undefined : parsed;
           if (val !== weight) onWeightChange(val);
         }}
         className={cn(
@@ -526,7 +550,8 @@ const SetRow = memo(function SetRow({
         value={localReps}
         onChange={(e) => setLocalReps(e.target.value)}
         onBlur={() => {
-          const val = localReps === "" ? undefined : Number(localReps);
+          const parsed = Number(localReps);
+          const val = localReps === "" || Number.isNaN(parsed) ? undefined : parsed;
           if (val !== reps) onRepsChange(val);
         }}
         className={cn(
