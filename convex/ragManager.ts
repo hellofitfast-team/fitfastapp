@@ -4,11 +4,11 @@ import { RAG } from "@convex-dev/rag";
 import { components } from "./_generated/api";
 
 /**
- * Singleton RAG client. Uses OpenAI text-embedding-3-small via OpenRouter.
+ * Singleton RAG client. Uses Qwen3 embedding model via OpenRouter.
  *
  * IMPORTANT: Changing the model or dimension is a breaking change — existing
  * embeddings become incompatible and all documents must be re-embedded.
- * Current production embeddings use text-embedding-3-small at 1536 dims.
+ * Current production embeddings use qwen/qwen3-embedding-8b at 1024 dims.
  *
  * The provider is created lazily at first use (inside Node actions) since
  * process.env is only available at runtime in the Node environment.
@@ -22,8 +22,8 @@ function createRagClient() {
   });
 
   return new RAG<{ tag: string }>(components.rag, {
-    textEmbeddingModel: openrouter.textEmbeddingModel("openai/text-embedding-3-small"),
-    embeddingDimension: 1536,
+    textEmbeddingModel: openrouter.textEmbeddingModel("qwen/qwen3-embedding-8b"),
+    embeddingDimension: 1024,
     filterNames: ["tag"],
   });
 }

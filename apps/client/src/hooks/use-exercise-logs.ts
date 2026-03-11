@@ -70,6 +70,29 @@ export function useExerciseLogs(date: string) {
 }
 
 /**
+ * Hook for fetching last session data (progressive overload pre-fill).
+ * Returns the heaviest completed set per exercise from the most recent prior session.
+ *
+ * @param exerciseNames - List of exercise names in today's workout
+ * @param beforeDate - Only look at sessions before this date
+ * @returns Record<exerciseName, { weight, reps }>
+ */
+export function useLastSessionData(exerciseNames: string[], beforeDate: string) {
+  const { isAuthenticated } = useConvexAuth();
+  const shouldFetch = isAuthenticated && exerciseNames.length > 0;
+
+  const data = useQuery(
+    api.exerciseLogs.getLastSessionData,
+    shouldFetch ? { exerciseNames, beforeDate } : "skip",
+  );
+
+  return {
+    lastSessionData: data ?? {},
+    isLoading: shouldFetch && data === undefined,
+  };
+}
+
+/**
  * Hook for fetching exercise history (progressive overload tracking).
  * Used by the exercise history drawer to show past sessions.
  *

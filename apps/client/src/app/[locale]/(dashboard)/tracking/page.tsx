@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useCurrentMealPlan } from "@/hooks/use-meal-plans";
 import { useCurrentWorkoutPlan } from "@/hooks/use-workout-plans";
 import { useTracking } from "@/hooks/use-tracking";
-import { useExerciseLogs } from "@/hooks/use-exercise-logs";
+import { useExerciseLogs, useLastSessionData } from "@/hooks/use-exercise-logs";
 import { toast } from "@/hooks/use-toast";
 import { Target } from "lucide-react";
 import type { GeneratedMealPlan } from "@/lib/ai/meal-plan-generator";
@@ -181,13 +181,14 @@ export default function TrackingPage() {
     [trackingData.mealCompletions, mealPlanData, mealDayKey],
   );
 
-  /** Build lastSessionData from exercise logs — keyed by exercise name, shows best set */
-  const lastSessionData = useMemo(() => {
-    const data: Record<string, { weight?: number; reps?: number }> = {};
-    // exerciseLogs only has today's data; last session data would come from history
-    // For now, provide empty — will be populated when history drawer is opened
-    return data;
-  }, []);
+  /** Extract exercise names from today's workout for pre-fill query */
+  const todaysExerciseNames = useMemo(
+    () => (todaysWorkout?.exercises ?? []).map((e: { name: string }) => e.name),
+    [todaysWorkout],
+  );
+
+  /** Fetch last session data for progressive overload pre-fill */
+  const { lastSessionData } = useLastSessionData(todaysExerciseNames, selectedDate);
 
   // Celebrate 100% completion (only once per session per date)
   const celebratedRef = useRef<string | null>(null);

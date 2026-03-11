@@ -146,6 +146,22 @@ export const insertTextEntryInternal = internalMutation({
   },
 });
 
+/** Delete a knowledge entry by ID (internal — no auth check). Schedules RAG cleanup. */
+export const deleteEntryInternal = internalMutation({
+  args: { entryId: v.id("coachKnowledge") },
+  handler: async (ctx, { entryId }) => {
+    const entry = await ctx.db.get(entryId);
+    if (!entry) return;
+    await ctx.db.delete(entryId);
+    await ctx.scheduler.runAfter(0, internal.knowledgeBaseActions.removeFromRag, {
+      key: entryId,
+    });
+    if (entry.storageId) {
+      await ctx.storage.delete(entry.storageId);
+    }
+  },
+});
+
 /** List all knowledge entry IDs that have content (for bulk re-embedding). */
 export const listAllEntryIds = internalQuery({
   args: {},

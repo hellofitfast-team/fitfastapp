@@ -71,6 +71,53 @@ export const getExerciseHistory = query({
 });
 
 /**
+ * Get the most recent logged weight/reps for a list of exercises (before a given date).
+ * Powers the progressive overload pre-fill — shows last session's data in input fields.
+ *
+ * @param exerciseNames - Array of exercise names to look up
+ * @param beforeDate - Only return logs before this date (YYYY-MM-DD)
+ * @returns Record<exerciseName, { weight, reps }> from the best (heaviest) set of the most recent session
+ */
+export const getLastSessionData = query({
+  args: {
+    exerciseNames: v.array(v.string()),
+    beforeDate: v.string(),
+  },
+  handler: async (ctx, { exerciseNames, beforeDate }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return {};
+
+    // Cap to avoid excessive reads
+    const names = exerciseNames.slice(0, 20);
+    const result: Record<string, { weight?: number; reps?: number }> = {};
+
+    for (const name of names) {
+      // Get the most recent log for this exercise before the given date
+      const logs = await ctx.db
+        .query("exerciseLogs")
+        .withIndex("by_userId_exerciseName", (q) => q.eq("userId", userId).eq("exerciseName", name))
+        .order("desc")
+        .take(10);
+
+      // Find the first log that's before the requested date
+      const prevLog = logs.find((l) => l.date < beforeDate);
+      if (!prevLog) continue;
+
+      // Find the heaviest completed set
+      const completedSets = prevLog.sets.filter((s) => s.completed && s.weight != null);
+      if (completedSets.length === 0) continue;
+
+      const bestSet = completedSets.reduce((best, s) =>
+        (s.weight ?? 0) > (best.weight ?? 0) ? s : best,
+      );
+      result[name] = { weight: bestSet.weight, reps: bestSet.reps };
+    }
+
+    return result;
+  },
+});
+
+/**
  * Coach-only query: get a client's exercise logs for a specific date.
  * Used in admin panel to see prescribed vs actual workout data.
  *
