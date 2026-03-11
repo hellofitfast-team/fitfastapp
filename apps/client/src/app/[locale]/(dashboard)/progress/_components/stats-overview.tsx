@@ -12,6 +12,7 @@ interface StatsOverviewProps {
   weightChange: number;
   weightChangePercent: string;
   totalCheckIns: number;
+  rateOfChange?: number | null;
 }
 
 export function StatsOverview({
@@ -20,6 +21,7 @@ export function StatsOverview({
   weightChange,
   weightChangePercent,
   totalCheckIns,
+  rateOfChange,
 }: StatsOverviewProps) {
   const t = useTranslations("progress");
   const locale = useLocale();
@@ -67,6 +69,11 @@ export function StatsOverview({
           title={t("totalChange")}
           value={
             weightChange !== 0 ? `${weightChange > 0 ? "+" : ""}${weightChange.toFixed(1)}` : "-"
+          }
+          subtitle={
+            rateOfChange != null
+              ? `${rateOfChange > 0 ? "+" : ""}${rateOfChange.toFixed(1)} ${t("kgPerWeek")}`
+              : undefined
           }
           trend={
             weightChange !== 0

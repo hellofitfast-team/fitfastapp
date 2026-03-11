@@ -55,6 +55,7 @@ export const cascadeDeleteUser = internalMutation({
     await deleteByIndex("dailyReflections", "by_userId_date");
     await deleteByIndex("mealCompletions", "by_userId_date");
     await deleteByIndex("workoutCompletions", "by_userId_date");
+    await deleteByIndex("exerciseLogs", "by_userId_date");
     await deleteByIndex("mealPlans", "by_userId");
     await deleteByIndex("workoutPlans", "by_userId");
     await deleteByIndex("checkIns", "by_userId");

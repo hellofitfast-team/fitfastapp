@@ -44,6 +44,7 @@ import { SupportCard } from "./_components/support-card";
 import { CheckInHistoryCard } from "./_components/checkin-history-card";
 import { ProgressCard } from "./_components/progress-card";
 import { AssessmentHistoryCard } from "./_components/assessment-history-card";
+import { WorkoutLogCard } from "./_components/workout-log-card";
 
 const tierOptions = [
   { value: "monthly" as const, months: 1 },
@@ -878,6 +879,11 @@ export default function ClientDetailPage() {
             initialWeight={insights.initialWeight}
             latestWeight={insights.latestWeight}
             mealCompletionRate={insights.mealCompletionRate}
+            workoutCompletionRate={insights.workoutCompletionRate}
+          />
+          <WorkoutLogCard
+            exerciseLogCount={insights.exerciseLogCount}
+            hasDetailedLogs={insights.hasDetailedLogs}
             workoutCompletionRate={insights.workoutCompletionRate}
           />
           {assessmentHistory && assessmentHistory.length > 0 && (

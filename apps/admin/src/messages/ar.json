@@ -718,7 +718,13 @@
     "openTickets": "تذاكر مفتوحة",
     "totalTickets": "إجمالي التذاكر",
     "lastTicket": "آخر تذكرة",
-    "noTickets": "لا توجد تذاكر"
+    "noTickets": "لا توجد تذاكر",
+    "workoutLogging": "سجل التمارين",
+    "workoutCompletionRate": "نسبة الإكمال",
+    "exerciseLogsRecorded": "سجلات التمارين",
+    "loggingStyle": "نمط التسجيل",
+    "detailedLogging": "تفصيلي",
+    "quickCompleteOnly": "إكمال سريع"
   },
   "assessmentHistory": {
     "title": "سجل التقييمات",

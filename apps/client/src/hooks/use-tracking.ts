@@ -16,16 +16,18 @@ export function useTracking(date: string) {
     mealPlanId: Id<"mealPlans">,
     mealIndex: number,
     completed: boolean,
+    notes?: string,
   ) => {
-    await toggleMealMutation({ mealPlanId, date, mealIndex, completed });
+    await toggleMealMutation({ mealPlanId, date, mealIndex, completed, notes });
   };
 
   const toggleWorkoutCompletion = async (
     workoutPlanId: Id<"workoutPlans">,
     workoutIndex: number,
     completed: boolean,
+    notes?: string,
   ) => {
-    await toggleWorkoutMutation({ workoutPlanId, date, workoutIndex, completed });
+    await toggleWorkoutMutation({ workoutPlanId, date, workoutIndex, completed, notes });
   };
 
   const saveDailyReflection = async (reflection: string) => {

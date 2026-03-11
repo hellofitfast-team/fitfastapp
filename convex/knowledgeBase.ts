@@ -146,6 +146,15 @@ export const insertTextEntryInternal = internalMutation({
   },
 });
 
+/** List all knowledge entry IDs that have content (for bulk re-embedding). */
+export const listAllEntryIds = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const entries = await ctx.db.query("coachKnowledge").collect();
+    return entries.filter((e) => e.content).map((e) => e._id);
+  },
+});
+
 export const insertPdfEntry = internalMutation({
   args: {
     title: v.string(),

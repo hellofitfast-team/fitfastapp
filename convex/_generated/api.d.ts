@@ -26,6 +26,7 @@ import type * as dataRetention from "../dataRetention.js";
 import type * as email from "../email.js";
 import type * as exerciseDatabase from "../exerciseDatabase.js";
 import type * as exerciseImageUpload from "../exerciseImageUpload.js";
+import type * as exerciseLogs from "../exerciseLogs.js";
 import type * as faqs from "../faqs.js";
 import type * as foodDatabase from "../foodDatabase.js";
 import type * as helpers from "../helpers.js";
@@ -87,6 +88,7 @@ declare const fullApi: ApiFromModules<{
   email: typeof email;
   exerciseDatabase: typeof exerciseDatabase;
   exerciseImageUpload: typeof exerciseImageUpload;
+  exerciseLogs: typeof exerciseLogs;
   faqs: typeof faqs;
   foodDatabase: typeof foodDatabase;
   helpers: typeof helpers;

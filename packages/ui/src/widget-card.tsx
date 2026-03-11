@@ -68,7 +68,7 @@ export function WidgetCard({
       <div className="flex items-start justify-between">
         <div className="min-w-0 flex-1">
           <p className="text-muted-foreground truncate text-xs font-medium">{title}</p>
-          {value !== undefined && <p className="mt-1 text-2xl font-bold tracking-tight">{value}</p>}
+          {value !== undefined && <p className="mt-1 text-3xl font-bold tracking-tight">{value}</p>}
           {subtitle && <p className="text-muted-foreground mt-0.5 text-xs">{subtitle}</p>}
           {trend && (
             <p

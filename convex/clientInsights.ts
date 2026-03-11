@@ -26,6 +26,9 @@ interface ClientInsights {
   pushSubscriptionActive: boolean;
   assessmentVersion: number;
   lastAssessmentChangeDate: number | null;
+  /** Exercise logging summary — count of detailed logs and whether any exist */
+  exerciseLogCount: number;
+  hasDetailedLogs: boolean;
 }
 
 /** Aggregates all coach-relevant insight data for a client in one query. */
@@ -43,6 +46,7 @@ export const getClientInsights = query({
       profile,
       config,
       latestHistoryEntry,
+      recentExerciseLogs,
     ] = await Promise.all([
       ctx.db
         .query("checkIns")
@@ -77,6 +81,12 @@ export const getClientInsights = query({
         .withIndex("by_userId", (q) => q.eq("userId", userId))
         .order("desc")
         .first(),
+      // Exercise logs — take a small sample to check if detailed logging exists
+      ctx.db
+        .query("exerciseLogs")
+        .withIndex("by_userId_date", (q) => q.eq("userId", userId))
+        .order("desc")
+        .take(100),
     ]);
 
     // Sort check-ins by date descending
@@ -159,6 +169,11 @@ export const getClientInsights = query({
       pushSubscriptionActive: subscription?.isActive ?? false,
       assessmentVersion: (latestHistoryEntry?.versionNumber ?? 0) + 1,
       lastAssessmentChangeDate: latestHistoryEntry?.createdAt ?? null,
+      exerciseLogCount: recentExerciseLogs.length,
+      // "Detailed" = has weight or reps data (not just quick-complete)
+      hasDetailedLogs: recentExerciseLogs.some((log) =>
+        log.sets.some((s: any) => s.weight != null || s.reps != null),
+      ),
     };
   },
 });

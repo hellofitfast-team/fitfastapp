@@ -2,14 +2,16 @@
 
 import { useState, useMemo } from "react";
 import { useTranslations, useLocale } from "next-intl";
-import { useQuery } from "convex/react";
+import { useConvexAuth, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import dynamic from "next/dynamic";
 import { Activity, Camera, Calendar } from "lucide-react";
 import { StatsOverview } from "./_components/stats-overview";
 import { PhotosTab } from "./_components/photos-tab";
+import { PhotoComparison } from "./_components/photo-comparison";
 import { HistoryTab } from "./_components/history-tab";
+import { WeekComparison } from "./_components/week-comparison";
 import { ProgressSkeleton } from "./_components/progress-skeleton";
 import { formatDateShort, formatDate } from "@/lib/utils";
 import { cn } from "@fitfast/ui/cn";
@@ -48,7 +50,9 @@ export default function ProgressPage() {
   const [dateRange, setDateRange] = useState<DateRange>("30");
   const [activeTab, setActiveTab] = useState<"charts" | "photos" | "history">("charts");
 
+  const { isAuthenticated } = useConvexAuth();
   const checkIns = useQuery(api.checkIns.getMyCheckIns);
+  const assessment = useQuery(api.assessments.getMyAssessment, isAuthenticated ? {} : "skip");
   const checkInsLoading = checkIns === undefined;
 
   // Sort ascending for charts (Convex returns desc)
@@ -90,6 +94,63 @@ export default function ProgressPage() {
       });
   }, [filteredCheckIns, locale]);
 
+  // Compute date range for adherence stats
+  const adherenceDateRange = useMemo(() => {
+    if (filteredCheckIns.length === 0) return null;
+    const first = new Date(filteredCheckIns[0]._creationTime);
+    const last = new Date(filteredCheckIns[filteredCheckIns.length - 1]._creationTime);
+    return {
+      startDate: first.toISOString().split("T")[0],
+      endDate: last.toISOString().split("T")[0],
+    };
+  }, [filteredCheckIns]);
+
+  const adherenceStats = useQuery(
+    api.completions.getAdherenceStats,
+    isAuthenticated && adherenceDateRange ? adherenceDateRange : "skip",
+  );
+
+  // Wellness chart data (sleep + energy from check-ins)
+  const wellnessChartData = useMemo(() => {
+    return filteredCheckIns
+      .filter((ci) => ci.sleepQuality != null || ci.energyLevel != null)
+      .map((ci) => ({
+        date: formatDateShort(new Date(ci._creationTime).toISOString(), locale),
+        sleep: ci.sleepQuality ?? null,
+        energy: ci.energyLevel ?? null,
+      }));
+  }, [filteredCheckIns, locale]);
+
+  // Dietary adherence chart data
+  const adherenceChartData = useMemo(() => {
+    return filteredCheckIns
+      .filter((ci) => ci.dietaryAdherence != null)
+      .map((ci) => ({
+        date: formatDateShort(new Date(ci._creationTime).toISOString(), locale),
+        dietaryAdherence: ci.dietaryAdherence ?? null,
+      }));
+  }, [filteredCheckIns, locale]);
+
+  // Body composition data from InBody scans
+  interface InBodyData {
+    bodyFatPercentage?: number;
+    leanBodyMass?: number;
+    skeletalMuscleMass?: number;
+  }
+  const bodyCompositionData = useMemo(() => {
+    return filteredCheckIns
+      .filter((ci) => (ci as unknown as { inBodyData?: InBodyData }).inBodyData)
+      .map((ci) => {
+        const inBody = (ci as unknown as { inBodyData: InBodyData }).inBodyData;
+        return {
+          date: formatDateShort(new Date(ci._creationTime).toISOString(), locale),
+          bodyFat: inBody.bodyFatPercentage ?? null,
+          leanMass: inBody.leanBodyMass ?? null,
+          skeletalMuscle: inBody.skeletalMuscleMass ?? null,
+        };
+      });
+  }, [filteredCheckIns, locale]);
+
   const firstCheckIn = filteredCheckIns[0];
   const latestCheckIn = filteredCheckIns[filteredCheckIns.length - 1];
   const weightChange =
@@ -98,17 +159,36 @@ export default function ProgressPage() {
     ? ((weightChange / firstCheckIn.weight) * 100).toFixed(1)
     : "0";
 
-  // Collect all photo storage IDs from check-ins (individual fields + legacy array)
-  const photoStorageIds = useMemo(() => {
-    const ids: Id<"_storage">[] = [];
-    for (const ci of filteredCheckIns) {
-      if (ci.progressPhotoFront) ids.push(ci.progressPhotoFront);
-      if (ci.progressPhotoBack) ids.push(ci.progressPhotoBack);
-      if (ci.progressPhotoSide) ids.push(ci.progressPhotoSide);
-      if (ci.progressPhotoIds) ids.push(...ci.progressPhotoIds);
-    }
-    return ids;
+  // Rate of change (kg/week)
+  const rateOfChange = useMemo(() => {
+    if (!firstCheckIn?.weight || !latestCheckIn?.weight || firstCheckIn === latestCheckIn)
+      return null;
+    const daysBetween =
+      (latestCheckIn._creationTime - firstCheckIn._creationTime) / (1000 * 60 * 60 * 24);
+    if (daysBetween < 7) return null;
+    const weeksBetween = daysBetween / 7;
+    return (latestCheckIn.weight - firstCheckIn.weight) / weeksBetween;
+  }, [firstCheckIn, latestCheckIn]);
+
+  // Collect photo storage IDs per check-in (consolidated — used for both batch URL query and photo list)
+  const checkInPhotoEntries = useMemo(() => {
+    return filteredCheckIns.map((ci) => {
+      const entries: Array<{ id: Id<"_storage">; label?: string }> = [];
+      if (ci.progressPhotoFront) entries.push({ id: ci.progressPhotoFront });
+      if (ci.progressPhotoBack) entries.push({ id: ci.progressPhotoBack });
+      if (ci.progressPhotoSide) entries.push({ id: ci.progressPhotoSide });
+      if (ci.progressPhotoIds) entries.push(...ci.progressPhotoIds.map((id) => ({ id })));
+      // Include InBody scan photos with label
+      const inBodyId = (ci as unknown as { inBodyStorageId?: Id<"_storage"> }).inBodyStorageId;
+      if (inBodyId) entries.push({ id: inBodyId, label: "InBody" });
+      return entries;
+    });
   }, [filteredCheckIns]);
+
+  const photoStorageIds = useMemo(
+    () => checkInPhotoEntries.flatMap((entries) => entries.map((e) => e.id)),
+    [checkInPhotoEntries],
+  );
 
   // Resolve storage IDs to URLs in a single batch query
   const photoUrlMap = useQuery(
@@ -118,18 +198,13 @@ export default function ProgressPage() {
 
   const allPhotos = useMemo(() => {
     if (!photoUrlMap) return [];
-    return filteredCheckIns.flatMap((checkIn) => {
-      const ids: Id<"_storage">[] = [];
-      if (checkIn.progressPhotoFront) ids.push(checkIn.progressPhotoFront);
-      if (checkIn.progressPhotoBack) ids.push(checkIn.progressPhotoBack);
-      if (checkIn.progressPhotoSide) ids.push(checkIn.progressPhotoSide);
-      if (checkIn.progressPhotoIds) ids.push(...checkIn.progressPhotoIds);
+    return filteredCheckIns.flatMap((checkIn, i) => {
       const dateStr = formatDate(new Date(checkIn._creationTime).toISOString(), locale);
-      return ids
-        .filter((id) => photoUrlMap[id])
-        .map((id) => ({ url: photoUrlMap[id]!, date: dateStr }));
+      return checkInPhotoEntries[i]
+        .filter((entry) => photoUrlMap[entry.id])
+        .map((entry) => ({ url: photoUrlMap[entry.id]!, date: dateStr, label: entry.label }));
     });
-  }, [filteredCheckIns, photoUrlMap, locale]);
+  }, [filteredCheckIns, checkInPhotoEntries, photoUrlMap, locale]);
 
   if (checkInsLoading) {
     return <ProgressSkeleton />;
@@ -155,7 +230,7 @@ export default function ProgressPage() {
               key={range}
               onClick={() => setDateRange(range)}
               className={cn(
-                "rounded-md px-3 py-1.5 text-xs font-semibold transition-colors",
+                "rounded-md px-4 py-2.5 text-xs font-semibold transition-colors",
                 dateRange === range
                   ? "bg-card text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground",
@@ -174,6 +249,7 @@ export default function ProgressPage() {
         weightChange={weightChange}
         weightChangePercent={weightChangePercent}
         totalCheckIns={filteredCheckIns.length}
+        rateOfChange={rateOfChange}
       />
 
       {/* Tabs */}
@@ -196,12 +272,27 @@ export default function ProgressPage() {
       </div>
 
       {activeTab === "charts" && (
-        <ProgressCharts
-          weightChartData={weightChartData}
-          measurementChartData={measurementChartData}
-        />
+        <>
+          <WeekComparison checkIns={filteredCheckIns} />
+          <ProgressCharts
+            weightChartData={weightChartData}
+            measurementChartData={measurementChartData}
+            adherenceStats={adherenceStats ?? undefined}
+            wellnessChartData={wellnessChartData}
+            adherenceChartData={adherenceChartData}
+            bodyCompositionData={bodyCompositionData}
+            targetWeight={
+              (assessment as { targetWeight?: number } | null | undefined)?.targetWeight
+            }
+          />
+        </>
       )}
-      {activeTab === "photos" && <PhotosTab photos={allPhotos} />}
+      {activeTab === "photos" && (
+        <div className="space-y-4">
+          <PhotoComparison photos={allPhotos} />
+          <PhotosTab photos={allPhotos} />
+        </div>
+      )}
       {activeTab === "history" && <HistoryTab checkIns={filteredCheckIns} />}
     </div>
   );

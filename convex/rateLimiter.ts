@@ -30,6 +30,8 @@ export const rateLimiter = new RateLimiter(components.rateLimiter, {
   replyToTicket: { kind: "fixed window", rate: 20, period: DAY },
   // Assessment submission: 5 per day per user (abuse prevention)
   submitAssessment: { kind: "fixed window", rate: 5, period: DAY },
+  // Completion toggle: 120 per hour per user (rapid-tap protection)
+  toggleCompletion: { kind: "fixed window", rate: 120, period: HOUR },
   // Invite token validation: 10 per hour per token (enumeration prevention)
   validateInviteToken: { kind: "fixed window", rate: 10, period: HOUR },
   // Individual push notification: 50 per day per coach (abuse prevention)

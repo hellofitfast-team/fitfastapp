@@ -131,6 +131,7 @@ export default defineSchema({
     experienceLevel: v.optional(
       v.union(v.literal("beginner"), v.literal("intermediate"), v.literal("advanced")),
     ),
+    targetWeight: v.optional(v.number()),
     lifestyleHabits: v.optional(
       v.object({
         equipment: v.optional(v.string()),
@@ -257,7 +258,8 @@ export default defineSchema({
     notes: v.optional(v.string()),
   })
     .index("by_userId_date", ["userId", "date"])
-    .index("by_planId_date", ["mealPlanId", "date"]),
+    .index("by_planId_date", ["mealPlanId", "date"])
+    .index("by_planId_date_mealIndex", ["mealPlanId", "date", "mealIndex"]),
 
   workoutCompletions: defineTable({
     userId: v.string(),
@@ -268,7 +270,8 @@ export default defineSchema({
     notes: v.optional(v.string()),
   })
     .index("by_userId_date", ["userId", "date"])
-    .index("by_planId_date", ["workoutPlanId", "date"]),
+    .index("by_planId_date", ["workoutPlanId", "date"])
+    .index("by_planId_date_workoutIndex", ["workoutPlanId", "date", "workoutIndex"]),
 
   dailyReflections: defineTable({
     userId: v.string(),
@@ -440,6 +443,28 @@ export default defineSchema({
   })
     .index("by_type", ["type"])
     .index("by_createdAt", ["createdAt"]),
+
+  /** Per-exercise workout logs — tracks sets, weights, reps for progressive overload */
+  exerciseLogs: defineTable({
+    userId: v.string(),
+    workoutPlanId: v.id("workoutPlans"),
+    date: v.string(), // YYYY-MM-DD
+    exerciseIndex: v.number(), // position in day's exercises array
+    exerciseName: v.string(), // denormalized for history queries
+    sets: v.array(
+      v.object({
+        setIndex: v.number(),
+        weight: v.optional(v.number()), // kg
+        reps: v.optional(v.number()), // actual reps completed
+        completed: v.boolean(),
+      }),
+    ),
+    notes: v.optional(v.string()),
+    completedAt: v.optional(v.number()), // timestamp when all sets marked done
+  })
+    .index("by_userId_date", ["userId", "date"])
+    .index("by_planId_date_exercise", ["workoutPlanId", "date", "exerciseIndex"])
+    .index("by_userId_exerciseName", ["userId", "exerciseName"]),
 
   exerciseDatabase: defineTable({
     name: v.string(),

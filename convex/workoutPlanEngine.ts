@@ -360,7 +360,7 @@ function selectExercisesForDay(
     // avgTimePerSet ~2.2 min accounts for work (~45s) + rest (60-120s avg ~90s)
     // So: exercises = (duration - 10) / (sets * 2.2)
     const availableMins = input.sessionDuration - 10; // subtract warmup + cooldown
-    count = Math.max(range.min, Math.round(availableMins / (gp.sets * 2.2)));
+    count = Math.min(range.max, Math.max(range.min, Math.round(availableMins / (gp.sets * 2.2))));
   } else {
     count = range.max;
   }

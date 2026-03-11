@@ -718,7 +718,13 @@
     "openTickets": "Open Tickets",
     "totalTickets": "Total Tickets",
     "lastTicket": "Last Ticket",
-    "noTickets": "No tickets"
+    "noTickets": "No tickets",
+    "workoutLogging": "Workout Logging",
+    "workoutCompletionRate": "Completion Rate",
+    "exerciseLogsRecorded": "Exercise Logs",
+    "loggingStyle": "Logging Style",
+    "detailedLogging": "Detailed",
+    "quickCompleteOnly": "Quick Complete"
   },
   "assessmentHistory": {
     "title": "Assessment History",
