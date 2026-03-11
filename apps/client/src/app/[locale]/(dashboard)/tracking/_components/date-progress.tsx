@@ -31,7 +31,7 @@ export function DateProgress({ selectedDate, onDateChange }: DateProgressProps) 
           type="date"
           value={selectedDate}
           onChange={(e) => onDateChange(e.target.value)}
-          max={new Date().toISOString().split("T")[0]}
+          max={new Date().toLocaleDateString("en-CA")}
           className="border-input bg-card focus:ring-ring ms-auto h-9 rounded-lg border px-3 text-sm transition-colors focus:ring-2 focus:outline-none"
         />
       </div>
