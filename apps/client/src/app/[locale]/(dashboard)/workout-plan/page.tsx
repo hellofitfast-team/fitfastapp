@@ -410,29 +410,40 @@ export default function WorkoutPlanPage() {
           </div>
         </div>
 
-        {/* Bottom: inline stats row — only when we have a non-rest day */}
+        {/* Bottom: stats + target muscles — only when we have a non-rest day */}
         {dayPlan && !dayPlan.restDay && (
-          <div className="divide-border flex items-center divide-x">
-            <div className="flex-1 py-3 text-center">
-              <p className="text-fitness text-lg font-bold">
-                {toLocalDigits(dayPlan.exercises?.length || 0, locale)}
-              </p>
-              <p className="text-muted-foreground text-[10px]">{t("exercises")}</p>
+          <div className="space-y-0">
+            {/* Exercises + Duration row */}
+            <div className="divide-border flex items-center divide-x">
+              <div className="flex-1 py-3 text-center">
+                <p className="text-fitness text-lg font-bold">
+                  {toLocalDigits(dayPlan.exercises?.length || 0, locale)}
+                </p>
+                <p className="text-muted-foreground text-[10px]">{t("exercises")}</p>
+              </div>
+              <div className="flex-1 py-3 text-center">
+                <p className="text-fitness text-lg font-bold">
+                  {dayPlan.duration ? toLocalDigits(dayPlan.duration, locale) : "–"}
+                </p>
+                <p className="text-muted-foreground text-[10px]">{t("durationMin")}</p>
+              </div>
             </div>
-            <div className="flex-1 py-3 text-center">
-              <p className="text-fitness text-lg font-bold">
-                {dayPlan.duration ? toLocalDigits(dayPlan.duration, locale) : "–"}
-              </p>
-              <p className="text-muted-foreground text-[10px]">{t("durationMin")}</p>
-            </div>
-            <div className="flex-1 py-3 text-center">
-              <p className="text-xs leading-tight font-semibold">
-                {Array.isArray(dayPlan.targetMuscles)
-                  ? dayPlan.targetMuscles.slice(0, 3).join(", ")
-                  : "–"}
-              </p>
-              <p className="text-muted-foreground text-[10px]">{t("targetMuscles")}</p>
-            </div>
+            {/* Target muscles as pills */}
+            {Array.isArray(dayPlan.targetMuscles) && dayPlan.targetMuscles.length > 0 && (
+              <div className="border-border border-t px-4 py-2.5">
+                <p className="text-muted-foreground mb-1.5 text-[10px]">{t("targetMuscles")}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {dayPlan.targetMuscles.slice(0, 5).map((muscle: string) => (
+                    <span
+                      key={muscle}
+                      className="bg-fitness/8 text-fitness rounded-full px-2.5 py-0.5 text-[11px] font-medium"
+                    >
+                      {muscle}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
