@@ -86,6 +86,8 @@ export function useNotifications() {
       if (result !== "granted") {
         if (result === "denied") {
           setError("Notifications were blocked. Please enable them in your browser settings.");
+        } else {
+          setError("Permission request was dismissed. Please try again to enable notifications.");
         }
         setToggling(false);
         return;

@@ -50,7 +50,7 @@ export function PhotosTab({ photos }: PhotosTabProps) {
           <div className="grid grid-cols-3 gap-2.5">
             {photos.map((photo, index) => (
               <button
-                key={photo.url}
+                key={`${photo.url}-${index}`}
                 type="button"
                 className="group border-border relative cursor-pointer overflow-hidden rounded-xl border transition-transform hover:scale-[1.02]"
                 onClick={() => setSelectedIndex(index)}
