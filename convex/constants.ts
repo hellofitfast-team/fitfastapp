@@ -12,7 +12,7 @@ export const DEFAULT_CHECK_IN_FREQUENCY_DAYS = 10;
 export const DEFAULT_MEAL_PLAN_DURATION_DAYS = 10;
 export const DEFAULT_WORKOUT_PLAN_DURATION_DAYS = 30;
 export const MIN_PLAN_DURATION_DAYS = 1;
-export const MAX_PLAN_DURATION_DAYS = 30;
+export const MAX_PLAN_DURATION_DAYS = 90;
 
 // ── Data Retention ─────────────────────────────────────────────────────────
 export const DATA_RETENTION_DAYS = 90;

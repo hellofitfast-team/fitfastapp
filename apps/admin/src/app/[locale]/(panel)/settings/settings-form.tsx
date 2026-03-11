@@ -37,7 +37,7 @@ export function AdminSettingsForm() {
   const [workoutDuration, setWorkoutDuration] = useState<string | null>(null);
 
   const effectiveCheckInDays = checkInDays ?? String(checkInConfig?.value ?? "10");
-  const effectiveWorkoutDuration = workoutDuration ?? String(workoutDurationConfig?.value ?? "10");
+  const effectiveWorkoutDuration = workoutDuration ?? String(workoutDurationConfig?.value ?? "30");
 
   if (checkInConfig === undefined || workoutDurationConfig === undefined) {
     return null;
@@ -58,7 +58,7 @@ export function AdminSettingsForm() {
         }),
         setConfig({
           key: "workout_plan_duration_days",
-          value: clamp(effectiveWorkoutDuration, 1, 30, 10),
+          value: clamp(effectiveWorkoutDuration, 1, 90, 30),
         }),
       ]);
     } catch (error) {
@@ -113,7 +113,7 @@ export function AdminSettingsForm() {
             <input
               type="number"
               min="1"
-              max="30"
+              max="90"
               value={effectiveWorkoutDuration}
               onChange={(e) => setWorkoutDuration(e.target.value)}
               className="text-primary focus:ring-primary/20 focus:border-primary h-11 w-24 rounded-xl border border-stone-200 bg-stone-50 px-3 text-center text-lg font-bold transition-all focus:ring-2 focus:outline-none"
