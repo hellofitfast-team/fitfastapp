@@ -53,13 +53,7 @@ export function HistoryTab({ checkIns }: HistoryTabProps) {
             .reverse()
             .map((checkIn) => {
               const measurements = (checkIn.measurements ?? {}) as MeasurementData;
-              const inBodyData = (checkIn as unknown as { inBodyData?: InBodyData }).inBodyData;
-              const extCheckIn = checkIn as unknown as {
-                workoutPerformance?: string;
-                newInjuries?: string;
-                notes?: string;
-                cyclePhase?: string;
-              };
+              const { inBodyData, workoutPerformance, newInjuries, notes, cyclePhase } = checkIn;
               return (
                 <div key={checkIn._id} className="p-4 transition-colors hover:bg-neutral-50">
                   <div className="mb-3 flex items-start justify-between">
@@ -176,39 +170,39 @@ export function HistoryTab({ checkIns }: HistoryTabProps) {
                           </span>
                         </span>
                       )}
-                    {extCheckIn.cyclePhase && extCheckIn.cyclePhase !== "not_tracking" && (
+                    {cyclePhase && cyclePhase !== "not_tracking" && (
                       <span
                         className={cn(
                           "rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                          extCheckIn.cyclePhase === "menstrual" && "bg-red-100 text-red-700",
-                          extCheckIn.cyclePhase === "follicular" && "bg-green-100 text-green-700",
-                          extCheckIn.cyclePhase === "ovulatory" && "bg-blue-100 text-blue-700",
-                          extCheckIn.cyclePhase === "luteal" && "bg-yellow-100 text-yellow-700",
+                          cyclePhase === "menstrual" && "bg-red-100 text-red-700",
+                          cyclePhase === "follicular" && "bg-green-100 text-green-700",
+                          cyclePhase === "ovulatory" && "bg-blue-100 text-blue-700",
+                          cyclePhase === "luteal" && "bg-yellow-100 text-yellow-700",
                         )}
                       >
-                        {t(`cyclePhase_${extCheckIn.cyclePhase}`)}
+                        {t(`cyclePhase_${cyclePhase}`)}
                       </span>
                     )}
                   </div>
 
-                  {extCheckIn.workoutPerformance && (
+                  {workoutPerformance && (
                     <div className="mt-2 flex items-start gap-1.5 text-xs">
                       <Dumbbell className="text-muted-foreground mt-0.5 h-3 w-3 shrink-0" />
-                      <span className="text-muted-foreground">{extCheckIn.workoutPerformance}</span>
+                      <span className="text-muted-foreground">{workoutPerformance}</span>
                     </div>
                   )}
 
-                  {extCheckIn.newInjuries && (
+                  {newInjuries && (
                     <div className="mt-2 flex items-start gap-1.5 text-xs">
                       <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0 text-amber-500" />
-                      <span className="text-amber-700">{extCheckIn.newInjuries}</span>
+                      <span className="text-amber-700">{newInjuries}</span>
                     </div>
                   )}
 
-                  {extCheckIn.notes && (
+                  {notes && (
                     <div className="mt-2 flex items-start gap-1.5 text-xs">
                       <StickyNote className="text-muted-foreground mt-0.5 h-3 w-3 shrink-0" />
-                      <span className="text-muted-foreground">{extCheckIn.notes}</span>
+                      <span className="text-muted-foreground">{notes}</span>
                     </div>
                   )}
                 </div>

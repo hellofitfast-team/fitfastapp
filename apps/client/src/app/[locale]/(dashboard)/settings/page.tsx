@@ -334,7 +334,11 @@ export default function SettingsPage() {
                   </button>
                 )}
               </div>
-              {notifError && <p className="text-xs text-red-600">{notifError}</p>}
+              {notifError && (
+                <p className="text-xs text-red-600" role="alert">
+                  {notifError}
+                </p>
+              )}
               <div>
                 <label className="mb-1.5 block text-sm font-medium">{t("reminderTime")}</label>
                 <input

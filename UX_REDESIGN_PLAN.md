@@ -23,7 +23,7 @@ Bigger problem: **workout logging is fundamentally broken** — clients can only
 exerciseLogs: defineTable({
   userId: v.string(),
   workoutPlanId: v.id("workoutPlans"),
-  date: v.string(), // YYYY-MM-DD
+  date: v.string(), // YYYY-MM-DD in user's local timezone (client converts before saving)
   exerciseIndex: v.number(), // position in day's exercises array
   exerciseName: v.string(), // denormalized for history queries
   sets: v.array(
@@ -137,6 +137,7 @@ Each exercise becomes an expandable card:
 
 - **Collapsed:** Exercise name + completion badge (0/4 sets) + last session weight hint
 - **Expanded:** Set-by-set logging table:
+
   ```
   Set 1:  [60 kg]  x  [10 reps]  [✓]
   Set 2:  [60 kg]  x  [8 reps]   [✓]
@@ -147,6 +148,7 @@ Each exercise becomes an expandable card:
   - Rep input shows planned reps as placeholder (e.g., "10-12")
   - Individual set checkmarks
   - "Last time: 60kg × 10" hint text below each row
+
 - **Exercise complete** indicator when all sets checked
 - **Workout auto-complete** when all exercises done → triggers celebration toast
 - **Quick complete** button at bottom as fallback (marks everything done without logging details)
