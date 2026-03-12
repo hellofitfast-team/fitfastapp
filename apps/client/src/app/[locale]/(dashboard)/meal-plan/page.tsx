@@ -9,7 +9,7 @@ import { cn } from "@fitfast/ui/cn";
 import { usePlanStream } from "@/hooks/use-plan-stream";
 import { EmptyState } from "@fitfast/ui/empty-state";
 import { DayNavigator } from "./_components/day-navigator";
-import type { GeneratedMealPlan } from "@/lib/ai/meal-plan-generator";
+import type { GeneratedMealPlan } from "@/types/plans";
 import { useAction, useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@fitfast/ui/button";

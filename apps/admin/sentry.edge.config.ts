@@ -10,7 +10,9 @@ Sentry.init({
 
   // Enable structured logging (Sentry.logger.* only — consoleLoggingIntegration
   // is omitted because the edge runtime has a limited API surface)
-  enableLogs: true,
+  _experiments: {
+    enableLogs: true,
+  },
 
   // Adjust this value in production, or use tracesSampler for greater control
   tracesSampleRate: 1,
@@ -20,7 +22,7 @@ Sentry.init({
 
   // Scrub PII from error events before sending to Sentry
   beforeSend(event) {
-    const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
+    const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g;
     if (event.exception?.values) {
       for (const ex of event.exception.values) {
         if (ex.value) {

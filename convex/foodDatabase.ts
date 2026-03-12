@@ -68,32 +68,52 @@ export const getFoodReferenceForPrompt = internalQuery({
     const foods = await ctx.db.query("foodDatabase").collect();
     if (foods.length === 0) return "";
 
-    // Cap at 80 ingredients + 20 recipes to keep prompt under ~1500 tokens
-    const ingredients = foods.filter((f) => !f.isRecipe).slice(0, 80);
-    const recipes = foods.filter((f) => f.isRecipe).slice(0, 20);
+    // Cap at 120 ingredients + 30 recipes
+    const ingredients = foods.filter((f) => !f.isRecipe).slice(0, 120);
+    const recipes = foods.filter((f) => f.isRecipe).slice(0, 30);
 
-    let result = "";
+    if (ingredients.length === 0 && recipes.length === 0) return "";
 
-    if (ingredients.length > 0) {
-      result += "FOOD REFERENCE DATABASE (use these verified macros — DO NOT estimate):\n";
-      result += "Name | Cal/100g | Protein | Carbs | Fat\n";
-      for (const food of ingredients) {
+    let result =
+      "VERIFIED FOOD DATABASE — You MUST use these exact macros when these foods appear in your plan. Do NOT estimate or fabricate nutritional values.\n\n";
+
+    // Group ingredients by category
+    const categoryOrder: Array<{ key: string; label: string }> = [
+      { key: "protein", label: "PROTEINS" },
+      { key: "carb", label: "CARBOHYDRATES" },
+      { key: "fat", label: "FATS & OILS" },
+      { key: "dairy", label: "DAIRY" },
+      { key: "vegetable", label: "VEGETABLES" },
+      { key: "fruit", label: "FRUITS" },
+      { key: "dessert", label: "DESSERTS" },
+    ];
+
+    for (const { key, label } of categoryOrder) {
+      const catFoods = ingredients.filter((f) => f.category === key);
+      if (catFoods.length === 0) continue;
+
+      result += `${label} (per 100g):\n`;
+      for (const food of catFoods) {
         const p = food.per100g;
-        result += `${food.name} | ${p.calories} | ${p.protein}g | ${p.carbs}g | ${p.fat}g\n`;
+        const arName = food.nameAr ? ` (${food.nameAr})` : "";
+        const fiberStr = p.fiber ? ` | ${p.fiber}g fiber` : "";
+        result += `${food.name}${arName} | ${p.calories} cal | ${p.protein}P | ${p.carbs}C | ${p.fat}F${fiberStr}\n`;
       }
+      result += "\n";
     }
 
     if (recipes.length > 0) {
-      result += "\nHEALTHY RECIPES (include 1-2 of these per day for variety):\n";
+      result += "RECIPES (per serving):\n";
       for (const recipe of recipes) {
         const ps = recipe.perServing;
-        const tags = recipe.tags.join(", ");
-        result += `- ${recipe.name} [${tags}]`;
+        const arName = recipe.nameAr ? ` (${recipe.nameAr})` : "";
+        result += `${recipe.name}${arName}`;
+        if (recipe.servingSize) result += ` [${recipe.servingSize}]`;
         if (ps) {
-          result += ` | Per serving: ${ps.calories} cal, ${ps.protein}g P, ${ps.carbs}g C, ${ps.fat}g F`;
+          result += ` | ${ps.calories} cal | ${ps.protein}P | ${ps.carbs}C | ${ps.fat}F`;
         }
-        if (recipe.servingSize) {
-          result += ` | Serving: ${recipe.servingSize}`;
+        if (recipe.ingredients && recipe.ingredients.length > 0) {
+          result += `\n  → Ingredients: ${recipe.ingredients.join(", ")}`;
         }
         result += "\n";
       }
@@ -102,6 +122,24 @@ export const getFoodReferenceForPrompt = internalQuery({
     }
 
     return result;
+  },
+});
+
+// ---------------------------------------------------------------------------
+// Internal query — find food by exact name (for idempotent seeding)
+// ---------------------------------------------------------------------------
+
+export const findByName = internalQuery({
+  args: { name: v.string() },
+  handler: async (ctx, { name }) => {
+    // Search index for candidate retrieval, then exact match filter.
+    // BM25 search can return fuzzy matches (e.g. "Milk" matches "Full-Fat Milk"),
+    // so we must verify the exact name to ensure idempotent seeding.
+    const candidates = await ctx.db
+      .query("foodDatabase")
+      .withSearchIndex("search_name", (q) => q.search("name", name))
+      .take(50);
+    return candidates.find((f) => f.name === name) ?? null;
   },
 });
 

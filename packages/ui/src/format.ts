@@ -43,6 +43,17 @@ export function formatDateWithWeekday(date: Date | string, locale: string = "en"
   });
 }
 
+// Date + time format (e.g., "Feb 15, 02:30 PM" / "15 فبراير، 2:30 م")
+export function formatDateTime(date: Date | string, locale: string = "en"): string {
+  const d = typeof date === "string" ? new Date(date) : date;
+  return d.toLocaleString(toDateLocale(locale), {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 // Time format (e.g., "02:30 PM" / "2:30 م")
 export function formatTime(date: Date | string, locale: string = "en"): string {
   const d = typeof date === "string" ? new Date(date) : date;
@@ -64,6 +75,54 @@ export function formatRelativeDate(date: Date | string, locale: string = "en"): 
     return locale === "ar" ? `منذ ${toLocalDigits(diffDays, locale)} أيام` : `${diffDays} days ago`;
 
   return formatDate(d, locale);
+}
+
+/**
+ * Validate a "HH:MM" time string and return parsed [hours, minutes].
+ * Throws on invalid input to prevent silent NaN propagation.
+ */
+function parseTime(time: string, label: string): [number, number] {
+  if (!time || !/^\d{1,2}:\d{2}$/.test(time)) {
+    throw new Error(`Invalid ${label} time format: "${time}". Expected "HH:MM".`);
+  }
+  const [h, m] = time.split(":").map(Number);
+  if (h < 0 || h > 23 || m < 0 || m > 59) {
+    throw new Error(`Invalid ${label} time values: hours=${h}, minutes=${m}`);
+  }
+  return [h, m];
+}
+
+/**
+ * Convert a local "HH:MM" time string to UTC "HH:MM".
+ * Used for cron reminder scheduling — the user picks local time,
+ * but the cron engine runs in UTC.
+ *
+ * Note: Uses the browser's current UTC offset. Egypt (UTC+2) has no DST,
+ * so this is stable for the target deployment region.
+ */
+export function localTimeToUtc(localTime: string): string {
+  const [h, m] = parseTime(localTime, "local");
+  const now = new Date();
+  now.setHours(h, m, 0, 0);
+  const utcH = now.getUTCHours();
+  const utcM = now.getUTCMinutes();
+  return `${String(utcH).padStart(2, "0")}:${String(utcM).padStart(2, "0")}`;
+}
+
+/**
+ * Convert a UTC "HH:MM" time string to local "HH:MM".
+ * Used to display stored UTC reminder times in the user's local timezone.
+ *
+ * Note: Uses the browser's current UTC offset. Egypt (UTC+2) has no DST,
+ * so this is stable for the target deployment region.
+ */
+export function utcTimeToLocal(utcTime: string): string {
+  const [h, m] = parseTime(utcTime, "UTC");
+  const now = new Date();
+  now.setUTCHours(h, m, 0, 0);
+  const localH = now.getHours();
+  const localM = now.getMinutes();
+  return `${String(localH).padStart(2, "0")}:${String(localM).padStart(2, "0")}`;
 }
 
 // Number utilities

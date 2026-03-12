@@ -11,7 +11,7 @@ import { memo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { UtensilsCrossed, ChevronDown, ChevronUp, Check, Circle, Loader2 } from "lucide-react";
 import { cn } from "@fitfast/ui/cn";
-import type { GeneratedMealPlan } from "@/lib/ai/meal-plan-generator";
+import type { GeneratedMealPlan } from "@/types/plans";
 
 type Meal = GeneratedMealPlan["weeklyPlan"][string]["meals"][number];
 
@@ -180,14 +180,19 @@ export const MealTracking = memo(function MealTracking({
                       </div>
 
                       {/* Expandable details toggle */}
-                      {meal.ingredients && meal.ingredients.length > 0 && (
+                      {((meal.ingredients && meal.ingredients.length > 0) ||
+                        (meal.instructions && meal.instructions.length > 0) ||
+                        (meal.alternatives && meal.alternatives.length > 0)) && (
                         <button
                           type="button"
                           onClick={() => setExpandedMeal(isExpanded ? null : index)}
                           aria-expanded={isExpanded}
                           className="text-nutrition bg-nutrition/8 hover:bg-nutrition/15 rounded-md px-2 py-0.5 text-xs font-medium transition-colors"
                         >
-                          {meal.ingredients.length} {tMeals("ingredients")} {isExpanded ? "▲" : "▼"}
+                          {meal.ingredients && meal.ingredients.length > 0
+                            ? `${meal.ingredients.length} ${tMeals("ingredients")}`
+                            : tMeals("details")}{" "}
+                          {isExpanded ? "▲" : "▼"}
                         </button>
                       )}
 

@@ -382,6 +382,30 @@ export const quickCompleteWorkout = mutation({
     const plan = await ctx.db.get(workoutPlanId);
     if (!plan || plan.userId !== userId) throw new Error("Not authorized");
 
+    // Server-side validation: verify exercise count matches the plan for this day
+    if (completed) {
+      const planData = plan.planData as Record<string, any>;
+      const weeklyPlan = planData?.weeklyPlan;
+      if (weeklyPlan && plan.startDate) {
+        const start = new Date(plan.startDate + "T00:00:00Z");
+        const current = new Date(date + "T00:00:00Z");
+        const diffDays = Math.floor((current.getTime() - start.getTime()) / 86400000);
+        if (diffDays >= 0) {
+          const dayIndex = (((diffDays % 7) + 7) % 7) + 1;
+          const dayKey = `day${dayIndex}`;
+          const dayPlan = weeklyPlan[dayKey];
+          if (dayPlan && !dayPlan.restDay && Array.isArray(dayPlan.exercises)) {
+            const expectedCount = dayPlan.exercises.length;
+            if (exercises.length < expectedCount) {
+              throw new Error(
+                `Incomplete workout: expected ${expectedCount} exercises but received ${exercises.length}`,
+              );
+            }
+          }
+        }
+      }
+    }
+
     // Upsert exercise logs for each exercise
     for (const ex of exercises) {
       const existing = await ctx.db

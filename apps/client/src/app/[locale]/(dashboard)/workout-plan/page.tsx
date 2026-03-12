@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations, useLocale } from "next-intl";
-import { toLocalDigits } from "@/lib/utils";
+import { toLocalDigits, formatDateShort } from "@/lib/utils";
 import { useCurrentWorkoutPlan } from "@/hooks/use-workout-plans";
 import {
   Dumbbell,
@@ -22,7 +22,7 @@ import { EmptyState } from "@fitfast/ui/empty-state";
 import { DayNavigator } from "../meal-plan/_components/day-navigator";
 import { ExerciseGif } from "./_components/exercise-gif";
 import { useExerciseMedia } from "@/hooks/use-exercise-media";
-import type { GeneratedWorkoutPlan } from "@/lib/ai/workout-plan-generator";
+import type { GeneratedWorkoutPlan } from "@/types/plans";
 
 /** Normalized exercise used in the main workout section */
 interface NormalizedExercise {
@@ -394,8 +394,8 @@ export default function WorkoutPlanPage() {
           <div className="flex-1 p-4 pb-3">
             <h1 className="text-xl font-bold">{isToday ? t("todaysWorkout") : t("title")}</h1>
             <p className="text-muted-foreground mt-0.5 text-xs">
-              {new Date(workoutPlan.startDate).toLocaleDateString(locale === "ar" ? "ar-EG" : "en")}{" "}
-              – {new Date(workoutPlan.endDate).toLocaleDateString(locale === "ar" ? "ar-EG" : "en")}
+              {formatDateShort(workoutPlan.startDate, locale)} –{" "}
+              {formatDateShort(workoutPlan.endDate, locale)}
             </p>
           </div>
           {planData.splitName && (

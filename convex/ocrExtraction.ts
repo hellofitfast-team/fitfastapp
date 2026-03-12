@@ -4,6 +4,8 @@ import { v } from "convex/values";
 import { internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
+import { traceAI, classifyError, flushLangfuse } from "./langfuse";
+import { INBODY_FIELD_RANGES, validateInBodyFields } from "./ocrUtils";
 
 /** OCR vision model — Qwen3-VL-8B: 32-language receipt OCR, handles blur/tilt/low-light */
 const OCR_MODEL = "qwen/qwen3-vl-8b-instruct";
@@ -31,13 +33,22 @@ export const extractPaymentData = internalAction({
       );
     }
 
+    const trace = traceAI({
+      name: "ocr-payment",
+      metadata: { signupId },
+      tags: ["ocr", "payment"],
+    });
     try {
       const { createOpenRouter } = await import("@openrouter/ai-sdk-provider");
       const { generateText } = await import("ai");
 
       const openrouter = createOpenRouter({ apiKey });
 
-      const { text } = await generateText({
+      const gen = trace?.generation({
+        name: "payment-ocr",
+        model: OCR_MODEL,
+      });
+      const { text, usage } = await generateText({
         model: openrouter(OCR_MODEL),
         messages: [
           {
@@ -64,6 +75,10 @@ Respond with ONLY the JSON object, no markdown or explanation.`,
         ],
         maxOutputTokens: 300,
       });
+      gen?.end({
+        output: text.slice(0, 300),
+        usage: { input: usage?.inputTokens, output: usage?.outputTokens },
+      });
 
       // Parse the JSON response
       const cleaned = text
@@ -87,12 +102,19 @@ Respond with ONLY the JSON object, no markdown or explanation.`,
         });
       }
     } catch (err) {
+      trace?.update({
+        metadata: {
+          errorType: classifyError(err),
+          error: err instanceof Error ? err.message : String(err),
+        },
+      });
       console.error("[OCR:extractPaymentData] Extraction failed", {
         signupId,
         error: err instanceof Error ? err.message : String(err),
       });
       // Non-critical — don't throw. The signup still exists without OCR data.
     }
+    await flushLangfuse();
   },
 });
 
@@ -109,22 +131,14 @@ const INBODY_PROMPT = `Extract body composition data from this InBody result she
 }
 Respond with ONLY the JSON object, no markdown or explanation.`;
 
-/** Physiological range validation — skip values outside plausible ranges */
-const INBODY_FIELD_RANGES: Record<string, [number, number]> = {
-  bodyFatPercentage: [3, 60],
-  leanBodyMass: [20, 150],
-  skeletalMuscleMass: [10, 80],
-  bmi: [10, 60],
-  visceralFatLevel: [1, 30],
-  basalMetabolicRate: [800, 4000],
-  totalBodyWater: [10, 80],
-};
+// INBODY_FIELD_RANGES and validateInBodyFields imported from ./ocrUtils
 
 /** Shared InBody OCR extraction logic — returns validated data or empty object */
 async function runInBodyOcr(
   imageUrl: string,
   logPrefix: string,
   contextId: string,
+  parentTrace?: ReturnType<typeof traceAI>,
 ): Promise<Record<string, number>> {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
@@ -138,7 +152,12 @@ async function runInBodyOcr(
 
   const openrouter = createOpenRouter({ apiKey });
 
-  const { text } = await generateText({
+  const gen = parentTrace?.generation({
+    name: "inbody-ocr",
+    model: OCR_MODEL,
+    metadata: { contextId },
+  });
+  const { text, usage } = await generateText({
     model: openrouter(OCR_MODEL),
     messages: [
       {
@@ -150,6 +169,10 @@ async function runInBodyOcr(
       },
     ],
     maxOutputTokens: 300,
+  });
+  gen?.end({
+    output: text.slice(0, 300),
+    usage: { input: usage?.inputTokens, output: usage?.outputTokens },
   });
 
   // Robust JSON extraction (handles markdown fences, trailing commas, brace extraction)
@@ -165,20 +188,18 @@ async function runInBodyOcr(
   }
   const parsed = JSON.parse(cleaned);
 
-  // Build typed InBody data — parse strings to numbers as fallback
-  const inBodyData: Record<string, number> = {};
+  // Validate parsed fields against physiological ranges
+  const inBodyData = validateInBodyFields(parsed);
+
+  // Log any fields that were present but excluded due to range validation
   for (const [field, [min, max]] of Object.entries(INBODY_FIELD_RANGES)) {
     const val = parsed[field];
-    if (val !== null && val !== undefined) {
+    if (val !== null && val !== undefined && !(field in inBodyData)) {
       const num = typeof val === "number" ? val : parseFloat(String(val));
       if (!isNaN(num)) {
-        if (num < min || num > max) {
-          console.warn(`[${logPrefix}] ${field}=${num} outside range [${min}, ${max}], skipping`, {
-            id: contextId,
-          });
-        } else {
-          inBodyData[field] = num;
-        }
+        console.warn(`[${logPrefix}] ${field}=${num} outside range [${min}, ${max}], skipping`, {
+          id: contextId,
+        });
       }
     }
   }
@@ -202,8 +223,18 @@ export const extractInBodyData = internalAction({
       return;
     }
 
+    const trace = traceAI({
+      name: "ocr-inbody",
+      metadata: { checkInId },
+      tags: ["ocr", "inbody"],
+    });
     try {
-      const inBodyData = await runInBodyOcr(imageUrl, "OCR:extractInBodyData", String(checkInId));
+      const inBodyData = await runInBodyOcr(
+        imageUrl,
+        "OCR:extractInBodyData",
+        String(checkInId),
+        trace,
+      );
 
       if (Object.keys(inBodyData).length > 0) {
         await ctx.runMutation(internal.checkInWorkflow.patchInBodyData, {
@@ -214,11 +245,18 @@ export const extractInBodyData = internalAction({
         console.warn("[OCR:extractInBodyData] AI returned no extractable fields", { checkInId });
       }
     } catch (err) {
+      trace?.update({
+        metadata: {
+          errorType: classifyError(err),
+          error: err instanceof Error ? err.message : String(err),
+        },
+      });
       console.error("[OCR:extractInBodyData] Extraction failed", {
         checkInId,
         error: err instanceof Error ? err.message : String(err),
       });
     }
+    await flushLangfuse();
   },
 });
 
@@ -240,11 +278,17 @@ export const extractAssessmentInBodyData = internalAction({
       return;
     }
 
+    const trace = traceAI({
+      name: "ocr-assessment-inbody",
+      metadata: { assessmentId },
+      tags: ["ocr", "inbody", "assessment"],
+    });
     try {
       const inBodyData = await runInBodyOcr(
         imageUrl,
         "OCR:extractAssessmentInBodyData",
         String(assessmentId),
+        trace,
       );
 
       if (Object.keys(inBodyData).length > 0) {
@@ -258,10 +302,17 @@ export const extractAssessmentInBodyData = internalAction({
         });
       }
     } catch (err) {
+      trace?.update({
+        metadata: {
+          errorType: classifyError(err),
+          error: err instanceof Error ? err.message : String(err),
+        },
+      });
       console.error("[OCR:extractAssessmentInBodyData] Extraction failed", {
         assessmentId,
         error: err instanceof Error ? err.message : String(err),
       });
     }
+    await flushLangfuse();
   },
 });

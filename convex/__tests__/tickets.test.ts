@@ -5,19 +5,26 @@ import schema from "../schema";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore — importing the compiled component schema directly
 import aggregateSchema from "../../node_modules/@convex-dev/aggregate/dist/component/schema.js";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore — importing the compiled component schema directly
+import rateLimiterSchema from "../../node_modules/@convex-dev/rate-limiter/dist/component/schema.js";
 
 const modules = import.meta.glob("../**/*.*s");
 const aggregateModules = import.meta.glob(
   "../../node_modules/@convex-dev/aggregate/dist/component/**/*.js",
 );
+const rateLimiterModules = import.meta.glob(
+  "../../node_modules/@convex-dev/rate-limiter/dist/component/**/*.js",
+);
 
 /**
- * Create a test instance with the required aggregate components registered.
- * createTicket uses openTicketsCount, closeTicket uses openTicketsCount.
+ * Create a test instance with the required aggregate and rate limiter components registered.
+ * createTicket/replyToTicket use rateLimiter, createTicket/closeTicket use openTicketsCount.
  */
 function createTestWithComponents() {
   const t = convexTest(schema, modules);
   t.registerComponent("openTickets", aggregateSchema, aggregateModules);
+  t.registerComponent("rateLimiter", rateLimiterSchema, rateLimiterModules);
   return t;
 }
 

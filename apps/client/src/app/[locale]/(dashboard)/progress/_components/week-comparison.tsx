@@ -107,7 +107,7 @@ export function WeekComparison({ checkIns }: WeekComparisonProps) {
       <h3 className="text-sm font-semibold">{t("weekComparison")}</h3>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <ComparisonCard
-          label={t("weightChange")}
+          label={t("avgWeight")}
           thisWeek={thisWeekAvgWeight}
           lastWeek={lastWeekAvgWeight}
           unit="kg"

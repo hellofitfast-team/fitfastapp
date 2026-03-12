@@ -10,6 +10,14 @@ import { calculateNutritionTargets, type NutritionTargets } from "./nutritionEng
 import { selectWorkoutSplit, type WorkoutSplit } from "./workoutSplitEngine";
 import { generateWorkoutPlan as buildWorkoutPlan, parseInjuries } from "./workoutPlanEngine";
 import { getRagClient } from "./ragManager";
+import { traceAI, classifyError, flushLangfuse } from "./langfuse";
+import {
+  extractJSON,
+  validateAndCorrectMealPlan,
+  validateWorkoutPlan,
+  shouldActivateDemoMode,
+  type ValidationWarning,
+} from "./aiUtils";
 import {
   MEAL_OUTPUT_TOKENS_EN,
   MEAL_OUTPUT_TOKENS_AR,
@@ -28,323 +36,26 @@ const PLAN_MODEL_PRIMARY = "gemini-2.5-flash-lite";
 /** Fallback model — direct DeepSeek API, used when primary is congested/unavailable */
 const PLAN_MODEL_FALLBACK = "deepseek-chat";
 
-// ---------------------------------------------------------------------------
-// Robust JSON extraction & repair
-// ---------------------------------------------------------------------------
-
-/**
- * Attempts to extract and parse a JSON object from potentially messy LLM output.
- * Handles: markdown fences, leading/trailing text, trailing commas, truncated JSON.
- */
-function extractJSON(raw: string): Record<string, unknown> {
-  // 1. Strip markdown code fences
-  let text = raw.replace(/```(?:json)?\s*\n?/g, "").trim();
-
-  // 2. Extract the outermost { ... } if surrounded by extra text
-  const firstBrace = text.indexOf("{");
-  const lastBrace = text.lastIndexOf("}");
-  if (firstBrace !== -1 && lastBrace > firstBrace) {
-    text = text.slice(firstBrace, lastBrace + 1);
-  }
-
-  // 3. Try direct parse first
-  try {
-    return JSON.parse(text);
-  } catch {
-    // continue to repairs
-  }
-
-  // 4. Fix trailing commas before } or ] (common LLM mistake)
-  let repaired = text.replace(/,\s*([\]}])/g, "$1");
-
-  try {
-    return JSON.parse(repaired);
-  } catch {
-    // continue
-  }
-
-  // 5. Handle truncated JSON: try closing open brackets/braces
-  repaired = repaired.trimEnd();
-  // Count unmatched openers
-  let braces = 0,
-    brackets = 0;
-  let inString = false,
-    escaped = false;
-  for (const ch of repaired) {
-    if (escaped) {
-      escaped = false;
-      continue;
-    }
-    if (ch === "\\") {
-      escaped = true;
-      continue;
-    }
-    if (ch === '"') {
-      inString = !inString;
-      continue;
-    }
-    if (inString) continue;
-    if (ch === "{") braces++;
-    else if (ch === "}") braces--;
-    else if (ch === "[") brackets++;
-    else if (ch === "]") brackets--;
-  }
-  // If we're inside a string, close it
-  if (inString) repaired += '"';
-  // Close unmatched brackets/braces
-  for (let i = 0; i < brackets; i++) repaired += "]";
-  for (let i = 0; i < braces; i++) repaired += "}";
-
-  // Remove any trailing commas that appeared before our closers
-  repaired = repaired.replace(/,\s*([\]}])/g, "$1");
-
-  return JSON.parse(repaired); // let this throw if still broken
-}
+// extractJSON, validateAndCorrectMealPlan, validateWorkoutPlan, and ValidationWarning
+// are imported from ./aiUtils (extracted for testability)
 
 // ---------------------------------------------------------------------------
-// Post-generation validation & auto-correction
+// InBody measured BMR extraction — prefer latest check-in, fallback to assessment
 // ---------------------------------------------------------------------------
 
-interface ValidationWarning {
-  type:
-    | "macro_mismatch"
-    | "below_minimum_calories"
-    | "zero_value"
-    | "missing_exercises"
-    | "missing_warmup_cooldown"
-    | "totals_corrected"
-    | "alt_macro_scaled";
-  day?: string;
-  message: string;
-}
-
-function validateAndCorrectMealPlan(
-  planData: Record<string, unknown>,
-  nutritionTargets: NutritionTargets,
-): ValidationWarning[] {
-  const warnings: ValidationWarning[] = [];
-  const weeklyPlan = planData.weeklyPlan as Record<string, any> | undefined;
-  if (!weeklyPlan || typeof weeklyPlan !== "object") return warnings;
-
-  for (const [dayKey, dayData] of Object.entries(weeklyPlan)) {
-    if (!dayData?.meals || !Array.isArray(dayData.meals)) continue;
-
-    // Sum actual meal macros
-    let sumCalories = 0,
-      sumProtein = 0,
-      sumCarbs = 0,
-      sumFat = 0;
-    for (const meal of dayData.meals) {
-      if (!meal || typeof meal !== "object") continue;
-      sumCalories += Number(meal.calories) || 0;
-      sumProtein += Number(meal.protein) || 0;
-      sumCarbs += Number(meal.carbs) || 0;
-      sumFat += Number(meal.fat) || 0;
-
-      // Flag zero-value meals
-      if ((Number(meal.calories) || 0) === 0) {
-        warnings.push({
-          type: "zero_value",
-          day: dayKey,
-          message: `Meal "${meal.name}" has 0 calories`,
-        });
-      }
-      if ((Number(meal.protein) || 0) === 0) {
-        warnings.push({
-          type: "zero_value",
-          day: dayKey,
-          message: `Meal "${meal.name}" has 0 protein`,
-        });
-      }
-
-      // Validate and correct alternatives' macros
-      if (Array.isArray(meal.alternatives)) {
-        const mealCal = Number(meal.calories) || 0;
-        for (const alt of meal.alternatives) {
-          if (!alt || typeof alt !== "object") continue;
-          // Per-alternative macro cross-check: P*4 + C*4 + F*9 should ≈ claimed calories
-          const altCal = Number(alt.calories) || 0;
-          const computedAltCal =
-            (Number(alt.protein) || 0) * 4 +
-            (Number(alt.carbs) || 0) * 4 +
-            (Number(alt.fat) || 0) * 9;
-          if (altCal > 0 && Math.abs(computedAltCal - altCal) > 30) {
-            alt.calories = Math.round(computedAltCal);
-          }
-          // Scale alternative if >10% off from parent meal calories
-          const correctedAltCal = Number(alt.calories) || 0;
-          if (mealCal > 0 && correctedAltCal > 0) {
-            const altDiff = Math.abs(correctedAltCal - mealCal) / mealCal;
-            if (altDiff > 0.1) {
-              const altScale = mealCal / correctedAltCal;
-              alt.calories = Math.round(correctedAltCal * altScale);
-              alt.protein = Math.round((Number(alt.protein) || 0) * altScale);
-              alt.carbs = Math.round((Number(alt.carbs) || 0) * altScale);
-              alt.fat = Math.round((Number(alt.fat) || 0) * altScale);
-              warnings.push({
-                type: "alt_macro_scaled",
-                day: dayKey,
-                message: `Alt "${alt.name}" for "${meal.name}" scaled by ${altScale.toFixed(2)}x to match meal calories`,
-              });
-            }
-          }
-        }
-      }
-    }
-
-    // Auto-correct dailyTotals to match actual meal sums
-    const existingTotals = dayData.dailyTotals;
-    const correctedTotals = {
-      calories: Math.round(sumCalories),
-      protein: Math.round(sumProtein),
-      carbs: Math.round(sumCarbs),
-      fat: Math.round(sumFat),
-    };
-
-    if (
-      existingTotals &&
-      (Math.abs(existingTotals.calories - sumCalories) > 1 ||
-        Math.abs(existingTotals.protein - sumProtein) > 1)
-    ) {
-      warnings.push({
-        type: "totals_corrected",
-        day: dayKey,
-        message: `dailyTotals corrected: was ${existingTotals.calories}cal/${existingTotals.protein}p, actual sum ${correctedTotals.calories}cal/${correctedTotals.protein}p`,
-      });
-    }
-    dayData.dailyTotals = correctedTotals;
-
-    // Per-meal macro cross-check: P*4 + C*4 + F*9 should ≈ claimed calories
-    for (const meal of dayData.meals) {
-      if (!meal || typeof meal !== "object") continue;
-      const mealCal = Number(meal.calories) || 0;
-      const computedCal =
-        (Number(meal.protein) || 0) * 4 +
-        (Number(meal.carbs) || 0) * 4 +
-        (Number(meal.fat) || 0) * 9;
-      if (mealCal > 0 && Math.abs(computedCal - mealCal) > 30) {
-        meal.calories = Math.round(computedCal);
-        warnings.push({
-          type: "macro_mismatch",
-          day: dayKey,
-          message: `Meal "${meal.name}" calories corrected: claimed ${mealCal}, macro sum ${Math.round(computedCal)}`,
-        });
-      }
-    }
-
-    // Recalculate after per-meal corrections
-    sumCalories = 0;
-    sumProtein = 0;
-    sumCarbs = 0;
-    sumFat = 0;
-    for (const meal of dayData.meals) {
-      if (!meal || typeof meal !== "object") continue;
-      sumCalories += Number(meal.calories) || 0;
-      sumProtein += Number(meal.protein) || 0;
-      sumCarbs += Number(meal.carbs) || 0;
-      sumFat += Number(meal.fat) || 0;
-    }
-    dayData.dailyTotals = {
-      calories: Math.round(sumCalories),
-      protein: Math.round(sumProtein),
-      carbs: Math.round(sumCarbs),
-      fat: Math.round(sumFat),
-    };
-
-    // Check if day is significantly off from nutrition targets
-    const calorieDiff =
-      Math.abs(sumCalories - nutritionTargets.calories) / nutritionTargets.calories;
-    if (calorieDiff > 0.1 && sumCalories > 0) {
-      // Scale at daily level first: preserve protein ratio, scale fat, derive carbs from remainder
-      const scaleFactor = nutritionTargets.calories / sumCalories;
-      const scaledProtein = Math.round(sumProtein * scaleFactor);
-      const scaledFat = Math.round(sumFat * scaleFactor);
-      // Derive carbs from calorie remainder to avoid cumulative rounding errors
-      const scaledCarbs = Math.round(
-        (nutritionTargets.calories - scaledProtein * 4 - scaledFat * 9) / 4,
-      );
-
-      // Distribute proportionally to meals
-      for (const meal of dayData.meals) {
-        if (!meal || typeof meal !== "object") continue;
-        meal.calories = Math.round((Number(meal.calories) || 0) * scaleFactor);
-        meal.protein = Math.round((Number(meal.protein) || 0) * scaleFactor);
-        meal.carbs = Math.round((Number(meal.carbs) || 0) * scaleFactor);
-        meal.fat = Math.round((Number(meal.fat) || 0) * scaleFactor);
-      }
-      dayData.dailyTotals = {
-        calories: nutritionTargets.calories,
-        protein: scaledProtein,
-        carbs: scaledCarbs,
-        fat: scaledFat,
-      };
-      warnings.push({
-        type: "totals_corrected",
-        day: dayKey,
-        message: `Day calories ${Math.round(sumCalories)} were ${Math.round(calorieDiff * 100)}% off — portions scaled by ${scaleFactor.toFixed(2)}x`,
-      });
-    } else if (calorieDiff > 0.05) {
-      warnings.push({
-        type: "macro_mismatch",
-        day: dayKey,
-        message: `Day calories ${Math.round(sumCalories)} are ${Math.round(calorieDiff * 100)}% off from target ${nutritionTargets.calories}`,
-      });
-    }
-
-    // Check minimum calorie floor
-    if (sumCalories > 0 && sumCalories < nutritionTargets.minCalories) {
-      warnings.push({
-        type: "below_minimum_calories",
-        day: dayKey,
-        message: `Day calories ${Math.round(sumCalories)} below safe minimum ${nutritionTargets.minCalories}`,
-      });
+function getLatestMeasuredBmr(clientCtx: ClientContext): number | undefined {
+  const sources = [
+    clientCtx.currentCheckIn?.inBodyData,
+    ...(clientCtx.checkInHistory ?? []).map((c) => c.inBodyData),
+    (clientCtx.assessment as any)?.inBodyData,
+  ];
+  for (const data of sources) {
+    if (data && typeof data === "object" && "basalMetabolicRate" in data) {
+      const bmr = (data as { basalMetabolicRate?: number }).basalMetabolicRate;
+      if (bmr != null && bmr >= 800 && bmr <= 4000) return bmr;
     }
   }
-
-  return warnings;
-}
-
-function validateWorkoutPlan(planData: Record<string, unknown>): ValidationWarning[] {
-  const warnings: ValidationWarning[] = [];
-  const weeklyPlan = planData.weeklyPlan as Record<string, any> | undefined;
-  if (!weeklyPlan || typeof weeklyPlan !== "object") return warnings;
-
-  for (const [dayKey, dayData] of Object.entries(weeklyPlan)) {
-    if (!dayData || typeof dayData !== "object") continue;
-
-    const isRestDay = dayData.restDay === true;
-
-    if (!isRestDay) {
-      // Training day checks
-      if (
-        !dayData.exercises ||
-        !Array.isArray(dayData.exercises) ||
-        dayData.exercises.length === 0
-      ) {
-        warnings.push({
-          type: "missing_exercises",
-          day: dayKey,
-          message: `Training day "${dayData.workoutName}" has no exercises`,
-        });
-      }
-      if (!dayData.warmup?.exercises?.length) {
-        warnings.push({
-          type: "missing_warmup_cooldown",
-          day: dayKey,
-          message: `Training day "${dayData.workoutName}" missing warmup`,
-        });
-      }
-      if (!dayData.cooldown?.exercises?.length) {
-        warnings.push({
-          type: "missing_warmup_cooldown",
-          day: dayKey,
-          message: `Training day "${dayData.workoutName}" missing cooldown`,
-        });
-      }
-    }
-  }
-
-  return warnings;
+  return undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -469,6 +180,7 @@ async function generateDemoMealPlan(
     trainingDaysPerWeek: Math.max(1, (assessment.scheduleAvailability as any)?.days?.length ?? 4),
     goal: assessment.goals?.split(",")[0]?.trim() ?? "general_fitness",
     activityLevel: (assessment as any).activityLevel ?? undefined,
+    measuredBmr: getLatestMeasuredBmr(clientCtx),
   });
 
   const makeMeal = (name: string, nameAr: string, type: string, calPct: number) => {
@@ -609,7 +321,7 @@ async function generateMealPlanHandler(
   const demoMode = process.env.DEMO_MODE === "true";
   const hasGoogleKey = !!process.env.GOOGLE_GENERATIVE_AI_API_KEY;
   const hasDeepSeekKey = !!process.env.DEEPSEEK_API_KEY;
-  if (demoMode || (!hasGoogleKey && !hasDeepSeekKey)) {
+  if (shouldActivateDemoMode(demoMode, hasGoogleKey, hasDeepSeekKey)) {
     console.warn(
       `[AI] DEMO MODE: ${demoMode ? "Explicitly enabled" : "No AI API keys configured"} — generating mock meal plan for user ${userId}`,
     );
@@ -657,6 +369,7 @@ async function generateMealPlanHandler(
     trainingDaysPerWeek: trainingDays,
     goal: assessment.goals?.split(",")[0]?.trim() ?? "general_fitness",
     activityLevel: (assessment as any).activityLevel ?? undefined,
+    measuredBmr: getLatestMeasuredBmr(clientCtx),
   });
 
   // Fetch coach knowledge context via RAG (filtered to nutrition/general docs)
@@ -792,12 +505,6 @@ NUTRITION CONSTRAINTS (calculated from client data via Mifflin-St Jeor — DO NO
 - MINIMUM daily calories: ${nutritionTargets.minCalories} kcal — NEVER go below this
 - Distribute calories across 4-5 meals (breakfast, snack, lunch, snack, dinner)
 ${femaleNutritionBlock}
-Egyptian/MENA Staple Foods (prefer these when culturally appropriate):
-- Proteins: eggs, chicken breast, beef, lentils, fava beans (foul), white cheese, labneh, Greek yogurt
-- Carbs: baladi bread, rice, sweet potato, oats, freekeh, couscous
-- Fats: olive oil, tahini, nuts, avocado
-- Vegetables: tomatoes, cucumber, molokhia, bamia, eggplant, peppers
-
 GUIDELINES:
 1. Consider food preferences, allergies, and dietary restrictions
 2. Each meal must have accurate macros that sum to the daily totals above
@@ -850,92 +557,153 @@ Daily meal macros MUST sum to the targets above (±5% tolerance). Respond ONLY w
   // Create stream for live progress
   const streamId: string = await ctx.runMutation(internal.streamingManager.createStream, {});
 
+  // --- Langfuse trace for full generation lifecycle ---
+  const trace = traceAI({
+    name: "generate-meal-plan",
+    userId,
+    metadata: { language, planDuration: safeDuration, checkInId },
+    tags: ["meal-plan"],
+  });
+
   // --- Attempt with primary model (direct Google) + fallback (direct DeepSeek) ---
-  const halfTimeout = PLAN_GENERATION_TIMEOUT_MS / 2;
-  const generateParams = {
-    system: systemPrompt,
-    prompt: userPrompt,
-    temperature: 0.4,
-    maxOutputTokens: mealOutputTokens,
-    maxRetries: PLAN_GENERATION_MAX_RETRIES,
-  };
+  // Wrapped in try-finally to ensure Langfuse traces are flushed on all exit paths
+  try {
+    const halfTimeout = PLAN_GENERATION_TIMEOUT_MS / 2;
+    const generateParams = {
+      system: systemPrompt,
+      prompt: userPrompt,
+      temperature: 0.4,
+      maxOutputTokens: mealOutputTokens,
+      maxRetries: PLAN_GENERATION_MAX_RETRIES,
+    };
 
-  // Use streaming to push progress chunks to the client in real-time
-  let result;
-  const streamChunkSize = 500; // Flush every ~500 chars
+    // Use streaming to push progress chunks to the client in real-time
+    let result;
+    const streamChunkSize = 500; // Flush every ~500 chars
 
-  async function streamAndCollect(
-    model: Parameters<typeof streamText>[0]["model"],
-  ): Promise<{ text: string; finishReason: string }> {
-    const streamResult = streamText({
-      model,
-      ...generateParams,
-      abortSignal: AbortSignal.timeout(halfTimeout),
-    });
-    let fullText = "";
-    let lastFlushed = 0;
-    try {
-      for await (const chunk of streamResult.textStream) {
-        fullText += chunk;
-        if (fullText.length - lastFlushed > streamChunkSize) {
+    async function streamAndCollect(
+      model: Parameters<typeof streamText>[0]["model"],
+    ): Promise<{
+      text: string;
+      finishReason: string;
+      usage: { inputTokens: number; outputTokens: number };
+    }> {
+      const streamResult = streamText({
+        model,
+        ...generateParams,
+        abortSignal: AbortSignal.timeout(halfTimeout),
+      });
+      let fullText = "";
+      let lastFlushed = 0;
+      try {
+        for await (const chunk of streamResult.textStream) {
+          fullText += chunk;
+          if (fullText.length - lastFlushed > streamChunkSize) {
+            await ctx.runMutation(internal.streamingManager.appendChunk, {
+              streamId,
+              text: fullText.substring(lastFlushed),
+              final: false,
+            });
+            lastFlushed = fullText.length;
+          }
+        }
+      } finally {
+        // Always finalize the stream so clients don't hang
+        if (fullText.length > lastFlushed) {
           await ctx.runMutation(internal.streamingManager.appendChunk, {
             streamId,
             text: fullText.substring(lastFlushed),
-            final: false,
+            final: true,
           });
-          lastFlushed = fullText.length;
+        } else {
+          await ctx.runMutation(internal.streamingManager.appendChunk, {
+            streamId,
+            text: "",
+            final: true,
+          });
         }
       }
-    } finally {
-      // Always finalize the stream so clients don't hang
-      if (fullText.length > lastFlushed) {
-        await ctx.runMutation(internal.streamingManager.appendChunk, {
-          streamId,
-          text: fullText.substring(lastFlushed),
-          final: true,
-        });
-      } else {
-        await ctx.runMutation(internal.streamingManager.appendChunk, {
-          streamId,
-          text: "",
-          final: true,
-        });
-      }
+      const finishReason = await streamResult.finishReason;
+      const usage = await streamResult.usage;
+      return {
+        text: fullText,
+        finishReason,
+        usage: { inputTokens: usage.inputTokens ?? 0, outputTokens: usage.outputTokens ?? 0 },
+      };
     }
-    const finishReason = await streamResult.finishReason;
-    return { text: fullText, finishReason };
-  }
 
-  try {
-    result = await streamAndCollect(google(PLAN_MODEL_PRIMARY));
-  } catch (primaryErr) {
-    console.warn(
-      `[AI] Primary model (Gemini) streaming failed for meal plan, falling back to DeepSeek: ${primaryErr}`,
-    );
-    const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
-    if (!deepseekApiKey) throw new Error("DEEPSEEK_API_KEY environment variable is not set");
-    const deepseek = createDeepSeek({ apiKey: deepseekApiKey });
-    // Fallback uses batch generateText (simpler, more reliable)
-    const batchResult = await generateText({
-      model: deepseek(PLAN_MODEL_FALLBACK),
-      ...generateParams,
-      abortSignal: AbortSignal.timeout(halfTimeout),
+    const primaryGen = trace?.generation({
+      name: "primary-gemini-stream",
+      model: PLAN_MODEL_PRIMARY,
+      input: { systemPrompt: systemPrompt.slice(0, 500), userPrompt: userPrompt.slice(0, 500) },
     });
-    result = { text: batchResult.text, finishReason: batchResult.finishReason };
-    // Write fallback result to stream so client can see it
-    await ctx.runMutation(internal.streamingManager.appendChunk, {
-      streamId,
-      text: batchResult.text,
-      final: true,
-    });
-  }
+    try {
+      result = await streamAndCollect(google(PLAN_MODEL_PRIMARY));
+      primaryGen?.end({
+        output: result.text.slice(0, 500),
+        usage: { input: result.usage.inputTokens, output: result.usage.outputTokens },
+        metadata: { finishReason: result.finishReason, textLength: result.text.length },
+      });
+    } catch (primaryErr) {
+      const errorType = classifyError(primaryErr);
+      primaryGen?.end({
+        metadata: {
+          errorType,
+          error: primaryErr instanceof Error ? primaryErr.message : String(primaryErr),
+        },
+        level: "ERROR",
+      });
+      console.warn(
+        `[AI] Primary model (Gemini) streaming failed for meal plan, falling back to DeepSeek: ${primaryErr}`,
+      );
+      const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
+      if (!deepseekApiKey) throw new Error("DEEPSEEK_API_KEY environment variable is not set");
+      const deepseek = createDeepSeek({ apiKey: deepseekApiKey });
+      // Fallback uses batch generateText (simpler, more reliable)
+      const fallbackGen = trace?.generation({
+        name: "fallback-deepseek-batch",
+        model: PLAN_MODEL_FALLBACK,
+        input: { systemPrompt: systemPrompt.slice(0, 500), userPrompt: userPrompt.slice(0, 500) },
+      });
+      try {
+        const batchResult = await generateText({
+          model: deepseek(PLAN_MODEL_FALLBACK),
+          ...generateParams,
+          abortSignal: AbortSignal.timeout(halfTimeout),
+        });
+        result = { text: batchResult.text, finishReason: batchResult.finishReason };
+        fallbackGen?.end({
+          output: result.text.slice(0, 500),
+          usage: {
+            input: batchResult.usage?.inputTokens,
+            output: batchResult.usage?.outputTokens,
+          },
+          metadata: { finishReason: result.finishReason, textLength: result.text.length },
+        });
+      } catch (fallbackErr) {
+        fallbackGen?.end({
+          metadata: {
+            errorType: classifyError(fallbackErr),
+            error: fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr),
+          },
+          level: "ERROR",
+        });
+        throw fallbackErr;
+      }
+      // Write fallback result to stream so client can see it
+      await ctx.runMutation(internal.streamingManager.appendChunk, {
+        streamId,
+        text: result.text,
+        final: true,
+      });
+    }
 
-  // --- Truncation detection + retry with reduced scope ---
-  if (result.finishReason === "length") {
-    console.warn(
-      `[AI] Meal plan truncated for user ${userId} (finishReason=length, ${result.text.length} chars). Retrying with simplified prompt.`,
-    );
-    const retryPrompt = `Create a ${safeDuration}-day meal plan ${isArabic ? "ENTIRELY IN ARABIC" : "in English"}:
+    // --- Truncation detection + retry with reduced scope ---
+    if (result.finishReason === "length") {
+      console.warn(
+        `[AI] Meal plan truncated for user ${userId} (finishReason=length, ${result.text.length} chars). Retrying with simplified prompt.`,
+      );
+      const retryPrompt = `Create a ${safeDuration}-day meal plan ${isArabic ? "ENTIRELY IN ARABIC" : "in English"}:
 
 CLIENT PROFILE:
 ${contextBlock}
@@ -952,80 +720,142 @@ IMPORTANT: Keep output concise to avoid truncation.
 Return JSON: { "dailyTargets": {...}, "weeklyPlan": { "day1": { "dailyTotals": {...}, "meals": [{ "name", "type", "calories", "protein", "carbs", "fat", "ingredients": [...], "instructions": [...] }] }, ...up to "day${safeDuration}" }, "notes": "string" }
 Respond ONLY with valid JSON.`;
 
-    try {
-      const retryResult = await generateText({
-        model: google(PLAN_MODEL_PRIMARY),
-        system: systemPrompt,
-        prompt: retryPrompt,
-        temperature: 0.3,
-        maxOutputTokens: MEAL_OUTPUT_TOKENS_AR,
-        maxRetries: 1,
-        abortSignal: AbortSignal.timeout(halfTimeout),
+      const retryPrimaryGen = trace?.generation({
+        name: "retry-primary-gemini",
+        model: PLAN_MODEL_PRIMARY,
+        input: { prompt: retryPrompt.slice(0, 500) },
+        metadata: { reason: "truncation-retry" },
       });
-      result = { text: retryResult.text, finishReason: retryResult.finishReason };
-    } catch {
-      const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
-      if (!deepseekApiKey) throw new Error("DEEPSEEK_API_KEY environment variable is not set");
-      const deepseek = createDeepSeek({ apiKey: deepseekApiKey });
-      const retryResult = await generateText({
-        model: deepseek(PLAN_MODEL_FALLBACK),
-        system: systemPrompt,
-        prompt: retryPrompt,
-        temperature: 0.3,
-        maxOutputTokens: MEAL_OUTPUT_TOKENS_AR,
-        maxRetries: 1,
-        abortSignal: AbortSignal.timeout(halfTimeout),
-      });
-      result = { text: retryResult.text, finishReason: retryResult.finishReason };
+      try {
+        const retryResult = await generateText({
+          model: google(PLAN_MODEL_PRIMARY),
+          system: systemPrompt,
+          prompt: retryPrompt,
+          temperature: 0.3,
+          maxOutputTokens: MEAL_OUTPUT_TOKENS_AR,
+          maxRetries: 1,
+          abortSignal: AbortSignal.timeout(halfTimeout),
+        });
+        result = { text: retryResult.text, finishReason: retryResult.finishReason };
+        retryPrimaryGen?.end({
+          output: result.text.slice(0, 500),
+          usage: {
+            input: retryResult.usage?.inputTokens,
+            output: retryResult.usage?.outputTokens,
+          },
+          metadata: { finishReason: result.finishReason },
+        });
+      } catch (retryPrimaryErr) {
+        retryPrimaryGen?.end({
+          metadata: {
+            errorType: classifyError(retryPrimaryErr),
+            error:
+              retryPrimaryErr instanceof Error ? retryPrimaryErr.message : String(retryPrimaryErr),
+          },
+          level: "ERROR",
+        });
+        const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
+        if (!deepseekApiKey) throw new Error("DEEPSEEK_API_KEY environment variable is not set");
+        const deepseek = createDeepSeek({ apiKey: deepseekApiKey });
+        const retryFallbackGen = trace?.generation({
+          name: "retry-fallback-deepseek",
+          model: PLAN_MODEL_FALLBACK,
+          input: { prompt: retryPrompt.slice(0, 500) },
+          metadata: { reason: "truncation-retry-fallback" },
+        });
+        try {
+          const retryResult = await generateText({
+            model: deepseek(PLAN_MODEL_FALLBACK),
+            system: systemPrompt,
+            prompt: retryPrompt,
+            temperature: 0.3,
+            maxOutputTokens: MEAL_OUTPUT_TOKENS_AR,
+            maxRetries: 1,
+            abortSignal: AbortSignal.timeout(halfTimeout),
+          });
+          result = { text: retryResult.text, finishReason: retryResult.finishReason };
+          retryFallbackGen?.end({
+            output: result.text.slice(0, 500),
+            usage: {
+              input: retryResult.usage?.inputTokens,
+              output: retryResult.usage?.outputTokens,
+            },
+            metadata: { finishReason: result.finishReason },
+          });
+        } catch (retryFallbackErr) {
+          retryFallbackGen?.end({
+            metadata: {
+              errorType: classifyError(retryFallbackErr),
+              error:
+                retryFallbackErr instanceof Error
+                  ? retryFallbackErr.message
+                  : String(retryFallbackErr),
+            },
+            level: "ERROR",
+          });
+          throw retryFallbackErr;
+        }
+      }
     }
-  }
 
-  let planData: Record<string, unknown>;
-  try {
-    planData = extractJSON(result.text);
-  } catch (parseErr) {
-    console.error(
-      `[AI] Meal plan JSON parse failed for user ${userId}. Text length: ${result.text.length}, finish reason: ${result.finishReason}. First 500 chars: ${result.text.slice(0, 500)}`,
-    );
-    if (result.finishReason === "length") {
+    let planData: Record<string, unknown>;
+    try {
+      planData = extractJSON(result.text);
+    } catch (parseErr) {
+      console.error(
+        `[AI] Meal plan JSON parse failed for user ${userId}. Text length: ${result.text.length}, finish reason: ${result.finishReason}. First 500 chars: ${result.text.slice(0, 500)}`,
+      );
+      if (result.finishReason === "length") {
+        throw new Error(
+          "Meal plan too long for AI model output limit. Try reducing plan duration or simplifying requirements.",
+        );
+      }
       throw new Error(
-        "Meal plan too long for AI model output limit. Try reducing plan duration or simplifying requirements.",
+        `Meal plan generation failed: AI returned invalid JSON (finish reason: ${result.finishReason})`,
       );
     }
-    throw new Error(
-      `Meal plan generation failed: AI returned invalid JSON (finish reason: ${result.finishReason})`,
-    );
+
+    // Post-generation validation & auto-correction
+    const validationWarnings = validateAndCorrectMealPlan(planData, nutritionTargets);
+    if (validationWarnings.length > 0) {
+      planData.validationWarnings = validationWarnings;
+      console.warn(
+        `[AI] Meal plan validation: ${validationWarnings.length} warnings for user ${userId}`,
+        validationWarnings,
+      );
+    }
+
+    const durationMs = Date.now() - startTime;
+    console.log(`[AI] Meal plan generated in ${durationMs}ms for user ${userId}`);
+
+    trace?.update({
+      metadata: {
+        durationMs,
+        finishReason: result.finishReason,
+        textLength: result.text.length,
+        validationWarnings: validationWarnings.length,
+      },
+    });
+
+    const startDate = new Date().toISOString().split("T")[0]!;
+    const endDate = new Date(Date.now() + safeDuration * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0]!;
+
+    return ctx.runMutation(internal.mealPlans.savePlanInternal, {
+      userId,
+      checkInId,
+      planData,
+      aiGeneratedContent: result.text,
+      streamId,
+      language,
+      startDate,
+      endDate,
+      assessmentVersion: clientCtx.assessmentVersion,
+    });
+  } finally {
+    await flushLangfuse();
   }
-
-  // Post-generation validation & auto-correction
-  const validationWarnings = validateAndCorrectMealPlan(planData, nutritionTargets);
-  if (validationWarnings.length > 0) {
-    planData.validationWarnings = validationWarnings;
-    console.warn(
-      `[AI] Meal plan validation: ${validationWarnings.length} warnings for user ${userId}`,
-      validationWarnings,
-    );
-  }
-
-  const durationMs = Date.now() - startTime;
-  console.log(`[AI] Meal plan generated in ${durationMs}ms for user ${userId}`);
-
-  const startDate = new Date().toISOString().split("T")[0]!;
-  const endDate = new Date(Date.now() + safeDuration * 24 * 60 * 60 * 1000)
-    .toISOString()
-    .split("T")[0]!;
-
-  return ctx.runMutation(internal.mealPlans.savePlanInternal, {
-    userId,
-    checkInId,
-    planData,
-    aiGeneratedContent: result.text,
-    streamId,
-    language,
-    startDate,
-    endDate,
-    assessmentVersion: clientCtx.assessmentVersion,
-  });
 }
 
 async function generateWorkoutPlanHandler(
@@ -1353,7 +1183,22 @@ export const translatePlanContent = internalAction({
       ],
     };
 
+    const trace = traceAI({
+      name: "translate-plan",
+      metadata: {
+        planType: args.planType,
+        sourceLanguage: args.sourceLanguage,
+        targetLanguage: args.targetLanguage,
+        planId: args.planId,
+      },
+      tags: ["translation"],
+    });
+
     let raw: string;
+    const primaryGen = trace?.generation({
+      name: "primary-gemini-translate",
+      model: PLAN_MODEL_PRIMARY,
+    });
     try {
       const res = await generateText({
         model: google(PLAN_MODEL_PRIMARY),
@@ -1361,22 +1206,60 @@ export const translatePlanContent = internalAction({
         abortSignal: AbortSignal.timeout(halfTimeout),
       });
       raw = res.text;
+      primaryGen?.end({
+        output: raw.slice(0, 500),
+        usage: { input: res.usage?.inputTokens, output: res.usage?.outputTokens },
+        metadata: { finishReason: res.finishReason },
+      });
     } catch (primaryErr) {
+      primaryGen?.end({
+        metadata: {
+          errorType: classifyError(primaryErr),
+          error: primaryErr instanceof Error ? primaryErr.message : String(primaryErr),
+        },
+        level: "ERROR",
+      });
       console.warn(
         `[AI] Primary model (Gemini) failed for translation, falling back to DeepSeek: ${primaryErr}`,
       );
       const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
       if (!deepseekApiKey) throw new Error("DEEPSEEK_API_KEY environment variable is not set");
       const deepseek = createDeepSeek({ apiKey: deepseekApiKey });
-      const res = await generateText({
-        model: deepseek(PLAN_MODEL_FALLBACK),
-        ...translateParams,
-        abortSignal: AbortSignal.timeout(halfTimeout),
+      const fallbackGen = trace?.generation({
+        name: "fallback-deepseek-translate",
+        model: PLAN_MODEL_FALLBACK,
       });
-      raw = res.text;
+      try {
+        const res = await generateText({
+          model: deepseek(PLAN_MODEL_FALLBACK),
+          ...translateParams,
+          abortSignal: AbortSignal.timeout(halfTimeout),
+        });
+        raw = res.text;
+        fallbackGen?.end({
+          output: raw.slice(0, 500),
+          usage: { input: res.usage?.inputTokens, output: res.usage?.outputTokens },
+          metadata: { finishReason: res.finishReason },
+        });
+      } catch (fallbackErr) {
+        fallbackGen?.end({
+          metadata: {
+            errorType: classifyError(fallbackErr),
+            error: fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr),
+          },
+          level: "ERROR",
+        });
+        await flushLangfuse();
+        throw fallbackErr;
+      }
     }
 
-    const translatedData = extractJSON(raw);
+    let translatedData: unknown;
+    try {
+      translatedData = extractJSON(raw);
+    } finally {
+      await flushLangfuse();
+    }
 
     const saveMutation =
       args.planType === "meal"
@@ -1424,8 +1307,20 @@ export const translateToArabic = action({
       { role: "user" as const, content: truncatedText },
     ];
 
+    const trace = traceAI({
+      name: "translate-arabic",
+      userId,
+      metadata: { inputLength: truncatedText.length },
+      tags: ["translation", "arabic"],
+    });
+
     try {
       let translated: string;
+      const primaryGen = trace?.generation({
+        name: "primary-gemini-arabic",
+        model: PLAN_MODEL_PRIMARY,
+        input: { text: truncatedText.slice(0, 200) },
+      });
       try {
         const res = await generateText({
           model: google(PLAN_MODEL_PRIMARY),
@@ -1435,13 +1330,29 @@ export const translateToArabic = action({
           abortSignal: AbortSignal.timeout(30_000),
         });
         translated = res.text;
+        primaryGen?.end({
+          output: translated.slice(0, 200),
+          usage: { input: res.usage?.inputTokens, output: res.usage?.outputTokens },
+        });
       } catch (primaryErr) {
+        primaryGen?.end({
+          metadata: {
+            errorType: classifyError(primaryErr),
+            error: primaryErr instanceof Error ? primaryErr.message : String(primaryErr),
+          },
+          level: "ERROR",
+        });
         console.warn(
           `[AI] Primary model (Gemini) failed for Arabic translation, falling back to DeepSeek: ${primaryErr}`,
         );
         const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
         if (!deepseekApiKey) throw new Error("DEEPSEEK_API_KEY environment variable is not set");
         const deepseek = createDeepSeek({ apiKey: deepseekApiKey });
+        const fallbackGen = trace?.generation({
+          name: "fallback-deepseek-arabic",
+          model: PLAN_MODEL_FALLBACK,
+          input: { text: truncatedText.slice(0, 200) },
+        });
         const res = await generateText({
           model: deepseek(PLAN_MODEL_FALLBACK),
           maxOutputTokens: 100,
@@ -1450,11 +1361,17 @@ export const translateToArabic = action({
           abortSignal: AbortSignal.timeout(30_000),
         });
         translated = res.text;
+        fallbackGen?.end({
+          output: translated.slice(0, 200),
+          usage: { input: res.usage?.inputTokens, output: res.usage?.outputTokens },
+        });
       }
 
+      await flushLangfuse();
       return translated.trim();
     } catch (err) {
       console.error("[AI] Translation failed:", err);
+      await flushLangfuse();
       throw new Error("Translation failed. Please try again.");
     }
   },

@@ -28,7 +28,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { cn } from "@fitfast/ui/cn";
-import { toLocalDigits } from "@/lib/utils";
+import { toLocalDigits, toDateLocale } from "@/lib/utils";
 
 function createTicketSchema(t: (key: string) => string) {
   return z.object({
@@ -60,7 +60,7 @@ function getTimeAgo(timestamp: number, locale: string): string {
     return locale === "ar" ? "أمس" : "Yesterday";
   }
 
-  return date.toLocaleDateString(locale === "ar" ? "ar-EG" : "en-US", {
+  return date.toLocaleDateString(toDateLocale(locale), {
     month: "short",
     day: "numeric",
   });

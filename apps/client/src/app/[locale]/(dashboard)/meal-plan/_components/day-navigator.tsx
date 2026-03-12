@@ -3,6 +3,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import { ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
 import { cn } from "@fitfast/ui/cn";
+import { toDateLocale } from "@/lib/utils";
 
 interface DayNavigatorProps {
   totalDays: number;
@@ -35,7 +36,7 @@ function getDateForDay(startDate: string, dayIndex: number): Date {
 }
 
 function formatDate(date: Date, locale: string): string {
-  return date.toLocaleDateString(locale === "ar" ? "ar-EG" : "en-US", {
+  return date.toLocaleDateString(toDateLocale(locale), {
     weekday: "short",
     month: "short",
     day: "numeric",
@@ -43,7 +44,7 @@ function formatDate(date: Date, locale: string): string {
 }
 
 function getWeekdayShort(date: Date, locale: string): string {
-  return date.toLocaleDateString(locale === "ar" ? "ar-EG" : "en-US", {
+  return date.toLocaleDateString(toDateLocale(locale), {
     weekday: "short",
   });
 }

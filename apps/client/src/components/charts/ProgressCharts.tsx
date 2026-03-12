@@ -12,6 +12,7 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from "recharts";
+import { useId } from "react";
 import { Weight, Ruler, Heart, Apple, Activity } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
 import { SectionCard } from "@fitfast/ui/section-card";
@@ -96,6 +97,8 @@ export default function ProgressCharts({
   const tCheckIn = useTranslations("checkIn");
   const tUnits = useTranslations("units");
   const locale = useLocale();
+  const id = useId();
+  const weightGradientId = `weightGradient-${id}`;
 
   // Determine which measurement lines have data
   const activeMeasurementKeys = MEASUREMENT_LINES.filter((line) =>
@@ -111,7 +114,7 @@ export default function ProgressCharts({
             <ResponsiveContainer width="100%" height={300}>
               <AreaChart data={weightChartData}>
                 <defs>
-                  <linearGradient id="weightGradient" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id={weightGradientId} x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor={CHART_COLORS.primary} stopOpacity={0.2} />
                     <stop offset="95%" stopColor={CHART_COLORS.primary} stopOpacity={0} />
                   </linearGradient>
@@ -146,7 +149,7 @@ export default function ProgressCharts({
                   dataKey="weight"
                   stroke={CHART_COLORS.primary}
                   strokeWidth={2.5}
-                  fill="url(#weightGradient)"
+                  fill={`url(#${weightGradientId})`}
                   dot={{ fill: CHART_COLORS.primary, r: 4, strokeWidth: 0 }}
                   activeDot={{ r: 6 }}
                 />
@@ -439,7 +442,7 @@ export default function ProgressCharts({
       {/* Adherence Stats — only show when real data exists */}
       {adherenceStats &&
         (adherenceStats.mealAdherence > 0 || adherenceStats.workoutAdherence > 0) && (
-          <div className="grid gap-3 md:grid-cols-2" role="img" aria-label={t("adherence")}>
+          <div className="grid gap-3 md:grid-cols-2">
             {/* Meal adherence — nutrition green */}
             <div className="border-border bg-card shadow-card hover:shadow-lifted overflow-hidden rounded-xl border transition-all hover:-translate-y-0.5">
               <div className="border-border bg-nutrition/8 border-b p-4">

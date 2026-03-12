@@ -86,7 +86,7 @@ describe("getCheckInFrequencyDays", () => {
     expect(result).toBe(10);
   });
 
-  it("returns default when config value is 0 (guarded — zero means misconfigured)", async () => {
+  it("returns 0 when config value is 0 (zero means no-lock, useful for testing)", async () => {
     const mockCtx = {
       db: {
         query: () => ({
@@ -97,7 +97,7 @@ describe("getCheckInFrequencyDays", () => {
       },
     };
     const result = await getCheckInFrequencyDays(mockCtx);
-    expect(result).toBe(10);
+    expect(result).toBe(0);
   });
 
   it("returns default when config value is negative", async () => {
@@ -114,7 +114,7 @@ describe("getCheckInFrequencyDays", () => {
     expect(result).toBe(10);
   });
 
-  it("returns default when config value is string '0'", async () => {
+  it("returns 0 when config value is string '0' (zero means no-lock)", async () => {
     const mockCtx = {
       db: {
         query: () => ({
@@ -125,6 +125,6 @@ describe("getCheckInFrequencyDays", () => {
       },
     };
     const result = await getCheckInFrequencyDays(mockCtx);
-    expect(result).toBe(10);
+    expect(result).toBe(0);
   });
 });

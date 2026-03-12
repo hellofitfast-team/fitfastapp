@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { cn } from "@fitfast/ui/cn";
-import { toLocalDigits } from "@/lib/utils";
+import { toLocalDigits, toDateLocale } from "@/lib/utils";
 
 interface DaySelectorProps {
   totalDays: number;
@@ -41,7 +41,7 @@ export function DaySelector({
     try {
       const date = new Date(planStartDate);
       date.setDate(date.getDate() + dayIndex);
-      return date.toLocaleDateString(locale === "ar" ? "ar-EG" : "en-US", {
+      return date.toLocaleDateString(toDateLocale(locale), {
         weekday: "short",
       });
     } catch {

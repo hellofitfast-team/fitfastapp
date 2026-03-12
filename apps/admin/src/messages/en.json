@@ -140,6 +140,11 @@
     "respondFailed": "Failed to send response. Please try again.",
     "closeFailed": "Failed to close ticket. Please try again.",
     "confirmDeleteFaq": "Are you sure you want to delete this FAQ?",
+    "selectAll": "Select all",
+    "deleteSelected": "Delete selected",
+    "confirmBulkDeleteFaq": "Are you sure you want to delete {count} FAQ(s)? This cannot be undone.",
+    "bulkDeleteFaqFailed": "Failed to delete FAQs. Please try again.",
+    "bulkDeleteFaqSuccess": "{count} FAQ(s) deleted successfully.",
     "clientDetail": {
       "profile": "Profile",
       "status": "Status",

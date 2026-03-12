@@ -87,10 +87,15 @@ brand-logos/
 
 # Misc screenshots & design files
 *.jpeg
+*.jpg
 *.png
 *.excalidraw
 *.pdf
 !apps/*/public/**
+
+# Test images (OCR testing artifacts)
+IPA-test.*
+inbody-test.*
 
 # Memory files
 MEMORY.md

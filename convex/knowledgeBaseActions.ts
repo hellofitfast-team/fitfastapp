@@ -9,6 +9,7 @@ import {
   RAG_CHUNK_SIZE_WORDS as CHUNK_SIZE,
   RAG_CHUNK_OVERLAP_WORDS as CHUNK_OVERLAP,
 } from "./constants";
+import { traceAI, flushLangfuse } from "./langfuse";
 
 const NAMESPACE = "coach_knowledge";
 
@@ -117,6 +118,11 @@ export const embedEntry = internalAction({
       value: tag,
     }));
 
+    const trace = traceAI({
+      name: "embedding-add",
+      metadata: { entryId, title: entry.title, chunkCount: chunks.length },
+      tags: ["embedding", "rag"],
+    });
     try {
       await rag.add(ctx, {
         namespace: NAMESPACE,
@@ -125,12 +131,17 @@ export const embedEntry = internalAction({
         chunks,
         filterValues,
       });
+      trace?.update({ metadata: { success: true } });
     } catch (err) {
+      trace?.update({
+        metadata: { error: err instanceof Error ? err.message : String(err) },
+      });
       console.error(
         `[RAG] Embedding failed for entry ${entryId} ("${entry.title}"). Entry exists but is unsearchable.`,
         err instanceof Error ? err.message : err,
       );
     }
+    await flushLangfuse();
   },
 });
 

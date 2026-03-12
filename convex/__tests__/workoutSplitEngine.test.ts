@@ -37,14 +37,14 @@ describe("selectWorkoutSplit", () => {
       expect(result.splitType).toBe("full_body");
     });
 
-    it("selects upper_lower for intermediate with 4 days/week", () => {
+    it("selects phul for intermediate with 4 days/week", () => {
       const result = selectWorkoutSplit("intermediate", 4);
-      expect(result.splitType).toBe("upper_lower");
+      expect(result.splitType).toBe("phul");
     });
 
-    it("selects push_pull_legs for intermediate with 5 days/week", () => {
+    it("selects anterior_posterior for intermediate with 5 days/week", () => {
       const result = selectWorkoutSplit("intermediate", 5);
-      expect(result.splitType).toBe("push_pull_legs");
+      expect(result.splitType).toBe("anterior_posterior");
     });
   });
 
@@ -59,14 +59,14 @@ describe("selectWorkoutSplit", () => {
       expect(result.splitType).toBe("push_pull_legs");
     });
 
-    it("selects ppl_2x for advanced with 5 days/week", () => {
+    it("selects bro_split for advanced with 5 days/week", () => {
       const result = selectWorkoutSplit("advanced", 5);
-      expect(result.splitType).toBe("ppl_2x");
+      expect(result.splitType).toBe("bro_split");
     });
 
-    it("selects ppl_2x for advanced with 6 days/week", () => {
+    it("selects arnold for advanced with 6 days/week", () => {
       const result = selectWorkoutSplit("advanced", 6);
-      expect(result.splitType).toBe("ppl_2x");
+      expect(result.splitType).toBe("arnold");
     });
   });
 
@@ -100,36 +100,59 @@ describe("selectWorkoutSplit", () => {
       ]);
     });
 
-    it("generates correct upper_lower labels (3-day cycle)", () => {
+    it("generates correct phul labels (6-day cycle)", () => {
       const result = selectWorkoutSplit("intermediate", 4, 6);
-      // upper_lower: 0=Upper, 1=Lower, 2=Rest, 3=Upper, 4=Lower, 5=Rest
-      expect(result.dayLabels).toEqual(["Upper", "Lower", "Rest", "Upper", "Lower", "Rest"]);
+      // phul: 0=Power Upper, 1=Power Lower, 2=Rest, 3=Hypertrophy Upper, 4=Hypertrophy Lower, 5=Rest
+      expect(result.dayLabels).toEqual([
+        "Power Upper",
+        "Power Lower",
+        "Rest",
+        "Hypertrophy Upper",
+        "Hypertrophy Lower",
+        "Rest",
+      ]);
     });
 
-    it("generates correct push_pull_legs labels (4-day cycle)", () => {
-      const result = selectWorkoutSplit("intermediate", 5, 8);
-      // PPL: 0=Push, 1=Pull, 2=Legs, 3=Rest, 4=Push, 5=Pull, 6=Legs, 7=Rest
+    it("generates correct anterior_posterior labels (3-day cycle)", () => {
+      const result = selectWorkoutSplit("intermediate", 5, 6);
+      // anterior_posterior: 0=Anterior, 1=Posterior, 2=Rest, 3=Anterior, 4=Posterior, 5=Rest
       expect(result.dayLabels).toEqual([
-        "Push",
-        "Pull",
+        "Anterior",
+        "Posterior",
+        "Rest",
+        "Anterior",
+        "Posterior",
+        "Rest",
+      ]);
+    });
+
+    it("generates correct arnold labels (4-day cycle)", () => {
+      const result = selectWorkoutSplit("advanced", 6, 8);
+      // arnold: 0=Chest+Back, 1=Shoulders+Arms, 2=Legs, 3=Rest, 4=Chest+Back, 5=Shoulders+Arms, 6=Legs, 7=Rest
+      expect(result.dayLabels).toEqual([
+        "Chest+Back",
+        "Shoulders+Arms",
         "Legs",
         "Rest",
-        "Push",
-        "Pull",
+        "Chest+Back",
+        "Shoulders+Arms",
         "Legs",
         "Rest",
       ]);
     });
 
-    it("generates correct ppl_2x labels (7-day cycle)", () => {
-      const result = selectWorkoutSplit("advanced", 6, 7);
-      // PPL 2x: Push, Pull, Legs, Push, Pull, Legs, Rest
-      expect(result.dayLabels).toEqual(["Push", "Pull", "Legs", "Push", "Pull", "Legs", "Rest"]);
-    });
-
     it("generates Arabic labels alongside English labels", () => {
-      const result = selectWorkoutSplit("advanced", 6, 7);
-      expect(result.dayLabelsAr).toEqual(["دفع", "سحب", "أرجل", "دفع", "سحب", "أرجل", "راحة"]);
+      const result = selectWorkoutSplit("advanced", 6, 8);
+      expect(result.dayLabelsAr).toEqual([
+        "صدر+ظهر",
+        "أكتاف+ذراعين",
+        "أرجل",
+        "راحة",
+        "صدر+ظهر",
+        "أكتاف+ذراعين",
+        "أرجل",
+        "راحة",
+      ]);
     });
 
     it("defaults totalPlanDays to 10", () => {
@@ -150,7 +173,7 @@ describe("selectWorkoutSplit", () => {
 
     it("includes splitDescription and splitDescriptionAr", () => {
       const result = selectWorkoutSplit("advanced", 6);
-      expect(result.splitDescription).toContain("PPL");
+      expect(result.splitDescription).toContain("Chest and back");
       expect(result.splitDescriptionAr).toBeTruthy();
     });
 
@@ -179,9 +202,9 @@ describe("selectWorkoutSplit", () => {
       expect(result.splitType).toBe("full_body");
     });
 
-    it("handles 7 days per week (treated as >= 5)", () => {
+    it("handles 7 days per week (treated as >= 6)", () => {
       const result = selectWorkoutSplit("advanced", 7);
-      expect(result.splitType).toBe("ppl_2x");
+      expect(result.splitType).toBe("arnold");
     });
 
     it("handles totalPlanDays of 1", () => {

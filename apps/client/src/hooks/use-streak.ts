@@ -5,7 +5,7 @@ import { api } from "@/convex/_generated/api";
 
 /** Returns the user's current streak, passing local date for timezone accuracy */
 export function useStreak() {
-  const { isAuthenticated } = useConvexAuth();
+  const { isAuthenticated, isLoading: isAuthLoading } = useConvexAuth();
   // Send the client's local YYYY-MM-DD so the server computes streaks
   // relative to the user's midnight, not UTC midnight.
   const clientToday = new Date().toLocaleDateString("en-CA"); // en-CA → YYYY-MM-DD
@@ -13,6 +13,6 @@ export function useStreak() {
 
   return {
     streak: data?.currentStreak ?? 0,
-    isLoading: isAuthenticated && data === undefined,
+    isLoading: isAuthLoading || (isAuthenticated && data === undefined),
   };
 }

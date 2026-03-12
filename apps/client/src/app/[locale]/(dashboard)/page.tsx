@@ -21,8 +21,7 @@ import { EmptyState } from "@fitfast/ui/empty-state";
 import { cn } from "@fitfast/ui/cn";
 import { formatDateWithWeekday } from "@/lib/utils";
 import { useState, useEffect, useRef, useCallback } from "react";
-import type { GeneratedMealPlan } from "@/lib/ai/meal-plan-generator";
-import type { GeneratedWorkoutPlan } from "@/lib/ai/workout-plan-generator";
+import type { GeneratedMealPlan, GeneratedWorkoutPlan } from "@/types/plans";
 
 /** Simplified meal used in the dashboard summary cards */
 interface DashboardMeal {

@@ -98,3 +98,22 @@ export const deleteFAQ = mutation({
     await ctx.db.delete(faqId);
   },
 });
+
+export const bulkDeleteFAQs = mutation({
+  args: { faqIds: v.array(v.id("faqs")) },
+  handler: async (ctx, { faqIds }) => {
+    if (faqIds.length === 0) return;
+    if (faqIds.length > 100) throw new Error("Cannot delete more than 100 FAQs at once");
+
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .unique();
+    if (!profile?.isCoach) throw new Error("Not authorized");
+
+    await Promise.all(faqIds.map((id) => ctx.db.delete(id)));
+  },
+});

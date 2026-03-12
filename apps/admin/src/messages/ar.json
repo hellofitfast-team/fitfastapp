@@ -140,6 +140,11 @@
     "respondFailed": "فشل إرسال الرد. يرجى المحاولة مرة أخرى.",
     "closeFailed": "فشل إغلاق التذكرة. يرجى المحاولة مرة أخرى.",
     "confirmDeleteFaq": "هل أنت متأكد من حذف هذا السؤال؟",
+    "selectAll": "تحديد الكل",
+    "deleteSelected": "حذف المحدد",
+    "confirmBulkDeleteFaq": "هل أنت متأكد من حذف {count} سؤال؟ لا يمكن التراجع عن هذا.",
+    "bulkDeleteFaqFailed": "فشل حذف الأسئلة. يرجى المحاولة مرة أخرى.",
+    "bulkDeleteFaqSuccess": "تم حذف {count} سؤال بنجاح.",
     "clientDetail": {
       "profile": "الملف الشخصي",
       "status": "الحالة",

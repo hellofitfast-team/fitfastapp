@@ -13,6 +13,7 @@ import {
 import { Link, useRouter, usePathname } from "@fitfast/i18n/navigation";
 import { useParams } from "next/navigation";
 import { useAuthActions } from "@convex-dev/auth/react";
+import { toDateLocale } from "@/lib/utils";
 
 const PAGE_TITLES: Record<string, string> = {
   "/": "nav.dashboard",
@@ -75,7 +76,7 @@ export function MobileHeader({ userName }: MobileHeaderProps) {
             <div>
               <p className="text-sm font-bold">{userName.split(" ")[0]}</p>
               <p className="text-muted-foreground text-xs" suppressHydrationWarning>
-                {new Date().toLocaleDateString(currentLocale === "ar" ? "ar-EG" : "en-US", {
+                {new Date().toLocaleDateString(toDateLocale(currentLocale), {
                   weekday: "short",
                   month: "short",
                   day: "numeric",

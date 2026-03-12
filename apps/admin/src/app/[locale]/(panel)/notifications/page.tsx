@@ -7,6 +7,7 @@ import { api } from "@/convex/_generated/api";
 import { Bell, Send, Loader2, BellOff } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Link } from "@fitfast/i18n/navigation";
+import { formatDateTime } from "@/lib/utils";
 
 const typeBadgeColors: Record<string, string> = {
   plan_ready: "bg-blue-50 text-blue-700 border-blue-200",
@@ -248,12 +249,7 @@ export default function NotificationsPage() {
                         {t(`typeLabels.${log.type}`)}
                       </span>
                       <span className="shrink-0 text-xs text-stone-400">
-                        {new Date(log.sentAt).toLocaleString(locale === "ar" ? "ar-EG" : "en-US", {
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
+                        {formatDateTime(new Date(log.sentAt), locale)}
                       </span>
                     </div>
                     <p className="truncate text-xs font-medium text-stone-700">{log.title}</p>
@@ -306,15 +302,7 @@ export default function NotificationsPage() {
                     {paginatedLogs?.map((log) => (
                       <tr key={log._id} className="text-stone-700">
                         <td className="py-2.5 pe-4 text-xs text-stone-500">
-                          {new Date(log.sentAt).toLocaleString(
-                            locale === "ar" ? "ar-EG" : "en-US",
-                            {
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            },
-                          )}
+                          {formatDateTime(new Date(log.sentAt), locale)}
                         </td>
                         <td className="py-2.5 pe-4">
                           <span

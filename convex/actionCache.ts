@@ -43,7 +43,7 @@ export const getFoodReferenceUncached = internalAction({
 
 const foodRefCache = new ActionCache(components.actionCache, {
   action: internal.actionCache.getFoodReferenceUncached,
-  name: "food-ref-v1",
+  name: "food-ref-v2",
   ttl: FOOD_REF_CACHE_TTL_MS,
 });
 

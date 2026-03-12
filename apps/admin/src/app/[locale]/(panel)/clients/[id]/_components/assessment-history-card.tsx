@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { History, ChevronDown, ChevronRight } from "lucide-react";
+import { toDateLocale } from "@/lib/utils";
 
 interface HistoryEntry {
   _id: string;
@@ -67,10 +68,12 @@ function HistoryEntryRow({
   entry,
   tA,
   tH,
+  locale,
 }: {
   entry: HistoryEntry;
   tA: ReturnType<typeof useTranslations>;
   tH: ReturnType<typeof useTranslations>;
+  locale: string;
 }) {
   const [expanded, setExpanded] = useState(false);
   const fromVersion = entry.versionNumber;
@@ -96,7 +99,7 @@ function HistoryEntryRow({
               {tH("versionBadge", { from: fromVersion, to: toVersion })}
             </span>
             <span className="text-xs text-stone-400">
-              {date.toLocaleDateString(undefined, {
+              {date.toLocaleDateString(toDateLocale(locale), {
                 month: "short",
                 day: "numeric",
                 year: "numeric",
@@ -157,6 +160,7 @@ function HistoryEntryRow({
 export function AssessmentHistoryCard({ history, currentVersion }: AssessmentHistoryCardProps) {
   const tH = useTranslations("assessmentHistory");
   const tA = useTranslations("assessmentDetails");
+  const locale = useLocale();
   const [showAll, setShowAll] = useState(false);
 
   if (history.length === 0) return null;
@@ -185,7 +189,7 @@ export function AssessmentHistoryCard({ history, currentVersion }: AssessmentHis
         <div className="absolute start-[5px] top-0 bottom-0 w-0.5 bg-stone-200" />
 
         {visibleEntries.map((entry) => (
-          <HistoryEntryRow key={entry._id} entry={entry} tA={tA} tH={tH} />
+          <HistoryEntryRow key={entry._id} entry={entry} tA={tA} tH={tH} locale={locale} />
         ))}
       </div>
 

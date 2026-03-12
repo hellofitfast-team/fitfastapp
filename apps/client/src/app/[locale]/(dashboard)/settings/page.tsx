@@ -13,6 +13,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { cn } from "@fitfast/ui/cn";
 import { useToast } from "@/hooks/use-toast";
+import { localTimeToUtc, utcTimeToLocal, toDateLocale, formatDate } from "@/lib/utils";
 
 function SettingsCard({
   icon,
@@ -95,9 +96,10 @@ export default function SettingsPage() {
   const [passwordForm, setPasswordForm] = useState({ current: "", new: "", confirm: "" });
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
-  // Initialize reminder time from profile once (setState during render, guarded by flag)
+  // Initialize reminder time from profile once (setState during render, guarded by flag).
+  // Profile stores UTC — convert to local for the <input type="time"> display.
   if (profile?.notificationReminderTime && !reminderInitialized) {
-    setReminderTime(profile.notificationReminderTime);
+    setReminderTime(utcTimeToLocal(profile.notificationReminderTime));
     setReminderInitialized(true);
   }
 
@@ -119,7 +121,7 @@ export default function SettingsPage() {
         phone: data.phone || undefined,
         language: data.language,
       });
-      toast({ title: t("saveSuccess") });
+      toast({ title: t("saveSuccess"), variant: "success" });
     } catch (err) {
       console.error("Failed to update profile:", err);
       toast({ title: t("errors.saveFailed"), variant: "destructive" });
@@ -130,7 +132,8 @@ export default function SettingsPage() {
   const handleReminderTimeChange = async (newTime: string) => {
     setReminderTime(newTime);
     try {
-      await updateProfile({ notificationReminderTime: newTime });
+      // Convert local time to UTC before saving — cron engine runs in UTC
+      await updateProfile({ notificationReminderTime: localTimeToUtc(newTime) });
     } catch {
       toast({ title: t("errors.saveFailed"), variant: "destructive" });
     }
@@ -149,11 +152,7 @@ export default function SettingsPage() {
     const daysPassed = totalDays - daysRemaining;
     const progressPercentage =
       totalDays > 0 ? Math.min(100, Math.max(0, (daysPassed / totalDays) * 100)) : 0;
-    const formattedEndDate = endDate.toLocaleDateString(locale === "ar" ? "ar-EG" : "en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    });
+    const formattedEndDate = formatDate(endDate, locale);
     return { daysRemaining, progressPercentage, formattedEndDate };
   };
 
@@ -174,7 +173,7 @@ export default function SettingsPage() {
         currentPassword: passwordForm.current,
         newPassword: passwordForm.new,
       });
-      toast({ title: t("passwordChanged") });
+      toast({ title: t("passwordChanged"), variant: "success" });
       setShowPasswordDialog(false);
       setPasswordForm({ current: "", new: "", confirm: "" });
     } catch (err) {
@@ -394,12 +393,7 @@ export default function SettingsPage() {
               <div className="border-border flex items-center justify-between border-b py-2">
                 <span className="text-muted-foreground text-xs">{t("planStart")}</span>
                 <span className="text-sm font-semibold">
-                  {profile.planStartDate
-                    ? new Date(profile.planStartDate).toLocaleDateString(
-                        locale === "ar" ? "ar-EG" : "en-US",
-                        { month: "long", day: "numeric", year: "numeric" },
-                      )
-                    : "—"}
+                  {profile.planStartDate ? formatDate(profile.planStartDate, locale) : "—"}
                 </span>
               </div>
               <div className="border-border flex items-center justify-between border-b py-2">

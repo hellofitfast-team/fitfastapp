@@ -7,9 +7,18 @@ import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { createLogger } from "@fitfast/config/logger";
 import { useToast } from "@/hooks/use-toast";
+import { Checkbox } from "@fitfast/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@fitfast/ui/dialog";
 
 const log = createLogger("admin-faqs");
-import { HelpCircle, Plus, Trash2, Save, X, Pencil } from "lucide-react";
+import { HelpCircle, Plus, Trash2, Save, X, Pencil, Loader2 } from "lucide-react";
 
 export function FaqManager() {
   const t = useTranslations("admin");
@@ -20,6 +29,7 @@ export function FaqManager() {
   const createFAQ = useMutation(api.faqs.createFAQ);
   const updateFAQ = useMutation(api.faqs.updateFAQ);
   const deleteFAQ = useMutation(api.faqs.deleteFAQ);
+  const bulkDeleteFAQs = useMutation(api.faqs.bulkDeleteFAQs);
 
   const { toast } = useToast();
   const allFaqs = [...(enFaqs ?? []), ...(arFaqs ?? [])];
@@ -32,6 +42,30 @@ export function FaqManager() {
   const [editQuestion, setEditQuestion] = useState("");
   const [editAnswer, setEditAnswer] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  const isAllSelected = allFaqs.length > 0 && selectedIds.size === allFaqs.length;
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(allFaqs.map((f) => f._id)));
+    }
+  };
 
   const handleCreate = async () => {
     if (!newQuestion.trim() || !newAnswer.trim()) return;
@@ -75,23 +109,74 @@ export function FaqManager() {
     if (!window.confirm(t("confirmDeleteFaq"))) return;
     try {
       await deleteFAQ({ faqId });
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(faqId);
+        return next;
+      });
     } catch (err) {
       log.error({ err, faqId }, "Failed to delete FAQ");
       toast({ title: t("faqDeleteFailed"), variant: "destructive" });
     }
   };
 
+  const handleBulkDelete = async () => {
+    setIsBulkDeleting(true);
+    try {
+      const ids = Array.from(selectedIds) as Id<"faqs">[];
+      await bulkDeleteFAQs({ faqIds: ids });
+      toast({
+        title: t("bulkDeleteFaqSuccess", { count: ids.length }),
+        variant: "success",
+      });
+      setSelectedIds(new Set());
+    } catch (err) {
+      log.error({ err }, "Failed to bulk delete FAQs");
+      toast({ title: t("bulkDeleteFaqFailed"), variant: "destructive" });
+    }
+    setIsBulkDeleting(false);
+    setShowBulkDeleteDialog(false);
+  };
+
   return (
     <div className="space-y-4">
-      {/* Add new FAQ button */}
-      <button
-        type="button"
-        onClick={() => setShowNew(!showNew)}
-        className="bg-primary hover:bg-primary/90 flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-colors"
-      >
-        {showNew ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-        {showNew ? t("cancel") : t("addFaq")}
-      </button>
+      {/* Action bar: Add FAQ + bulk actions */}
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          onClick={() => setShowNew(!showNew)}
+          className="bg-primary hover:bg-primary/90 flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-colors"
+        >
+          {showNew ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+          {showNew ? t("cancel") : t("addFaq")}
+        </button>
+
+        {allFaqs.length > 0 && (
+          <>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={isAllSelected}
+                onCheckedChange={toggleSelectAll}
+                disabled={isBulkDeleting}
+                aria-label={t("selectAll")}
+              />
+              <span className="text-xs text-stone-500">{t("selectAll")}</span>
+            </div>
+
+            {selectedIds.size > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowBulkDeleteDialog(true)}
+                disabled={isBulkDeleting}
+                className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-600 transition-colors hover:bg-red-100 disabled:opacity-50"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                {t("deleteSelected")} ({selectedIds.size})
+              </button>
+            )}
+          </>
+        )}
+      </div>
 
       {/* New FAQ form */}
       {showNew && (
@@ -157,7 +242,11 @@ export function FaqManager() {
           {allFaqs.map((faq) => (
             <div
               key={faq._id}
-              className="rounded-xl border border-stone-200 bg-white transition-colors hover:border-stone-300"
+              className={`rounded-xl border bg-white transition-colors ${
+                selectedIds.has(faq._id)
+                  ? "border-red-200 bg-red-50/30"
+                  : "border-stone-200 hover:border-stone-300"
+              }`}
             >
               {editingId === faq._id ? (
                 <div className="space-y-3 p-5">
@@ -194,6 +283,13 @@ export function FaqManager() {
                 </div>
               ) : (
                 <div className="flex items-start gap-3 p-4">
+                  <div className="flex pt-0.5">
+                    <Checkbox
+                      checked={selectedIds.has(faq._id)}
+                      onCheckedChange={() => toggleSelect(faq._id)}
+                      disabled={isBulkDeleting}
+                    />
+                  </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-stone-900">{faq.question}</p>
                     <p className="mt-1 line-clamp-2 text-xs text-stone-500">{faq.answer}</p>
@@ -225,6 +321,42 @@ export function FaqManager() {
           ))}
         </div>
       )}
+
+      {/* Bulk delete confirmation dialog */}
+      <Dialog
+        open={showBulkDeleteDialog}
+        onOpenChange={(open) => {
+          if (!isBulkDeleting) setShowBulkDeleteDialog(open);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("deleteSelected")}</DialogTitle>
+            <DialogDescription>
+              {t("confirmBulkDeleteFaq", { count: selectedIds.size })}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <button
+              type="button"
+              onClick={() => setShowBulkDeleteDialog(false)}
+              disabled={isBulkDeleting}
+              className="rounded-lg border border-stone-200 px-4 py-2 text-sm font-medium text-stone-600 transition-colors hover:bg-stone-50 disabled:opacity-50"
+            >
+              {t("cancel")}
+            </button>
+            <button
+              type="button"
+              onClick={handleBulkDelete}
+              disabled={isBulkDeleting}
+              className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+            >
+              {isBulkDeleting && <Loader2 className="h-4 w-4 animate-spin" />}
+              {t("deleteSelected")}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

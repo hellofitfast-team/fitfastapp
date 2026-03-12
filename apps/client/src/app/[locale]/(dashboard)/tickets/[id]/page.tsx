@@ -10,7 +10,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { ArrowLeft, MessageSquare, Shield, Send, Loader2 } from "lucide-react";
 import { Skeleton } from "@fitfast/ui/skeleton";
 import { cn } from "@fitfast/ui/cn";
-import { formatTime } from "@/lib/utils";
+import { formatTime, toDateLocale } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
 interface TicketMessage {
@@ -41,7 +41,7 @@ function groupMessagesByDate(
       } else if (dateKey === yesterday) {
         label = t("chat.yesterday");
       } else {
-        label = new Date(dateKey).toLocaleDateString(locale === "ar" ? "ar-EG" : "en-US", {
+        label = new Date(dateKey).toLocaleDateString(toDateLocale(locale), {
           month: "short",
           day: "numeric",
         });

@@ -18,6 +18,8 @@ interface NutritionInput {
   trainingDaysPerWeek: number;
   goal: string; // "weight_loss" | "muscle_gain" | "body_recomposition" | "general_fitness" | etc.
   activityLevel?: ActivityLevel;
+  /** InBody-measured BMR (kcal). When provided, overrides Mifflin-St Jeor estimate. */
+  measuredBmr?: number;
 }
 
 export interface NutritionTargets {
@@ -126,9 +128,11 @@ function getProteinPerKg(goal: string): number {
 }
 
 export function calculateNutritionTargets(input: NutritionInput): NutritionTargets {
-  const { weightKg, heightCm, age, gender, trainingDaysPerWeek, goal, activityLevel } = input;
+  const { weightKg, heightCm, age, gender, trainingDaysPerWeek, goal, activityLevel, measuredBmr } =
+    input;
 
-  const bmr = Math.round(calculateBMR(weightKg, heightCm, age, gender));
+  const estimatedBmr = Math.round(calculateBMR(weightKg, heightCm, age, gender));
+  const bmr = measuredBmr && measuredBmr >= 800 && measuredBmr <= 4000 ? measuredBmr : estimatedBmr;
   const activityMultiplier = getActivityMultiplier(trainingDaysPerWeek, activityLevel);
   const tdee = Math.round(bmr * activityMultiplier);
 

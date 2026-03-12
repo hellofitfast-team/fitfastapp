@@ -200,6 +200,49 @@ export function formatContextForPrompt(ctx: ClientContext): string {
     }
   }
 
+  // ── Body composition: InBody OR manual measurements (mutually exclusive per submission) ──
+  // Priority: current check-in > historical check-ins > initial assessment
+  type MeasurementSource = {
+    method?: string;
+    inBodyData?: Record<string, number | undefined>;
+    measurements?: Record<string, number | undefined>;
+  };
+  const measurementSources: MeasurementSource[] = [
+    ctx.currentCheckIn as MeasurementSource | null,
+    ...ctx.checkInHistory.map((c) => c as unknown as MeasurementSource),
+    a as MeasurementSource | null,
+  ].filter((s): s is MeasurementSource => s != null);
+
+  const latestWithBody = measurementSources.find((s) => s.inBodyData || s.measurements);
+
+  if (latestWithBody?.inBodyData && typeof latestWithBody.inBodyData === "object") {
+    // InBody data — structured body composition from machine
+    const ib = latestWithBody.inBodyData;
+    const ibParts: string[] = [];
+    if (ib.bodyFatPercentage != null) ibParts.push(`BF ${ib.bodyFatPercentage}%`);
+    if (ib.skeletalMuscleMass != null) ibParts.push(`SMM ${ib.skeletalMuscleMass}kg`);
+    if (ib.leanBodyMass != null) ibParts.push(`LBM ${ib.leanBodyMass}kg`);
+    if (ib.basalMetabolicRate != null) ibParts.push(`BMR ${ib.basalMetabolicRate}kcal (measured)`);
+    if (ib.visceralFatLevel != null) ibParts.push(`Visceral fat ${ib.visceralFatLevel}`);
+    if (ib.bmi != null) ibParts.push(`BMI ${ib.bmi}`);
+    if (ib.totalBodyWater != null) ibParts.push(`TBW ${ib.totalBodyWater}L`);
+    if (ibParts.length > 0) {
+      parts.push(`INBODY COMPOSITION: ${ibParts.join(", ")}`);
+    }
+  } else if (latestWithBody?.measurements && typeof latestWithBody.measurements === "object") {
+    // Manual measurements — tape measurements from client
+    const m = latestWithBody.measurements;
+    const mParts: string[] = [];
+    if (m.chest != null) mParts.push(`Chest ${m.chest}cm`);
+    if (m.waist != null) mParts.push(`Waist ${m.waist}cm`);
+    if (m.hips != null) mParts.push(`Hips ${m.hips}cm`);
+    if (m.arms != null) mParts.push(`Arms ${m.arms}cm`);
+    if (m.thighs != null) mParts.push(`Thighs ${m.thighs}cm`);
+    if (mParts.length > 0) {
+      parts.push(`BODY MEASUREMENTS: ${mParts.join(", ")}`);
+    }
+  }
+
   // ── Assessment changes (if reassessment happened) ──
   if (ctx.assessmentChanges?.length) {
     parts.push(`\nRECENT ASSESSMENT CHANGES: ${ctx.assessmentChanges.join(", ")}`);

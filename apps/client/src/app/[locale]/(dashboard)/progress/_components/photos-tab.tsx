@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -17,6 +17,9 @@ export function PhotosTab({ photos }: PhotosTabProps) {
   const tEmpty = useTranslations("emptyStates");
   const router = useRouter();
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const wasOpenRef = useRef(false);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -24,20 +27,38 @@ export function PhotosTab({ photos }: PhotosTabProps) {
       if (e.key === "Escape") {
         setSelectedIndex(null);
       } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
         setSelectedIndex((prev) => (prev !== null && prev > 0 ? prev - 1 : prev));
       } else if (e.key === "ArrowRight") {
+        e.preventDefault();
         setSelectedIndex((prev) => (prev !== null && prev < photos.length - 1 ? prev + 1 : prev));
       }
     },
     [selectedIndex, photos.length],
   );
 
+  // Keydown listener — re-attaches when handleKeyDown changes (arrow navigation)
   useEffect(() => {
     if (selectedIndex !== null) {
       document.addEventListener("keydown", handleKeyDown);
-      return () => document.removeEventListener("keydown", handleKeyDown);
+      return () => {
+        document.removeEventListener("keydown", handleKeyDown);
+      };
     }
   }, [selectedIndex, handleKeyDown]);
+
+  // Focus management — only runs on open/close transitions
+  useEffect(() => {
+    const isOpen = selectedIndex !== null;
+    if (isOpen && !wasOpenRef.current) {
+      // Modal just opened — focus close button
+      closeButtonRef.current?.focus();
+    } else if (!isOpen && wasOpenRef.current) {
+      // Modal just closed — restore focus to trigger thumbnail
+      triggerRef.current?.focus();
+    }
+    wasOpenRef.current = isOpen;
+  }, [selectedIndex]);
 
   return (
     <>
@@ -53,7 +74,10 @@ export function PhotosTab({ photos }: PhotosTabProps) {
                 key={`${photo.url}-${index}`}
                 type="button"
                 className="group border-border relative cursor-pointer overflow-hidden rounded-xl border transition-transform hover:scale-[1.02]"
-                onClick={() => setSelectedIndex(index)}
+                onClick={(e) => {
+                  triggerRef.current = e.currentTarget;
+                  setSelectedIndex(index);
+                }}
               >
                 <div className="relative aspect-[3/4] bg-neutral-100">
                   <Image
@@ -106,6 +130,7 @@ export function PhotosTab({ photos }: PhotosTabProps) {
                 {t("progressPhoto")} ({selectedIndex + 1}/{photos.length})
               </span>
               <button
+                ref={closeButtonRef}
                 type="button"
                 onClick={() => setSelectedIndex(null)}
                 aria-label={t("close")}

@@ -13,17 +13,15 @@ const ToastViewport = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <ToastPrimitives.Viewport
     ref={ref}
-    className={cn("flex flex-col gap-2", className)}
-    style={{
-      position: "fixed",
-      bottom: 16,
-      insetInlineEnd: 16,
-      zIndex: 100,
-      maxWidth: 420,
-      width: "100%",
-      padding: 0,
-      pointerEvents: "none",
-    }}
+    className={cn(
+      "pointer-events-none fixed z-[100] flex w-[calc(100%-2rem)] max-w-[420px] flex-col gap-2 p-0",
+      "end-4",
+      // On mobile (client PWA), push above the bottom nav + safe area
+      "bottom-[calc(var(--height-bottom-nav,0px)+max(0.5rem,env(safe-area-inset-bottom))+0.75rem)]",
+      // On desktop / admin (no bottom nav), sit 16px from bottom
+      "lg:bottom-4",
+      className,
+    )}
     {...props}
   />
 ));
