@@ -57,6 +57,36 @@ Sentry.init({
         }
       }
     }
+    /** Recursively scrub email addresses from strings in an object */
+    function scrubStrings(obj: unknown): unknown {
+      if (typeof obj === "string") {
+        return obj.replace(emailRegex, "[email]");
+      }
+      if (Array.isArray(obj)) {
+        return obj.map(scrubStrings);
+      }
+      if (obj !== null && typeof obj === "object") {
+        const result: Record<string, unknown> = {};
+        for (const [key, value] of Object.entries(obj)) {
+          result[key] = scrubStrings(value);
+        }
+        return result;
+      }
+      return obj;
+    }
+
+    if (event.extra) {
+      event.extra = scrubStrings(event.extra) as Record<string, unknown>;
+    }
+    if (event.contexts) {
+      event.contexts = scrubStrings(event.contexts) as typeof event.contexts;
+    }
+    if (event.tags) {
+      event.tags = scrubStrings(event.tags) as Record<string, string>;
+    }
+    if (event.request) {
+      event.request = scrubStrings(event.request) as typeof event.request;
+    }
     return event;
   },
 

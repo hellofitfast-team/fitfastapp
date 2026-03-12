@@ -87,6 +87,56 @@ Sentry.init({
     return event;
   },
 
+  // Scrub PII from structured logs before sending to Sentry
+  beforeSendLog(log) {
+    const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g;
+
+    function scrubValue(obj: unknown): unknown {
+      if (typeof obj === "string") {
+        return obj.replace(emailRegex, "[email]");
+      }
+      if (Array.isArray(obj)) {
+        return obj.map(scrubValue);
+      }
+      if (obj !== null && typeof obj === "object") {
+        const result: Record<string, unknown> = {};
+        for (const [key, value] of Object.entries(obj)) {
+          result[key] = scrubValue(value);
+        }
+        return result;
+      }
+      return obj;
+    }
+
+    if (log.message) {
+      log.message = log.message.replace(emailRegex, "[email]");
+    }
+    if (log.attributes) {
+      const topLevelKeys = ["email", "password", "token", "userId", "user_id"];
+      const nestedPaths: [string, string][] = [
+        ["user", "id"],
+        ["user", "email"],
+        ["user", "name"],
+      ];
+      for (const key of topLevelKeys) {
+        delete log.attributes[key];
+      }
+      for (const [parent, child] of nestedPaths) {
+        const nested = log.attributes[parent];
+        if (nested && typeof nested === "object") {
+          delete (nested as Record<string, unknown>)[child];
+        }
+      }
+      // Scrub remaining string values
+      for (const [key, value] of Object.entries(log.attributes)) {
+        if (typeof value === "string") {
+          log.attributes[key] = value.replace(emailRegex, "[email]");
+        }
+      }
+    }
+    return log;
+  },
+
   // Only send errors in production
   enabled: process.env.NODE_ENV === "production",
 });

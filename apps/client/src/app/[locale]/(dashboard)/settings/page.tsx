@@ -13,7 +13,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { cn } from "@fitfast/ui/cn";
 import { useToast } from "@/hooks/use-toast";
-import { localTimeToUtc, utcTimeToLocal, toDateLocale, formatDate } from "@/lib/utils";
+import { localTimeToUtc, utcTimeToLocal, formatDate } from "@/lib/utils";
 
 function SettingsCard({
   icon,
