@@ -1166,15 +1166,6 @@ export const translatePlanContent = internalAction({
         `Do NOT translate JSON keys like "name", "type", "calories", "day1", etc. Do NOT change any numeric values. ` +
         `Return ONLY valid JSON with the exact same structure.`;
 
-      const maxTokens =
-        args.planType === "meal"
-          ? args.targetLanguage === "ar"
-            ? MEAL_OUTPUT_TOKENS_AR
-            : MEAL_OUTPUT_TOKENS_EN
-          : args.targetLanguage === "ar"
-            ? WORKOUT_OUTPUT_TOKENS_AR
-            : WORKOUT_OUTPUT_TOKENS_EN;
-
       const trace = traceAI({
         name: "translate-plan",
         metadata: {
@@ -1182,128 +1173,110 @@ export const translatePlanContent = internalAction({
           sourceLanguage: args.sourceLanguage,
           targetLanguage: args.targetLanguage,
           planId: args.planId,
+          strategy: "parallel-day-by-day",
         },
         tags: ["translation"],
       });
 
-      // Try full-plan translation first
-      const fullGen = trace?.generation({
-        name: "full-plan-translate",
-        model: PLAN_MODEL_PRIMARY,
+      // Parallel day-by-day translation — each day is a small, fast AI call
+      // 10 parallel requests of ~500 tokens each finish in ~2-3s total
+      const planObj = args.planData as Record<string, unknown>;
+      const weeklyPlan = planObj.weeklyPlan as Record<string, unknown> | undefined;
+
+      if (!weeklyPlan || typeof weeklyPlan !== "object") {
+        throw new Error("Plan has no weeklyPlan structure to translate");
+      }
+
+      const dayKeys = Object.keys(weeklyPlan);
+      const parallelSpan = trace?.span({
+        name: "parallel-day-translate",
+        metadata: { totalDays: dayKeys.length },
       });
-      let translatedData: unknown;
-      try {
-        const res = await generateText({
-          model: google(PLAN_MODEL_PRIMARY),
-          maxOutputTokens: maxTokens,
-          temperature: 0.3,
-          messages: [
-            { role: "system" as const, content: systemPrompt },
-            { role: "user" as const, content: JSON.stringify(args.planData) },
-          ],
-          abortSignal: AbortSignal.timeout(PLAN_GENERATION_TIMEOUT_MS / 2),
-        });
-        fullGen?.end({
-          output: res.text.slice(0, 500),
-          usage: { input: res.usage?.inputTokens, output: res.usage?.outputTokens },
-          metadata: { finishReason: res.finishReason },
-        });
 
-        if (res.finishReason === "length") {
-          throw new Error("Output truncated — plan too large for single-pass translation");
-        }
-        translatedData = extractJSON(res.text);
-      } catch (fullErr) {
-        if (fullGen && !(fullErr instanceof Error && fullErr.message.includes("truncated"))) {
-          fullGen.end({
-            metadata: {
-              errorType: classifyError(fullErr),
-              error: fullErr instanceof Error ? fullErr.message : String(fullErr),
-            },
-            level: "ERROR",
-          });
-        }
-
-        // Fallback: chunked day-by-day translation for large plans
-        console.warn(`[AI] Full-plan translation failed, chunking day-by-day: ${fullErr}`);
-        const planObj = args.planData as Record<string, unknown>;
-        const weeklyPlan = planObj.weeklyPlan as Record<string, unknown> | undefined;
-
-        if (!weeklyPlan || typeof weeklyPlan !== "object") {
-          throw fullErr; // No weeklyPlan to chunk — re-throw original error
-        }
-
-        const dayKeys = Object.keys(weeklyPlan);
-        const translatedWeeklyPlan: Record<string, unknown> = {};
-        const chunkSpan = trace?.span({
-          name: "chunked-translate",
-          metadata: { totalDays: dayKeys.length },
-        });
-
-        for (const dayKey of dayKeys) {
-          const dayGen = chunkSpan?.generation({
+      // Translate all days in parallel
+      const dayResults = await Promise.all(
+        dayKeys.map(async (dayKey) => {
+          const dayGen = parallelSpan?.generation({
             name: `translate-${dayKey}`,
             model: PLAN_MODEL_PRIMARY,
           });
-          const dayJson = JSON.stringify({ [dayKey]: weeklyPlan[dayKey] });
-          const dayRes = await generateText({
-            model: google(PLAN_MODEL_PRIMARY),
-            maxOutputTokens: 4000,
-            temperature: 0.3,
-            messages: [
-              { role: "system" as const, content: systemPrompt },
-              { role: "user" as const, content: dayJson },
-            ],
-            abortSignal: AbortSignal.timeout(30_000),
-          });
-          dayGen?.end({
-            usage: { input: dayRes.usage?.inputTokens, output: dayRes.usage?.outputTokens },
-            metadata: { finishReason: dayRes.finishReason },
-          });
-          const parsed = extractJSON(dayRes.text) as Record<string, unknown>;
-          // extractJSON returns the day wrapper {dayN: {...}} — merge into weeklyPlan
-          Object.assign(translatedWeeklyPlan, parsed);
-        }
-
-        chunkSpan?.end();
-
-        // Translate top-level fields (notes, splitName, etc.) separately if they exist
-        const topLevelFields: Record<string, unknown> = {};
-        for (const [key, val] of Object.entries(planObj)) {
-          if (key !== "weeklyPlan" && typeof val === "string" && val.length > 0) {
-            topLevelFields[key] = val;
-          }
-        }
-
-        let translatedTopLevel: Record<string, unknown> = {};
-        if (Object.keys(topLevelFields).length > 0) {
-          const topGen = chunkSpan?.generation({
-            name: "translate-top-level",
-            model: PLAN_MODEL_PRIMARY,
-          });
           try {
-            const topRes = await generateText({
+            const dayJson = JSON.stringify({ [dayKey]: weeklyPlan[dayKey] });
+            const dayRes = await generateText({
               model: google(PLAN_MODEL_PRIMARY),
-              maxOutputTokens: 1000,
+              maxOutputTokens: 4000,
               temperature: 0.3,
               messages: [
                 { role: "system" as const, content: systemPrompt },
-                { role: "user" as const, content: JSON.stringify(topLevelFields) },
+                { role: "user" as const, content: dayJson },
               ],
-              abortSignal: AbortSignal.timeout(15_000),
+              abortSignal: AbortSignal.timeout(30_000),
             });
-            topGen?.end({
-              usage: { input: topRes.usage?.inputTokens, output: topRes.usage?.outputTokens },
+            dayGen?.end({
+              usage: { input: dayRes.usage?.inputTokens, output: dayRes.usage?.outputTokens },
+              metadata: { finishReason: dayRes.finishReason },
             });
-            translatedTopLevel = extractJSON(topRes.text) as Record<string, unknown>;
-          } catch {
-            topGen?.end({ level: "WARNING" });
-            // Non-critical — keep original top-level fields
+            return extractJSON(dayRes.text) as Record<string, unknown>;
+          } catch (dayErr) {
+            dayGen?.end({
+              metadata: {
+                errorType: classifyError(dayErr),
+                error: dayErr instanceof Error ? dayErr.message : String(dayErr),
+              },
+              level: "ERROR",
+            });
+            throw dayErr;
           }
-        }
+        }),
+      );
 
-        translatedData = { ...planObj, ...translatedTopLevel, weeklyPlan: translatedWeeklyPlan };
+      // Merge all translated days
+      const translatedWeeklyPlan: Record<string, unknown> = {};
+      for (const dayResult of dayResults) {
+        Object.assign(translatedWeeklyPlan, dayResult);
       }
+
+      parallelSpan?.end();
+
+      // Translate top-level string fields (notes, etc.) in parallel with days
+      const topLevelFields: Record<string, unknown> = {};
+      for (const [key, val] of Object.entries(planObj)) {
+        if (key !== "weeklyPlan" && typeof val === "string" && val.length > 0) {
+          topLevelFields[key] = val;
+        }
+      }
+
+      let translatedTopLevel: Record<string, unknown> = {};
+      if (Object.keys(topLevelFields).length > 0) {
+        const topGen = trace?.generation({
+          name: "translate-top-level",
+          model: PLAN_MODEL_PRIMARY,
+        });
+        try {
+          const topRes = await generateText({
+            model: google(PLAN_MODEL_PRIMARY),
+            maxOutputTokens: 1000,
+            temperature: 0.3,
+            messages: [
+              { role: "system" as const, content: systemPrompt },
+              { role: "user" as const, content: JSON.stringify(topLevelFields) },
+            ],
+            abortSignal: AbortSignal.timeout(15_000),
+          });
+          topGen?.end({
+            usage: { input: topRes.usage?.inputTokens, output: topRes.usage?.outputTokens },
+          });
+          translatedTopLevel = extractJSON(topRes.text) as Record<string, unknown>;
+        } catch {
+          topGen?.end({ level: "WARNING" });
+        }
+      }
+
+      const translatedData = {
+        ...planObj,
+        ...translatedTopLevel,
+        weeklyPlan: translatedWeeklyPlan,
+      };
 
       const saveMutation =
         args.planType === "meal"
@@ -1323,7 +1296,6 @@ export const translatePlanContent = internalAction({
         `[AI] Translation failed for ${args.planType} plan ${args.planId}: ${errorMessage}`,
       );
 
-      // Mark as failed so client can show retry UI
       await ctx.runMutation(statusMutation, {
         planId: args.planId as any,
         status: "failed",

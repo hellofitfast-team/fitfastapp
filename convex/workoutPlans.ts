@@ -1,5 +1,12 @@
 import { v } from "convex/values";
-import { query, mutation, action, internalMutation, internalQuery } from "./_generated/server";
+import {
+  query,
+  mutation,
+  action,
+  internalAction,
+  internalMutation,
+  internalQuery,
+} from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getAuthUserId } from "./auth";
 
@@ -151,19 +158,85 @@ export const requestTranslation = action({
     if (plan.language === targetLanguage) return;
     if (plan.translatedLanguage === targetLanguage && plan.translatedPlanData) return;
 
-    // Mark as pending so client shows loading state
-    await ctx.runMutation(internal.workoutPlans.setTranslationStatus, {
+    // Workout plans use a deterministic engine with bilingual exercise DB —
+    // rebuild the plan in the target language using DB field swap (no AI needed)
+    await ctx.scheduler.runAfter(0, internal.workoutPlans.translateFromDb, {
       planId: plan._id,
-      status: "pending",
-    });
-
-    await ctx.scheduler.runAfter(0, internal.ai.translatePlanContent, {
-      planId: plan._id,
-      planType: "workout",
-      planData: plan.planData,
-      sourceLanguage: plan.language,
       targetLanguage,
     });
+  },
+});
+
+/** Programmatic workout translation using bilingual exercise DB — no AI, instant */
+export const translateFromDb = internalAction({
+  args: {
+    planId: v.id("workoutPlans"),
+    targetLanguage: v.union(v.literal("en"), v.literal("ar")),
+  },
+  handler: async (ctx, { planId, targetLanguage }) => {
+    const { generateWorkoutPlan: buildWorkoutPlan, parseInjuries } =
+      await import("./workoutPlanEngine");
+    const { selectWorkoutSplit } = await import("./workoutSplitEngine");
+
+    const plan = await ctx.runQuery(internal.workoutPlans.getPlanById, { planId });
+    if (!plan) throw new Error("Plan not found");
+
+    // Fetch the same inputs used during original generation
+    const [profile, assessment, exercises] = await Promise.all([
+      ctx.runQuery(internal.helpers.getProfileInternal, { userId: plan.userId }),
+      ctx.runQuery(internal.helpers.getAssessmentInternal, { userId: plan.userId }),
+      ctx.runQuery(internal.exerciseDatabase.getActiveExercises, {}),
+    ]);
+
+    if (!assessment) throw new Error("Assessment not found");
+
+    const scheduleData = assessment.scheduleAvailability as { days?: string[] } | null;
+    const trainingDays = Math.max(1, scheduleData?.days?.length ?? 4);
+    const planDuration =
+      plan.startDate && plan.endDate
+        ? Math.ceil(
+            (new Date(plan.endDate).getTime() - new Date(plan.startDate).getTime()) / 86400000,
+          )
+        : 10;
+
+    const split = selectWorkoutSplit(
+      assessment.experienceLevel as "beginner" | "intermediate" | "advanced" | undefined,
+      trainingDays,
+      planDuration,
+    );
+
+    const injuries = parseInjuries(assessment, null);
+
+    const translatedPlanData = buildWorkoutPlan(exercises as any[], {
+      split,
+      planDuration,
+      experienceLevel:
+        (assessment.experienceLevel as "beginner" | "intermediate" | "advanced") ?? "intermediate",
+      goal: assessment.goals ?? "hypertrophy",
+      trainingDaysPerWeek: trainingDays,
+      injuries,
+      adherenceLevel: null,
+      energyLevel: null,
+      sleepQuality: null,
+      previousPlan: null,
+      gender: (profile?.gender as "male" | "female") ?? "male",
+      femaleHealth: assessment.femaleHealth as any,
+      language: targetLanguage,
+      sessionDuration: (scheduleData as any)?.sessionDuration ?? undefined,
+    });
+
+    await ctx.runMutation(internal.workoutPlans.saveTranslation, {
+      planId,
+      translatedPlanData,
+      translatedLanguage: targetLanguage,
+    });
+  },
+});
+
+export const getPlanById = internalQuery({
+  args: { planId: v.id("workoutPlans") },
+  handler: async (ctx, { planId }) => {
+    return ctx.db.get(planId);
   },
 });
 
