@@ -4,6 +4,10 @@ import { internal } from "./_generated/api";
 
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [Password],
+  session: {
+    totalDurationMs: 8 * 60 * 60 * 1000, // 8 hours — coach re-logs in each morning
+    inactiveDurationMs: 30 * 60 * 1000, // 30 min idle — protects unattended screens
+  },
   callbacks: {
     async afterUserCreatedOrUpdated(ctx, { userId, existingUserId }) {
       // Only run for brand-new users (not updates)
