@@ -114,7 +114,16 @@ export default function AdminLoginPage() {
       if (result.signingIn) {
         setSignInComplete(true);
       }
-    } catch {
+    } catch (err) {
+      // Log failed login attempt for security audit trail
+      import("@sentry/nextjs").then((Sentry) => {
+        Sentry.captureMessage("Failed login attempt", {
+          level: "warning",
+          tags: { feature: "auth", operation: "sign-in-failed" },
+          extra: { email: data.email },
+        });
+      });
+      console.warn(`[Auth] Failed login attempt for ${data.email}`);
       // Never expose raw server errors to the user — always show friendly message
       setError(t("invalidCredentials"));
       setIsLoading(false);

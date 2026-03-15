@@ -219,7 +219,7 @@ export const translateFromDb = internalAction({
       energyLevel: null,
       sleepQuality: null,
       previousPlan: null,
-      gender: (profile?.gender as "male" | "female") ?? "male",
+      gender: (assessment.gender as "male" | "female") ?? "male",
       femaleHealth: assessment.femaleHealth as any,
       language: targetLanguage,
       sessionDuration: (scheduleData as any)?.sessionDuration ?? undefined,

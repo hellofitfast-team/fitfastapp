@@ -112,6 +112,14 @@ export default function LoginPage() {
       await signIn("password", formData);
       router.replace("/");
     } catch {
+      // Log failed login for security audit trail
+      import("@sentry/nextjs").then((Sentry) => {
+        Sentry.captureMessage("Failed login attempt", {
+          level: "warning",
+          tags: { feature: "auth", operation: "sign-in-failed" },
+          extra: { email: data.email },
+        });
+      });
       // Never expose raw server errors — always show friendly message
       setError(t("invalidCredentials"));
     } finally {
