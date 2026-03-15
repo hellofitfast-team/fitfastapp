@@ -68,9 +68,52 @@ jobs:
       - name: Build all apps
         run: pnpm build
 
+  smoke:
+    name: Smoke Tests
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    env:
+      NEXT_PUBLIC_CONVEX_URL: https://placeholder.convex.cloud
+      NEXT_PUBLIC_SENTRY_DSN: https://placeholder@sentry.io/0
+      SENTRY_AUTH_TOKEN: placeholder
+      SENTRY_ORG: placeholder
+      SENTRY_PROJECT: placeholder
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build all apps
+        run: pnpm build
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run smoke tests
+        run: pnpm test:smoke
+
+      - name: Upload smoke report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke-report
+          path: e2e/reports/smoke-report.json
+          retention-days: 30
+
   e2e:
     name: E2E Tests
-    needs: build
+    needs: smoke
     runs-on: ubuntu-latest
     env:
       NEXT_PUBLIC_CONVEX_URL: ${{ secrets.E2E_CONVEX_URL || 'https://placeholder.convex.cloud' }}

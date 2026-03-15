@@ -1,0 +1,99 @@
+name: Uptime Monitor
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+jobs:
+  health-check:
+    name: Production Health Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Check Client
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ vars.CLIENT_URL }}/api/version")
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::Client health check failed with status $STATUS"
+            exit 1
+          fi
+          echo "Client OK ($STATUS)"
+
+      - name: Check Admin
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ vars.ADMIN_URL }}/api/health")
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::Admin health check failed with status $STATUS"
+            exit 1
+          fi
+          echo "Admin OK ($STATUS)"
+
+      - name: Check Marketing
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ vars.MARKETING_URL }}/api/health")
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::Marketing health check failed with status $STATUS"
+            exit 1
+          fi
+          echo "Marketing OK ($STATUS)"
+
+      - name: Check Convex
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ vars.CONVEX_HTTP_URL }}/stream-plan")
+          if [ "$STATUS" != "400" ]; then
+            echo "::error::Convex health check failed with status $STATUS"
+            exit 1
+          fi
+          echo "Convex OK ($STATUS)"
+
+  alert:
+    name: Alert on Failure
+    needs: health-check
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Check for existing downtime issue
+        id: check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'downtime',
+              state: 'open',
+            });
+            if (issues.data.length > 0) {
+              core.setOutput('issue_number', issues.data[0].number);
+              core.setOutput('exists', 'true');
+            } else {
+              core.setOutput('exists', 'false');
+            }
+
+      - name: Create downtime issue
+        if: steps.check.outputs.exists == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Production downtime detected — ${new Date().toISOString()}`,
+              body: `## Production Health Check Failed\n\n**Time:** ${new Date().toISOString()}\n**Run:** ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\n\nOne or more production endpoints failed their health check. Check the workflow run for details.`,
+              labels: ['downtime', 'urgent'],
+            });
+
+      - name: Comment on existing issue
+        if: steps.check.outputs.exists == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: parseInt('${{ steps.check.outputs.issue_number }}'),
+              body: `Still down at ${new Date().toISOString()}\n\n**Run:** ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            });

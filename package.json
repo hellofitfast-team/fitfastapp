@@ -17,6 +17,7 @@
     "test:ai:integration": "cd convex && vitest run __tests__/integration/",
     "analyze:client": "ANALYZE=true pnpm --filter @fitfast/client build",
     "analyze:admin": "ANALYZE=true pnpm --filter @fitfast/admin build",
+    "test:smoke": "playwright test --config=playwright.smoke.config.ts",
     "test:e2e": "playwright test",
     "test:load": "echo 'Requires k6 binary. Run: k6 run e2e/load/scenarios/dashboard-reads.js'",
     "generate:handoff-report": "tsx scripts/generate-handoff-report.ts",
