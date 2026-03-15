@@ -301,6 +301,7 @@ export function FaqManager() {
                       checked={validSelectedIds.has(faq._id)}
                       onCheckedChange={() => toggleSelect(faq._id)}
                       disabled={isBulkDeleting}
+                      aria-label={t("selectFaq", { question: faq.question })}
                     />
                   </div>
                   <div className="min-w-0 flex-1">

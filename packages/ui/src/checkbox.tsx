@@ -32,7 +32,12 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
     };
 
     return (
-      <label className="relative inline-flex cursor-pointer items-center">
+      <label
+        className={cn(
+          "relative inline-flex items-center",
+          props.disabled ? "cursor-not-allowed" : "cursor-pointer",
+        )}
+      >
         <input
           type="checkbox"
           className="peer sr-only"
