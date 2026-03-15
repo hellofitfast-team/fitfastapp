@@ -11,6 +11,7 @@ import { useAuthActions } from "@convex-dev/auth/react";
 import { useConvexAuth, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Mail, Lock, ArrowRight, Zap, Loader2 } from "lucide-react";
+import * as Sentry from "@sentry/nextjs";
 
 type LoginFormData = {
   email: string;
@@ -112,13 +113,10 @@ export default function LoginPage() {
       await signIn("password", formData);
       router.replace("/");
     } catch {
-      // Log failed login for security audit trail
-      import("@sentry/nextjs").then((Sentry) => {
-        Sentry.captureMessage("Failed login attempt", {
-          level: "warning",
-          tags: { feature: "auth", operation: "sign-in-failed" },
-          extra: { email: data.email },
-        });
+      // Log failed login for security audit trail (no PII — Sentry captures IP + timestamp)
+      Sentry.captureMessage("Failed client login attempt", {
+        level: "warning",
+        tags: { feature: "auth", operation: "sign-in-failed" },
       });
       // Never expose raw server errors — always show friendly message
       setError(t("invalidCredentials"));

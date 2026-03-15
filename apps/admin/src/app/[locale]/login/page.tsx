@@ -11,6 +11,7 @@ import { useAuthActions } from "@convex-dev/auth/react";
 import { useConvexAuth, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Mail, Lock, ArrowRight } from "lucide-react";
+import * as Sentry from "@sentry/nextjs";
 
 function createLoginSchema(t: (key: string) => string) {
   return z.object({
@@ -114,16 +115,12 @@ export default function AdminLoginPage() {
       if (result.signingIn) {
         setSignInComplete(true);
       }
-    } catch (err) {
-      // Log failed login attempt for security audit trail
-      import("@sentry/nextjs").then((Sentry) => {
-        Sentry.captureMessage("Failed login attempt", {
-          level: "warning",
-          tags: { feature: "auth", operation: "sign-in-failed" },
-          extra: { email: data.email },
-        });
+    } catch {
+      // Log failed login attempt for security audit trail (no PII — Sentry captures IP + timestamp)
+      Sentry.captureMessage("Failed admin login attempt", {
+        level: "warning",
+        tags: { feature: "auth", operation: "sign-in-failed" },
       });
-      console.warn(`[Auth] Failed login attempt for ${data.email}`);
       // Never expose raw server errors to the user — always show friendly message
       setError(t("invalidCredentials"));
       setIsLoading(false);
