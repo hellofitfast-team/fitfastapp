@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { useConvexAuth, useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -32,7 +32,7 @@ export function FaqManager() {
   const bulkDeleteFAQs = useMutation(api.faqs.bulkDeleteFAQs);
 
   const { toast } = useToast();
-  const allFaqs = [...(enFaqs ?? []), ...(arFaqs ?? [])];
+  const allFaqs = useMemo(() => [...(enFaqs ?? []), ...(arFaqs ?? [])], [enFaqs, arFaqs]);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showNew, setShowNew] = useState(false);
@@ -48,7 +48,15 @@ export function FaqManager() {
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
-  const isAllSelected = allFaqs.length > 0 && selectedIds.size === allFaqs.length;
+  // Filter out stale IDs that no longer exist in the current FAQ list
+  const allFaqIds = useMemo(() => new Set(allFaqs.map((f) => f._id)), [allFaqs]);
+  const validSelectedIds = useMemo(
+    () => new Set([...selectedIds].filter((id) => allFaqIds.has(id as Id<"faqs">))),
+    [selectedIds, allFaqIds],
+  );
+
+  const isAllSelected = allFaqs.length > 0 && validSelectedIds.size === allFaqs.length;
+  const isSomeSelected = validSelectedIds.size > 0 && !isAllSelected;
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) => {
@@ -121,21 +129,26 @@ export function FaqManager() {
   };
 
   const handleBulkDelete = async () => {
+    const ids = Array.from(validSelectedIds) as Id<"faqs">[];
+    if (ids.length === 0) {
+      setShowBulkDeleteDialog(false);
+      return;
+    }
     setIsBulkDeleting(true);
     try {
-      const ids = Array.from(selectedIds) as Id<"faqs">[];
       await bulkDeleteFAQs({ faqIds: ids });
       toast({
         title: t("bulkDeleteFaqSuccess", { count: ids.length }),
         variant: "success",
       });
       setSelectedIds(new Set());
+      setShowBulkDeleteDialog(false);
     } catch (err) {
       log.error({ err }, "Failed to bulk delete FAQs");
       toast({ title: t("bulkDeleteFaqFailed"), variant: "destructive" });
+    } finally {
+      setIsBulkDeleting(false);
     }
-    setIsBulkDeleting(false);
-    setShowBulkDeleteDialog(false);
   };
 
   return (
@@ -155,7 +168,7 @@ export function FaqManager() {
           <>
             <div className="flex items-center gap-2">
               <Checkbox
-                checked={isAllSelected}
+                checked={isAllSelected ? true : isSomeSelected ? "indeterminate" : false}
                 onCheckedChange={toggleSelectAll}
                 disabled={isBulkDeleting}
                 aria-label={t("selectAll")}
@@ -163,7 +176,7 @@ export function FaqManager() {
               <span className="text-xs text-stone-500">{t("selectAll")}</span>
             </div>
 
-            {selectedIds.size > 0 && (
+            {validSelectedIds.size > 0 && (
               <button
                 type="button"
                 onClick={() => setShowBulkDeleteDialog(true)}
@@ -171,7 +184,7 @@ export function FaqManager() {
                 className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-600 transition-colors hover:bg-red-100 disabled:opacity-50"
               >
                 <Trash2 className="h-3.5 w-3.5" />
-                {t("deleteSelected")} ({selectedIds.size})
+                {t("deleteSelected")} ({validSelectedIds.size})
               </button>
             )}
           </>
@@ -243,7 +256,7 @@ export function FaqManager() {
             <div
               key={faq._id}
               className={`rounded-xl border bg-white transition-colors ${
-                selectedIds.has(faq._id)
+                validSelectedIds.has(faq._id)
                   ? "border-red-200 bg-red-50/30"
                   : "border-stone-200 hover:border-stone-300"
               }`}
@@ -285,7 +298,7 @@ export function FaqManager() {
                 <div className="flex items-start gap-3 p-4">
                   <div className="flex pt-0.5">
                     <Checkbox
-                      checked={selectedIds.has(faq._id)}
+                      checked={validSelectedIds.has(faq._id)}
                       onCheckedChange={() => toggleSelect(faq._id)}
                       disabled={isBulkDeleting}
                     />
@@ -333,7 +346,7 @@ export function FaqManager() {
           <DialogHeader>
             <DialogTitle>{t("deleteSelected")}</DialogTitle>
             <DialogDescription>
-              {t("confirmBulkDeleteFaq", { count: selectedIds.size })}
+              {t("confirmBulkDeleteFaq", { count: validSelectedIds.size })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

@@ -95,7 +95,8 @@ export const deleteFAQ = mutation({
       .unique();
     if (!profile?.isCoach) throw new Error("Not authorized");
 
-    await ctx.db.delete(faqId);
+    const doc = await ctx.db.get(faqId);
+    if (doc) await ctx.db.delete(faqId);
   },
 });
 
@@ -114,6 +115,11 @@ export const bulkDeleteFAQs = mutation({
       .unique();
     if (!profile?.isCoach) throw new Error("Not authorized");
 
-    await Promise.all(faqIds.map((id) => ctx.db.delete(id)));
+    await Promise.all(
+      faqIds.map(async (id) => {
+        const doc = await ctx.db.get(id);
+        if (doc) await ctx.db.delete(id);
+      }),
+    );
   },
 });
