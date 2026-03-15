@@ -32,7 +32,7 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
     };
 
     return (
-      <div className="relative inline-flex items-center">
+      <label className="relative inline-flex cursor-pointer items-center">
         <input
           type="checkbox"
           className="peer sr-only"
@@ -52,14 +52,14 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
             isIndeterminate && "border-primary bg-primary",
             "peer-focus-visible:ring-ring peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2 peer-focus-visible:outline-none",
             "peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
-            "flex cursor-pointer items-center justify-center",
+            "flex items-center justify-center",
             className,
           )}
         >
           {isChecked && <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />}
           {isIndeterminate && <Minus className="h-3.5 w-3.5 text-white" strokeWidth={3} />}
         </div>
-      </div>
+      </label>
     );
   },
 );
