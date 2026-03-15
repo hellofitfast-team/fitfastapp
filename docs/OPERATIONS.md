@@ -10,6 +10,11 @@ Day-to-day operations, maintenance, troubleshooting, and monitoring for the FitF
 2. [Resetting Client Data](#resetting-client-data)
 3. [Data Retention](#data-retention)
 4. [Monitoring](#monitoring)
+   - [Production Uptime Monitoring](#production-uptime-monitoring)
+   - [Health Endpoints](#health-endpoints)
+   - [Convex Dashboard](#convex-dashboard)
+   - [Sentry](#sentry)
+   - [Vercel](#vercel)
 5. [Common Troubleshooting](#common-troubleshooting)
 6. [Backup and Recovery](#backup-and-recovery)
 7. [Scaling](#scaling)
@@ -107,6 +112,31 @@ npx convex run dataRetention:runRetentionCleanup
 
 ## Monitoring
 
+### Production Uptime Monitoring
+
+FitFast includes automated uptime monitoring via GitHub Actions (`.github/workflows/uptime.yml`):
+
+- **Frequency**: Every 5 minutes
+- **Endpoints checked**:
+  - Client: `$CLIENT_URL/api/version` (expects HTTP 200)
+  - Admin: `$ADMIN_URL/api/health` (expects HTTP 200)
+  - Marketing: `$MARKETING_URL/api/health` (expects HTTP 200)
+  - Convex: `$CONVEX_HTTP_URL/stream-plan` (expects HTTP 400 — proves Convex is alive)
+- **On failure**: Creates a GitHub Issue with `downtime` + `urgent` labels. If an open issue already exists, appends a comment instead of creating a duplicate.
+- **Configuration**: GitHub repo variables (`CLIENT_URL`, `ADMIN_URL`, `MARKETING_URL`, `CONVEX_HTTP_URL`) set in repo Settings > Secrets and variables > Actions > Variables.
+
+To manually trigger: `gh workflow run uptime.yml`
+
+### Health Endpoints
+
+| App       | Endpoint       | Response                               |
+| --------- | -------------- | -------------------------------------- |
+| Client    | `/api/version` | `{"buildId": "..."}`                   |
+| Admin     | `/api/health`  | `{"status": "ok", "app": "admin"}`     |
+| Marketing | `/api/health`  | `{"status": "ok", "app": "marketing"}` |
+
+All health endpoints use `force-static` — served from edge cache at zero compute cost.
+
 ### Convex Dashboard
 
 Access the Convex dashboard at https://dashboard.convex.dev:
@@ -162,11 +192,11 @@ Access Vercel at https://vercel.com:
 
 ### Login Issues
 
-| Symptom                        | Likely Cause                | Fix                                                              |
-| ------------------------------ | --------------------------- | ---------------------------------------------------------------- |
-| "Not authenticated" error      | Convex Auth session expired | Check Convex Auth configuration and session handling             |
-| Login page loops back          | Middleware misconfiguration | Check `apps/client/middleware.ts` and `apps/admin/middleware.ts` |
-| Coach can't access admin panel | Profile not marked as coach | In Convex, check the profile has `isCoach: true`                 |
+| Symptom                        | Likely Cause                | Fix                                                                                                                                                  |
+| ------------------------------ | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| "Not authenticated" error      | Convex Auth session expired | Check Convex Auth configuration and session handling                                                                                                 |
+| Login page loops back          | Middleware misconfiguration | Check `apps/client/src/middleware.ts` and `apps/admin/src/middleware.ts`. Note: `/api` routes are excluded from i18n middleware via matcher pattern. |
+| Coach can't access admin panel | Profile not marked as coach | In Convex, check the profile has `isCoach: true`                                                                                                     |
 
 ### AI Plan Generation Failures
 

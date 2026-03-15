@@ -15,7 +15,8 @@ Welcome to FitFast! This guide covers everything you need to manage your fitness
 7. [Knowledge Base](#knowledge-base)
 8. [Subscription Plans](#subscription-plans)
 9. [Settings](#settings)
-10. [Tips and Best Practices](#tips-and-best-practices)
+10. [Automatic Monitoring](#automatic-monitoring)
+11. [Tips and Best Practices](#tips-and-best-practices)
 
 ---
 
@@ -326,6 +327,40 @@ Under the **Payment Methods** section:
 ### Social Links
 
 Add your social media profiles (Twitter, Instagram, TikTok, YouTube, Facebook, LinkedIn). These are displayed in the client app and marketing site.
+
+---
+
+## Automatic Monitoring
+
+FitFast monitors itself automatically so you don't have to check manually.
+
+### Uptime Alerts
+
+Every 5 minutes, a background check verifies that all parts of the platform are running:
+
+- Client app (what your clients use)
+- Admin panel (what you use)
+- Marketing site (your public landing page)
+- AI backend (what generates meal and workout plans)
+
+**If something goes down**, you will receive an email from GitHub with the subject "Production downtime detected." This means one or more parts of the platform are not responding.
+
+**What to do when you get a downtime alert:**
+
+1. Try opening the admin panel in your browser. If it loads, the issue may have been brief and already resolved.
+2. If it does not load, check the other apps (client app, marketing site).
+3. If none of them load, contact your developer -- a service may need attention.
+4. If only one app is down, contact your developer with which app is affected.
+
+Once the issue is resolved, the monitoring will automatically detect recovery. You can close the GitHub Issue that was created.
+
+### Weekly Health Check (Optional)
+
+Even though monitoring is automatic, a quick weekly check is good practice:
+
+1. **OpenRouter** (openrouter.ai) -- Check your credit balance. Add credits if below $5.
+2. **Sentry** (sentry.io) -- Glance at error count. If many new red items appeared, contact your developer.
+3. **Vercel** (vercel.com) -- All 3 projects should show green "Ready" status.
 
 ---
 

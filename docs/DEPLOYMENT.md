@@ -146,7 +146,7 @@ Use this as `NEXT_PUBLIC_CONVEX_URL` in both apps.
 
 ## Vercel Deployment
 
-You need to deploy **two separate Vercel projects** from the same repository.
+You need to deploy **three separate Vercel projects** from the same repository.
 
 ### Project 1: Client App (PWA)
 
@@ -191,6 +191,28 @@ You need to deploy **two separate Vercel projects** from the same repository.
    | `SENTRY_AUTH_TOKEN`      | Sentry auth token            |
    | `SENTRY_ORG`             | Sentry organization slug     |
    | `SENTRY_PROJECT`         | Sentry project slug (admin)  |
+
+4. Deploy.
+
+### Project 3: Marketing Site
+
+1. Import the same repository again.
+2. Configure:
+   - **Project Name**: `fitfast-marketing`
+   - **Root Directory**: `apps/marketing`
+   - **Framework Preset**: Next.js
+   - **Build Command**: `cd ../.. && pnpm turbo build --filter=@fitfast/marketing`
+   - **Install Command**: `pnpm install`
+
+3. Add environment variables:
+
+   | Variable                 | Value                            |
+   | ------------------------ | -------------------------------- |
+   | `NEXT_PUBLIC_CONVEX_URL` | Same Convex deployment URL       |
+   | `NEXT_PUBLIC_SENTRY_DSN` | Sentry DSN for marketing project |
+   | `SENTRY_AUTH_TOKEN`      | Sentry auth token                |
+   | `SENTRY_ORG`             | Sentry organization slug         |
+   | `SENTRY_PROJECT`         | Sentry project slug (marketing)  |
 
 4. Deploy.
 
@@ -356,10 +378,38 @@ Run through this checklist after deploying everything:
 - [ ] Offline page shows when network is unavailable
 - [ ] Service worker is registered (check DevTools > Application)
 
+### Health Endpoints
+
+- [ ] `curl https://app.yourdomain.com/api/version` returns `{"buildId": "..."}`
+- [ ] `curl https://admin.yourdomain.com/api/health` returns `{"status": "ok", "app": "admin"}`
+- [ ] `curl https://yourdomain.com/api/health` returns `{"status": "ok", "app": "marketing"}`
+
 ### Bilingual
 
 - [ ] Switch language to Arabic -- UI flips to RTL
 - [ ] AI plans generate in Arabic when language is set
+
+### Uptime Monitoring
+
+After the first push to `main` that includes `.github/workflows/uptime.yml`:
+
+- [ ] Set GitHub repo variables: `CLIENT_URL`, `ADMIN_URL`, `MARKETING_URL`, `CONVEX_HTTP_URL` (Settings > Secrets and variables > Actions > Variables)
+- [ ] Create GitHub labels: `gh label create downtime --color "d73a4a"` and `gh label create urgent --color "b60205"`
+- [ ] Trigger manually: `gh workflow run uptime.yml`
+- [ ] Verify all 4 health checks pass in the workflow run
+- [ ] (Optional) Test alerting: temporarily set `CLIENT_URL` to a bad URL, trigger workflow, verify GitHub Issue is created
+
+### CI Smoke Tests
+
+The CI pipeline runs smoke tests between build and E2E:
+
+```
+quality → build → smoke → e2e → quality-gate → handoff-report
+```
+
+- Smoke tests verify all 3 apps boot and serve HTTP (6 tests, ~15 seconds)
+- If smoke fails, E2E tests are skipped (saves 15+ min)
+- Run locally: `pnpm build && pnpm test:smoke`
 
 ---
 
