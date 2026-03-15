@@ -223,7 +223,10 @@
     "calorieExplanation": "AI aims for around {calories} kcal/day ({protein}g protein) based on your profile and {trainingDays} training days/week. Actual meals may vary slightly.",
     "dayLabel": "Day {n}",
     "translating": "Translating your meal plan...",
-    "translatingDescription": "Your plan will update automatically in a few seconds."
+    "translatingDescription": "Your plan will update automatically in a few seconds.",
+    "translationFailed": "Translation failed",
+    "translationFailedDescription": "Could not translate your meal plan. You can retry or view in the original language.",
+    "retry": "Retry"
   },
   "workouts": {
     "title": "Workout Plan",
@@ -260,6 +263,9 @@
     "trainingSplit": "Training Split",
     "translating": "Translating your workout plan...",
     "translatingDescription": "Your plan will update automatically in a few seconds.",
+    "translationFailed": "Translation failed",
+    "translationFailedDescription": "Could not translate your workout plan. You can retry or view in the original language.",
+    "retry": "Retry",
     "swapExercise": "Swap Exercise",
     "swapping": "Swapping...",
     "restDayTitle": "Rest & Recovery",

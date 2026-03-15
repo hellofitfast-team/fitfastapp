@@ -116,7 +116,26 @@ export const saveTranslation = internalMutation({
     translatedLanguage: v.union(v.literal("en"), v.literal("ar")),
   },
   handler: async (ctx, { planId, translatedPlanData, translatedLanguage }) => {
-    await ctx.db.patch(planId, { translatedPlanData, translatedLanguage });
+    await ctx.db.patch(planId, {
+      translatedPlanData,
+      translatedLanguage,
+      translationStatus: "completed",
+      translationError: undefined,
+    });
+  },
+});
+
+export const setTranslationStatus = internalMutation({
+  args: {
+    planId: v.id("mealPlans"),
+    status: v.union(v.literal("pending"), v.literal("completed"), v.literal("failed")),
+    error: v.optional(v.string()),
+  },
+  handler: async (ctx, { planId, status, error }) => {
+    await ctx.db.patch(planId, {
+      translationStatus: status,
+      translationError: error,
+    });
   },
 });
 
@@ -133,6 +152,12 @@ export const requestTranslation = action({
 
     if (plan.language === targetLanguage) return;
     if (plan.translatedLanguage === targetLanguage && plan.translatedPlanData) return;
+
+    // Mark as pending so client shows loading state
+    await ctx.runMutation(internal.mealPlans.setTranslationStatus, {
+      planId: plan._id,
+      status: "pending",
+    });
 
     await ctx.scheduler.runAfter(0, internal.ai.translatePlanContent, {
       planId: plan._id,

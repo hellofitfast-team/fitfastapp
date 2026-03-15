@@ -74,6 +74,6 @@ export const NUTRITION = {
 export const MEAL_OUTPUT_TOKENS_EN = 16000;
 export const MEAL_OUTPUT_TOKENS_AR = 22000;
 export const WORKOUT_OUTPUT_TOKENS_EN = 16000;
-export const WORKOUT_OUTPUT_TOKENS_AR = 20000;
+export const WORKOUT_OUTPUT_TOKENS_AR = 30000;
 export const PLAN_GENERATION_TIMEOUT_MS = 240_000; // 4 minutes (2 min per model attempt with fallback)
 export const PLAN_GENERATION_MAX_RETRIES = 2;

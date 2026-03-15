@@ -229,6 +229,10 @@ export default defineSchema({
     assessmentVersion: v.optional(v.number()),
     translatedPlanData: v.optional(v.any()),
     translatedLanguage: v.optional(languageValidator),
+    translationStatus: v.optional(
+      v.union(v.literal("pending"), v.literal("completed"), v.literal("failed")),
+    ),
+    translationError: v.optional(v.string()),
   })
     .index("by_userId", ["userId"])
     .index("by_userId_dates", ["userId", "startDate", "endDate"]),
@@ -245,6 +249,10 @@ export default defineSchema({
     assessmentVersion: v.optional(v.number()),
     translatedPlanData: v.optional(v.any()),
     translatedLanguage: v.optional(languageValidator),
+    translationStatus: v.optional(
+      v.union(v.literal("pending"), v.literal("completed"), v.literal("failed")),
+    ),
+    translationError: v.optional(v.string()),
   })
     .index("by_userId", ["userId"])
     .index("by_userId_dates", ["userId", "startDate", "endDate"]),

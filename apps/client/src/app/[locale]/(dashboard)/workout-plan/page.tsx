@@ -18,6 +18,7 @@ import { useQuery, useAction, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { usePlanStream } from "@/hooks/use-plan-stream";
 
+import { Button } from "@fitfast/ui/button";
 import { EmptyState } from "@fitfast/ui/empty-state";
 import { DayNavigator } from "../meal-plan/_components/day-navigator";
 import { ExerciseGif } from "./_components/exercise-gif";
@@ -221,18 +222,31 @@ export default function WorkoutPlanPage() {
     needsTranslation &&
     workoutPlan?.translatedLanguage === locale &&
     !!workoutPlan?.translatedPlanData;
+  const translationFailed =
+    needsTranslation && (workoutPlan as any)?.translationStatus === "failed" && !hasTranslation;
+  const translationPending = needsTranslation && !hasTranslation && !translationFailed;
 
   useEffect(() => {
-    if (needsTranslation && !hasTranslation && !translationRequested.current) {
+    if (
+      needsTranslation &&
+      !hasTranslation &&
+      !translationFailed &&
+      !translationRequested.current
+    ) {
       translationRequested.current = true;
       requestTranslation({ targetLanguage: locale as "en" | "ar" }).catch(console.error);
     }
-  }, [needsTranslation, hasTranslation, locale, requestTranslation]);
+  }, [needsTranslation, hasTranslation, translationFailed, locale, requestTranslation]);
 
   // Reset translation ref when plan changes
   useEffect(() => {
     translationRequested.current = false;
   }, [workoutPlan?._id]);
+
+  const retryTranslation = () => {
+    translationRequested.current = true;
+    requestTranslation({ targetLanguage: locale as "en" | "ar" }).catch(console.error);
+  };
 
   // Streaming support
   const streamId = workoutPlan?.streamId;
@@ -457,7 +471,21 @@ export default function WorkoutPlanPage() {
       />
 
       {/* Translating banner */}
-      {needsTranslation && !hasTranslation && (
+      {translationFailed && (
+        <div className="border-destructive/30 bg-destructive/5 flex items-center justify-between gap-3 rounded-xl border p-4">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="text-destructive h-5 w-5 shrink-0" />
+            <div>
+              <p className="text-destructive text-sm font-semibold">{t("translationFailed")}</p>
+              <p className="text-muted-foreground text-xs">{t("translationFailedDescription")}</p>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" onClick={retryTranslation}>
+            {t("retry")}
+          </Button>
+        </div>
+      )}
+      {translationPending && (
         <div className="border-primary/30 bg-primary/5 flex items-center gap-3 rounded-xl border p-4">
           <Loader2 className="text-primary h-5 w-5 shrink-0 animate-spin" />
           <div>

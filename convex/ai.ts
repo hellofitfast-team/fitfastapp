@@ -581,9 +581,7 @@ Daily meal macros MUST sum to the targets above (±5% tolerance). Respond ONLY w
     let result;
     const streamChunkSize = 500; // Flush every ~500 chars
 
-    async function streamAndCollect(
-      model: Parameters<typeof streamText>[0]["model"],
-    ): Promise<{
+    async function streamAndCollect(model: Parameters<typeof streamText>[0]["model"]): Promise<{
       text: string;
       finishReason: string;
       usage: { inputTokens: number; outputTokens: number };
@@ -1149,128 +1147,191 @@ export const translatePlanContent = internalAction({
     targetLanguage: v.union(v.literal("en"), v.literal("ar")),
   },
   handler: async (ctx, args) => {
-    const { google } = await import("@ai-sdk/google");
-    const { createDeepSeek } = await import("@ai-sdk/deepseek");
-    const { generateText } = await import("ai");
-
-    const sourceName = LANGUAGE_NAMES[args.sourceLanguage];
-    const targetName = LANGUAGE_NAMES[args.targetLanguage];
-
-    const maxTokens =
+    const statusMutation =
       args.planType === "meal"
-        ? args.targetLanguage === "ar"
-          ? MEAL_OUTPUT_TOKENS_AR
-          : MEAL_OUTPUT_TOKENS_EN
-        : args.targetLanguage === "ar"
-          ? WORKOUT_OUTPUT_TOKENS_AR
-          : WORKOUT_OUTPUT_TOKENS_EN;
+        ? internal.mealPlans.setTranslationStatus
+        : internal.workoutPlans.setTranslationStatus;
 
-    const halfTimeout = PLAN_GENERATION_TIMEOUT_MS / 2;
-    const translateParams = {
-      maxOutputTokens: maxTokens,
-      temperature: 0.3,
-      messages: [
-        {
-          role: "system" as const,
-          content:
-            `You are a professional fitness content translator. Translate all human-readable text values in the JSON below from ${sourceName} to ${targetName}. ` +
-            `Keep ALL JSON keys, numbers, booleans, and structure EXACTLY the same. ` +
-            `Only translate values that are: meal/exercise names, ingredients, instructions, notes, alternatives, workout names, muscle names, safety tips, progression notes. ` +
-            `Do NOT translate JSON keys like "name", "type", "calories", "day1", etc. Do NOT change any numeric values. ` +
-            `Return ONLY valid JSON with the exact same structure.`,
-        },
-        { role: "user" as const, content: JSON.stringify(args.planData) },
-      ],
-    };
-
-    const trace = traceAI({
-      name: "translate-plan",
-      metadata: {
-        planType: args.planType,
-        sourceLanguage: args.sourceLanguage,
-        targetLanguage: args.targetLanguage,
-        planId: args.planId,
-      },
-      tags: ["translation"],
-    });
-
-    let raw: string;
-    const primaryGen = trace?.generation({
-      name: "primary-gemini-translate",
-      model: PLAN_MODEL_PRIMARY,
-    });
     try {
-      const res = await generateText({
-        model: google(PLAN_MODEL_PRIMARY),
-        ...translateParams,
-        abortSignal: AbortSignal.timeout(halfTimeout),
-      });
-      raw = res.text;
-      primaryGen?.end({
-        output: raw.slice(0, 500),
-        usage: { input: res.usage?.inputTokens, output: res.usage?.outputTokens },
-        metadata: { finishReason: res.finishReason },
-      });
-    } catch (primaryErr) {
-      primaryGen?.end({
+      const { google } = await import("@ai-sdk/google");
+      const { generateText } = await import("ai");
+
+      const sourceName = LANGUAGE_NAMES[args.sourceLanguage];
+      const targetName = LANGUAGE_NAMES[args.targetLanguage];
+
+      const systemPrompt =
+        `You are a professional fitness content translator. Translate all human-readable text values in the JSON below from ${sourceName} to ${targetName}. ` +
+        `Keep ALL JSON keys, numbers, booleans, and structure EXACTLY the same. ` +
+        `Only translate values that are: meal/exercise names, ingredients, instructions, notes, alternatives, workout names, muscle names, safety tips, progression notes. ` +
+        `Do NOT translate JSON keys like "name", "type", "calories", "day1", etc. Do NOT change any numeric values. ` +
+        `Return ONLY valid JSON with the exact same structure.`;
+
+      const maxTokens =
+        args.planType === "meal"
+          ? args.targetLanguage === "ar"
+            ? MEAL_OUTPUT_TOKENS_AR
+            : MEAL_OUTPUT_TOKENS_EN
+          : args.targetLanguage === "ar"
+            ? WORKOUT_OUTPUT_TOKENS_AR
+            : WORKOUT_OUTPUT_TOKENS_EN;
+
+      const trace = traceAI({
+        name: "translate-plan",
         metadata: {
-          errorType: classifyError(primaryErr),
-          error: primaryErr instanceof Error ? primaryErr.message : String(primaryErr),
+          planType: args.planType,
+          sourceLanguage: args.sourceLanguage,
+          targetLanguage: args.targetLanguage,
+          planId: args.planId,
         },
-        level: "ERROR",
+        tags: ["translation"],
       });
-      console.warn(
-        `[AI] Primary model (Gemini) failed for translation, falling back to DeepSeek: ${primaryErr}`,
-      );
-      const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
-      if (!deepseekApiKey) throw new Error("DEEPSEEK_API_KEY environment variable is not set");
-      const deepseek = createDeepSeek({ apiKey: deepseekApiKey });
-      const fallbackGen = trace?.generation({
-        name: "fallback-deepseek-translate",
-        model: PLAN_MODEL_FALLBACK,
+
+      // Try full-plan translation first
+      const fullGen = trace?.generation({
+        name: "full-plan-translate",
+        model: PLAN_MODEL_PRIMARY,
       });
+      let translatedData: unknown;
       try {
         const res = await generateText({
-          model: deepseek(PLAN_MODEL_FALLBACK),
-          ...translateParams,
-          abortSignal: AbortSignal.timeout(halfTimeout),
+          model: google(PLAN_MODEL_PRIMARY),
+          maxOutputTokens: maxTokens,
+          temperature: 0.3,
+          messages: [
+            { role: "system" as const, content: systemPrompt },
+            { role: "user" as const, content: JSON.stringify(args.planData) },
+          ],
+          abortSignal: AbortSignal.timeout(PLAN_GENERATION_TIMEOUT_MS / 2),
         });
-        raw = res.text;
-        fallbackGen?.end({
-          output: raw.slice(0, 500),
+        fullGen?.end({
+          output: res.text.slice(0, 500),
           usage: { input: res.usage?.inputTokens, output: res.usage?.outputTokens },
           metadata: { finishReason: res.finishReason },
         });
-      } catch (fallbackErr) {
-        fallbackGen?.end({
-          metadata: {
-            errorType: classifyError(fallbackErr),
-            error: fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr),
-          },
-          level: "ERROR",
-        });
-        await flushLangfuse();
-        throw fallbackErr;
-      }
-    }
 
-    let translatedData: unknown;
-    try {
-      translatedData = extractJSON(raw);
-    } finally {
+        if (res.finishReason === "length") {
+          throw new Error("Output truncated — plan too large for single-pass translation");
+        }
+        translatedData = extractJSON(res.text);
+      } catch (fullErr) {
+        if (fullGen && !(fullErr instanceof Error && fullErr.message.includes("truncated"))) {
+          fullGen.end({
+            metadata: {
+              errorType: classifyError(fullErr),
+              error: fullErr instanceof Error ? fullErr.message : String(fullErr),
+            },
+            level: "ERROR",
+          });
+        }
+
+        // Fallback: chunked day-by-day translation for large plans
+        console.warn(`[AI] Full-plan translation failed, chunking day-by-day: ${fullErr}`);
+        const planObj = args.planData as Record<string, unknown>;
+        const weeklyPlan = planObj.weeklyPlan as Record<string, unknown> | undefined;
+
+        if (!weeklyPlan || typeof weeklyPlan !== "object") {
+          throw fullErr; // No weeklyPlan to chunk — re-throw original error
+        }
+
+        const dayKeys = Object.keys(weeklyPlan);
+        const translatedWeeklyPlan: Record<string, unknown> = {};
+        const chunkSpan = trace?.span({
+          name: "chunked-translate",
+          metadata: { totalDays: dayKeys.length },
+        });
+
+        for (const dayKey of dayKeys) {
+          const dayGen = chunkSpan?.generation({
+            name: `translate-${dayKey}`,
+            model: PLAN_MODEL_PRIMARY,
+          });
+          const dayJson = JSON.stringify({ [dayKey]: weeklyPlan[dayKey] });
+          const dayRes = await generateText({
+            model: google(PLAN_MODEL_PRIMARY),
+            maxOutputTokens: 4000,
+            temperature: 0.3,
+            messages: [
+              { role: "system" as const, content: systemPrompt },
+              { role: "user" as const, content: dayJson },
+            ],
+            abortSignal: AbortSignal.timeout(30_000),
+          });
+          dayGen?.end({
+            usage: { input: dayRes.usage?.inputTokens, output: dayRes.usage?.outputTokens },
+            metadata: { finishReason: dayRes.finishReason },
+          });
+          const parsed = extractJSON(dayRes.text) as Record<string, unknown>;
+          // extractJSON returns the day wrapper {dayN: {...}} — merge into weeklyPlan
+          Object.assign(translatedWeeklyPlan, parsed);
+        }
+
+        chunkSpan?.end();
+
+        // Translate top-level fields (notes, splitName, etc.) separately if they exist
+        const topLevelFields: Record<string, unknown> = {};
+        for (const [key, val] of Object.entries(planObj)) {
+          if (key !== "weeklyPlan" && typeof val === "string" && val.length > 0) {
+            topLevelFields[key] = val;
+          }
+        }
+
+        let translatedTopLevel: Record<string, unknown> = {};
+        if (Object.keys(topLevelFields).length > 0) {
+          const topGen = chunkSpan?.generation({
+            name: "translate-top-level",
+            model: PLAN_MODEL_PRIMARY,
+          });
+          try {
+            const topRes = await generateText({
+              model: google(PLAN_MODEL_PRIMARY),
+              maxOutputTokens: 1000,
+              temperature: 0.3,
+              messages: [
+                { role: "system" as const, content: systemPrompt },
+                { role: "user" as const, content: JSON.stringify(topLevelFields) },
+              ],
+              abortSignal: AbortSignal.timeout(15_000),
+            });
+            topGen?.end({
+              usage: { input: topRes.usage?.inputTokens, output: topRes.usage?.outputTokens },
+            });
+            translatedTopLevel = extractJSON(topRes.text) as Record<string, unknown>;
+          } catch {
+            topGen?.end({ level: "WARNING" });
+            // Non-critical — keep original top-level fields
+          }
+        }
+
+        translatedData = { ...planObj, ...translatedTopLevel, weeklyPlan: translatedWeeklyPlan };
+      }
+
+      const saveMutation =
+        args.planType === "meal"
+          ? internal.mealPlans.saveTranslation
+          : internal.workoutPlans.saveTranslation;
+
+      await ctx.runMutation(saveMutation, {
+        planId: args.planId as any,
+        translatedPlanData: translatedData,
+        translatedLanguage: args.targetLanguage,
+      });
+
+      await flushLangfuse();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.error(
+        `[AI] Translation failed for ${args.planType} plan ${args.planId}: ${errorMessage}`,
+      );
+
+      // Mark as failed so client can show retry UI
+      await ctx.runMutation(statusMutation, {
+        planId: args.planId as any,
+        status: "failed",
+        error: errorMessage.slice(0, 500),
+      });
+
       await flushLangfuse();
     }
-
-    const saveMutation =
-      args.planType === "meal"
-        ? internal.mealPlans.saveTranslation
-        : internal.workoutPlans.saveTranslation;
-
-    await ctx.runMutation(saveMutation, {
-      planId: args.planId as any,
-      translatedPlanData: translatedData,
-      translatedLanguage: args.targetLanguage,
-    });
   },
 });
 

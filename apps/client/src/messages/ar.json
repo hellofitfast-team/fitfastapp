@@ -223,7 +223,10 @@
     "calorieExplanation": "الذكاء الاصطناعي بيستهدف حوالي {calories} سعرة/يوم ({protein} جرام بروتين) بناءً على بياناتك و{trainingDays} أيام تمرين/أسبوع. الوجبات الفعلية ممكن تختلف بسيط.",
     "dayLabel": "يوم {n}",
     "translating": "جاري ترجمة خطة الوجبات...",
-    "translatingDescription": "ستُحدَّث الخطة تلقائيًا خلال ثوانٍ."
+    "translatingDescription": "ستُحدَّث الخطة تلقائيًا خلال ثوانٍ.",
+    "translationFailed": "فشلت الترجمة",
+    "translationFailedDescription": "تعذّر ترجمة خطة الوجبات. يمكنك إعادة المحاولة أو عرضها باللغة الأصلية.",
+    "retry": "إعادة المحاولة"
   },
   "workouts": {
     "title": "خطة التمارين",
@@ -260,6 +263,9 @@
     "trainingSplit": "نظام التقسيم",
     "translating": "جاري ترجمة خطة التمارين...",
     "translatingDescription": "ستُحدَّث الخطة تلقائيًا خلال ثوانٍ.",
+    "translationFailed": "فشلت الترجمة",
+    "translationFailedDescription": "تعذّر ترجمة خطة التمارين. يمكنك إعادة المحاولة أو عرضها باللغة الأصلية.",
+    "retry": "إعادة المحاولة",
     "swapExercise": "استبدال التمرين",
     "swapping": "جاري الاستبدال...",
     "restDayTitle": "راحة واستشفاء",

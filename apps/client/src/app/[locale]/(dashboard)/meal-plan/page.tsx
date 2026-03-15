@@ -3,7 +3,7 @@
 import { useTranslations, useLocale } from "next-intl";
 import { toLocalDigits, formatDateShort } from "@/lib/utils";
 import { useCurrentMealPlan } from "@/hooks/use-meal-plans";
-import { UtensilsCrossed, Loader2, ChevronDown, Sparkles, Info } from "lucide-react";
+import { UtensilsCrossed, Loader2, ChevronDown, Sparkles, Info, AlertTriangle } from "lucide-react";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { cn } from "@fitfast/ui/cn";
 import { usePlanStream } from "@/hooks/use-plan-stream";
@@ -127,18 +127,31 @@ export default function MealPlanPage() {
   const needsTranslation = !!mealPlan && !!planLanguage && planLanguage !== locale;
   const hasTranslation =
     needsTranslation && mealPlan?.translatedLanguage === locale && !!mealPlan?.translatedPlanData;
+  const translationFailed =
+    needsTranslation && (mealPlan as any)?.translationStatus === "failed" && !hasTranslation;
+  const translationPending = needsTranslation && !hasTranslation && !translationFailed;
 
   useEffect(() => {
-    if (needsTranslation && !hasTranslation && !translationRequested.current) {
+    if (
+      needsTranslation &&
+      !hasTranslation &&
+      !translationFailed &&
+      !translationRequested.current
+    ) {
       translationRequested.current = true;
       requestTranslation({ targetLanguage: locale as "en" | "ar" }).catch(console.error);
     }
-  }, [needsTranslation, hasTranslation, locale, requestTranslation]);
+  }, [needsTranslation, hasTranslation, translationFailed, locale, requestTranslation]);
 
   // Reset translation ref when plan changes
   useEffect(() => {
     translationRequested.current = false;
   }, [mealPlan?._id]);
+
+  const retryTranslation = () => {
+    translationRequested.current = true;
+    requestTranslation({ targetLanguage: locale as "en" | "ar" }).catch(console.error);
+  };
 
   // Meal swap mutation
   const swapMeal = useMutation(api.mealPlans.swapMeal);
@@ -403,7 +416,21 @@ export default function MealPlanPage() {
       </div>
 
       {/* Translating banner */}
-      {needsTranslation && !hasTranslation && (
+      {translationFailed && (
+        <div className="border-destructive/30 bg-destructive/5 flex items-center justify-between gap-3 rounded-xl border p-4">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="text-destructive h-5 w-5 shrink-0" />
+            <div>
+              <p className="text-destructive text-sm font-semibold">{t("translationFailed")}</p>
+              <p className="text-muted-foreground text-xs">{t("translationFailedDescription")}</p>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" onClick={retryTranslation}>
+            {t("retry")}
+          </Button>
+        </div>
+      )}
+      {translationPending && (
         <div className="border-primary/30 bg-primary/5 flex items-center gap-3 rounded-xl border p-4">
           <Loader2 className="text-primary h-5 w-5 shrink-0 animate-spin" />
           <div>
