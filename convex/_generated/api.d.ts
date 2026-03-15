@@ -46,6 +46,7 @@ import type * as ocrUtils from "../ocrUtils.js";
 import type * as passwordChange from "../passwordChange.js";
 import type * as passwordChangeHelpers from "../passwordChangeHelpers.js";
 import type * as pendingSignups from "../pendingSignups.js";
+import type * as planCache from "../planCache.js";
 import type * as planTypes from "../planTypes.js";
 import type * as profiles from "../profiles.js";
 import type * as pushSubscriptions from "../pushSubscriptions.js";
@@ -111,6 +112,7 @@ declare const fullApi: ApiFromModules<{
   passwordChange: typeof passwordChange;
   passwordChangeHelpers: typeof passwordChangeHelpers;
   pendingSignups: typeof pendingSignups;
+  planCache: typeof planCache;
   planTypes: typeof planTypes;
   profiles: typeof profiles;
   pushSubscriptions: typeof pushSubscriptions;

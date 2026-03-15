@@ -13,10 +13,9 @@ import { memo, useState, useCallback, useMemo, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { Dumbbell, ChevronDown, ChevronUp, Check, Loader2, Zap, History } from "lucide-react";
 import { cn } from "@fitfast/ui/cn";
-import type { GeneratedWorkoutPlan } from "@/types/plans";
+import type { WorkoutDay } from "@/types/plans";
 import type { Id } from "@/convex/_generated/dataModel";
 
-type WorkoutDay = GeneratedWorkoutPlan["weeklyPlan"][string];
 type Exercise = WorkoutDay["exercises"][number];
 
 /** Shape of a single exercise log from the backend */

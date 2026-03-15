@@ -148,7 +148,8 @@ export default function TrackingPage() {
   );
 
   const todaysMeals = mealPlanData?.weeklyPlan?.[mealDayKey]?.meals || [];
-  const todaysWorkout = workoutPlanData?.weeklyPlan?.[workoutDayKey];
+  const todaysWorkoutRaw = workoutPlanData?.weeklyPlan?.[workoutDayKey];
+  const todaysWorkout = todaysWorkoutRaw?.restDay ? undefined : todaysWorkoutRaw;
 
   const completionPercentage = useMemo(() => {
     let totalItems = 0;
