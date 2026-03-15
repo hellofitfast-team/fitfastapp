@@ -18,7 +18,7 @@ export const MAX_PLAN_DURATION_DAYS = 90;
 export const DATA_RETENTION_DAYS = 90;
 
 // ── AI Workpool ────────────────────────────────────────────────────────────
-export const MAX_AI_CONCURRENCY = 10;
+export const MAX_AI_CONCURRENCY = 15;
 
 // ── RAG Chunking ───────────────────────────────────────────────────────────
 export const RAG_CHUNK_SIZE_WORDS = 500;

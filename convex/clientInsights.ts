@@ -37,6 +37,9 @@ export const getClientInsights = query({
   handler: async (ctx, { userId }): Promise<ClientInsights> => {
     await requireCoach(ctx);
 
+    // Window data queries to last 90 days to prevent unbounded growth at scale
+    const ninetyDaysAgo = Date.now() - 90 * 24 * 60 * 60 * 1000;
+
     const [
       checkIns,
       tickets,
@@ -51,10 +54,12 @@ export const getClientInsights = query({
       ctx.db
         .query("checkIns")
         .withIndex("by_userId", (q) => q.eq("userId", userId))
+        .filter((q) => q.gte(q.field("_creationTime"), ninetyDaysAgo))
         .collect(),
       ctx.db
         .query("tickets")
         .withIndex("by_userId", (q) => q.eq("userId", userId))
+        .filter((q) => q.gte(q.field("_creationTime"), ninetyDaysAgo))
         .collect(),
       ctx.db
         .query("pushSubscriptions")
@@ -63,10 +68,12 @@ export const getClientInsights = query({
       ctx.db
         .query("mealCompletions")
         .withIndex("by_userId_date", (q) => q.eq("userId", userId))
+        .filter((q) => q.gte(q.field("_creationTime"), ninetyDaysAgo))
         .collect(),
       ctx.db
         .query("workoutCompletions")
         .withIndex("by_userId_date", (q) => q.eq("userId", userId))
+        .filter((q) => q.gte(q.field("_creationTime"), ninetyDaysAgo))
         .collect(),
       ctx.db
         .query("profiles")

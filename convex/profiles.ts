@@ -1,4 +1,4 @@
-import { v } from "convex/values";
+import { v, paginationOptsValidator } from "convex/values";
 import { query, mutation, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getAuthUserId } from "./auth";
@@ -54,6 +54,26 @@ export const getAllClients = query({
       .query("profiles")
       .withIndex("by_isCoach", (q) => q.eq("isCoach", false))
       .take(1500);
+  },
+});
+
+export const listClientsPaginated = query({
+  args: { paginationOpts: paginationOptsValidator },
+  handler: async (ctx, { paginationOpts }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .unique();
+    if (!profile?.isCoach) throw new Error("Not authorized");
+
+    return ctx.db
+      .query("profiles")
+      .withIndex("by_isCoach", (q) => q.eq("isCoach", false))
+      .order("desc")
+      .paginate(paginationOpts);
   },
 });
 

@@ -39,6 +39,7 @@
     "dashboard": "Dashboard",
     "overview": "Overview",
     "totalClients": "Total Clients",
+    "loadMore": "Load More",
     "activeClients": "Active Clients",
     "pendingSignups": "Pending Signups",
     "openTickets": "Open Tickets",

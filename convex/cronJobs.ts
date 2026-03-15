@@ -30,6 +30,19 @@ export const scheduleUserReminder = internalMutation({
 
     const cronName = `reminder-${userId}`;
 
+    // Add ±15 minute jitter to prevent burst load when many clients pick the same time.
+    // Jitter is deterministic per user (based on userId hash) so it doesn't change on re-registration.
+    const jitterMinutes = ((userId.charCodeAt(0) + userId.charCodeAt(userId.length - 1)) % 31) - 15;
+    let jitteredMinute = minute + jitterMinutes;
+    let jitteredHour = hour;
+    if (jitteredMinute < 0) {
+      jitteredMinute += 60;
+      jitteredHour = (jitteredHour + 23) % 24;
+    } else if (jitteredMinute >= 60) {
+      jitteredMinute -= 60;
+      jitteredHour = (jitteredHour + 1) % 24;
+    }
+
     // Remove any existing cron for this user before re-registering
     const existing = await dynamicCrons.get(ctx, { name: cronName });
     if (existing) {
@@ -38,7 +51,7 @@ export const scheduleUserReminder = internalMutation({
 
     await dynamicCrons.register(
       ctx,
-      { kind: "cron", cronspec: `${minute} ${hour} * * *` },
+      { kind: "cron", cronspec: `${jitteredMinute} ${jitteredHour} * * *` },
       internal.notifications.sendReminderToUser,
       { userId },
       cronName,

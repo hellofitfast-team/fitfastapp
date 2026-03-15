@@ -1,17 +1,25 @@
 "use client";
 
-import { useConvexAuth, useQuery } from "convex/react";
+import { useConvexAuth } from "convex/react";
+import { usePaginatedQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useTranslations } from "next-intl";
 import { ClientsList } from "./clients-list";
 import { Loader2 } from "lucide-react";
+import { Button } from "@fitfast/ui/button";
+
+const PAGE_SIZE = 50;
 
 export default function AdminClientsPage() {
   const t = useTranslations("admin");
   const { isAuthenticated } = useConvexAuth();
-  const clients = useQuery(api.profiles.getAllClients, isAuthenticated ? {} : "skip");
+  const { results, status, loadMore } = usePaginatedQuery(
+    api.profiles.listClientsPaginated,
+    isAuthenticated ? {} : "skip",
+    { initialNumItems: PAGE_SIZE },
+  );
 
-  const isLoading = clients === undefined;
+  const isLoading = status === "LoadingFirstPage";
 
   if (isLoading) {
     return (
@@ -21,8 +29,7 @@ export default function AdminClientsPage() {
     );
   }
 
-  // Adapt client data for the ClientsList component
-  const adaptedClients = clients.map((c) => ({
+  const adaptedClients = (results ?? []).map((c) => ({
     id: c._id,
     fullName: c.fullName ?? null,
     phone: c.phone ?? null,
@@ -39,11 +46,26 @@ export default function AdminClientsPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-stone-900">{t("clients")}</h1>
         <p className="mt-1 text-sm text-stone-500">
-          {clients.length} {t("totalClients").toLowerCase()}
+          {adaptedClients.length}
+          {status === "CanLoadMore" ? "+" : ""} {t("totalClients").toLowerCase()}
         </p>
       </div>
 
       <ClientsList clients={adaptedClients} />
+
+      {status === "CanLoadMore" && (
+        <div className="flex justify-center pt-2 pb-8">
+          <Button variant="outline" onClick={() => loadMore(PAGE_SIZE)}>
+            {t("loadMore")}
+          </Button>
+        </div>
+      )}
+
+      {status === "LoadingMore" && (
+        <div className="flex justify-center py-4">
+          <Loader2 className="text-primary h-5 w-5 animate-spin" />
+        </div>
+      )}
     </div>
   );
 }
