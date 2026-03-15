@@ -114,6 +114,15 @@ export const updateKnowledgeContent = internalMutation({
 // Internal helpers
 // ---------------------------------------------------------------------------
 
+/** Fast O(1) check — returns true if coach has any knowledge base entries. */
+export const hasEntries = internalQuery({
+  args: {},
+  handler: async (ctx): Promise<boolean> => {
+    const first = await ctx.db.query("coachKnowledge").first();
+    return first !== null;
+  },
+});
+
 export const getEntryInternal = internalQuery({
   args: { entryId: v.id("coachKnowledge") },
   handler: async (ctx, { entryId }) => {

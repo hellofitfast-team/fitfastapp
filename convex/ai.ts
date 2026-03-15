@@ -372,8 +372,81 @@ async function generateMealPlanHandler(
     measuredBmr: getLatestMeasuredBmr(clientCtx),
   });
 
+  // --- PLAN CACHE CHECK: per-user cache for identical nutrition targets ---
+  // Scoped per-user to avoid cross-client data leaks (pregnancy safety, personalization).
+  // Helps when same user re-generates (e.g., retry after failure, same cycle macros).
+  let mealPlanCacheKey: string | null = null;
+  try {
+    const restrictions = [...((assessment.dietaryRestrictions as string[] | undefined) ?? [])]
+      .sort()
+      .join(",");
+    const allergies = [...((assessment.allergies as string[] | undefined) ?? [])].sort().join(",");
+    const gender = assessment.gender ?? "male";
+    const fh = (assessment.femaleHealth ?? {}) as Record<string, unknown>;
+    const femaleHash =
+      gender === "female"
+        ? `-${fh.isPregnant ?? false}-${fh.isBreastfeeding ?? false}-${fh.menstrualStatus ?? "none"}`
+        : "";
+    const isInitial = !checkInId;
+    mealPlanCacheKey = `${userId}-${nutritionTargets.calories}-${nutritionTargets.protein}-${nutritionTargets.carbs}-${nutritionTargets.fat}-${language}-${safeDuration}-${restrictions}|${allergies}${femaleHash}-${isInitial}`;
+
+    const cachedPlan = await ctx.runQuery(internal.planCache.checkPlanCache, {
+      cacheKey: mealPlanCacheKey,
+    });
+    if (cachedPlan) {
+      console.log(`[AI] Cache HIT for key ${mealPlanCacheKey} — skipping generation`);
+
+      const cacheTrace = traceAI({
+        name: "generate-meal-plan",
+        userId,
+        metadata: { language, planDuration: safeDuration, checkInId, cacheKey: mealPlanCacheKey },
+        tags: ["meal-plan", "cache-hit"],
+      });
+      cacheTrace?.update({ metadata: { cacheHit: true } });
+
+      const startDate = new Date().toISOString().split("T")[0]!;
+      const endDate = new Date(Date.now() + safeDuration * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split("T")[0]!;
+
+      // Create a stream with the cached plan data so clients can display it
+      const cachedStreamId: string = await ctx.runMutation(
+        internal.streamingManager.createStream,
+        {},
+      );
+      await ctx.runMutation(internal.streamingManager.appendChunk, {
+        streamId: cachedStreamId,
+        text: JSON.stringify(cachedPlan),
+        final: true,
+      });
+
+      const planId = await ctx.runMutation(internal.mealPlans.savePlanInternal, {
+        userId,
+        checkInId,
+        planData: cachedPlan,
+        streamId: cachedStreamId,
+        language,
+        startDate,
+        endDate,
+        assessmentVersion: clientCtx.assessmentVersion,
+      });
+
+      await flushLangfuse();
+      return planId;
+    }
+
+    console.log(`[AI] Cache MISS for key ${mealPlanCacheKey} — proceeding with AI generation`);
+  } catch (cacheErr) {
+    // Never let cache issues break generation
+    console.warn(`[AI] Plan cache check failed, proceeding with generation:`, cacheErr);
+  }
+
   // Fetch coach knowledge context via RAG (filtered to nutrition/general docs)
-  const knowledgeSection = await getCoachKnowledgeContext(ctx, assessment, "meal");
+  // Skip RAG search entirely if knowledge base is empty — saves compute for ~80% of coaches
+  const kbHasEntries: boolean = await ctx.runQuery(internal.knowledgeBase.hasEntries, {});
+  const knowledgeSection = kbHasEntries
+    ? await getCoachKnowledgeContext(ctx, assessment, "meal")
+    : "";
 
   // Fetch food database reference (cached 1h — rarely changes)
   const foodReference: string = await ctx.runAction(
@@ -491,6 +564,15 @@ async function generateMealPlanHandler(
     return lines.join("\n");
   })();
 
+  // Determine prompt complexity — initial generations (no check-in history) skip adherence guidelines
+  const isInitialGeneration = !checkInId;
+  const promptComplexity = isInitialGeneration && !knowledgeSection ? "simple" : "complex";
+
+  // Guideline #7 only applies when there's check-in history (weight trend data)
+  const weightStallGuideline = isInitialGeneration
+    ? ""
+    : "\n7. If weight trend shows stall (>2 weeks same weight on fat loss), slightly increase protein and reduce carbs";
+
   const systemPrompt = `You are an expert sports nutritionist and meal planning AI specializing in ${isArabic ? "Middle Eastern and Egyptian cuisine" : "international cuisine"}. Create personalized meal plans.
 HARD CONSTRAINT: All meals MUST be halal. Never include pork, alcohol, or non-halal meat. This is non-negotiable.
 
@@ -511,9 +593,8 @@ GUIDELINES:
 3. Use locally available, affordable ingredients
 4. Include specific measurements (grams, cups, tablespoons) and cooking instructions with times/temperatures
 5. Each meal MUST have exactly 3 alternatives with matching macros (±10% calories each)
-6. If adherence data is provided, adjust meal complexity accordingly
-7. If weight trend shows stall (>2 weeks same weight on fat loss), slightly increase protein and reduce carbs
-8. Vary meals across days — avoid repeating the same meal more than twice per week
+6. If adherence data is provided, adjust meal complexity accordingly${weightStallGuideline}
+7. Vary meals across days — avoid repeating the same meal more than twice per week
 ${isArabic ? "ALL content MUST be in Arabic language. Focus on Egyptian/Middle Eastern cuisine." : ""}${knowledgeSection}
 ${foodReference}
 IMPORTANT: Respond ONLY with valid JSON. No markdown, no code blocks, just raw JSON.`;
@@ -561,8 +642,8 @@ Daily meal macros MUST sum to the targets above (±5% tolerance). Respond ONLY w
   const trace = traceAI({
     name: "generate-meal-plan",
     userId,
-    metadata: { language, planDuration: safeDuration, checkInId },
-    tags: ["meal-plan"],
+    metadata: { language, planDuration: safeDuration, checkInId, promptComplexity },
+    tags: ["meal-plan", `complexity:${promptComplexity}`],
   });
 
   // --- Attempt with primary model (direct Google) + fallback (direct DeepSeek) ---
@@ -832,8 +913,23 @@ Respond ONLY with valid JSON.`;
         finishReason: result.finishReason,
         textLength: result.text.length,
         validationWarnings: validationWarnings.length,
+        cacheHit: false,
       },
     });
+
+    // --- PLAN CACHE WRITE: save validated plan for future reuse ---
+    if (mealPlanCacheKey) {
+      try {
+        await ctx.runMutation(internal.planCache.savePlanCache, {
+          cacheKey: mealPlanCacheKey,
+          planData,
+        });
+        console.log(`[AI] Cached meal plan with key ${mealPlanCacheKey}`);
+      } catch (cacheWriteErr) {
+        // Never let cache write failures break the flow
+        console.warn(`[AI] Failed to cache meal plan:`, cacheWriteErr);
+      }
+    }
 
     const startDate = new Date().toISOString().split("T")[0]!;
     const endDate = new Date(Date.now() + safeDuration * 24 * 60 * 60 * 1000)

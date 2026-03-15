@@ -19,4 +19,6 @@ crons.daily(
   internal.dataRetention.runRetentionCleanup,
 );
 
+crons.daily("plan-cache-cleanup", { hourUTC: 5, minuteUTC: 0 }, internal.planCache.cleanupExpired);
+
 export default crons;

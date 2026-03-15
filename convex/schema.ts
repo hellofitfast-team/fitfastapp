@@ -474,6 +474,12 @@ export default defineSchema({
     .index("by_planId_date_exercise", ["workoutPlanId", "date", "exerciseIndex"])
     .index("by_userId_exerciseName", ["userId", "exerciseName"]),
 
+  planCache: defineTable({
+    cacheKey: v.string(),
+    planData: v.any(),
+    createdAt: v.number(),
+  }).index("by_cacheKey", ["cacheKey"]),
+
   exerciseDatabase: defineTable({
     name: v.string(),
     nameAr: v.string(),
