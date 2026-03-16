@@ -30,6 +30,13 @@ export default convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
     return response;
   }
 
+  // Let non-auth API routes pass through without i18n processing
+  if (pathname.startsWith("/api/") && !pathname.startsWith("/api/auth")) {
+    const response = NextResponse.next();
+    response.headers.set("x-request-id", requestId);
+    return response;
+  }
+
   // Device language detection: when no locale prefix exists (e.g. visiting "/"),
   // let next-intl read the Accept-Language header and redirect to /ar/ or /en/.
   const hasLocalePrefix = /^\/(en|ar)(\/|$)/.test(pathname);
@@ -66,5 +73,5 @@ export default convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
 });
 
 export const config = {
-  matcher: ["/((?!api|_next|.*\\..*).*)"],
+  matcher: ["/((?!_next|.*\\..*).*)"],
 };

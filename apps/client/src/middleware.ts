@@ -30,7 +30,15 @@ export default convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
 
   const { pathname } = request.nextUrl;
 
+  // Skip static files (but NOT /api/auth — handled by convexAuthNextjsMiddleware)
   if (pathname.startsWith("/_next") || pathname.startsWith("/favicon") || pathname.includes(".")) {
+    const response = NextResponse.next();
+    response.headers.set("x-request-id", requestId);
+    return response;
+  }
+
+  // Let non-auth API routes pass through without i18n processing
+  if (pathname.startsWith("/api/") && !pathname.startsWith("/api/auth")) {
     const response = NextResponse.next();
     response.headers.set("x-request-id", requestId);
     return response;
@@ -67,5 +75,5 @@ export default convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
 });
 
 export const config = {
-  matcher: ["/((?!api|_next|.*\\..*).*)"],
+  matcher: ["/((?!_next|.*\\..*).*)"],
 };
