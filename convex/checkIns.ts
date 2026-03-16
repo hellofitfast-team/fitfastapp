@@ -65,6 +65,86 @@ export const getLatestCheckIn = query({
   },
 });
 
+/**
+ * Shared lock-status logic used by both the getLockStatus query (UI)
+ * and the startCheckInWorkflow mutation (server-side enforcement).
+ */
+async function checkLockStatus(
+  ctx: { db: any },
+  userId: string,
+): Promise<{
+  isLocked: boolean;
+  nextCheckInDate: string | null;
+  lastCheckInDate?: string;
+  frequencyDays: number;
+}> {
+  const frequencyDays = await getCheckInFrequencyDays(ctx as any);
+
+  const latestCheckIn = await ctx.db
+    .query("checkIns")
+    .withIndex("by_userId", (q: any) => q.eq("userId", userId))
+    .order("desc")
+    .first();
+
+  // Determine the anchor date: last check-in, or if none, the latest plan creation
+  let anchorTime: number | null = latestCheckIn?._creationTime ?? null;
+
+  if (!anchorTime) {
+    const latestMealPlan = await ctx.db
+      .query("mealPlans")
+      .withIndex("by_userId", (q: any) => q.eq("userId", userId))
+      .order("desc")
+      .first();
+    const latestWorkoutPlan = await ctx.db
+      .query("workoutPlans")
+      .withIndex("by_userId", (q: any) => q.eq("userId", userId))
+      .order("desc")
+      .first();
+
+    const planTimes = [latestMealPlan?._creationTime, latestWorkoutPlan?._creationTime].filter(
+      (t: any): t is number => t != null,
+    );
+    anchorTime = planTimes.length > 0 ? Math.min(...planTimes) : null;
+  }
+
+  if (!anchorTime) {
+    const GENERATION_WINDOW_MS = 10 * 60 * 1000;
+    const assessment = await ctx.db
+      .query("initialAssessments")
+      .withIndex("by_userId", (q: any) => q.eq("userId", userId))
+      .first();
+    if (assessment && Date.now() - assessment._creationTime < GENERATION_WINDOW_MS) {
+      anchorTime = assessment._creationTime;
+    }
+  }
+
+  if (!anchorTime) return { isLocked: false, nextCheckInDate: null, frequencyDays };
+
+  const anchorDate = new Date(anchorTime);
+  const nextCheckInDate = new Date(anchorDate);
+  nextCheckInDate.setDate(nextCheckInDate.getDate() + frequencyDays);
+
+  const isLocked = Date.now() < nextCheckInDate.getTime();
+
+  // Test users (@fitfast.test) bypass the lock — only check when locked to avoid extra query
+  if (isLocked) {
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_userId", (q: any) => q.eq("userId", userId))
+      .unique();
+    if (profile?.email?.endsWith("@fitfast.test")) {
+      return { isLocked: false, nextCheckInDate: null, frequencyDays };
+    }
+  }
+
+  return {
+    isLocked,
+    nextCheckInDate: nextCheckInDate.toISOString(),
+    lastCheckInDate: anchorDate.toISOString(),
+    frequencyDays,
+  };
+}
+
 export const getLockStatus = query({
   args: {},
   handler: async (ctx) => {
@@ -76,74 +156,7 @@ export const getLockStatus = query({
         frequencyDays: DEFAULT_CHECK_IN_FREQUENCY_DAYS,
       };
 
-    const frequencyDays = await getCheckInFrequencyDays(ctx);
-
-    // Test users (@fitfast.test) always have check-in unlocked for testing
-    const profile = await ctx.db
-      .query("profiles")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .unique();
-    if (profile?.email?.endsWith("@fitfast.test")) {
-      return { isLocked: false, nextCheckInDate: null, frequencyDays };
-    }
-
-    const latestCheckIn = await ctx.db
-      .query("checkIns")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .order("desc")
-      .first();
-
-    // Determine the anchor date: last check-in, or if none, the latest plan creation
-    // This ensures new clients are locked after their initial plans are generated
-    let anchorTime: number | null = latestCheckIn?._creationTime ?? null;
-
-    if (!anchorTime) {
-      // No check-ins yet — check if initial plans were generated (from assessment)
-      const latestMealPlan = await ctx.db
-        .query("mealPlans")
-        .withIndex("by_userId", (q) => q.eq("userId", userId))
-        .order("desc")
-        .first();
-      const latestWorkoutPlan = await ctx.db
-        .query("workoutPlans")
-        .withIndex("by_userId", (q) => q.eq("userId", userId))
-        .order("desc")
-        .first();
-
-      // Use the earliest plan creation as anchor (both are generated together)
-      const planTimes = [latestMealPlan?._creationTime, latestWorkoutPlan?._creationTime].filter(
-        (t): t is number => t != null,
-      );
-      anchorTime = planTimes.length > 0 ? Math.min(...planTimes) : null;
-    }
-
-    if (!anchorTime) {
-      // No plans yet — use assessment as anchor ONLY if recent (plans still generating).
-      // If assessment is old but no plans exist, they were deleted or failed — don't lock.
-      const GENERATION_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
-      const assessment = await ctx.db
-        .query("initialAssessments")
-        .withIndex("by_userId", (q) => q.eq("userId", userId))
-        .first();
-      if (assessment && Date.now() - assessment._creationTime < GENERATION_WINDOW_MS) {
-        anchorTime = assessment._creationTime;
-      }
-    }
-
-    if (!anchorTime) return { isLocked: false, nextCheckInDate: null, frequencyDays };
-
-    const anchorDate = new Date(anchorTime);
-    const nextCheckInDate = new Date(anchorDate);
-    nextCheckInDate.setDate(nextCheckInDate.getDate() + frequencyDays);
-
-    const isLocked = Date.now() < nextCheckInDate.getTime();
-
-    return {
-      isLocked,
-      nextCheckInDate: nextCheckInDate.toISOString(),
-      lastCheckInDate: anchorDate.toISOString(),
-      frequencyDays,
-    };
+    return checkLockStatus(ctx, userId);
   },
 });
 
@@ -251,6 +264,12 @@ export const startCheckInWorkflow = mutation({
     if (!userId) throw new Error("Not authenticated");
 
     validateCheckInStrings(checkInFields);
+
+    // Guard 0: enforce check-in lock server-side (not just UI)
+    const lockStatus = await checkLockStatus(ctx, userId);
+    if (lockStatus.isLocked) {
+      throw new Error(`Check-in locked until ${lockStatus.nextCheckInDate ?? "unknown"}`);
+    }
 
     // Guard 1: max 3 check-in attempts per day (anti-spam)
     const checkInLimit = await rateLimiter.limit(ctx, "submitCheckIn", { key: userId });
