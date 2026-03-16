@@ -1,16 +1,19 @@
 # FitFast — Pricing Strategy & Margin Analysis
 
 > Based on Langfuse-verified cost analysis (March 2026) | Exchange rate: ~50 EGP/$1
+>
+> **Model**: inception/mercury-2 via OpenRouter ($0.25/M input, $0.75/M output)
 
 ---
 
 ## Your Actual Costs Per Client
 
-| Cost Component                   | Per Client/Month | Notes                                    |
-| -------------------------------- | ---------------- | ---------------------------------------- |
-| AI (meal plans + OCR)            | ~$0.03           | Langfuse-verified from production traces |
-| Infrastructure (Vercel + domain) | ~$0.04           | $21 fixed / 500 clients                  |
-| **Total tech cost**              | **~$0.07**       | **~3.5 EGP at 50 EGP/$**                 |
+| Cost Component                   | Per Client/Month | Notes                                                 |
+| -------------------------------- | ---------------- | ----------------------------------------------------- |
+| AI (meal plans + translation)    | ~$0.06           | ~$0.02/meal plan × 3 cycles/month (Langfuse-verified) |
+| OCR (InBody/payment screenshots) | ~$0.001          | Qwen3-VL via OpenRouter, negligible                   |
+| Infrastructure (Vercel + domain) | ~$0.04           | $21 fixed / 500 clients                               |
+| **Total tech cost**              | **~$0.10**       | **~5 EGP at 50 EGP/$**                                |
 
 ---
 
@@ -28,11 +31,11 @@
 |                               | Monthly          | Quarterly (500 EGP/mo equiv) |
 | ----------------------------- | ---------------- | ---------------------------- |
 | Revenue per client            | 600 EGP          | 500 EGP/mo                   |
-| Tech cost per client          | ~3.5 EGP         | ~3.5 EGP                     |
-| Gross margin                  | 99.4%            | 99.3%                        |
+| Tech cost per client          | ~5 EGP           | ~5 EGP                       |
+| Gross margin                  | 99.2%            | 99.0%                        |
 | Monthly revenue (500 clients) | 300,000 EGP      | 250,000 EGP                  |
-| Monthly tech costs            | ~1,850 EGP ($37) | ~1,850 EGP                   |
-| Net from tech                 | 298,150 EGP      | 248,150 EGP                  |
+| Monthly tech costs            | ~2,500 EGP ($50) | ~2,500 EGP                   |
+| Net from tech                 | 297,500 EGP      | 247,500 EGP                  |
 
 The tech costs are negligible — your margins are essentially determined by the coach's time and external costs.
 
@@ -67,7 +70,7 @@ At 600 EGP/month (Monthly plan):
 
 ## Key Points
 
-- **Tech costs scale linearly but are < 1% of revenue** — they never pressure margins
+- **Tech costs scale linearly but are ~1% of revenue** — they never pressure margins
 - **Ad spend is the real cost driver** — at 3,000-10,000 EGP/month, you need ~5-17 new clients/month just to break even on ads (at 600 EGP/client)
 - **Quarterly discount (500 EGP/mo) locks in revenue and reduces churn** — worth the 17% discount because you get 3 months guaranteed vs monthly uncertainty
 - **Egyptian fitness coaching market**: Typical online coaching ranges 400-1,000 EGP/month. 600 EGP positions you mid-market with AI-powered personalization as the differentiator
@@ -77,4 +80,14 @@ At 600 EGP/month (Monthly plan):
 
 ## The Bottom Line
 
-The pricing gives you pressure-free scaling because tech costs are essentially $0.07/client — you could charge 100 EGP/month and still have 95%+ tech margins. The real question is how much the coach's time and ad spend cost per acquired client.
+The pricing gives you pressure-free scaling because tech costs are ~$0.10/client — you could charge 100 EGP/month and still have 95%+ tech margins. The real question is how much the coach's time and ad spend cost per acquired client.
+
+---
+
+## AI Model Comparison
+
+| Model                             | Provider   | Cost/Plan | Latency | Notes                                     |
+| --------------------------------- | ---------- | --------- | ------- | ----------------------------------------- |
+| **inception/mercury-2** (current) | OpenRouter | ~$0.02    | ~20s    | Diffusion LLM, >1000 tok/s, very reliable |
+| gemini-2.5-flash-lite (previous)  | Google     | ~$0.005   | ~25s    | Cheaper but slightly slower               |
+| deepseek-chat (fallback)          | DeepSeek   | ~$0.003   | ~30s    | Used only when primary fails              |
