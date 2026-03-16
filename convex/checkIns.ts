@@ -78,7 +78,7 @@ async function checkLockStatus(
   lastCheckInDate?: string;
   frequencyDays: number;
 }> {
-  const frequencyDays = await getCheckInFrequencyDays(ctx as any);
+  const frequencyDays = await getCheckInFrequencyDays(ctx);
 
   const latestCheckIn = await ctx.db
     .query("checkIns")
@@ -280,7 +280,7 @@ export const startCheckInWorkflow = mutation({
     }
 
     // Guard 2: max 2 AI plan generations per configured cycle (cost protection)
-    const frequencyDays = await getCheckInFrequencyDays(ctx);
+    const frequencyDays = lockStatus.frequencyDays;
     const windowStart = Date.now() - frequencyDays * 24 * 60 * 60 * 1000;
     const recentMeals = await ctx.db
       .query("mealPlans")
