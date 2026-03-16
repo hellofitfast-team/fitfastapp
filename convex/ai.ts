@@ -814,7 +814,7 @@ Respond ONLY with valid JSON.`;
           system: systemPrompt,
           prompt: retryPrompt,
           temperature: 0.3,
-          maxOutputTokens: MEAL_OUTPUT_TOKENS_AR,
+          maxOutputTokens: mealOutputTokens,
           maxRetries: 1,
           abortSignal: AbortSignal.timeout(halfTimeout),
         });
@@ -851,7 +851,7 @@ Respond ONLY with valid JSON.`;
             system: systemPrompt,
             prompt: retryPrompt,
             temperature: 0.3,
-            maxOutputTokens: MEAL_OUTPUT_TOKENS_AR,
+            maxOutputTokens: mealOutputTokens,
             maxRetries: 1,
             abortSignal: AbortSignal.timeout(halfTimeout),
           });
