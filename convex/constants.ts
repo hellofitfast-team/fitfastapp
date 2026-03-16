@@ -71,7 +71,7 @@ export const NUTRITION = {
 } as const;
 
 // ── AI Generation ─────────────────────────────────────────────────────────
-export const MEAL_OUTPUT_TOKENS_EN = 16000;
+export const MEAL_OUTPUT_TOKENS_EN = 22000;
 export const MEAL_OUTPUT_TOKENS_AR = 22000;
 export const WORKOUT_OUTPUT_TOKENS_EN = 16000;
 export const WORKOUT_OUTPUT_TOKENS_AR = 30000;

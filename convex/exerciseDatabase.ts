@@ -39,10 +39,10 @@ const difficultyValidator = v.union(
 export const getActiveExercises = internalQuery({
   args: {},
   handler: async (ctx) => {
-    // Use by_category index — all categories with isActive=true
-    // Collect from all categories to ensure we get everything active
+    // Collect all exercises; treat missing isActive as true (backwards compat
+    // for exercises uploaded before the isActive field was added)
     const exercises = await ctx.db.query("exerciseDatabase").collect();
-    return exercises.filter((e) => e.isActive);
+    return exercises.filter((e) => e.isActive !== false);
   },
 });
 
