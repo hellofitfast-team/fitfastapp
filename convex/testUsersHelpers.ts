@@ -76,35 +76,38 @@ export const insertTestUser = internalMutation({
   },
 });
 
+// ─── Shared test assessment data ─────────────────────────────────────────────
+
+const TEST_ASSESSMENT = {
+  goals: "fat_loss",
+  currentWeight: 85,
+  height: 178,
+  age: 28,
+  gender: "male" as const,
+  activityLevel: "moderately_active" as const,
+  experienceLevel: "intermediate" as const,
+  exerciseHistory: "2 years of gym training",
+  measurements: { chest: 100, waist: 88, hips: 95, arms: 35, thighs: 58 },
+  scheduleAvailability: {
+    days: ["sunday", "tuesday", "thursday", "saturday"],
+    sessionDuration: 60,
+    preferredTime: "morning",
+  },
+  foodPreferences: ["chicken", "rice", "eggs", "fish", "oats"],
+  allergies: [] as string[],
+  dietaryRestrictions: [] as string[],
+  medicalConditions: [] as string[],
+  injuries: [] as string[],
+  lifestyleHabits: { equipment: "full_gym", mealsPerDay: 4 },
+  measurementMethod: "manual" as const,
+};
+
 // ─── Seed assessment only for "active_checkin_ready" scenario ────────────────
 
 export const seedAssessmentOnly = internalMutation({
   args: { userId: v.string() },
   handler: async (ctx, { userId }): Promise<void> => {
-    await ctx.db.insert("initialAssessments", {
-      userId,
-      goals: "fat_loss",
-      currentWeight: 85,
-      height: 178,
-      age: 28,
-      gender: "male" as const,
-      activityLevel: "moderately_active" as const,
-      experienceLevel: "intermediate" as const,
-      exerciseHistory: "2 years of gym training",
-      measurements: { chest: 100, waist: 88, hips: 95, arms: 35, thighs: 58 },
-      scheduleAvailability: {
-        days: ["sunday", "tuesday", "thursday", "saturday"],
-        sessionDuration: 60,
-        preferredTime: "morning",
-      },
-      foodPreferences: ["chicken", "rice", "eggs", "fish", "oats"],
-      allergies: [],
-      dietaryRestrictions: [],
-      medicalConditions: [],
-      injuries: [],
-      lifestyleHabits: { equipment: "full_gym", mealsPerDay: 4 },
-      measurementMethod: "manual" as const,
-    });
+    await ctx.db.insert("initialAssessments", { userId, ...TEST_ASSESSMENT });
   },
 });
 
@@ -118,30 +121,7 @@ export const seedTestUserData = internalMutation({
   },
   handler: async (ctx, { userId, planStartDate, planEndDate }): Promise<void> => {
     // 1. Create initial assessment
-    await ctx.db.insert("initialAssessments", {
-      userId,
-      goals: "fat_loss",
-      currentWeight: 85,
-      height: 178,
-      age: 28,
-      gender: "male" as const,
-      activityLevel: "moderately_active" as const,
-      experienceLevel: "intermediate" as const,
-      exerciseHistory: "2 years of gym training",
-      measurements: { chest: 100, waist: 88, hips: 95, arms: 35, thighs: 58 },
-      scheduleAvailability: {
-        days: ["sunday", "tuesday", "thursday", "saturday"],
-        sessionDuration: 60,
-        preferredTime: "morning",
-      },
-      foodPreferences: ["chicken", "rice", "eggs", "fish", "oats"],
-      allergies: [],
-      dietaryRestrictions: [],
-      medicalConditions: [],
-      injuries: [],
-      lifestyleHabits: { equipment: "full_gym", mealsPerDay: 4 },
-      measurementMethod: "manual" as const,
-    });
+    await ctx.db.insert("initialAssessments", { userId, ...TEST_ASSESSMENT });
 
     // 2. Get real exercise IDs from the database
     const exercises = await ctx.db.query("exerciseDatabase").take(50);
@@ -298,7 +278,6 @@ export const seedTestUserData = internalMutation({
       exercises: [
         {
           name: "Light Treadmill Walk",
-          exerciseDbId: getExId("Barbell Back Squat"),
           duration: 5,
           instructions: ["5 minutes at moderate pace"],
         },
@@ -309,7 +288,6 @@ export const seedTestUserData = internalMutation({
       exercises: [
         {
           name: "Full Body Stretching",
-          exerciseDbId: getExId("Barbell Back Squat"),
           duration: 5,
           instructions: ["Hold each stretch for 30 seconds"],
         },
