@@ -225,6 +225,8 @@
     "scenario": "Subscription Scenario",
     "scenarioActive": "Active",
     "scenarioActiveDesc": "Plan started recently, plenty of time left",
+    "scenarioActiveWithPlans": "Active + Plans Ready",
+    "scenarioActiveWithPlansDesc": "Has assessment, meal plan & workout plan — ready for check-in",
     "scenarioExpiring": "Expiring Soon",
     "scenarioExpiringDesc": "Plan ends in 3 days",
     "scenarioExpired": "Expired",

@@ -10,6 +10,7 @@ const DEFAULT_PASSWORD = "test12345";
 
 const SCENARIO_NAMES: Record<string, string> = {
   active: "Test User (Active)",
+  active_with_plans: "Test User (Active + Plans)",
   expiring: "Test User (Expiring)",
   expired: "Test User (Expired)",
   pending: "Test User (Pending)",
@@ -31,7 +32,8 @@ function computeDates(
   const now = new Date();
 
   switch (scenario) {
-    case "active": {
+    case "active":
+    case "active_with_plans": {
       const start = new Date(now);
       start.setDate(start.getDate() - 7);
       const end = new Date(start);
@@ -66,6 +68,7 @@ export const createTestUser = action({
     planTier: v.union(v.literal("monthly"), v.literal("quarterly")),
     scenario: v.union(
       v.literal("active"),
+      v.literal("active_with_plans"),
       v.literal("expiring"),
       v.literal("expired"),
       v.literal("pending"),
@@ -87,7 +90,7 @@ export const createTestUser = action({
     const hashedPassword = await new Scrypt().hash(DEFAULT_PASSWORD);
     const { status, planStartDate, planEndDate } = computeDates(planTier, scenario);
 
-    await ctx.runMutation(internal.testUsersHelpers.insertTestUser, {
+    const { userId: newUserId } = await ctx.runMutation(internal.testUsersHelpers.insertTestUser, {
       email,
       hashedPassword,
       fullName,
@@ -96,6 +99,15 @@ export const createTestUser = action({
       planStartDate,
       planEndDate,
     });
+
+    // For "active_with_plans": seed assessment + meal plan + workout plan
+    if (scenario === "active_with_plans" && planStartDate) {
+      await ctx.runMutation(internal.testUsersHelpers.seedTestUserData, {
+        userId: newUserId,
+        planStartDate,
+        planEndDate: planEndDate!,
+      });
+    }
 
     return { email, password: DEFAULT_PASSWORD, fullName, status };
   },

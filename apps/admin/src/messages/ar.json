@@ -225,6 +225,8 @@
     "scenario": "حالة الاشتراك",
     "scenarioActive": "نشط",
     "scenarioActiveDesc": "الخطة بدأت مؤخراً، وقت كافٍ متبقي",
+    "scenarioActiveWithPlans": "نشط + خطط جاهزة",
+    "scenarioActiveWithPlansDesc": "لديه تقييم وخطة وجبات وخطة تمارين — جاهز للمتابعة",
     "scenarioExpiring": "ينتهي قريباً",
     "scenarioExpiringDesc": "الخطة تنتهي خلال 3 أيام",
     "scenarioExpired": "منتهي",

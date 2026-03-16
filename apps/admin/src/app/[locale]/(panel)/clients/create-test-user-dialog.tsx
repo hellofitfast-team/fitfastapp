@@ -17,7 +17,7 @@ import {
 } from "@fitfast/ui/dialog";
 
 type PlanTier = "monthly" | "quarterly";
-type Scenario = "active" | "expiring" | "expired" | "pending";
+type Scenario = "active" | "active_with_plans" | "expiring" | "expired" | "pending";
 
 interface Credentials {
   email: string;
@@ -28,6 +28,11 @@ interface Credentials {
 
 const SCENARIOS: { value: Scenario; labelKey: string; descKey: string }[] = [
   { value: "active", labelKey: "scenarioActive", descKey: "scenarioActiveDesc" },
+  {
+    value: "active_with_plans",
+    labelKey: "scenarioActiveWithPlans",
+    descKey: "scenarioActiveWithPlansDesc",
+  },
   { value: "expiring", labelKey: "scenarioExpiring", descKey: "scenarioExpiringDesc" },
   { value: "expired", labelKey: "scenarioExpired", descKey: "scenarioExpiredDesc" },
   { value: "pending", labelKey: "scenarioPending", descKey: "scenarioPendingDesc" },
@@ -40,7 +45,7 @@ export function CreateTestUserButton() {
   const [scenario, setScenario] = useState<Scenario>("active");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [credentials, setCredentials] = useState<Credentials | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
 
   const createTestUser = useAction(api.testUsers.createTestUser);
 
@@ -62,10 +67,10 @@ export function CreateTestUserButton() {
     }
   };
 
-  const handleCopy = async (text: string) => {
+  const handleCopy = async (text: string, field: string) => {
     await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 2000);
   };
 
   const handleClose = () => {
@@ -75,7 +80,7 @@ export function CreateTestUserButton() {
       setCredentials(null);
       setPlanTier("monthly");
       setScenario("active");
-      setCopied(false);
+      setCopiedField(null);
     }, 200);
   };
 
@@ -117,10 +122,10 @@ export function CreateTestUserButton() {
                       </code>
                       <button
                         type="button"
-                        onClick={() => handleCopy(credentials.email)}
+                        onClick={() => handleCopy(credentials.email, "email")}
                         className="rounded p-1 text-emerald-600 transition-colors hover:bg-emerald-100"
                       >
-                        {copied ? (
+                        {copiedField === "email" ? (
                           <Check className="h-3.5 w-3.5" />
                         ) : (
                           <Copy className="h-3.5 w-3.5" />
@@ -130,9 +135,22 @@ export function CreateTestUserButton() {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-emerald-600">{t("password")}</span>
-                    <code className="rounded bg-white px-2 py-0.5 text-xs text-stone-800">
-                      {credentials.password}
-                    </code>
+                    <div className="flex items-center gap-1.5">
+                      <code className="rounded bg-white px-2 py-0.5 text-xs text-stone-800">
+                        {credentials.password}
+                      </code>
+                      <button
+                        type="button"
+                        onClick={() => handleCopy(credentials.password, "password")}
+                        className="rounded p-1 text-emerald-600 transition-colors hover:bg-emerald-100"
+                      >
+                        {copiedField === "password" ? (
+                          <Check className="h-3.5 w-3.5" />
+                        ) : (
+                          <Copy className="h-3.5 w-3.5" />
+                        )}
+                      </button>
+                    </div>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-emerald-600">{t("status")}</span>
