@@ -17,7 +17,13 @@ import {
 } from "@fitfast/ui/dialog";
 
 type PlanTier = "monthly" | "quarterly";
-type Scenario = "active" | "active_with_plans" | "expiring" | "expired" | "pending";
+type Scenario =
+  | "active"
+  | "active_with_plans"
+  | "active_checkin_ready"
+  | "expiring"
+  | "expired"
+  | "pending";
 
 interface Credentials {
   email: string;
@@ -32,6 +38,11 @@ const SCENARIOS: { value: Scenario; labelKey: string; descKey: string }[] = [
     value: "active_with_plans",
     labelKey: "scenarioActiveWithPlans",
     descKey: "scenarioActiveWithPlansDesc",
+  },
+  {
+    value: "active_checkin_ready",
+    labelKey: "scenarioCheckinReady",
+    descKey: "scenarioCheckinReadyDesc",
   },
   { value: "expiring", labelKey: "scenarioExpiring", descKey: "scenarioExpiringDesc" },
   { value: "expired", labelKey: "scenarioExpired", descKey: "scenarioExpiredDesc" },
