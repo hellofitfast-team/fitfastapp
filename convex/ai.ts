@@ -1455,7 +1455,7 @@ export const translateToArabic = action({
     try {
       let translated: string;
       const primaryGen = trace?.generation({
-        name: "primary-gemini-arabic",
+        name: "primary-mercury-arabic",
         model: PLAN_MODEL_PRIMARY,
         input: { text: truncatedText.slice(0, 200) },
       });
