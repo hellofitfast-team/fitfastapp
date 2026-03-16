@@ -31,8 +31,8 @@ import {
 // AI Model Configuration
 // ---------------------------------------------------------------------------
 
-/** Primary plan generation model — direct Google API (no OpenRouter routing overhead) */
-const PLAN_MODEL_PRIMARY = "gemini-2.5-flash-lite";
+/** Primary plan generation model — Mercury 2 via OpenRouter (testing performance vs Gemini) */
+const PLAN_MODEL_PRIMARY = "inception/mercury-2";
 /** Fallback model — direct DeepSeek API, used when primary is congested/unavailable */
 const PLAN_MODEL_FALLBACK = "deepseek-chat";
 
@@ -454,9 +454,12 @@ async function generateMealPlanHandler(
     {},
   );
 
-  const { google } = await import("@ai-sdk/google");
+  const { createOpenRouter } = await import("@openrouter/ai-sdk-provider");
   const { createDeepSeek } = await import("@ai-sdk/deepseek");
   const { generateText, streamText } = await import("ai");
+  const openrouterApiKey = process.env.OPENROUTER_API_KEY;
+  if (!openrouterApiKey) throw new Error("OPENROUTER_API_KEY environment variable is not set");
+  const openrouter = createOpenRouter({ apiKey: openrouterApiKey });
   const isArabic = language === "ar";
 
   const contextBlock = formatContextForPrompt(clientCtx);
@@ -712,12 +715,12 @@ Daily meal macros MUST sum to the targets above (±5% tolerance). Respond ONLY w
     }
 
     const primaryGen = trace?.generation({
-      name: "primary-gemini-stream",
+      name: "primary-mercury-stream",
       model: PLAN_MODEL_PRIMARY,
       input: { systemPrompt: systemPrompt.slice(0, 500), userPrompt: userPrompt.slice(0, 500) },
     });
     try {
-      result = await streamAndCollect(google(PLAN_MODEL_PRIMARY));
+      result = await streamAndCollect(openrouter(PLAN_MODEL_PRIMARY));
       primaryGen?.end({
         output: result.text.slice(0, 500),
         usage: { input: result.usage.inputTokens, output: result.usage.outputTokens },
@@ -733,7 +736,7 @@ Daily meal macros MUST sum to the targets above (±5% tolerance). Respond ONLY w
         level: "ERROR",
       });
       console.warn(
-        `[AI] Primary model (Gemini) streaming failed for meal plan, falling back to DeepSeek: ${primaryErr}`,
+        `[AI] Primary model (Mercury 2) streaming failed for meal plan, falling back to DeepSeek: ${primaryErr}`,
       );
       const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
       if (!deepseekApiKey) throw new Error("DEEPSEEK_API_KEY environment variable is not set");
@@ -800,14 +803,14 @@ Return JSON: { "dailyTargets": {...}, "weeklyPlan": { "day1": { "dailyTotals": {
 Respond ONLY with valid JSON.`;
 
       const retryPrimaryGen = trace?.generation({
-        name: "retry-primary-gemini",
+        name: "retry-primary-mercury",
         model: PLAN_MODEL_PRIMARY,
         input: { prompt: retryPrompt.slice(0, 500) },
         metadata: { reason: "truncation-retry" },
       });
       try {
         const retryResult = await generateText({
-          model: google(PLAN_MODEL_PRIMARY),
+          model: openrouter(PLAN_MODEL_PRIMARY),
           system: systemPrompt,
           prompt: retryPrompt,
           temperature: 0.3,
@@ -1249,8 +1252,11 @@ export const translatePlanContent = internalAction({
         : internal.workoutPlans.setTranslationStatus;
 
     try {
-      const { google } = await import("@ai-sdk/google");
+      const { createOpenRouter } = await import("@openrouter/ai-sdk-provider");
       const { generateText } = await import("ai");
+      const orApiKey = process.env.OPENROUTER_API_KEY;
+      if (!orApiKey) throw new Error("OPENROUTER_API_KEY environment variable is not set");
+      const openrouter = createOpenRouter({ apiKey: orApiKey });
 
       const sourceName = LANGUAGE_NAMES[args.sourceLanguage];
       const targetName = LANGUAGE_NAMES[args.targetLanguage];
@@ -1299,7 +1305,7 @@ export const translatePlanContent = internalAction({
           try {
             const dayJson = JSON.stringify({ [dayKey]: weeklyPlan[dayKey] });
             const dayRes = await generateText({
-              model: google(PLAN_MODEL_PRIMARY),
+              model: openrouter(PLAN_MODEL_PRIMARY),
               maxOutputTokens: 4000,
               temperature: 0.3,
               messages: [
@@ -1350,7 +1356,7 @@ export const translatePlanContent = internalAction({
         });
         try {
           const topRes = await generateText({
-            model: google(PLAN_MODEL_PRIMARY),
+            model: openrouter(PLAN_MODEL_PRIMARY),
             maxOutputTokens: 1000,
             temperature: 0.3,
             messages: [
@@ -1419,9 +1425,12 @@ export const translateToArabic = action({
     // Truncate input to prevent abuse (translation is for short UI strings)
     const truncatedText = text.slice(0, 500);
 
-    const { google } = await import("@ai-sdk/google");
+    const { createOpenRouter } = await import("@openrouter/ai-sdk-provider");
     const { createDeepSeek } = await import("@ai-sdk/deepseek");
     const { generateText } = await import("ai");
+    const orApiKey = process.env.OPENROUTER_API_KEY;
+    if (!orApiKey) throw new Error("OPENROUTER_API_KEY environment variable is not set");
+    const openrouter = createOpenRouter({ apiKey: orApiKey });
 
     const translateMessages = [
       {
@@ -1452,7 +1461,7 @@ export const translateToArabic = action({
       });
       try {
         const res = await generateText({
-          model: google(PLAN_MODEL_PRIMARY),
+          model: openrouter(PLAN_MODEL_PRIMARY),
           maxOutputTokens: 100,
           temperature: 0.3,
           messages: translateMessages,
@@ -1472,7 +1481,7 @@ export const translateToArabic = action({
           level: "ERROR",
         });
         console.warn(
-          `[AI] Primary model (Gemini) failed for Arabic translation, falling back to DeepSeek: ${primaryErr}`,
+          `[AI] Primary model (Mercury 2) failed for Arabic translation, falling back to DeepSeek: ${primaryErr}`,
         );
         const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
         if (!deepseekApiKey) throw new Error("DEEPSEEK_API_KEY environment variable is not set");
