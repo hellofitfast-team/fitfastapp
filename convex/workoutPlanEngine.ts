@@ -302,7 +302,7 @@ function selectExercisesForDay(
   // Filter eligible exercises (main categories only)
   let eligible = allExercises.filter(
     (ex) =>
-      ex.isActive &&
+      ex.isActive !== false &&
       (ex.category === "compound" ||
         ex.category === "accessory" ||
         ex.category === "isolation" ||
@@ -316,7 +316,7 @@ function selectExercisesForDay(
   if (eligible.length < 6) {
     eligible = allExercises.filter(
       (ex) =>
-        ex.isActive &&
+        ex.isActive !== false &&
         (ex.category === "compound" ||
           ex.category === "accessory" ||
           ex.category === "isolation" ||
@@ -330,7 +330,7 @@ function selectExercisesForDay(
   if (eligible.length < 6) {
     eligible = allExercises.filter(
       (ex) =>
-        ex.isActive &&
+        ex.isActive !== false &&
         (ex.category === "compound" ||
           ex.category === "accessory" ||
           ex.category === "isolation" ||
@@ -400,7 +400,7 @@ function selectWarmupExercises(
 
   const warmups = allExercises.filter(
     (ex) =>
-      ex.isActive &&
+      ex.isActive !== false &&
       ex.category === "warmup" &&
       !hasInjuryConflict(ex, input.injuries) &&
       equipmentAvailable(ex, input.availableEquipment),
@@ -425,7 +425,7 @@ function selectCooldownExercises(
 
   const cooldowns = allExercises.filter(
     (ex) =>
-      ex.isActive &&
+      ex.isActive !== false &&
       ex.category === "cooldown" &&
       !hasInjuryConflict(ex, input.injuries) &&
       equipmentAvailable(ex, input.availableEquipment),
