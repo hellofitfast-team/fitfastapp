@@ -102,15 +102,6 @@ const TEST_ASSESSMENT = {
   measurementMethod: "manual" as const,
 };
 
-// ─── Seed assessment only for "active_checkin_ready" scenario ────────────────
-
-export const seedAssessmentOnly = internalMutation({
-  args: { userId: v.string() },
-  handler: async (ctx, { userId }): Promise<void> => {
-    await ctx.db.insert("initialAssessments", { userId, ...TEST_ASSESSMENT });
-  },
-});
-
 // ─── Seed assessment + plans for "active_with_plans" scenario ────────────────
 
 export const seedTestUserData = internalMutation({
