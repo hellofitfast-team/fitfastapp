@@ -218,7 +218,27 @@
       "technical": "Technical",
       "bug_report": "Bug",
       "other": "Other"
-    }
+    },
+    "createTestUser": "Create Test User",
+    "createTestUserDesc": "Create a test client account for testing the client app",
+    "planTier": "Plan Tier",
+    "scenario": "Subscription Scenario",
+    "scenarioActive": "Active",
+    "scenarioActiveDesc": "Plan started recently, plenty of time left",
+    "scenarioExpiring": "Expiring Soon",
+    "scenarioExpiringDesc": "Plan ends in 3 days",
+    "scenarioExpired": "Expired",
+    "scenarioExpiredDesc": "Plan already ended",
+    "scenarioPending": "Pending Approval",
+    "scenarioPendingDesc": "No plan yet, awaiting coach approval",
+    "testUserCreated": "Test user created",
+    "testUserCredentials": "Login Credentials",
+    "create": "Create",
+    "done": "Done",
+    "deleteTestUser": "Delete Test User",
+    "deleteTestUserDesc": "This will permanently delete this test user and all their data.",
+    "deleteTestUserSuccess": "Test user deleted",
+    "deleteTestUserFailed": "Failed to delete test user"
   },
   "signupDetail": {
     "backToList": "Back to Signups",

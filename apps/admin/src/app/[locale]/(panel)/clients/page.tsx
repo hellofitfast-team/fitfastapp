@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { ClientsList } from "./clients-list";
 import { Loader2 } from "lucide-react";
 import { Button } from "@fitfast/ui/button";
+import { CreateTestUserButton } from "./create-test-user-dialog";
 
 const PAGE_SIZE = 50;
 
@@ -32,6 +33,7 @@ export default function AdminClientsPage() {
   const adaptedClients = (results ?? []).map((c) => ({
     id: c._id,
     fullName: c.fullName ?? null,
+    email: c.email ?? null,
     phone: c.phone ?? null,
     status: c.status ?? null,
     planTier: c.planTier ?? null,
@@ -43,12 +45,15 @@ export default function AdminClientsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-stone-900">{t("clients")}</h1>
-        <p className="mt-1 text-sm text-stone-500">
-          {adaptedClients.length}
-          {status === "CanLoadMore" ? "+" : ""} {t("totalClients").toLowerCase()}
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-stone-900">{t("clients")}</h1>
+          <p className="mt-1 text-sm text-stone-500">
+            {adaptedClients.length}
+            {status === "CanLoadMore" ? "+" : ""} {t("totalClients").toLowerCase()}
+          </p>
+        </div>
+        <CreateTestUserButton />
       </div>
 
       <ClientsList clients={adaptedClients} />

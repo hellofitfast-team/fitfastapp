@@ -60,6 +60,8 @@ import type * as staticCrons from "../staticCrons.js";
 import type * as storage from "../storage.js";
 import type * as streamingManager from "../streamingManager.js";
 import type * as systemConfig from "../systemConfig.js";
+import type * as testUsers from "../testUsers.js";
+import type * as testUsersHelpers from "../testUsersHelpers.js";
 import type * as tickets from "../tickets.js";
 import type * as workflowManager from "../workflowManager.js";
 import type * as workoutPlanEngine from "../workoutPlanEngine.js";
@@ -126,6 +128,8 @@ declare const fullApi: ApiFromModules<{
   storage: typeof storage;
   streamingManager: typeof streamingManager;
   systemConfig: typeof systemConfig;
+  testUsers: typeof testUsers;
+  testUsersHelpers: typeof testUsersHelpers;
   tickets: typeof tickets;
   workflowManager: typeof workflowManager;
   workoutPlanEngine: typeof workoutPlanEngine;

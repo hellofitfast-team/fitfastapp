@@ -218,7 +218,27 @@
       "technical": "تقني",
       "bug_report": "خلل",
       "other": "أخرى"
-    }
+    },
+    "createTestUser": "إنشاء مستخدم تجريبي",
+    "createTestUserDesc": "إنشاء حساب عميل تجريبي لاختبار تطبيق العميل",
+    "planTier": "نوع الخطة",
+    "scenario": "حالة الاشتراك",
+    "scenarioActive": "نشط",
+    "scenarioActiveDesc": "الخطة بدأت مؤخراً، وقت كافٍ متبقي",
+    "scenarioExpiring": "ينتهي قريباً",
+    "scenarioExpiringDesc": "الخطة تنتهي خلال 3 أيام",
+    "scenarioExpired": "منتهي",
+    "scenarioExpiredDesc": "الخطة انتهت بالفعل",
+    "scenarioPending": "بانتظار الموافقة",
+    "scenarioPendingDesc": "لا توجد خطة بعد، بانتظار موافقة المدرب",
+    "testUserCreated": "تم إنشاء المستخدم التجريبي",
+    "testUserCredentials": "بيانات تسجيل الدخول",
+    "create": "إنشاء",
+    "done": "تم",
+    "deleteTestUser": "حذف المستخدم التجريبي",
+    "deleteTestUserDesc": "سيتم حذف هذا المستخدم التجريبي وجميع بياناته نهائياً.",
+    "deleteTestUserSuccess": "تم حذف المستخدم التجريبي",
+    "deleteTestUserFailed": "فشل حذف المستخدم التجريبي"
   },
   "signupDetail": {
     "backToList": "العودة إلى التسجيلات",

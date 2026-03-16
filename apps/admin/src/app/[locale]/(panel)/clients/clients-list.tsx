@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useTranslations, useLocale } from "next-intl";
-import { useMutation } from "convex/react";
+import { useMutation, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { Link } from "@fitfast/i18n/navigation";
@@ -17,6 +17,7 @@ import {
   Clock,
   XCircle,
   MinusCircle,
+  Trash2,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
@@ -32,6 +33,7 @@ import {
 interface Client {
   id: string;
   fullName: string | null;
+  email: string | null;
   phone: string | null;
   status: string | null;
   planTier: string | null;
@@ -162,12 +164,87 @@ function RejectModal({
   );
 }
 
+function DeleteTestUserModal({
+  client,
+  open,
+  onOpenChange,
+}: {
+  client: Client;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const t = useTranslations("admin");
+  const deleteTestUser = useAction(api.testUsers.deleteTestUser);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleDelete = async () => {
+    setIsSubmitting(true);
+    try {
+      await deleteTestUser({ profileId: client.id as Id<"profiles"> });
+      toast({
+        title: t("deleteTestUserSuccess"),
+        variant: "success",
+      });
+      onOpenChange(false);
+    } catch (err) {
+      console.error("Delete test user failed:", err);
+      toast({
+        title: t("actionError"),
+        description: err instanceof Error ? err.message : t("deleteTestUserFailed"),
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(value) => {
+        if (!isSubmitting) onOpenChange(value);
+      }}
+    >
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>{t("deleteTestUser")}</DialogTitle>
+          <DialogDescription>{t("deleteTestUserDesc")}</DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            disabled={isSubmitting}
+            className="rounded-lg border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-600 transition-colors hover:bg-stone-50 disabled:opacity-50"
+          >
+            {t("cancel")}
+          </button>
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={isSubmitting}
+            className="flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+          >
+            {isSubmitting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="h-4 w-4" />
+            )}
+            {t("deleteTestUser")}
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function ClientsList({ clients }: { clients: Client[] }) {
   const t = useTranslations("admin");
   const locale = useLocale();
 
   const [search, setSearch] = useState("");
   const [rejectTarget, setRejectTarget] = useState<Client | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Client | null>(null);
 
   const filtered = clients.filter((c) => {
     const q = search.toLowerCase();
@@ -271,6 +348,16 @@ export function ClientsList({ clients }: { clients: Client[] }) {
                           </button>
                         </>
                       )}
+                      {client.email?.endsWith("@fitfast.test") && (
+                        <button
+                          type="button"
+                          onClick={() => setDeleteTarget(client)}
+                          aria-label={t("deleteTestUser")}
+                          className="flex h-11 w-11 items-center justify-center rounded-lg border border-red-200 text-red-400 transition-colors hover:border-red-300 hover:text-red-600"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
                       <Link
                         href={`/clients/${client.userId}`}
                         aria-label={t("viewClient")}
@@ -294,6 +381,17 @@ export function ClientsList({ clients }: { clients: Client[] }) {
           open={!!rejectTarget}
           onOpenChange={(open) => {
             if (!open) setRejectTarget(null);
+          }}
+        />
+      )}
+
+      {/* Delete test user modal */}
+      {deleteTarget && (
+        <DeleteTestUserModal
+          client={deleteTarget}
+          open={!!deleteTarget}
+          onOpenChange={(open) => {
+            if (!open) setDeleteTarget(null);
           }}
         />
       )}
