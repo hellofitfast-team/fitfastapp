@@ -78,6 +78,15 @@ export const getLockStatus = query({
 
     const frequencyDays = await getCheckInFrequencyDays(ctx);
 
+    // Test users (@fitfast.test) always have check-in unlocked for testing
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .unique();
+    if (profile?.email?.endsWith("@fitfast.test")) {
+      return { isLocked: false, nextCheckInDate: null, frequencyDays };
+    }
+
     const latestCheckIn = await ctx.db
       .query("checkIns")
       .withIndex("by_userId", (q) => q.eq("userId", userId))

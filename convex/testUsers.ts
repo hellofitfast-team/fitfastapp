@@ -11,7 +11,6 @@ const DEFAULT_PASSWORD = "test12345";
 const SCENARIO_NAMES: Record<string, string> = {
   active: "Test User (Active)",
   active_with_plans: "Test User (Active + Plans)",
-  active_checkin_ready: "Test User (Check-in Ready)",
   expiring: "Test User (Expiring)",
   expired: "Test User (Expired)",
   pending: "Test User (Pending)",
@@ -34,8 +33,7 @@ function computeDates(
 
   switch (scenario) {
     case "active":
-    case "active_with_plans":
-    case "active_checkin_ready": {
+    case "active_with_plans": {
       const start = new Date(now);
       start.setDate(start.getDate() - 7);
       const end = new Date(start);
@@ -71,7 +69,6 @@ export const createTestUser = action({
     scenario: v.union(
       v.literal("active"),
       v.literal("active_with_plans"),
-      v.literal("active_checkin_ready"),
       v.literal("expiring"),
       v.literal("expired"),
       v.literal("pending"),
@@ -109,13 +106,6 @@ export const createTestUser = action({
         userId: newUserId,
         planStartDate,
         planEndDate: planEndDate!,
-      });
-    }
-
-    // For "active_checkin_ready": seed assessment only (no plans = check-in unlocked)
-    if (scenario === "active_checkin_ready") {
-      await ctx.runMutation(internal.testUsersHelpers.seedAssessmentOnly, {
-        userId: newUserId,
       });
     }
 
