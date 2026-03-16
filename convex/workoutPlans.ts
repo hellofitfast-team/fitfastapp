@@ -301,7 +301,7 @@ export const swapExercise = mutation({
 
     // Query exercise database for alternatives with matching muscles
     const allExercises = await ctx.db.query("exerciseDatabase").collect();
-    const activeExercises = allExercises.filter((e) => e.isActive);
+    const activeExercises = allExercises.filter((e) => e.isActive !== false);
 
     // Score alternatives by muscle match
     const targetSet = new Set(targetMuscles.map((m) => m.toLowerCase()));
