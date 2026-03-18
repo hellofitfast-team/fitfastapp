@@ -330,12 +330,16 @@ export default defineSchema({
     }),
 
   faqs: defineTable({
-    question: v.string(),
-    answer: v.string(),
-    language: languageValidator,
+    questionEn: v.string(),
+    questionAr: v.optional(v.string()),
+    answerEn: v.string(),
+    answerAr: v.optional(v.string()),
     displayOrder: v.number(),
+    translationStatus: v.optional(
+      v.union(v.literal("pending"), v.literal("completed"), v.literal("failed")),
+    ),
     updatedAt: v.number(),
-  }).index("by_language_order", ["language", "displayOrder"]),
+  }).index("by_displayOrder", ["displayOrder"]),
 
   pendingSignups: defineTable({
     email: v.string(),

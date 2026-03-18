@@ -15,6 +15,7 @@ import type * as ai from "../ai.js";
 import type * as aiUtils from "../aiUtils.js";
 import type * as assessments from "../assessments.js";
 import type * as auth from "../auth.js";
+import type * as authCleanup from "../authCleanup.js";
 import type * as checkInWorkflow from "../checkInWorkflow.js";
 import type * as checkIns from "../checkIns.js";
 import type * as clientContext from "../clientContext.js";
@@ -83,6 +84,7 @@ declare const fullApi: ApiFromModules<{
   aiUtils: typeof aiUtils;
   assessments: typeof assessments;
   auth: typeof auth;
+  authCleanup: typeof authCleanup;
   checkInWorkflow: typeof checkInWorkflow;
   checkIns: typeof checkIns;
   clientContext: typeof clientContext;

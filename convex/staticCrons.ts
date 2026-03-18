@@ -4,8 +4,15 @@ import { internal } from "./_generated/api";
 /**
  * Native Convex cron jobs (always-on, unlike dynamic @convex-dev/crons).
  * These run on a fixed schedule regardless of user state.
+ * Listed in chronological order of execution.
  */
 const crons = cronJobs();
+
+crons.daily(
+  "auth-session-cleanup",
+  { hourUTC: 2, minuteUTC: 0 },
+  internal.authCleanup.cleanupExpiredSessions,
+);
 
 crons.daily(
   "storage-orphan-cleanup",

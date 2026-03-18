@@ -24,23 +24,23 @@ export function FaqManager() {
   const t = useTranslations("admin");
   const tCommon = useTranslations("common");
   const { isAuthenticated } = useConvexAuth();
-  const enFaqs = useQuery(api.faqs.getFAQs, isAuthenticated ? { language: "en" } : "skip");
-  const arFaqs = useQuery(api.faqs.getFAQs, isAuthenticated ? { language: "ar" } : "skip");
+  const faqs = useQuery(api.faqs.getFAQs, isAuthenticated ? { language: "en" } : "skip");
   const createFAQ = useMutation(api.faqs.createFAQ);
   const updateFAQ = useMutation(api.faqs.updateFAQ);
   const deleteFAQ = useMutation(api.faqs.deleteFAQ);
   const bulkDeleteFAQs = useMutation(api.faqs.bulkDeleteFAQs);
 
   const { toast } = useToast();
-  const allFaqs = useMemo(() => [...(enFaqs ?? []), ...(arFaqs ?? [])], [enFaqs, arFaqs]);
+  const allFaqs = faqs ?? [];
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showNew, setShowNew] = useState(false);
   const [newQuestion, setNewQuestion] = useState("");
   const [newAnswer, setNewAnswer] = useState("");
-  const [newLang, setNewLang] = useState<"en" | "ar">("en");
-  const [editQuestion, setEditQuestion] = useState("");
-  const [editAnswer, setEditAnswer] = useState("");
+  const [editQuestionEn, setEditQuestionEn] = useState("");
+  const [editAnswerEn, setEditAnswerEn] = useState("");
+  const [editQuestionAr, setEditQuestionAr] = useState("");
+  const [editAnswerAr, setEditAnswerAr] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
   // Bulk selection state
@@ -80,31 +80,38 @@ export function FaqManager() {
     setIsSaving(true);
     try {
       await createFAQ({
-        question: newQuestion,
-        answer: newAnswer,
-        language: newLang,
+        questionEn: newQuestion,
+        answerEn: newAnswer,
         displayOrder: allFaqs.length,
       });
       setNewQuestion("");
       setNewAnswer("");
       setShowNew(false);
     } catch (err) {
-      log.error({ err, language: newLang }, "Failed to create FAQ");
+      log.error({ err }, "Failed to create FAQ");
       toast({ title: t("faqSaveFailed"), variant: "destructive" });
     }
     setIsSaving(false);
   };
 
-  const handleEdit = (faq: { _id: Id<"faqs">; question: string; answer: string }) => {
+  const handleEdit = (faq: Record<string, unknown> & { _id: Id<"faqs"> }) => {
     setEditingId(faq._id);
-    setEditQuestion(faq.question);
-    setEditAnswer(faq.answer);
+    setEditQuestionEn((faq.questionEn as string) ?? "");
+    setEditAnswerEn((faq.answerEn as string) ?? "");
+    setEditQuestionAr((faq.questionAr as string) ?? "");
+    setEditAnswerAr((faq.answerAr as string) ?? "");
   };
 
   const handleSave = async (faqId: Id<"faqs">) => {
     setIsSaving(true);
     try {
-      await updateFAQ({ faqId, question: editQuestion, answer: editAnswer });
+      await updateFAQ({
+        faqId,
+        questionEn: editQuestionEn,
+        answerEn: editAnswerEn,
+        questionAr: editQuestionAr || undefined,
+        answerAr: editAnswerAr || undefined,
+      });
       setEditingId(null);
     } catch (err) {
       log.error({ err, faqId }, "Failed to update FAQ");
@@ -194,41 +201,18 @@ export function FaqManager() {
       {/* New FAQ form */}
       {showNew && (
         <div className="space-y-3 rounded-xl border border-stone-200 bg-white p-5">
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setNewLang("en")}
-              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                newLang === "en"
-                  ? "bg-primary text-white"
-                  : "border border-stone-200 text-stone-600 hover:bg-stone-50"
-              }`}
-            >
-              EN
-            </button>
-            <button
-              type="button"
-              onClick={() => setNewLang("ar")}
-              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                newLang === "ar"
-                  ? "bg-primary text-white"
-                  : "border border-stone-200 text-stone-600 hover:bg-stone-50"
-              }`}
-            >
-              AR
-            </button>
-          </div>
+          <p className="text-xs font-medium text-stone-500">{t("autoTranslated")}</p>
           <input
             type="text"
             value={newQuestion}
             onChange={(e) => setNewQuestion(e.target.value)}
-            placeholder={t("questionPlaceholder")}
+            placeholder={t("questionEnPlaceholder")}
             className="focus:ring-primary/20 focus:border-primary w-full rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm font-medium text-stone-900 transition-all placeholder:text-stone-400 focus:ring-2 focus:outline-none"
           />
           <textarea
             value={newAnswer}
             onChange={(e) => setNewAnswer(e.target.value)}
-            placeholder={t("answerPlaceholder")}
+            placeholder={t("answerEnPlaceholder")}
             rows={3}
             className="focus:ring-primary/20 focus:border-primary w-full resize-none rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm text-stone-900 transition-all placeholder:text-stone-400 focus:ring-2 focus:outline-none"
           />
@@ -263,15 +247,37 @@ export function FaqManager() {
             >
               {editingId === faq._id ? (
                 <div className="space-y-3 p-5">
+                  {/* English fields */}
+                  <p className="text-xs font-medium text-stone-500">EN</p>
                   <input
                     type="text"
-                    value={editQuestion}
-                    onChange={(e) => setEditQuestion(e.target.value)}
+                    value={editQuestionEn}
+                    onChange={(e) => setEditQuestionEn(e.target.value)}
+                    placeholder={t("questionEnPlaceholder")}
                     className="focus:ring-primary/20 focus:border-primary w-full rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm font-medium text-stone-900 transition-all focus:ring-2 focus:outline-none"
                   />
                   <textarea
-                    value={editAnswer}
-                    onChange={(e) => setEditAnswer(e.target.value)}
+                    value={editAnswerEn}
+                    onChange={(e) => setEditAnswerEn(e.target.value)}
+                    placeholder={t("answerEnPlaceholder")}
+                    rows={3}
+                    className="focus:ring-primary/20 focus:border-primary w-full resize-none rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm text-stone-900 transition-all focus:ring-2 focus:outline-none"
+                  />
+                  {/* Arabic fields */}
+                  <p className="text-xs font-medium text-stone-500">AR</p>
+                  <input
+                    type="text"
+                    dir="rtl"
+                    value={editQuestionAr}
+                    onChange={(e) => setEditQuestionAr(e.target.value)}
+                    placeholder={t("questionArPlaceholder")}
+                    className="focus:ring-primary/20 focus:border-primary w-full rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm font-medium text-stone-900 transition-all focus:ring-2 focus:outline-none"
+                  />
+                  <textarea
+                    dir="rtl"
+                    value={editAnswerAr}
+                    onChange={(e) => setEditAnswerAr(e.target.value)}
+                    placeholder={t("answerArPlaceholder")}
                     rows={3}
                     className="focus:ring-primary/20 focus:border-primary w-full resize-none rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm text-stone-900 transition-all focus:ring-2 focus:outline-none"
                   />
@@ -301,20 +307,52 @@ export function FaqManager() {
                       checked={validSelectedIds.has(faq._id)}
                       onCheckedChange={() => toggleSelect(faq._id)}
                       disabled={isBulkDeleting}
-                      aria-label={t("selectFaq", { question: faq.question })}
+                      aria-label={t("selectFaq", {
+                        question:
+                          ((faq as Record<string, unknown>).questionEn as string) ?? faq.question,
+                      })}
                     />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-stone-900">{faq.question}</p>
-                    <p className="mt-1 line-clamp-2 text-xs text-stone-500">{faq.answer}</p>
-                    <span className="mt-2 inline-block rounded-full border border-stone-200 px-2 py-0.5 text-[10px] font-medium text-stone-500">
-                      {faq.language.toUpperCase()}
-                    </span>
+                    {/* English text */}
+                    <p className="text-sm font-medium text-stone-900">
+                      {((faq as Record<string, unknown>).questionEn as string) ?? faq.question}
+                    </p>
+                    <p className="mt-1 line-clamp-2 text-xs text-stone-500">
+                      {((faq as Record<string, unknown>).answerEn as string) ?? faq.answer}
+                    </p>
+                    {/* Arabic preview */}
+                    {(faq as Record<string, unknown>).questionAr && (
+                      <div className="mt-2 border-t border-stone-100 pt-2">
+                        <span className="mr-1.5 inline-block rounded bg-stone-100 px-1.5 py-0.5 text-[10px] font-semibold text-stone-500">
+                          AR
+                        </span>
+                        <span dir="rtl" className="text-xs text-stone-500">
+                          {(faq as Record<string, unknown>).questionAr as string}
+                        </span>
+                      </div>
+                    )}
+                    {/* Translation status indicators */}
+                    {(faq as Record<string, unknown>).translationStatus === "pending" && (
+                      <div className="mt-1.5 flex items-center gap-1.5">
+                        <Loader2 className="h-3 w-3 animate-spin text-amber-500" />
+                        <span className="text-[10px] font-medium text-amber-600">
+                          {t("translating")}
+                        </span>
+                      </div>
+                    )}
+                    {(faq as Record<string, unknown>).translationStatus === "failed" && (
+                      <span className="mt-1.5 inline-block text-[10px] font-medium text-red-500">
+                        {t("translationFailed")}
+                      </span>
+                    )}
                   </div>
                   <div className="flex shrink-0 gap-1">
                     <button
                       type="button"
-                      onClick={() => handleEdit(faq)}
+                      onClick={() =>
+                        handleEdit(faq as Record<string, unknown> & { _id: Id<"faqs"> })
+                      }
                       aria-label={tCommon("edit")}
                       className="hover:border-primary/30 hover:text-primary flex h-11 w-11 items-center justify-center rounded-lg border border-stone-200 text-stone-400 transition-colors"
                     >
