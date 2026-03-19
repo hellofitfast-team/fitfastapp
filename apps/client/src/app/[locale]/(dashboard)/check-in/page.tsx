@@ -376,7 +376,7 @@ export default function CheckInPage() {
     <div className="mx-auto max-w-2xl space-y-5 px-4 py-6 pb-8">
       {/* Submission Overlay */}
       {isSubmitting && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="bg-card mx-4 rounded-2xl p-8 text-center shadow-xl">
             <Loader2 className="text-primary mx-auto mb-4 h-10 w-10 animate-spin" />
             <p className="text-lg font-bold">{t("submitting")}</p>
@@ -425,7 +425,7 @@ export default function CheckInPage() {
             >
               {/* Swipeable step content */}
               <div {...swipeHandlers} className="touch-pan-y">
-                <div key={currentStep} className="animate-fade-in">
+                <div key={currentStep} className="motion-safe:animate-fade-in">
                   {/* Step 1: Weight & Measurements */}
                   {currentStep === 1 && (
                     <WeightStep inBodyFile={inBodyFile} onInBodyFileChange={handleInBodyFile} />
