@@ -5,20 +5,18 @@ import { action } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { Scrypt } from "lucia";
 import { getAuthUserId } from "./auth";
+import { formatDate } from "./testUsersHelpers";
 
 const DEFAULT_PASSWORD = "test12345";
 
 const SCENARIO_NAMES: Record<string, string> = {
   active: "Test User (Active)",
   active_with_plans: "Test User (Active + Plans)",
+  active_with_history: "Test User (Active + Full History)",
   expiring: "Test User (Expiring)",
   expired: "Test User (Expired)",
   pending: "Test User (Pending)",
 };
-
-function formatDate(d: Date): string {
-  return d.toISOString().split("T")[0];
-}
 
 function computeDates(
   planTier: "monthly" | "quarterly",
@@ -33,25 +31,26 @@ function computeDates(
 
   switch (scenario) {
     case "active":
-    case "active_with_plans": {
+    case "active_with_plans":
+    case "active_with_history": {
       const start = new Date(now);
       start.setDate(start.getDate() - 7);
       const end = new Date(start);
-      end.setMonth(end.getMonth() + tierMonths);
+      end.setDate(end.getDate() + tierMonths * 30);
       return { planStartDate: formatDate(start), planEndDate: formatDate(end), status: "active" };
     }
     case "expiring": {
       const end = new Date(now);
       end.setDate(end.getDate() + 3);
       const start = new Date(end);
-      start.setMonth(start.getMonth() - tierMonths);
+      start.setDate(start.getDate() - tierMonths * 30);
       return { planStartDate: formatDate(start), planEndDate: formatDate(end), status: "active" };
     }
     case "expired": {
       const end = new Date(now);
       end.setDate(end.getDate() - 7);
       const start = new Date(end);
-      start.setMonth(start.getMonth() - tierMonths);
+      start.setDate(start.getDate() - tierMonths * 30);
       return { planStartDate: formatDate(start), planEndDate: formatDate(end), status: "expired" };
     }
     case "pending":
@@ -69,14 +68,16 @@ export const createTestUser = action({
     scenario: v.union(
       v.literal("active"),
       v.literal("active_with_plans"),
+      v.literal("active_with_history"),
       v.literal("expiring"),
       v.literal("expired"),
       v.literal("pending"),
     ),
+    language: v.optional(v.union(v.literal("en"), v.literal("ar"))),
   },
   handler: async (
     ctx,
-    { planTier, scenario },
+    { planTier, scenario, language },
   ): Promise<{ email: string; password: string; fullName: string; status: string }> => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
@@ -98,14 +99,16 @@ export const createTestUser = action({
       planTier,
       planStartDate,
       planEndDate,
+      language,
     });
 
-    // For "active_with_plans": seed assessment + meal plan + workout plan
-    if (scenario === "active_with_plans" && planStartDate) {
+    // For plan-based scenarios: seed assessment + meal plan + workout plan (+ history)
+    if ((scenario === "active_with_plans" || scenario === "active_with_history") && planStartDate) {
       await ctx.runMutation(internal.testUsersHelpers.seedTestUserData, {
         userId: newUserId,
         planStartDate,
         planEndDate: planEndDate!,
+        includeHistory: scenario === "active_with_history",
       });
     }
 

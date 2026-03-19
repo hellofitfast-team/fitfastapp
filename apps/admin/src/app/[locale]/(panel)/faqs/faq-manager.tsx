@@ -94,12 +94,12 @@ export function FaqManager() {
     setIsSaving(false);
   };
 
-  const handleEdit = (faq: Record<string, unknown> & { _id: Id<"faqs"> }) => {
+  const handleEdit = (faq: (typeof allFaqs)[number]) => {
     setEditingId(faq._id);
-    setEditQuestionEn((faq.questionEn as string) ?? "");
-    setEditAnswerEn((faq.answerEn as string) ?? "");
-    setEditQuestionAr((faq.questionAr as string) ?? "");
-    setEditAnswerAr((faq.answerAr as string) ?? "");
+    setEditQuestionEn(faq.questionEn ?? "");
+    setEditAnswerEn(faq.answerEn ?? "");
+    setEditQuestionAr(faq.questionAr ?? "");
+    setEditAnswerAr(faq.answerAr ?? "");
   };
 
   const handleSave = async (faqId: Id<"faqs">) => {
@@ -316,24 +316,24 @@ export function FaqManager() {
                   <div className="min-w-0 flex-1">
                     {/* English text */}
                     <p className="text-sm font-medium text-stone-900">
-                      {((faq as Record<string, unknown>).questionEn as string) ?? faq.question}
+                      {faq.questionEn ?? faq.question}
                     </p>
                     <p className="mt-1 line-clamp-2 text-xs text-stone-500">
-                      {((faq as Record<string, unknown>).answerEn as string) ?? faq.answer}
+                      {faq.answerEn ?? faq.answer}
                     </p>
                     {/* Arabic preview */}
-                    {(faq as Record<string, unknown>).questionAr && (
+                    {faq.questionAr && (
                       <div className="mt-2 border-t border-stone-100 pt-2">
                         <span className="mr-1.5 inline-block rounded bg-stone-100 px-1.5 py-0.5 text-[10px] font-semibold text-stone-500">
                           AR
                         </span>
                         <span dir="rtl" className="text-xs text-stone-500">
-                          {(faq as Record<string, unknown>).questionAr as string}
+                          {faq.questionAr}
                         </span>
                       </div>
                     )}
                     {/* Translation status indicators */}
-                    {(faq as Record<string, unknown>).translationStatus === "pending" && (
+                    {faq.translationStatus === "pending" && (
                       <div className="mt-1.5 flex items-center gap-1.5">
                         <Loader2 className="h-3 w-3 animate-spin text-amber-500" />
                         <span className="text-[10px] font-medium text-amber-600">
@@ -341,7 +341,7 @@ export function FaqManager() {
                         </span>
                       </div>
                     )}
-                    {(faq as Record<string, unknown>).translationStatus === "failed" && (
+                    {faq.translationStatus === "failed" && (
                       <span className="mt-1.5 inline-block text-[10px] font-medium text-red-500">
                         {t("translationFailed")}
                       </span>
@@ -350,9 +350,7 @@ export function FaqManager() {
                   <div className="flex shrink-0 gap-1">
                     <button
                       type="button"
-                      onClick={() =>
-                        handleEdit(faq as Record<string, unknown> & { _id: Id<"faqs"> })
-                      }
+                      onClick={() => handleEdit(faq)}
                       aria-label={tCommon("edit")}
                       className="hover:border-primary/30 hover:text-primary flex h-11 w-11 items-center justify-center rounded-lg border border-stone-200 text-stone-400 transition-colors"
                     >

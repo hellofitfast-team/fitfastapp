@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { toast } from "@/hooks/use-toast";
 import { UserPlus, Loader2, Copy, Check } from "lucide-react";
 import { Button } from "@fitfast/ui/button";
@@ -17,7 +17,13 @@ import {
 } from "@fitfast/ui/dialog";
 
 type PlanTier = "monthly" | "quarterly";
-type Scenario = "active" | "active_with_plans" | "expiring" | "expired" | "pending";
+type Scenario =
+  | "active"
+  | "active_with_plans"
+  | "active_with_history"
+  | "expiring"
+  | "expired"
+  | "pending";
 
 interface Credentials {
   email: string;
@@ -33,6 +39,11 @@ const SCENARIOS: { value: Scenario; labelKey: string; descKey: string }[] = [
     labelKey: "scenarioActiveWithPlans",
     descKey: "scenarioActiveWithPlansDesc",
   },
+  {
+    value: "active_with_history",
+    labelKey: "scenarioActiveWithHistory",
+    descKey: "scenarioActiveWithHistoryDesc",
+  },
   { value: "expiring", labelKey: "scenarioExpiring", descKey: "scenarioExpiringDesc" },
   { value: "expired", labelKey: "scenarioExpired", descKey: "scenarioExpiredDesc" },
   { value: "pending", labelKey: "scenarioPending", descKey: "scenarioPendingDesc" },
@@ -40,6 +51,7 @@ const SCENARIOS: { value: Scenario; labelKey: string; descKey: string }[] = [
 
 export function CreateTestUserButton() {
   const t = useTranslations("admin");
+  const locale = useLocale();
   const [open, setOpen] = useState(false);
   const [planTier, setPlanTier] = useState<PlanTier>("monthly");
   const [scenario, setScenario] = useState<Scenario>("active");
@@ -52,16 +64,17 @@ export function CreateTestUserButton() {
   const handleCreate = async () => {
     setIsSubmitting(true);
     try {
-      const result = await createTestUser({ planTier, scenario });
+      const result = await createTestUser({
+        planTier,
+        scenario,
+        language: locale === "ar" ? "ar" : "en",
+      });
       setCredentials(result);
       toast({ title: t("testUserCreated"), variant: "success" });
     } catch (err) {
       console.error("Create test user failed:", err);
-      toast({
-        title: t("actionError"),
-        description: err instanceof Error ? err.message : "Failed to create test user",
-        variant: "destructive",
-      });
+      const message = err instanceof Error ? err.message : t("testUserCreationFailed");
+      toast({ title: message, variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
@@ -173,11 +186,14 @@ export function CreateTestUserButton() {
               {/* Plan tier */}
               <div className="space-y-2">
                 <label className="text-xs font-medium text-stone-500">{t("planTier")}</label>
-                <div className="flex gap-2">
+                <div className="flex gap-2" role="radiogroup">
                   {(["monthly", "quarterly"] as const).map((tier) => (
                     <button
                       key={tier}
                       type="button"
+                      role="radio"
+                      aria-checked={planTier === tier}
+                      aria-label={t(`tierLabels.${tier}`)}
                       onClick={() => setPlanTier(tier)}
                       className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
                         planTier === tier
@@ -194,11 +210,14 @@ export function CreateTestUserButton() {
               {/* Scenario */}
               <div className="space-y-2">
                 <label className="text-xs font-medium text-stone-500">{t("scenario")}</label>
-                <div className="space-y-2">
+                <div className="space-y-2" role="radiogroup">
                   {SCENARIOS.map(({ value, labelKey, descKey }) => (
                     <button
                       key={value}
                       type="button"
+                      role="radio"
+                      aria-checked={scenario === value}
+                      aria-label={t(labelKey)}
                       onClick={() => setScenario(value)}
                       className={`w-full rounded-lg border px-3 py-2.5 text-start transition-colors ${
                         scenario === value

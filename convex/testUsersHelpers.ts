@@ -28,6 +28,7 @@ export const insertTestUser = internalMutation({
     planTier: v.union(v.literal("monthly"), v.literal("quarterly")),
     planStartDate: v.optional(v.string()),
     planEndDate: v.optional(v.string()),
+    language: v.optional(v.union(v.literal("en"), v.literal("ar"))),
   },
   handler: async (ctx, args): Promise<{ profileId: string; userId: string }> => {
     // Check for existing user
@@ -58,7 +59,7 @@ export const insertTestUser = internalMutation({
       userId,
       email: args.email,
       fullName: args.fullName,
-      language: "en",
+      language: args.language ?? "en",
       status: args.status,
       isCoach: false,
       planTier: args.status === "pending_approval" ? undefined : args.planTier,
@@ -102,23 +103,34 @@ const TEST_ASSESSMENT = {
   measurementMethod: "manual" as const,
 };
 
-// ─── Seed assessment + plans for "active_with_plans" scenario ────────────────
+// ─── Seed assessment + plans for "active_with_plans" / "active_with_history" ──
 
 export const seedTestUserData = internalMutation({
   args: {
     userId: v.string(),
     planStartDate: v.string(),
     planEndDate: v.string(),
+    includeHistory: v.optional(v.boolean()),
   },
-  handler: async (ctx, { userId, planStartDate, planEndDate }): Promise<void> => {
+  handler: async (ctx, { userId, planStartDate, planEndDate, includeHistory }): Promise<void> => {
     // 1. Create initial assessment
     await ctx.db.insert("initialAssessments", { userId, ...TEST_ASSESSMENT });
 
     // 2. Get real exercise IDs from the database
-    const exercises = await ctx.db.query("exerciseDatabase").take(50);
+    const exercises = (await ctx.db.query("exerciseDatabase").take(50)).filter(
+      (e) => e.isActive !== false,
+    );
+    if (exercises.length === 0) {
+      throw new Error("No active exercises in database — seed exercises first");
+    }
+    const exerciseMap = new Map(exercises.map((e) => [e.name, e._id]));
     const getExId = (name: string): string | undefined => {
-      const ex = exercises.find((e) => e.name === name);
-      return ex?._id ?? exercises[0]?._id;
+      const id = exerciseMap.get(name);
+      if (!id) {
+        console.warn(`Exercise "${name}" not found in database, falling back to first exercise`);
+        return exercises[0]._id;
+      }
+      return id;
     };
 
     // 3. Create meal plan (10-day default)
@@ -239,7 +251,7 @@ export const seedTestUserData = internalMutation({
       weeklyPlan[`day${i}`] = dayMeals;
     }
 
-    await ctx.db.insert("mealPlans", {
+    const mealPlanId = await ctx.db.insert("mealPlans", {
       userId,
       planData: {
         dailyTargets: { calories: 2200, protein: 180, carbs: 220, fat: 70 },
@@ -247,7 +259,7 @@ export const seedTestUserData = internalMutation({
       },
       language: "en",
       startDate: planStartDate,
-      endDate: formatDateStr(mealEndDate),
+      endDate: formatDate(mealEndDate),
       assessmentVersion: 1,
     });
 
@@ -332,7 +344,7 @@ export const seedTestUserData = internalMutation({
 
     const restDay = { workoutName: "Rest Day", restDay: true };
 
-    await ctx.db.insert("workoutPlans", {
+    const workoutPlanId = await ctx.db.insert("workoutPlans", {
       userId,
       planData: {
         splitType: "push_pull_legs",
@@ -356,13 +368,79 @@ export const seedTestUserData = internalMutation({
       },
       language: "en",
       startDate: planStartDate,
-      endDate: formatDateStr(workoutEndDate),
+      endDate: formatDate(workoutEndDate),
       assessmentVersion: 1,
     });
+
+    // 5. Optionally seed check-in, completions, and ticket for "active_with_history"
+    if (includeHistory) {
+      const startDate = new Date(planStartDate);
+
+      // Check-in record
+      await ctx.db.insert("checkIns", {
+        userId,
+        weight: 75,
+        energyLevel: 7,
+        sleepQuality: 8,
+        dietaryAdherence: 8,
+        workoutPerformance: "Good progress, increased weights on compound lifts",
+        measurementMethod: "manual" as const,
+        measurements: { chest: 95, waist: 80, hips: 95, arms: 35, thighs: 55 },
+        submittedAt: startDate.getTime(),
+      });
+
+      // Meal completions — 5 days, 3 meals per day
+      for (let day = 0; day < 5; day++) {
+        const date = new Date(startDate);
+        date.setDate(date.getDate() + day);
+        const dateStr = formatDate(date);
+
+        for (let mealIdx = 0; mealIdx < 3; mealIdx++) {
+          await ctx.db.insert("mealCompletions", {
+            userId,
+            mealPlanId,
+            date: dateStr,
+            mealIndex: mealIdx,
+            completed: day < 4 || mealIdx < 2, // Last day: skip last meal for realism
+          });
+        }
+      }
+
+      // Workout completions — 3 sessions on alternating days
+      for (let day = 0; day < 3; day++) {
+        const date = new Date(startDate);
+        date.setDate(date.getDate() + day * 2 + 1); // Every other day
+        const dateStr = formatDate(date);
+
+        await ctx.db.insert("workoutCompletions", {
+          userId,
+          workoutPlanId,
+          date: dateStr,
+          workoutIndex: day,
+          completed: true,
+        });
+      }
+
+      // Support ticket with a client message
+      await ctx.db.insert("tickets", {
+        userId,
+        subject: "Question about my meal plan",
+        status: "open" as const,
+        messages: [
+          {
+            sender: "client" as const,
+            message:
+              "Hi coach, I noticed my lunch calories seem high compared to breakfast. Is this intentional?",
+            timestamp: startDate.getTime() + 2 * 24 * 60 * 60 * 1000,
+          },
+        ],
+        updatedAt: startDate.getTime() + 2 * 24 * 60 * 60 * 1000,
+      });
+    }
   },
 });
 
-function formatDateStr(d: Date): string {
+export function formatDate(d: Date): string {
   return d.toISOString().split("T")[0];
 }
 
@@ -429,7 +507,10 @@ export const deleteTestUserMutation = internalMutation({
       // User record may already be deleted
     }
 
-    // Cascade delete profile + all user data
+    // Delete profile synchronously before scheduling cascade to avoid race condition
+    await ctx.db.delete(profile._id);
+
+    // Cascade delete remaining user data (cascade will skip already-deleted profile)
     await ctx.scheduler.runAfter(0, internal.dataRetention.cascadeDeleteUser, {
       userId: profile.userId,
       profileId: profile._id,
