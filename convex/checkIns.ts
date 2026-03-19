@@ -25,6 +25,26 @@ function validateCheckInStrings(fields: {
     throw new Error("Notes too long (max 2000 characters)");
 }
 
+/** Validate numeric check-in fields are within sane ranges */
+function validateCheckInNumbers(fields: {
+  weight?: number;
+  energyLevel?: number;
+  sleepQuality?: number;
+  dietaryAdherence?: number;
+}) {
+  if (fields.weight !== undefined && (fields.weight < 20 || fields.weight > 500))
+    throw new Error("Weight must be between 20 and 500 kg");
+  if (fields.energyLevel !== undefined && (fields.energyLevel < 1 || fields.energyLevel > 10))
+    throw new Error("Energy level must be between 1 and 10");
+  if (fields.sleepQuality !== undefined && (fields.sleepQuality < 1 || fields.sleepQuality > 10))
+    throw new Error("Sleep quality must be between 1 and 10");
+  if (
+    fields.dietaryAdherence !== undefined &&
+    (fields.dietaryAdherence < 1 || fields.dietaryAdherence > 10)
+  )
+    throw new Error("Dietary adherence must be between 1 and 10");
+}
+
 /** Shared InBody data validator — reused across check-in mutations and workflow */
 export const inBodyDataValidator = v.object({
   bodyFatPercentage: v.optional(v.number()),
@@ -205,6 +225,7 @@ export const submitCheckIn = mutation({
     if (!userId) throw new Error("Not authenticated");
 
     validateCheckInStrings(args);
+    validateCheckInNumbers(args);
 
     const { ok, retryAfter } = await rateLimiter.limit(ctx, "submitCheckIn", { key: userId });
     if (!ok) {
@@ -264,6 +285,7 @@ export const startCheckInWorkflow = mutation({
     if (!userId) throw new Error("Not authenticated");
 
     validateCheckInStrings(checkInFields);
+    validateCheckInNumbers(checkInFields);
 
     // Guard 0: enforce check-in lock server-side (not just UI)
     const lockStatus = await checkLockStatus(ctx, userId);

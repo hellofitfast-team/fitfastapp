@@ -134,6 +134,9 @@ export const checkInAndGeneratePlans = workflow.define({
     while (!mealDone || !workoutDone) {
       pollCount++;
       if (pollCount > MAX_POLL_ATTEMPTS) {
+        console.error(
+          `[Workflow] Plan generation timed out (checkInId: ${checkInId}, userId: ${userId}, meal: ${mealWorkId}=${mealDone ? "done" : "pending"}, workout: ${workoutWorkId}=${workoutDone ? "done" : "pending"})`,
+        );
         throw new Error(
           `Plan generation timed out after ${MAX_POLL_ATTEMPTS} poll attempts (meal: ${mealDone ? "done" : "pending"}, workout: ${workoutDone ? "done" : "pending"})`,
         );
