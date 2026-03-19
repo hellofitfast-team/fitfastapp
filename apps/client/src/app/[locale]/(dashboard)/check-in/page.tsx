@@ -168,6 +168,7 @@ export default function CheckInPage() {
       method: "POST",
       headers: { "Content-Type": file.type },
       body: file,
+      signal: AbortSignal.timeout(30_000),
     });
     if (!result.ok) throw new Error(`Upload failed: ${result.status}`);
     const json = await result.json();

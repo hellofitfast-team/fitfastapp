@@ -279,7 +279,9 @@ export const startCheckInWorkflow = mutation({
       );
     }
 
-    // Guard 2: max 2 AI plan generations per configured cycle (cost protection)
+    // Guard 2 + Insert: Atomic plan-count check + check-in creation
+    // Combined in a single mutation to prevent race conditions where two
+    // concurrent requests both pass the plan limit check before either inserts.
     const frequencyDays = lockStatus.frequencyDays;
     const windowStart = Date.now() - frequencyDays * 24 * 60 * 60 * 1000;
     const recentMeals = await ctx.db
@@ -296,11 +298,25 @@ export const startCheckInWorkflow = mutation({
       throw new Error("Plan generation limit reached for this cycle");
     }
 
+    // Also guard against duplicate concurrent check-in submissions:
+    // If a check-in was already created in the last 30 seconds, reject.
+    const recentCheckIns = await ctx.db
+      .query("checkIns")
+      .withIndex("by_userId", (q: any) => q.eq("userId", userId))
+      .order("desc")
+      .take(1);
+    if (recentCheckIns.length > 0) {
+      const lastSubmitted = recentCheckIns[0].submittedAt ?? recentCheckIns[0]._creationTime;
+      if (Date.now() - lastSubmitted < 30_000) {
+        throw new Error("Check-in already submitted — please wait before trying again");
+      }
+    }
+
     // Resolve separate durations for meal and workout plans
     const mealPlanDuration = await getMealPlanDurationDays(ctx);
     const workoutPlanDuration = await getWorkoutPlanDurationDays(ctx);
 
-    // Create check-in record synchronously so getLockStatus sees it immediately
+    // Create check-in record (within same mutation as guards above = atomic)
     const checkInId = await ctx.db.insert("checkIns", {
       userId,
       submittedAt: Date.now(),

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useEffect } from "react";
+import { useMemo, useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { Camera, Upload, X } from "lucide-react";
 import { SectionCard } from "@fitfast/ui/section-card";
@@ -17,21 +17,37 @@ const POSITIONS: (keyof ProgressPhotos)[] = ["front", "back", "side"];
 export function PhotosStep({ progressPhotos, onPhotoChange }: PhotosStepProps) {
   const t = useTranslations("checkIn");
 
+  // Track all created URLs in a ref so we can revoke them on unmount
+  const urlsRef = useRef<string[]>([]);
+
   const previewUrls = useMemo(() => {
+    // Revoke previous URLs before creating new ones
+    for (const url of urlsRef.current) {
+      URL.revokeObjectURL(url);
+    }
+    urlsRef.current = [];
+
     const urls: Record<string, string | null> = {};
     for (const pos of POSITIONS) {
-      urls[pos] = progressPhotos[pos] ? URL.createObjectURL(progressPhotos[pos]) : null;
+      if (progressPhotos[pos]) {
+        const url = URL.createObjectURL(progressPhotos[pos]);
+        urls[pos] = url;
+        urlsRef.current.push(url);
+      } else {
+        urls[pos] = null;
+      }
     }
     return urls;
   }, [progressPhotos]);
 
+  // Cleanup all URLs on unmount
   useEffect(() => {
     return () => {
-      for (const url of Object.values(previewUrls)) {
-        if (url) URL.revokeObjectURL(url);
+      for (const url of urlsRef.current) {
+        URL.revokeObjectURL(url);
       }
     };
-  }, [previewUrls]);
+  }, []);
 
   const positionLabels: Record<keyof ProgressPhotos, string> = {
     front: t("photoFront"),

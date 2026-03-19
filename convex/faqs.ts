@@ -237,7 +237,7 @@ export const translateFAQ = internalAction({
             content: `Question: ${faq.questionEn}\nAnswer: ${faq.answerEn}`,
           },
         ],
-        maxTokens: 1000,
+        maxOutputTokens: 1000,
       });
 
       // Parse and sanitize the JSON response

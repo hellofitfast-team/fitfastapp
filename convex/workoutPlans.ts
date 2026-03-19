@@ -81,7 +81,7 @@ export const getIdByCheckIn = internalQuery({
       .query("workoutPlans")
       .withIndex("by_userId", (q) => q.eq("userId", userId))
       .order("desc")
-      .take(5);
+      .take(10);
     return plans.find((p) => p.checkInId === checkInId)?._id ?? null;
   },
 });

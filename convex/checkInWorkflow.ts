@@ -4,20 +4,13 @@ import { type Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { workflow } from "./workflowManager";
 import { DEFAULT_CHECK_IN_FREQUENCY_DAYS } from "./constants";
+import { inBodyDataValidator } from "./checkIns";
 
 /** Internal mutation: patches InBody OCR data onto a check-in record. */
 export const patchInBodyData = internalMutation({
   args: {
     checkInId: v.id("checkIns"),
-    inBodyData: v.object({
-      bodyFatPercentage: v.optional(v.number()),
-      leanBodyMass: v.optional(v.number()),
-      skeletalMuscleMass: v.optional(v.number()),
-      bmi: v.optional(v.number()),
-      visceralFatLevel: v.optional(v.number()),
-      basalMetabolicRate: v.optional(v.number()),
-      totalBodyWater: v.optional(v.number()),
-    }),
+    inBodyData: inBodyDataValidator,
   },
   handler: async (ctx, { checkInId, inBodyData }) => {
     const checkIn = await ctx.db.get(checkInId);
@@ -49,17 +42,7 @@ export const submitCheckInInternal = internalMutation({
       }),
     ),
     inBodyStorageId: v.optional(v.id("_storage")),
-    inBodyData: v.optional(
-      v.object({
-        bodyFatPercentage: v.optional(v.number()),
-        leanBodyMass: v.optional(v.number()),
-        skeletalMuscleMass: v.optional(v.number()),
-        bmi: v.optional(v.number()),
-        visceralFatLevel: v.optional(v.number()),
-        basalMetabolicRate: v.optional(v.number()),
-        totalBodyWater: v.optional(v.number()),
-      }),
-    ),
+    inBodyData: v.optional(inBodyDataValidator),
     workoutPerformance: v.optional(v.string()),
     energyLevel: v.optional(v.number()),
     sleepQuality: v.optional(v.number()),
@@ -79,13 +62,8 @@ export const submitCheckInInternal = internalMutation({
       ...fields,
     });
 
-    // Schedule InBody OCR if photo was uploaded
-    if (fields.inBodyStorageId && fields.measurementMethod === "inbody") {
-      await ctx.scheduler.runAfter(0, internal.ocrExtraction.extractInBodyData, {
-        checkInId,
-        storageId: fields.inBodyStorageId,
-      });
-    }
+    // Note: OCR scheduling is handled by startCheckInWorkflow (checkIns.ts),
+    // NOT here, to avoid duplicate OCR jobs when both paths are used.
 
     return checkInId;
   },
@@ -147,7 +125,8 @@ export const checkInAndGeneratePlans = workflow.define({
     ]);
 
     // Steps 4 & 5: Poll workpool until both finish (interleaved for efficiency)
-    const MAX_POLL_ATTEMPTS = 80;
+    // 180 polls × 1.5s delay = ~4.5 min — covers AI timeout (4 min) + buffer
+    const MAX_POLL_ATTEMPTS = 180;
     let mealDone = false;
     let workoutDone = false;
     let pollCount = 0;

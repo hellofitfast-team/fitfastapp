@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useEffect } from "react";
+import { useMemo, useEffect, useRef } from "react";
 import { useFormContext } from "react-hook-form";
 import { useTranslations } from "next-intl";
 import { Weight, Upload, X } from "lucide-react";
@@ -42,15 +42,28 @@ export function WeightStep({ inBodyFile, onInBodyFileChange }: WeightStepProps) 
     }
   };
 
-  const inBodyPreviewUrl = useMemo(
-    () => (inBodyFile ? URL.createObjectURL(inBodyFile) : null),
-    [inBodyFile],
-  );
+  const prevUrlRef = useRef<string | null>(null);
+
+  const inBodyPreviewUrl = useMemo(() => {
+    // Revoke previous URL before creating new one
+    if (prevUrlRef.current) {
+      URL.revokeObjectURL(prevUrlRef.current);
+      prevUrlRef.current = null;
+    }
+    if (inBodyFile) {
+      const url = URL.createObjectURL(inBodyFile);
+      prevUrlRef.current = url;
+      return url;
+    }
+    return null;
+  }, [inBodyFile]);
+
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (inBodyPreviewUrl) URL.revokeObjectURL(inBodyPreviewUrl);
+      if (prevUrlRef.current) URL.revokeObjectURL(prevUrlRef.current);
     };
-  }, [inBodyPreviewUrl]);
+  }, []);
 
   return (
     <div className="space-y-4">
