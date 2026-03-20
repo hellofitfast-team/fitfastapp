@@ -1,4 +1,4 @@
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { internalMutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { activeClientsCount } from "./adminStats";
@@ -30,7 +30,7 @@ export const insertTestUser = internalMutation({
     planEndDate: v.optional(v.string()),
     language: v.optional(v.union(v.literal("en"), v.literal("ar"))),
   },
-  handler: async (ctx, args): Promise<{ profileId: string; userId: string }> => {
+  handler: async (ctx, args): Promise<{ profileId: Id<"profiles">; userId: Id<"users"> }> => {
     // Check for existing user
     const existing = await ctx.db
       .query("authAccounts")
@@ -41,7 +41,7 @@ export const insertTestUser = internalMutation({
         ),
       )
       .first();
-    if (existing) throw new Error(`User ${args.email} already exists`);
+    if (existing) throw new ConvexError(`User ${args.email} already exists`);
 
     // 1. Create user record
     const userId = await ctx.db.insert("users", { email: args.email });
@@ -121,12 +121,12 @@ export const seedTestUserData = internalMutation({
     // 1. Create initial assessment
     await ctx.db.insert("initialAssessments", { userId, ...TEST_ASSESSMENT });
 
-    // 2. Get real exercise IDs from the database
-    const exercises = (await ctx.db.query("exerciseDatabase").take(50)).filter(
+    // 2. Get real exercise IDs from the database (collect all — only ~133 exercises)
+    const exercises = (await ctx.db.query("exerciseDatabase").collect()).filter(
       (e) => e.isActive !== false,
     );
     if (exercises.length === 0) {
-      throw new Error("No active exercises in database — seed exercises first");
+      throw new ConvexError("No active exercises in database — seed exercises first");
     }
     const exerciseMap = new Map(exercises.map((e) => [e.name, e._id]));
     const getExId = (name: string): string => {
@@ -463,14 +463,14 @@ export const deleteTestUserMutation = internalMutation({
       .query("profiles")
       .withIndex("by_userId", (q) => q.eq("userId", callerUserId))
       .unique();
-    if (!callerProfile?.isCoach) throw new Error("Not authorized");
+    if (!callerProfile?.isCoach) throw new ConvexError("Not authorized");
 
     const profile = await ctx.db.get(profileId);
-    if (!profile) throw new Error("Profile not found");
+    if (!profile) throw new ConvexError("Profile not found");
 
     // Safety: only allow deleting test users
     if (!profile.email?.endsWith("@fitfast.test")) {
-      throw new Error("Can only delete test users (@fitfast.test)");
+      throw new ConvexError("Can only delete test users (@fitfast.test)");
     }
 
     // Remove from active count if applicable

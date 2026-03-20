@@ -1,11 +1,12 @@
 "use node";
 
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { action } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { Scrypt } from "lucia";
 import { getAuthUserId } from "./auth";
 import { formatDate } from "./testUsersHelpers";
+import type { Id } from "./_generated/dataModel";
 
 const DEFAULT_PASSWORD = "test12345";
 
@@ -63,7 +64,7 @@ function computeDates(
     case "pending":
       return { status: "pending_approval" };
     default:
-      throw new Error(`Unknown scenario: ${scenario}`);
+      throw new ConvexError(`Unknown scenario: ${scenario}`);
   }
 }
 
@@ -87,37 +88,59 @@ export const createTestUser = action({
     { planTier, scenario, language },
   ): Promise<{ email: string; password: string; fullName: string; status: string }> => {
     const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    if (!userId) throw new ConvexError("Not authenticated");
 
     // Verify coach
     const isCoach = await ctx.runQuery(internal.testUsersHelpers.checkIsCoach, { userId });
-    if (!isCoach) throw new Error("Not authorized");
+    if (!isCoach) throw new ConvexError("Not authorized");
 
     const email = `test-${Date.now()}@fitfast.test`;
     const fullName = SCENARIO_NAMES[scenario] ?? "Test User";
     const hashedPassword = await new Scrypt().hash(DEFAULT_PASSWORD);
     const { status, planStartDate, planEndDate } = computeDates(planTier, scenario);
 
-    const { userId: newUserId } = await ctx.runMutation(internal.testUsersHelpers.insertTestUser, {
-      email,
-      hashedPassword,
-      fullName,
-      status,
-      planTier,
-      planStartDate,
-      planEndDate,
-      language,
-    });
+    const { userId: newUserId, profileId: newProfileId } = await ctx.runMutation(
+      internal.testUsersHelpers.insertTestUser,
+      {
+        email,
+        hashedPassword,
+        fullName,
+        status,
+        planTier,
+        planStartDate,
+        planEndDate,
+        language,
+      },
+    );
 
     // For plan-based scenarios: seed assessment + meal plan + workout plan (+ history)
     if ((scenario === "active_with_plans" || scenario === "active_with_history") && planStartDate) {
-      await ctx.runMutation(internal.testUsersHelpers.seedTestUserData, {
-        userId: newUserId,
-        planStartDate,
-        planEndDate: planEndDate!,
-        includeHistory: scenario === "active_with_history",
-        language,
-      });
+      try {
+        await ctx.runMutation(internal.testUsersHelpers.seedTestUserData, {
+          userId: newUserId,
+          planStartDate,
+          planEndDate: planEndDate!,
+          includeHistory: scenario === "active_with_history",
+          language,
+        });
+      } catch (err) {
+        // Clean up orphaned user+profile so they don't linger in the DB
+        try {
+          await ctx.runMutation(internal.testUsersHelpers.deleteTestUserMutation, {
+            profileId: newProfileId,
+            callerUserId: userId,
+          });
+        } catch {
+          // Cleanup failed — orphan will remain, but don't mask the original error
+        }
+        const msg =
+          err instanceof ConvexError
+            ? err.data
+            : err instanceof Error
+              ? err.message
+              : "Unknown error";
+        throw new ConvexError(`Failed to seed test data: ${msg}`);
+      }
     }
 
     return { email, password: DEFAULT_PASSWORD, fullName, status };
@@ -130,11 +153,11 @@ export const deleteTestUser = action({
   args: { profileId: v.id("profiles") },
   handler: async (ctx, { profileId }): Promise<void> => {
     const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    if (!userId) throw new ConvexError("Not authenticated");
 
     // Verify coach before delegating to internal mutation
     const isCoach = await ctx.runQuery(internal.testUsersHelpers.checkIsCoach, { userId });
-    if (!isCoach) throw new Error("Not authorized");
+    if (!isCoach) throw new ConvexError("Not authorized");
 
     await ctx.runMutation(internal.testUsersHelpers.deleteTestUserMutation, {
       profileId,
