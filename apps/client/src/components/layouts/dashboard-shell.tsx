@@ -6,7 +6,8 @@ import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useProfile } from "@/hooks/use-profile";
 import { MobileHeader } from "./mobile-header";
-import { DesktopTopNav } from "./desktop-top-nav";
+import { ClientSidebar } from "./client-sidebar";
+import { DesktopHeader } from "./desktop-header";
 import { BottomNav } from "./bottom-nav";
 import { MoreMenu } from "./more-menu";
 import { ExpiryBanner } from "./expiry-banner";
@@ -35,7 +36,7 @@ export function DashboardShell({ children, userName, daysUntilExpiry }: Dashboar
   }, [locale, profile, updateProfile]);
 
   return (
-    <div className="bg-background text-foreground selection:bg-primary selection:text-primary-foreground flex min-h-dvh flex-col">
+    <div className="bg-background text-foreground selection:bg-primary selection:text-primary-foreground flex min-h-dvh lg:h-dvh">
       {/* Noise texture overlay */}
       <div
         className="pointer-events-none fixed inset-0 z-0 opacity-[0.03]"
@@ -44,28 +45,32 @@ export function DashboardShell({ children, userName, daysUntilExpiry }: Dashboar
         }}
       />
 
-      {/* Near-expiry banner — above all headers */}
-      {hasBanner && <ExpiryBanner daysUntilExpiry={daysUntilExpiry} />}
+      {/* Sidebar — fixed & off-screen on mobile, in-flow on desktop (lg+) */}
+      <ClientSidebar />
 
-      {/* Desktop top navbar */}
-      <DesktopTopNav userName={userName} />
+      {/* Content column */}
+      <div className="flex flex-1 flex-col">
+        {/* Near-expiry banner */}
+        {hasBanner && <ExpiryBanner daysUntilExpiry={daysUntilExpiry} />}
 
-      {/* Mobile header */}
-      <MobileHeader userName={userName} />
+        {/* Desktop header (lg+) */}
+        <DesktopHeader userName={userName} />
 
-      {/* Main content area */}
-      <main
-        aria-label="Main content"
-        className="relative z-0 flex-1 overflow-x-hidden overflow-y-auto pb-[calc(var(--height-bottom-nav)+max(0.5rem,env(safe-area-inset-bottom))+0.75rem)] lg:pb-0"
-      >
-        {children}
-      </main>
+        {/* Mobile header (below lg) */}
+        <MobileHeader userName={userName} />
 
-      {/* Mobile bottom navigation */}
-      <BottomNav onMoreClick={() => setMoreMenuOpen(true)} />
+        {/* Single main content — scrolls on desktop, mobile bottom-nav padding */}
+        <main
+          aria-label="Main content"
+          className="relative z-0 flex-1 overflow-x-hidden overflow-y-auto p-4 pb-[calc(var(--height-bottom-nav)+max(0.5rem,env(safe-area-inset-bottom))+0.75rem)] lg:p-8 lg:pb-8"
+        >
+          {children}
+        </main>
 
-      {/* More menu bottom sheet */}
-      <MoreMenu open={moreMenuOpen} onOpenChange={setMoreMenuOpen} />
+        {/* Mobile bottom navigation (below lg) */}
+        <BottomNav onMoreClick={() => setMoreMenuOpen(true)} />
+        <MoreMenu open={moreMenuOpen} onOpenChange={setMoreMenuOpen} />
+      </div>
     </div>
   );
 }
