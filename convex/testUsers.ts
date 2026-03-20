@@ -109,6 +109,7 @@ export const createTestUser = action({
         planStartDate,
         planEndDate: planEndDate!,
         includeHistory: scenario === "active_with_history",
+        language,
       });
     }
 

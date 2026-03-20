@@ -78,8 +78,9 @@ export const cascadeDeleteUser = internalMutation({
       await ctx.db.delete(fm._id);
     }
 
-    // Finally, delete the profile
-    await ctx.db.delete(profileId);
+    // Finally, delete the profile (may already be deleted by test user cleanup)
+    const profileDoc = await ctx.db.get(profileId);
+    if (profileDoc) await ctx.db.delete(profileId);
   },
 });
 

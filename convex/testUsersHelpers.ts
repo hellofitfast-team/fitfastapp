@@ -111,8 +111,13 @@ export const seedTestUserData = internalMutation({
     planStartDate: v.string(),
     planEndDate: v.string(),
     includeHistory: v.optional(v.boolean()),
+    language: v.optional(v.union(v.literal("en"), v.literal("ar"))),
   },
-  handler: async (ctx, { userId, planStartDate, planEndDate, includeHistory }): Promise<void> => {
+  handler: async (
+    ctx,
+    { userId, planStartDate, planEndDate, includeHistory, language },
+  ): Promise<void> => {
+    const planLanguage = language ?? "en";
     // 1. Create initial assessment
     await ctx.db.insert("initialAssessments", { userId, ...TEST_ASSESSMENT });
 
@@ -124,7 +129,7 @@ export const seedTestUserData = internalMutation({
       throw new Error("No active exercises in database — seed exercises first");
     }
     const exerciseMap = new Map(exercises.map((e) => [e.name, e._id]));
-    const getExId = (name: string): string | undefined => {
+    const getExId = (name: string): string => {
       const id = exerciseMap.get(name);
       if (!id) {
         console.warn(`Exercise "${name}" not found in database, falling back to first exercise`);
@@ -257,7 +262,7 @@ export const seedTestUserData = internalMutation({
         dailyTargets: { calories: 2200, protein: 180, carbs: 220, fat: 70 },
         weeklyPlan,
       },
-      language: "en",
+      language: planLanguage,
       startDate: planStartDate,
       endDate: formatDate(mealEndDate),
       assessmentVersion: 1,
@@ -366,7 +371,7 @@ export const seedTestUserData = internalMutation({
           "Maintain neutral spine during deadlifts and squats",
         ],
       },
-      language: "en",
+      language: planLanguage,
       startDate: planStartDate,
       endDate: formatDate(workoutEndDate),
       assessmentVersion: 1,
@@ -395,13 +400,14 @@ export const seedTestUserData = internalMutation({
         date.setDate(date.getDate() + day);
         const dateStr = formatDate(date);
 
-        for (let mealIdx = 0; mealIdx < 3; mealIdx++) {
+        // 5 meals per day matches the plan structure (breakfast, snack, lunch, snack, dinner)
+        for (let mealIdx = 0; mealIdx < 5; mealIdx++) {
           await ctx.db.insert("mealCompletions", {
             userId,
             mealPlanId,
             date: dateStr,
             mealIndex: mealIdx,
-            completed: day < 4 || mealIdx < 2, // Last day: skip last meal for realism
+            completed: day < 4 || mealIdx < 4, // Last day: skip dinner for realism
           });
         }
       }
