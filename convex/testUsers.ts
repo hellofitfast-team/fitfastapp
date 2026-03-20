@@ -30,11 +30,18 @@ function computeDates(
   const now = new Date();
 
   switch (scenario) {
-    case "active":
-    case "active_with_plans":
-    case "active_with_history": {
+    case "active": {
       const start = new Date(now);
       start.setDate(start.getDate() - 7);
+      const end = new Date(start);
+      end.setDate(end.getDate() + tierMonths * 30);
+      return { planStartDate: formatDate(start), planEndDate: formatDate(end), status: "active" };
+    }
+    case "active_with_plans":
+    case "active_with_history": {
+      // 11 days back — past the 10-day check-in frequency so lock is expired
+      const start = new Date(now);
+      start.setDate(start.getDate() - 11);
       const end = new Date(start);
       end.setDate(end.getDate() + tierMonths * 30);
       return { planStartDate: formatDate(start), planEndDate: formatDate(end), status: "active" };

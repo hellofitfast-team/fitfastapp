@@ -106,8 +106,10 @@ async function checkLockStatus(
     .order("desc")
     .first();
 
-  // Determine the anchor date: last check-in, or if none, the latest plan creation
-  let anchorTime: number | null = latestCheckIn?._creationTime ?? null;
+  // Determine the anchor date: last check-in, or if none, the latest plan creation.
+  // Prefer submittedAt (domain timestamp) over _creationTime (insertion time) for seeded data.
+  let anchorTime: number | null =
+    latestCheckIn?.submittedAt ?? latestCheckIn?._creationTime ?? null;
 
   if (!anchorTime) {
     const latestMealPlan = await ctx.db
@@ -121,9 +123,14 @@ async function checkLockStatus(
       .order("desc")
       .first();
 
-    const planTimes = [latestMealPlan?._creationTime, latestWorkoutPlan?._creationTime].filter(
-      (t: any): t is number => t != null,
-    );
+    // Use plan startDate (domain timestamp) instead of _creationTime (insertion time).
+    // _creationTime is always "now" for seeded data, breaking lock logic for test users.
+    // Parse as UTC midnight — consistent with exerciseLogs.ts and completions.ts.
+    const parseStartDate = (d?: string) => (d ? new Date(d + "T00:00:00Z").getTime() : null);
+    const planTimes = [
+      parseStartDate(latestMealPlan?.startDate),
+      parseStartDate(latestWorkoutPlan?.startDate),
+    ].filter((t): t is number => t != null);
     anchorTime = planTimes.length > 0 ? Math.min(...planTimes) : null;
   }
 
@@ -145,17 +152,6 @@ async function checkLockStatus(
   nextCheckInDate.setDate(nextCheckInDate.getDate() + frequencyDays);
 
   const isLocked = Date.now() < nextCheckInDate.getTime();
-
-  // Test users (@fitfast.test) bypass the lock — only check when locked to avoid extra query
-  if (isLocked) {
-    const profile = await ctx.db
-      .query("profiles")
-      .withIndex("by_userId", (q: any) => q.eq("userId", userId))
-      .unique();
-    if (profile?.email?.endsWith("@fitfast.test")) {
-      return { isLocked: false, nextCheckInDate: null, frequencyDays };
-    }
-  }
 
   return {
     isLocked,
