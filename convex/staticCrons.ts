@@ -28,4 +28,10 @@ crons.daily(
 
 crons.daily("plan-cache-cleanup", { hourUTC: 5, minuteUTC: 0 }, internal.planCache.cleanupExpired);
 
+crons.daily(
+  "workout-plan-renewal",
+  { hourUTC: 6, minuteUTC: 0 },
+  internal.workoutPlanRenewal.renewExpiredWorkoutPlans,
+);
+
 export default crons;

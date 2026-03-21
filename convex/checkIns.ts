@@ -2,11 +2,7 @@ import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getAuthUserId } from "./auth";
-import {
-  getCheckInFrequencyDays,
-  getMealPlanDurationDays,
-  getWorkoutPlanDurationDays,
-} from "./helpers";
+import { getCheckInFrequencyDays, getMealPlanDurationDays } from "./helpers";
 import { DEFAULT_CHECK_IN_FREQUENCY_DAYS } from "./constants";
 import { rateLimiter } from "./rateLimiter";
 import { workflow } from "./workflowManager";
@@ -297,9 +293,10 @@ export const startCheckInWorkflow = mutation({
       );
     }
 
-    // Guard 2 + Insert: Atomic plan-count check + check-in creation
+    // Guard 2 + Insert: Atomic meal-plan-count check + check-in creation
     // Combined in a single mutation to prevent race conditions where two
     // concurrent requests both pass the plan limit check before either inserts.
+    // Note: Workout plans are decoupled — they renew on their own schedule via cron.
     const frequencyDays = lockStatus.frequencyDays;
     const windowStart = Date.now() - frequencyDays * 24 * 60 * 60 * 1000;
     const recentMeals = await ctx.db
@@ -307,13 +304,8 @@ export const startCheckInWorkflow = mutation({
       .withIndex("by_userId", (q: any) => q.eq("userId", userId))
       .filter((q: any) => q.gte(q.field("_creationTime"), windowStart))
       .collect();
-    const recentWorkouts = await ctx.db
-      .query("workoutPlans")
-      .withIndex("by_userId", (q: any) => q.eq("userId", userId))
-      .filter((q: any) => q.gte(q.field("_creationTime"), windowStart))
-      .collect();
-    if (Math.max(recentMeals.length, recentWorkouts.length) >= 2) {
-      throw new Error("Plan generation limit reached for this cycle");
+    if (recentMeals.length >= 2) {
+      throw new Error("Meal plan generation limit reached for this cycle");
     }
 
     // Also guard against duplicate concurrent check-in submissions:
@@ -330,9 +322,8 @@ export const startCheckInWorkflow = mutation({
       }
     }
 
-    // Resolve separate durations for meal and workout plans
+    // Resolve meal plan duration (workout plans renew independently via cron)
     const mealPlanDuration = await getMealPlanDurationDays(ctx);
-    const workoutPlanDuration = await getWorkoutPlanDurationDays(ctx);
 
     // Create check-in record (within same mutation as guards above = atomic)
     const checkInId = await ctx.db.insert("checkIns", {
@@ -354,7 +345,6 @@ export const startCheckInWorkflow = mutation({
       checkInId,
       language,
       mealPlanDuration,
-      workoutPlanDuration,
     });
 
     return workflowId;

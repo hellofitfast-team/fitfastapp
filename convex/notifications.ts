@@ -51,10 +51,15 @@ async function isNotificationsEnabled(ctx: {
 export const sendPlanReadyNotification = internalAction({
   args: {
     userId: v.string(),
-    mealPlanId: v.id("mealPlans"),
-    workoutPlanId: v.id("workoutPlans"),
+    mealPlanId: v.optional(v.id("mealPlans")),
+    workoutPlanId: v.optional(v.id("workoutPlans")),
   },
-  handler: async (ctx, { userId }) => {
+  handler: async (ctx, { userId, mealPlanId, workoutPlanId }) => {
+    if (!mealPlanId && !workoutPlanId) {
+      console.warn("[Notification] sendPlanReadyNotification called with no plan IDs — skipping");
+      return;
+    }
+
     // Check global toggle and fetch subscription in parallel
     const [enabled, subscription] = await Promise.all([
       isNotificationsEnabled(ctx),
@@ -63,7 +68,12 @@ export const sendPlanReadyNotification = internalAction({
     if (!enabled) return;
 
     const title = "FitFast";
-    const body = "Your new meal and workout plans are ready!";
+    const body =
+      mealPlanId && workoutPlanId
+        ? "Your new meal and workout plans are ready!"
+        : mealPlanId
+          ? "Your new meal plan is ready!"
+          : "Your new workout plan is ready!";
 
     if (subscription?.isActive && subscription.endpoint) {
       try {

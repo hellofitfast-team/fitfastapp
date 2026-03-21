@@ -62,15 +62,16 @@ export const submitCheckInInternal = internalMutation({
       ...fields,
     });
 
-    // Note: OCR scheduling is handled by startCheckInWorkflow (checkIns.ts),
-    // NOT here, to avoid duplicate OCR jobs when both paths are used.
-
     return checkInId;
   },
 });
 
 /**
- * Durable workflow: check-in submission → parallel AI plan generation → notification.
+ * Durable workflow: check-in submission → meal plan generation → notification.
+ *
+ * Workout plan generation is DECOUPLED from check-ins — it runs on its own
+ * renewal schedule via a daily cron job (see workoutPlanRenewal.ts).
+ * Check-in data is accumulated and used when the next workout plan is generated.
  *
  * AI generation is routed through the Workpool (maxParallelism: 5) so that
  * even if 50 clients check in simultaneously, only 5 OpenRouter calls run
@@ -86,6 +87,7 @@ export const checkInAndGeneratePlans = workflow.define({
     language: v.union(v.literal("en"), v.literal("ar")),
     planDuration: v.optional(v.number()),
     mealPlanDuration: v.optional(v.number()),
+    // Kept for backward compat but no longer used — workout plans renew via cron
     workoutPlanDuration: v.optional(v.number()),
   },
   handler: async (
@@ -96,113 +98,73 @@ export const checkInAndGeneratePlans = workflow.define({
       language,
       planDuration = DEFAULT_CHECK_IN_FREQUENCY_DAYS,
       mealPlanDuration,
-      workoutPlanDuration,
     },
   ): Promise<{
     checkInId: Id<"checkIns">;
     mealPlanId: Id<"mealPlans">;
-    workoutPlanId: Id<"workoutPlans">;
   }> => {
-    // Check-in record already created by startCheckInWorkflow mutation
-    // Use specific durations if provided, otherwise fall back to legacy planDuration
+    // Use specific meal duration if provided, otherwise fall back to legacy planDuration
     const effectiveMealDuration = mealPlanDuration ?? planDuration;
-    const effectiveWorkoutDuration = workoutPlanDuration ?? planDuration;
 
-    // Steps 1 & 2: Enqueue both AI generations via Workpool (max 5 concurrent)
-    const [mealWorkId, workoutWorkId] = await Promise.all([
-      step.runMutation(internal.workpoolManager.enqueueMealPlan, {
-        userId,
-        checkInId,
-        language,
-        planDuration: effectiveMealDuration,
-      }),
-      step.runMutation(internal.workpoolManager.enqueueWorkoutPlan, {
-        userId,
-        checkInId,
-        language,
-        planDuration: effectiveWorkoutDuration,
-      }),
-    ]);
+    // Step 1: Enqueue meal plan generation via Workpool
+    const mealWorkId = await step.runMutation(internal.workpoolManager.enqueueMealPlan, {
+      userId,
+      checkInId,
+      language,
+      planDuration: effectiveMealDuration,
+    });
 
-    // Steps 4 & 5: Poll workpool until both finish (interleaved for efficiency)
+    // Step 2: Poll workpool until meal plan finishes
     // 180 polls × 1.5s delay = ~4.5 min — covers AI timeout (4 min) + buffer
     const MAX_POLL_ATTEMPTS = 180;
     let mealDone = false;
-    let workoutDone = false;
     let pollCount = 0;
 
-    while (!mealDone || !workoutDone) {
+    while (!mealDone) {
       pollCount++;
       if (pollCount > MAX_POLL_ATTEMPTS) {
         console.error(
-          `[Workflow] Plan generation timed out (checkInId: ${checkInId}, userId: ${userId}, meal: ${mealWorkId}=${mealDone ? "done" : "pending"}, workout: ${workoutWorkId}=${workoutDone ? "done" : "pending"})`,
+          `[Workflow] Meal plan generation timed out (checkInId: ${checkInId}, userId: ${userId}, workId: ${mealWorkId})`,
         );
-        throw new Error(
-          `Plan generation timed out after ${MAX_POLL_ATTEMPTS} poll attempts (meal: ${mealDone ? "done" : "pending"}, workout: ${workoutDone ? "done" : "pending"})`,
-        );
+        throw new Error(`Meal plan generation timed out after ${MAX_POLL_ATTEMPTS} poll attempts`);
       }
 
-      if (!mealDone) {
-        const mealStatus = await step.runQuery(
-          internal.workpoolManager.getWorkStatus,
-          { workId: mealWorkId },
-          pollCount === 1 ? undefined : { runAfter: 1500 },
-        );
-        if (mealStatus === null) {
-          throw new Error(`Meal plan workpool entry lost (workId: ${mealWorkId})`);
-        }
-        if (mealStatus.state === "finished") {
-          mealDone = true;
-        }
+      const mealStatus = await step.runQuery(
+        internal.workpoolManager.getWorkStatus,
+        { workId: mealWorkId },
+        pollCount === 1 ? undefined : { runAfter: 1500 },
+      );
+      if (mealStatus === null) {
+        throw new Error(`Meal plan workpool entry lost (workId: ${mealWorkId})`);
       }
-
-      if (!workoutDone) {
-        const workoutStatus = await step.runQuery(
-          internal.workpoolManager.getWorkStatus,
-          { workId: workoutWorkId },
-          // Always delay after first poll — avoid rapid no-delay polling when meal finishes first
-          pollCount === 1 ? undefined : { runAfter: 1500 },
-        );
-        if (workoutStatus === null) {
-          throw new Error(`Workout plan workpool entry lost (workId: ${workoutWorkId})`);
-        }
-        if (workoutStatus.state === "finished") {
-          workoutDone = true;
-        }
+      if (mealStatus.state === "finished") {
+        mealDone = true;
       }
     }
 
-    // Look up generated plans by checkInId (workpool status doesn't include return values)
+    // Step 3: Look up generated meal plan by checkInId
     const mealPlanId = await step.runQuery(internal.mealPlans.getIdByCheckIn, {
       userId,
       checkInId,
     });
-    const workoutPlanId = await step.runQuery(internal.workoutPlans.getIdByCheckIn, {
-      userId,
-      checkInId,
-    });
 
-    if (!mealPlanId || !workoutPlanId) {
-      throw new Error(
-        `Plans not found after generation (checkInId: ${checkInId}, meal: ${!!mealPlanId}, workout: ${!!workoutPlanId})`,
-      );
+    if (!mealPlanId) {
+      throw new Error(`Meal plan not found after generation (checkInId: ${checkInId})`);
     }
 
-    // Step 6: Notify user via push with email fallback (best-effort — plans are already saved)
-    // Email fallback is handled inside sendPlanReadyNotification (matches sendReminderToUser pattern)
+    // Step 4: Notify user via push with email fallback (best-effort)
     try {
       await step.runAction(internal.notifications.sendPlanReadyNotification, {
         userId,
         mealPlanId,
-        workoutPlanId,
       });
     } catch (err) {
       console.error(
-        `[Workflow] Notification failed for user ${userId}. Plans are saved — user will see them in-app.`,
+        `[Workflow] Notification failed for user ${userId}. Plan is saved — user will see it in-app.`,
         err,
       );
     }
 
-    return { checkInId, mealPlanId, workoutPlanId };
+    return { checkInId, mealPlanId };
   },
 });

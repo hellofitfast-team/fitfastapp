@@ -66,6 +66,7 @@ import type * as testUsersHelpers from "../testUsersHelpers.js";
 import type * as tickets from "../tickets.js";
 import type * as workflowManager from "../workflowManager.js";
 import type * as workoutPlanEngine from "../workoutPlanEngine.js";
+import type * as workoutPlanRenewal from "../workoutPlanRenewal.js";
 import type * as workoutPlans from "../workoutPlans.js";
 import type * as workoutSplitEngine from "../workoutSplitEngine.js";
 import type * as workpoolManager from "../workpoolManager.js";
@@ -135,6 +136,7 @@ declare const fullApi: ApiFromModules<{
   tickets: typeof tickets;
   workflowManager: typeof workflowManager;
   workoutPlanEngine: typeof workoutPlanEngine;
+  workoutPlanRenewal: typeof workoutPlanRenewal;
   workoutPlans: typeof workoutPlans;
   workoutSplitEngine: typeof workoutSplitEngine;
   workpoolManager: typeof workpoolManager;
