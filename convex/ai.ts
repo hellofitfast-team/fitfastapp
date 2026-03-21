@@ -973,10 +973,20 @@ async function generateWorkoutPlanHandler(
   const startTime = Date.now();
 
   // Fetch client context + exercise database in parallel
-  const [clientCtx, exercises] = await Promise.all([
+  const [clientCtx, exercises, previousPlanForPerf] = await Promise.all([
     fetchClientContextWithRetry(ctx, userId, checkInId),
     ctx.runQuery(internal.exerciseDatabase.getActiveExercises, {}),
+    ctx.runQuery(internal.workoutPlans.getCurrentPlanInternal, { userId }),
   ]);
+
+  // Fetch performance context since last workout plan (for adaptive progression)
+  const perfSinceDate =
+    previousPlanForPerf?.startDate ??
+    new Date(Date.now() - 30 * 86400000).toISOString().split("T")[0]!;
+  const performanceContext = await ctx.runQuery(
+    internal.workoutPerformanceContext.getPerformanceContext,
+    { userId, sinceDate: perfSinceDate },
+  );
 
   const assessment = clientCtx.assessment!;
   const scheduleData = assessment.scheduleAvailability as { days?: string[] } | null;
@@ -989,8 +999,8 @@ async function generateWorkoutPlanHandler(
     safeDuration,
   );
 
-  // Get previous plan for progressive overload
-  const previousPlan = await ctx.runQuery(internal.workoutPlans.getCurrentPlanInternal, { userId });
+  // Use already-fetched previous plan for progressive overload
+  const previousPlan = previousPlanForPerf;
 
   // Parse injuries from assessment + latest check-in
   const latestCheckIn = clientCtx.checkInHistory?.[0] ?? null;
@@ -1061,6 +1071,7 @@ async function generateWorkoutPlanHandler(
             isBreastfeeding?: boolean;
           })
         : undefined,
+    performanceContext: performanceContext ?? undefined,
   });
 
   // Create stream and mark it done immediately (backward compat)

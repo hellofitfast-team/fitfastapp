@@ -7,6 +7,7 @@
  */
 
 import type { WorkoutSplit } from "./workoutSplitEngine";
+import type { ExercisePerformance, PerformanceContext } from "./workoutPerformanceContext";
 
 // ---------------------------------------------------------------------------
 // Input types
@@ -53,6 +54,8 @@ export interface WorkoutPlanInput {
     isPregnant?: boolean;
     isBreastfeeding?: boolean;
   };
+  /** Performance data from exercise logs, completions, and check-ins since last plan */
+  performanceContext?: PerformanceContext;
 }
 
 // ---------------------------------------------------------------------------
@@ -235,12 +238,88 @@ function muscleMatchesTarget(ex: Exercise, targetSet: Set<string>): boolean {
   return false;
 }
 
-function goalParams(goal: string) {
+function baseGoalParams(goal: string) {
   const key = goal.toLowerCase();
-  if (key.includes("strength") || key.includes("قوة")) return GOAL_PARAMS.strength!;
-  if (key.includes("endurance") || key.includes("تحمل")) return GOAL_PARAMS.endurance!;
+  if (key.includes("strength") || key.includes("قوة")) return { ...GOAL_PARAMS.strength! };
+  if (key.includes("endurance") || key.includes("تحمل")) return { ...GOAL_PARAMS.endurance! };
   // Default to hypertrophy for muscle gain, weight loss, general fitness, etc.
-  return GOAL_PARAMS.hypertrophy!;
+  return { ...GOAL_PARAMS.hypertrophy! };
+}
+
+/**
+ * Dynamic goal params adjusted by performance context.
+ * If no performance data, falls back to static goal params.
+ */
+function goalParams(goal: string, perf?: PerformanceContext) {
+  const params = baseGoalParams(goal);
+  if (!perf || perf.checkInCount === 0) return params;
+
+  // Adjust based on overall session completion rate
+  if (perf.sessionCompletionRate < 0.5) {
+    // Low attendance: reduce volume to make workouts more approachable
+    params.sets = Math.max(2, params.sets - 1);
+    params.restSeconds = Math.min(params.restSeconds + 30, 180);
+  } else if (perf.sessionCompletionRate > 0.85 && perf.sessionsCompleted >= 6) {
+    // High consistency: nudge volume up slightly
+    params.sets = Math.min(params.sets + 1, 6);
+  }
+
+  // Adjust based on recovery metrics
+  const recoveryScore = (perf.avgEnergy + perf.avgSleep) / 2;
+  if (recoveryScore < 4) {
+    // Poor recovery: reduce intensity, increase rest
+    params.sets = Math.max(2, params.sets - 1);
+    params.restSeconds = Math.min(params.restSeconds + 30, 180);
+  } else if (recoveryScore >= 8 && perf.avgAdherence >= 8) {
+    // Excellent recovery + adherence: allow higher intensity
+    params.restSeconds = Math.max(params.restSeconds - 15, 30);
+  }
+
+  return params;
+}
+
+/**
+ * Per-exercise dynamic adjustments based on actual logged performance.
+ * Returns modified sets/reps/rest for a specific exercise.
+ */
+function adjustForExercisePerformance(
+  exerciseName: string,
+  baseSets: number,
+  baseRepsMin: number,
+  baseRepsMax: number,
+  baseRestSec: number,
+  perf?: PerformanceContext,
+): { sets: number; repsMin: number; repsMax: number; restSeconds: number } {
+  if (!perf)
+    return { sets: baseSets, repsMin: baseRepsMin, repsMax: baseRepsMax, restSeconds: baseRestSec };
+
+  const exPerf = perf.exercisePerformance.get(exerciseName);
+  if (!exPerf || exPerf.sessionCount < 2) {
+    return { sets: baseSets, repsMin: baseRepsMin, repsMax: baseRepsMax, restSeconds: baseRestSec };
+  }
+
+  let sets = baseSets;
+  let repsMin = baseRepsMin;
+  let repsMax = baseRepsMax;
+  let restSeconds = baseRestSec;
+
+  if (exPerf.isOverperforming) {
+    // User consistently completes all sets — bump volume
+    if (exPerf.avgReps > baseRepsMax) {
+      // Exceeding rep range: increase reps or add a set
+      repsMin = Math.min(repsMin + 1, repsMin + 4);
+      repsMax = Math.min(repsMax + 2, repsMax + 4);
+    } else {
+      // Completing within range: add a set
+      sets = Math.min(sets + 1, 6);
+    }
+  } else if (exPerf.isUnderperforming) {
+    // User struggling: reduce volume to build consistency
+    sets = Math.max(2, sets - 1);
+    restSeconds = Math.min(restSeconds + 15, 180);
+  }
+
+  return { sets, repsMin, repsMax, restSeconds };
 }
 
 /** Look up a previous plan's exercise by name to apply progressive overload. */
@@ -453,18 +532,22 @@ function buildTrainingDay(
   const lang = input.language;
   // PHUL override: power days use strength params, hypertrophy days use hypertrophy params
   const labelLower = dayLabel.toLowerCase();
+  const perf = input.performanceContext;
   const gp = labelLower.includes("power")
-    ? GOAL_PARAMS.strength!
+    ? goalParams("strength", perf)
     : labelLower.includes("hypertrophy") || labelLower.includes("تضخيم")
-      ? GOAL_PARAMS.hypertrophy!
-      : goalParams(input.goal);
+      ? goalParams("hypertrophy", perf)
+      : goalParams(input.goal, perf);
 
   const mainExercises = selectExercisesForDay(allExercises, targetMuscles, input);
   const warmups = selectWarmupExercises(allExercises, targetMuscles, input);
   const cooldowns = selectCooldownExercises(allExercises, targetMuscles, input);
 
-  // Build workout exercises with sets/reps/rest
+  // Build workout exercises with dynamic sets/reps/rest
   const workoutExercises: WorkoutExercise[] = mainExercises.map((ex) => {
+    const exName = exerciseName(ex, lang);
+
+    // Start with goal-based params (already adjusted by performance context)
     let sets = gp.sets;
     let repsMin = gp.repsMin;
     let repsMax = gp.repsMax;
@@ -476,8 +559,15 @@ function buildTrainingDay(
       restSec = ex.defaultRestSeconds > 0 ? ex.defaultRestSeconds : restSec;
     }
 
-    // Progressive overload from previous plan
-    const prev = findPreviousExercise(input.previousPlan, exerciseName(ex, lang));
+    // Per-exercise performance adjustments (from actual logged data)
+    const perfAdj = adjustForExercisePerformance(exName, sets, repsMin, repsMax, restSec, perf);
+    sets = perfAdj.sets;
+    repsMin = perfAdj.repsMin;
+    repsMax = perfAdj.repsMax;
+    restSec = perfAdj.restSeconds;
+
+    // Progressive overload from previous plan (applies on top of performance adjustments)
+    const prev = findPreviousExercise(input.previousPlan, exName);
     if (prev) {
       // Try to increment reps by 1-2
       const canAddReps = prev.repsMax + 2 <= gp.repsMax + 4; // allow slight overshoot
