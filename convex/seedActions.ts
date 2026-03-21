@@ -2451,3 +2451,27 @@ export const seedFreshUsers = internalAction({
     return results.join("\n");
   },
 });
+
+/**
+ * Create an admin/coach user on any deployment (including production).
+ * No production guard — intended for initial admin setup.
+ *
+ * Run: npx convex run --prod seedActions:createAdminUser '{"email":"admin@example.com","fullName":"Admin Name","password":"securePassword"}'
+ */
+export const createAdminUser = internalAction({
+  args: {
+    email: v.string(),
+    fullName: v.string(),
+    password: v.string(),
+  },
+  handler: async (ctx, { email, fullName, password }): Promise<string> => {
+    const hashedPassword = await hashPassword(password);
+    const result = await ctx.runMutation(internal.seed.insertAuthUser, {
+      email,
+      hashedPassword,
+      fullName,
+      isCoach: true,
+    });
+    return result;
+  },
+});
