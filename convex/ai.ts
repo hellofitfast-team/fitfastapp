@@ -33,8 +33,8 @@ import {
 
 /** Primary plan generation model — Mercury 2 via OpenRouter (testing performance vs Gemini) */
 const PLAN_MODEL_PRIMARY = "inception/mercury-2";
-/** Fallback model — direct DeepSeek API, used when primary is congested/unavailable */
-const PLAN_MODEL_FALLBACK = "deepseek-chat";
+/** Fallback model — Google Gemini, used when primary is congested/unavailable */
+const PLAN_MODEL_FALLBACK = "gemini-2.5-flash";
 
 // extractJSON, validateAndCorrectMealPlan, validateWorkoutPlan, and ValidationWarning
 // are imported from ./aiUtils (extracted for testability)
@@ -320,7 +320,7 @@ async function generateMealPlanHandler(
   // --- DEMO MODE: skip AI when explicitly enabled or no API keys are configured ---
   const demoMode = process.env.DEMO_MODE === "true";
   const hasGoogleKey = !!process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-  const hasDeepSeekKey = !!process.env.DEEPSEEK_API_KEY;
+  const hasDeepSeekKey = !!process.env.GOOGLE_GENERATIVE_AI_API_KEY;
   if (shouldActivateDemoMode(demoMode, hasGoogleKey, hasDeepSeekKey)) {
     console.warn(
       `[AI] DEMO MODE: ${demoMode ? "Explicitly enabled" : "No AI API keys configured"} — generating mock meal plan for user ${userId}`,
@@ -455,7 +455,7 @@ async function generateMealPlanHandler(
   );
 
   const { createOpenRouter } = await import("@openrouter/ai-sdk-provider");
-  const { createDeepSeek } = await import("@ai-sdk/deepseek");
+  const { createGoogleGenerativeAI } = await import("@ai-sdk/google");
   const { generateText, streamText } = await import("ai");
   const openrouterApiKey = process.env.OPENROUTER_API_KEY;
   if (!openrouterApiKey) throw new Error("OPENROUTER_API_KEY environment variable is not set");
@@ -736,20 +736,21 @@ Daily meal macros MUST sum to the targets above (±5% tolerance). Respond ONLY w
         level: "ERROR",
       });
       console.warn(
-        `[AI] Primary model (Mercury 2) streaming failed for meal plan, falling back to DeepSeek: ${primaryErr}`,
+        `[AI] Primary model (Mercury 2) streaming failed for meal plan, falling back to Gemini: ${primaryErr}`,
       );
-      const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
-      if (!deepseekApiKey) throw new Error("DEEPSEEK_API_KEY environment variable is not set");
-      const deepseek = createDeepSeek({ apiKey: deepseekApiKey });
+      const googleApiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+      if (!googleApiKey)
+        throw new Error("GOOGLE_GENERATIVE_AI_API_KEY environment variable is not set");
+      const google = createGoogleGenerativeAI({ apiKey: googleApiKey });
       // Fallback uses batch generateText (simpler, more reliable)
       const fallbackGen = trace?.generation({
-        name: "fallback-deepseek-batch",
+        name: "fallback-gemini-batch",
         model: PLAN_MODEL_FALLBACK,
         input: { systemPrompt: systemPrompt.slice(0, 500), userPrompt: userPrompt.slice(0, 500) },
       });
       try {
         const batchResult = await generateText({
-          model: deepseek(PLAN_MODEL_FALLBACK),
+          model: google(PLAN_MODEL_FALLBACK),
           ...generateParams,
           abortSignal: AbortSignal.timeout(halfTimeout),
         });
@@ -836,18 +837,19 @@ Respond ONLY with valid JSON.`;
           },
           level: "ERROR",
         });
-        const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
-        if (!deepseekApiKey) throw new Error("DEEPSEEK_API_KEY environment variable is not set");
-        const deepseek = createDeepSeek({ apiKey: deepseekApiKey });
+        const googleApiKey2 = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+        if (!googleApiKey2)
+          throw new Error("GOOGLE_GENERATIVE_AI_API_KEY environment variable is not set");
+        const google2 = createGoogleGenerativeAI({ apiKey: googleApiKey2 });
         const retryFallbackGen = trace?.generation({
-          name: "retry-fallback-deepseek",
+          name: "retry-fallback-gemini",
           model: PLAN_MODEL_FALLBACK,
           input: { prompt: retryPrompt.slice(0, 500) },
           metadata: { reason: "truncation-retry-fallback" },
         });
         try {
           const retryResult = await generateText({
-            model: deepseek(PLAN_MODEL_FALLBACK),
+            model: google2(PLAN_MODEL_FALLBACK),
             system: systemPrompt,
             prompt: retryPrompt,
             temperature: 0.3,
@@ -1437,7 +1439,7 @@ export const translateToArabic = action({
     const truncatedText = text.slice(0, 500);
 
     const { createOpenRouter } = await import("@openrouter/ai-sdk-provider");
-    const { createDeepSeek } = await import("@ai-sdk/deepseek");
+    const { createGoogleGenerativeAI } = await import("@ai-sdk/google");
     const { generateText } = await import("ai");
     const orApiKey = process.env.OPENROUTER_API_KEY;
     if (!orApiKey) throw new Error("OPENROUTER_API_KEY environment variable is not set");
@@ -1492,18 +1494,19 @@ export const translateToArabic = action({
           level: "ERROR",
         });
         console.warn(
-          `[AI] Primary model (Mercury 2) failed for Arabic translation, falling back to DeepSeek: ${primaryErr}`,
+          `[AI] Primary model (Mercury 2) failed for Arabic translation, falling back to Gemini: ${primaryErr}`,
         );
-        const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
-        if (!deepseekApiKey) throw new Error("DEEPSEEK_API_KEY environment variable is not set");
-        const deepseek = createDeepSeek({ apiKey: deepseekApiKey });
+        const googleApiKeyAr = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+        if (!googleApiKeyAr)
+          throw new Error("GOOGLE_GENERATIVE_AI_API_KEY environment variable is not set");
+        const googleAr = createGoogleGenerativeAI({ apiKey: googleApiKeyAr });
         const fallbackGen = trace?.generation({
-          name: "fallback-deepseek-arabic",
+          name: "fallback-gemini-arabic",
           model: PLAN_MODEL_FALLBACK,
           input: { text: truncatedText.slice(0, 200) },
         });
         const res = await generateText({
-          model: deepseek(PLAN_MODEL_FALLBACK),
+          model: googleAr(PLAN_MODEL_FALLBACK),
           maxOutputTokens: 100,
           temperature: 0.3,
           messages: translateMessages,

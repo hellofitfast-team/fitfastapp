@@ -56,6 +56,7 @@ import type * as rateLimiter from "../rateLimiter.js";
 import type * as reflections from "../reflections.js";
 import type * as seed from "../seed.js";
 import type * as seedActions from "../seedActions.js";
+import type * as seedCardioAndAdvanced from "../seedCardioAndAdvanced.js";
 import type * as seedExercises from "../seedExercises.js";
 import type * as staticCrons from "../staticCrons.js";
 import type * as storage from "../storage.js";
@@ -127,6 +128,7 @@ declare const fullApi: ApiFromModules<{
   reflections: typeof reflections;
   seed: typeof seed;
   seedActions: typeof seedActions;
+  seedCardioAndAdvanced: typeof seedCardioAndAdvanced;
   seedExercises: typeof seedExercises;
   staticCrons: typeof staticCrons;
   storage: typeof storage;
