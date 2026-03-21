@@ -319,9 +319,9 @@ async function generateMealPlanHandler(
 
   // --- DEMO MODE: skip AI when explicitly enabled or no API keys are configured ---
   const demoMode = process.env.DEMO_MODE === "true";
-  const hasGoogleKey = !!process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-  const hasDeepSeekKey = !!process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-  if (shouldActivateDemoMode(demoMode, hasGoogleKey, hasDeepSeekKey)) {
+  const hasOpenRouterKey = !!process.env.OPENROUTER_API_KEY;
+  const hasFallbackKey = !!process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+  if (shouldActivateDemoMode(demoMode, hasOpenRouterKey, hasFallbackKey)) {
     console.warn(
       `[AI] DEMO MODE: ${demoMode ? "Explicitly enabled" : "No AI API keys configured"} — generating mock meal plan for user ${userId}`,
     );
@@ -649,7 +649,7 @@ Daily meal macros MUST sum to the targets above (±5% tolerance). Respond ONLY w
     tags: ["meal-plan", `complexity:${promptComplexity}`],
   });
 
-  // --- Attempt with primary model (direct Google) + fallback (direct DeepSeek) ---
+  // --- Attempt with primary model (OpenRouter Mercury 2) + fallback (Google Gemini) ---
   // Wrapped in try-finally to ensure Langfuse traces are flushed on all exit paths
   try {
     const halfTimeout = PLAN_GENERATION_TIMEOUT_MS / 2;

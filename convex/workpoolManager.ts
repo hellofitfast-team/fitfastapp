@@ -7,7 +7,7 @@ import { MAX_AI_CONCURRENCY } from "./constants";
 
 /**
  * Singleton Workpool for AI generation actions.
- * Caps concurrent DeepSeek/OpenRouter calls at 5, even if 50+ clients
+ * Caps concurrent OpenRouter/Gemini AI calls at 5, even if 50+ clients
  * submit check-ins simultaneously. Excess requests queue automatically.
  */
 export const aiWorkpool = new Workpool(components.aiWorkpool, {

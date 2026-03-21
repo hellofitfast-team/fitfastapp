@@ -12,13 +12,14 @@ import type { NutritionTargets } from "./nutritionEngine";
 /**
  * Determines whether AI should run in demo mode (returning mock plans).
  * Demo mode activates when explicitly enabled OR when no AI API keys are configured.
+ * Primary: OpenRouter (Mercury 2), Fallback: Google Gemini.
  */
 export function shouldActivateDemoMode(
   demoMode: boolean,
-  hasGoogleKey: boolean,
-  hasDeepSeekKey: boolean,
+  hasPrimaryKey: boolean,
+  hasFallbackKey: boolean,
 ): boolean {
-  return demoMode || (!hasGoogleKey && !hasDeepSeekKey);
+  return demoMode || (!hasPrimaryKey && !hasFallbackKey);
 }
 
 // ---------------------------------------------------------------------------
