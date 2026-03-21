@@ -293,7 +293,7 @@ function adjustForExercisePerformance(
   if (!perf)
     return { sets: baseSets, repsMin: baseRepsMin, repsMax: baseRepsMax, restSeconds: baseRestSec };
 
-  const exPerf = perf.exercisePerformance.get(exerciseName);
+  const exPerf = perf.exercisePerformance[exerciseName];
   if (!exPerf || exPerf.sessionCount < 2) {
     return { sets: baseSets, repsMin: baseRepsMin, repsMax: baseRepsMax, restSeconds: baseRestSec };
   }
@@ -306,9 +306,9 @@ function adjustForExercisePerformance(
   if (exPerf.isOverperforming) {
     // User consistently completes all sets — bump volume
     if (exPerf.avgReps > baseRepsMax) {
-      // Exceeding rep range: increase reps or add a set
-      repsMin = Math.min(repsMin + 1, repsMin + 4);
-      repsMax = Math.min(repsMax + 2, repsMax + 4);
+      // Exceeding rep range: increase reps (capped at base + 4)
+      repsMin = Math.min(baseRepsMin + 1, baseRepsMin + 4);
+      repsMax = Math.min(baseRepsMax + 2, baseRepsMax + 4);
     } else {
       // Completing within range: add a set
       sets = Math.min(sets + 1, 6);
@@ -430,7 +430,7 @@ function selectExercisesForDay(
 
   // Determine count based on session duration if available, otherwise use level-based ranges
   const range = EXERCISE_COUNTS[input.experienceLevel] ?? EXERCISE_COUNTS.intermediate!;
-  const gp = goalParams(input.goal);
+  const gp = goalParams(input.goal, input.performanceContext);
   let count: number;
 
   if (input.sessionDuration && input.sessionDuration > 0) {
@@ -566,14 +566,16 @@ function buildTrainingDay(
     repsMax = perfAdj.repsMax;
     restSec = perfAdj.restSeconds;
 
-    // Progressive overload from previous plan (applies on top of performance adjustments)
+    // Progressive overload from previous plan — only if performance adjustment didn't already bump
+    const perfAlreadyAdjusted =
+      sets !== gp.sets || repsMin !== gp.repsMin || repsMax !== gp.repsMax;
     const prev = findPreviousExercise(input.previousPlan, exName);
-    if (prev) {
-      // Try to increment reps by 1-2
+    if (prev && !perfAlreadyAdjusted) {
+      // Try to increment reps by 1-2 (capped at goal max + 4)
       const canAddReps = prev.repsMax + 2 <= gp.repsMax + 4; // allow slight overshoot
       if (canAddReps) {
-        repsMin = Math.min(prev.repsMin + 1, repsMin + 4);
-        repsMax = Math.min(prev.repsMax + 2, repsMax + 4);
+        repsMin = Math.min(prev.repsMin + 1, gp.repsMin + 4);
+        repsMax = Math.min(prev.repsMax + 2, gp.repsMax + 4);
       } else {
         // Cap reps reached: add 1 set instead
         sets = Math.min(prev.sets + 1, 6);

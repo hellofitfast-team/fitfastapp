@@ -27,7 +27,7 @@ export interface ExercisePerformance {
 /** Aggregated workout performance context passed to the plan engine. */
 export interface PerformanceContext {
   /** Per-exercise performance data keyed by exercise name */
-  exercisePerformance: Map<string, ExercisePerformance>;
+  exercisePerformance: Record<string, ExercisePerformance>;
   /** Overall workout session completion rate (0-1) */
   sessionCompletionRate: number;
   /** Total sessions completed in the period */
@@ -68,13 +68,14 @@ export const getPerformanceContext = internalQuery({
       .withIndex("by_userId_date", (q) => q.eq("userId", userId).gte("date", sinceDate))
       .collect();
 
-    // 3. Fetch check-ins since last plan
+    // 3. Fetch recent check-ins (bounded to last 20 — typically 4-8 weeks of data)
     const sinceTimestamp = new Date(sinceDate).getTime();
-    const checkIns = await ctx.db
+    const allRecentCheckIns = await ctx.db
       .query("checkIns")
       .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .collect();
-    const recentCheckIns = checkIns.filter(
+      .order("desc")
+      .take(20);
+    const recentCheckIns = allRecentCheckIns.filter(
       (c) => (c.submittedAt ?? c._creationTime) >= sinceTimestamp,
     );
 
@@ -114,15 +115,16 @@ export const getPerformanceContext = internalQuery({
       }
     }
 
-    const exercisePerformance = new Map<string, ExercisePerformance>();
+    const exercisePerformance: Record<string, ExercisePerformance> = {};
     for (const [name, data] of exerciseMap) {
       const completionRate = data.totalSets > 0 ? data.completedSets / data.totalSets : 0;
       const avgReps = data.completedSets > 0 ? data.totalReps / data.completedSets : 0;
-      const maxWeight = data.weights.length > 0 ? Math.max(...data.weights) : 0;
+      const maxWeight =
+        data.weights.length > 0 ? data.weights.reduce((a, b) => Math.max(a, b), 0) : 0;
       const avgWeight =
         data.weights.length > 0 ? data.weights.reduce((a, b) => a + b, 0) / data.weights.length : 0;
 
-      exercisePerformance.set(name, {
+      exercisePerformance[name] = {
         exerciseName: name,
         completionRate,
         avgReps,
@@ -133,7 +135,7 @@ export const getPerformanceContext = internalQuery({
         isOverperforming: completionRate > 0.9 && data.sessions.size >= 2,
         // Underperforming: completes <60% sets
         isUnderperforming: completionRate < 0.6 && data.sessions.size >= 2,
-      });
+      };
     }
 
     // 5. Session completion rate
