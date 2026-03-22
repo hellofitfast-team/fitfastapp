@@ -353,7 +353,18 @@
     "accountNamePlaceholder": "مثال: أحمد حسن",
     "accountNumberPlaceholder": "مثال: 01XXXXXXXXX",
     "atLeastOneRequired": "مطلوب واحدة على الأقل",
-    "featuresSelected": "{count, plural, one {ميزة واحدة محددة} other {# ميزات محددة}}"
+    "featuresSelected": "{count, plural, one {ميزة واحدة محددة} other {# ميزات محددة}}",
+    "teamManagement": "إدارة الفريق",
+    "teamManagementDesc": "دعوة مدربين آخرين لإدارة المنصة.",
+    "inviteCoach": "دعوة مدرب",
+    "inviteCoachDesc": "إرسال بريد إلكتروني بالدعوة مع بيانات تسجيل الدخول لمدرب جديد. سيتمكن من الوصول إلى لوحة الإدارة.",
+    "inviteFullName": "الاسم الكامل",
+    "inviteFullNamePlaceholder": "مثال: أحمد حسن",
+    "inviteEmail": "البريد الإلكتروني",
+    "inviteEmailPlaceholder": "coach@example.com",
+    "inviteSending": "جاري الإرسال...",
+    "inviteSendButton": "إرسال الدعوة",
+    "inviteCancel": "إلغاء"
   },
   "adminNav": {
     "dashboard": "لوحة التحكم",

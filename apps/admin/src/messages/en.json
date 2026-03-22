@@ -353,7 +353,18 @@
     "accountNamePlaceholder": "e.g. Ahmed Hassan",
     "accountNumberPlaceholder": "e.g. 01XXXXXXXXX",
     "atLeastOneRequired": "at least one required",
-    "featuresSelected": "{count, plural, one {# feature selected} other {# features selected}}"
+    "featuresSelected": "{count, plural, one {# feature selected} other {# features selected}}",
+    "teamManagement": "Team Management",
+    "teamManagementDesc": "Invite other coaches to manage the platform.",
+    "inviteCoach": "Invite Coach",
+    "inviteCoachDesc": "Send an invitation email with login credentials to a new coach. They will be able to access the admin panel.",
+    "inviteFullName": "Full Name",
+    "inviteFullNamePlaceholder": "e.g. Ahmed Hassan",
+    "inviteEmail": "Email Address",
+    "inviteEmailPlaceholder": "coach@example.com",
+    "inviteSending": "Sending...",
+    "inviteSendButton": "Send Invitation",
+    "inviteCancel": "Cancel"
   },
   "adminNav": {
     "dashboard": "Dashboard",

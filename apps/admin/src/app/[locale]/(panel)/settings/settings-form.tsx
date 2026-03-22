@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useConvexAuth, useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Calendar, DollarSign, Share2, Wallet, Dumbbell } from "lucide-react";
+import { Calendar, DollarSign, Share2, Wallet, Dumbbell, UserPlus } from "lucide-react";
 import * as Sentry from "@sentry/nextjs";
 import { MAX_PRICING_PLANS } from "@/convex/constants";
 import { PlansManager } from "./plans-manager";
@@ -12,6 +12,7 @@ import { PaymentMethodsManager } from "./payment-methods-manager";
 import { SocialLinksManager } from "./social-links-manager";
 import { SaveButton } from "./save-button";
 import { NotificationToggle } from "./notification-toggle";
+import { InviteCoachDialog } from "./invite-coach-dialog";
 
 export function AdminSettingsForm() {
   const t = useTranslations("admin");
@@ -173,6 +174,20 @@ export function AdminSettingsForm() {
           </div>
         </div>
         <SocialLinksManager />
+      </div>
+
+      {/* ===== Team Management ===== */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <div className="bg-primary/10 text-primary flex h-8 w-8 items-center justify-center rounded-lg">
+            <UserPlus className="h-4 w-4" />
+          </div>
+          <div>
+            <h2 className="text-sm font-semibold text-stone-900">{tSettings("teamManagement")}</h2>
+            <p className="mt-0.5 text-xs text-stone-400">{tSettings("teamManagementDesc")}</p>
+          </div>
+        </div>
+        <InviteCoachDialog />
       </div>
     </div>
   );
