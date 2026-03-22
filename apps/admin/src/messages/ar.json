@@ -395,7 +395,10 @@
     "roleCoach": "مدرب",
     "statusActive": "نشط",
     "statusPending": "مدعو",
-    "noTeamMembers": "لا يوجد أعضاء فريق بعد."
+    "noTeamMembers": "لا يوجد أعضاء فريق بعد.",
+    "teamActions": "إجراءات",
+    "teamRemove": "إزالة",
+    "confirmRemoveMember": "إزالة {email} من الفريق؟ سيتم حذف حسابهم وصلاحياتهم."
   },
   "adminNav": {
     "dashboard": "لوحة التحكم",

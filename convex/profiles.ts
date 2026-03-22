@@ -96,6 +96,66 @@ export const getTeamMembers = query({
   },
 });
 
+/** Remove a coach from the team (owner-only). Deletes profile + auth account. */
+export const removeTeamMember = mutation({
+  args: { email: v.string() },
+  handler: async (ctx, { email }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const callerProfile = await ctx.db
+      .query("profiles")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .unique();
+    if (!callerProfile?.isOwner) throw new Error("Only the owner can remove team members");
+
+    // Find the target profile
+    const allCoaches = await ctx.db
+      .query("profiles")
+      .withIndex("by_isCoach", (q) => q.eq("isCoach", true))
+      .collect();
+    const target = allCoaches.find((p) => p.email?.toLowerCase() === email.toLowerCase());
+
+    if (target?.isOwner) throw new Error("Cannot remove the owner account");
+
+    if (target) {
+      // Delete profile
+      await ctx.db.delete(target._id);
+
+      // Delete auth account
+      const authAccount = await ctx.db
+        .query("authAccounts")
+        .filter((q) =>
+          q.and(
+            q.eq(q.field("provider"), "password"),
+            q.eq(q.field("providerAccountId"), email.toLowerCase()),
+          ),
+        )
+        .first();
+      if (authAccount) {
+        await ctx.db.delete(authAccount._id);
+        // Delete users record too
+        const userDoc = await ctx.db
+          .query("users")
+          .filter((q) => q.eq(q.field("_id"), authAccount.userId))
+          .first();
+        if (userDoc) await ctx.db.delete(userDoc._id);
+      }
+    }
+
+    // Also delete any pending invite for this email
+    const invites = await ctx.db
+      .query("adminInvites")
+      .withIndex("by_email", (q) => q.eq("email", email))
+      .collect();
+    for (const inv of invites) {
+      await ctx.db.delete(inv._id);
+    }
+
+    return `Removed ${email} from the team`;
+  },
+});
+
 export const getAllClients = query({
   args: {},
   handler: async (ctx) => {

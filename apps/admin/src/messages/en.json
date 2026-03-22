@@ -395,7 +395,10 @@
     "roleCoach": "Coach",
     "statusActive": "Active",
     "statusPending": "Invited",
-    "noTeamMembers": "No team members yet."
+    "noTeamMembers": "No team members yet.",
+    "teamActions": "Actions",
+    "teamRemove": "Remove",
+    "confirmRemoveMember": "Remove {email} from the team? This will delete their account and access."
   },
   "adminNav": {
     "dashboard": "Dashboard",
