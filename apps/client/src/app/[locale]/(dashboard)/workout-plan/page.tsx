@@ -11,6 +11,9 @@ import {
   Sparkles,
   ChevronDown,
   ArrowLeftRight,
+  Heart,
+  TrendingUp,
+  Zap,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { cn } from "@fitfast/ui/cn";
@@ -36,6 +39,7 @@ interface NormalizedExercise {
   instructions: string[];
   equipment: string;
   notes: string;
+  suggestedWeight?: string;
 }
 
 /** Warmup/cooldown exercise */
@@ -44,6 +48,28 @@ interface WarmupCooldownExercise {
   exerciseDbId?: string;
   duration: number;
   instructions: string[];
+}
+
+/** Cardio finisher data */
+interface NormalizedCardioFinisher {
+  name: string;
+  exerciseDbId?: string;
+  durationMinutes: number;
+  intensity: string;
+  instructions: string[];
+}
+
+/** Active recovery data for rest days */
+interface NormalizedActiveRecovery {
+  recommendation: string;
+  durationMinutes: number;
+  intensity: string;
+}
+
+/** Superset pairing */
+interface NormalizedSuperset {
+  exerciseA: string;
+  exerciseB: string;
 }
 
 /** Normalized workout day plan */
@@ -55,6 +81,9 @@ interface NormalizedWorkoutDay {
   exercises: NormalizedExercise[];
   warmup: { exercises: WarmupCooldownExercise[] };
   cooldown: { exercises: WarmupCooldownExercise[] };
+  cardioFinisher?: NormalizedCardioFinisher;
+  supersets?: NormalizedSuperset[];
+  activeRecovery?: NormalizedActiveRecovery;
 }
 
 /** Raw workout day data from AI output (may have old or new field names) */
@@ -71,6 +100,23 @@ interface RawWorkoutDay {
   warmUp?: RawWarmupCooldown;
   cooldown?: RawWarmupCooldown;
   coolDown?: RawWarmupCooldown;
+  cardioFinisher?: {
+    name?: string;
+    exerciseDbId?: string;
+    durationMinutes?: number;
+    duration?: number;
+    intensity?: string;
+    instructions?: string[];
+  };
+  supersets?: { exerciseA?: string; exerciseB?: string; exercises?: [string, string] }[];
+  activeRecovery?: {
+    recommendation?: string;
+    type?: string;
+    durationMinutes?: number;
+    duration?: number;
+    intensity?: string;
+    description?: string;
+  };
 }
 
 interface RawExercise {
@@ -86,6 +132,7 @@ interface RawExercise {
   instructions?: string[];
   equipment?: string;
   notes?: string;
+  suggestedWeight?: string;
 }
 
 interface RawWarmupCooldown {
@@ -141,6 +188,7 @@ function normalizeWorkoutDay(raw: RawWorkoutDay | null): NormalizedWorkoutDay | 
     instructions: Array.isArray(ex.instructions) ? ex.instructions : [],
     equipment: ex.equipment || "",
     notes: ex.notes || "",
+    suggestedWeight: ex.suggestedWeight,
   }));
 
   let warmupExercises: WarmupCooldownExercise[] = [];
@@ -178,6 +226,38 @@ function normalizeWorkoutDay(raw: RawWorkoutDay | null): NormalizedWorkoutDay | 
     }
   }
 
+  // Normalize cardio finisher
+  const cardioFinisher: NormalizedCardioFinisher | undefined = raw.cardioFinisher?.name
+    ? {
+        name: raw.cardioFinisher.name,
+        exerciseDbId: raw.cardioFinisher.exerciseDbId,
+        durationMinutes: raw.cardioFinisher.durationMinutes ?? raw.cardioFinisher.duration ?? 12,
+        intensity: raw.cardioFinisher.intensity ?? "",
+        instructions: Array.isArray(raw.cardioFinisher.instructions)
+          ? raw.cardioFinisher.instructions
+          : [],
+      }
+    : undefined;
+
+  // Normalize supersets
+  const supersets: NormalizedSuperset[] | undefined = Array.isArray(raw.supersets)
+    ? raw.supersets
+        .map((s) => ({
+          exerciseA: s.exerciseA ?? s.exercises?.[0] ?? "",
+          exerciseB: s.exerciseB ?? s.exercises?.[1] ?? "",
+        }))
+        .filter((s) => s.exerciseA && s.exerciseB)
+    : undefined;
+
+  // Normalize active recovery (for rest days)
+  const activeRecovery: NormalizedActiveRecovery | undefined = raw.activeRecovery
+    ? {
+        recommendation: raw.activeRecovery.recommendation ?? raw.activeRecovery.description ?? "",
+        durationMinutes: raw.activeRecovery.durationMinutes ?? raw.activeRecovery.duration ?? 45,
+        intensity: raw.activeRecovery.intensity ?? "",
+      }
+    : undefined;
+
   return {
     workoutName: raw.workoutName || raw.name || "",
     duration: raw.duration || null,
@@ -190,6 +270,9 @@ function normalizeWorkoutDay(raw: RawWorkoutDay | null): NormalizedWorkoutDay | 
     exercises,
     warmup: { exercises: warmupExercises },
     cooldown: { exercises: cooldownExercises },
+    cardioFinisher,
+    supersets: supersets && supersets.length > 0 ? supersets : undefined,
+    activeRecovery,
   };
 }
 
@@ -198,6 +281,22 @@ function sectionDurationMinutes(exercises: WarmupCooldownExercise[]): number {
   const totalSec = exercises.reduce((sum, ex) => sum + (ex.duration || 0), 0);
   return Math.max(1, Math.round(totalSec / 60));
 }
+
+const PHASE_TRANSLATION_KEYS: Record<string, string> = {
+  foundation: "phaseFoundation",
+  build: "phaseBuild",
+  peak: "phasePeak",
+  deload: "phaseDeload",
+  retest: "phaseRetest",
+};
+
+const PHASE_COLORS: Record<string, string> = {
+  foundation: "bg-sky-100 text-sky-700",
+  build: "bg-emerald-100 text-emerald-700",
+  peak: "bg-amber-100 text-amber-700",
+  deload: "bg-violet-100 text-violet-700",
+  retest: "bg-rose-100 text-rose-700",
+};
 
 export default function WorkoutPlanPage() {
   const t = useTranslations("workouts");
@@ -369,7 +468,16 @@ export default function WorkoutPlanPage() {
     splitType?: string;
     splitName?: string;
     splitDescription?: string;
+    weekPhases?: { week: number; phase: string; volumeMultiplier: number }[];
   };
+
+  // Compute current week phase for display
+  const currentWeekPhase = (() => {
+    if (!planData.weekPhases || planData.weekPhases.length === 0) return null;
+    const weekNum = Math.floor(selectedDay / 7) + 1;
+    return planData.weekPhases.find((p) => p.week === weekNum) ?? null;
+  })();
+
   const rawDayPlan = resolveDayPlan(planData.weeklyPlan, selectedDay, workoutPlan.startDate);
   const dayPlan = normalizeWorkoutDay(rawDayPlan);
 
@@ -412,9 +520,21 @@ export default function WorkoutPlanPage() {
               {formatDateShort(workoutPlan.endDate, locale)}
             </p>
           </div>
-          {planData.splitName && (
-            <div className="bg-fitness/8 border-border flex items-center border-s px-4">
-              <span className="text-fitness text-sm font-bold">{planData.splitName}</span>
+          {(planData.splitName || currentWeekPhase) && (
+            <div className="bg-fitness/8 border-border flex flex-col items-center justify-center gap-1 border-s px-4">
+              {planData.splitName && (
+                <span className="text-fitness text-sm font-bold">{planData.splitName}</span>
+              )}
+              {currentWeekPhase && (
+                <span
+                  className={cn(
+                    "rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                    PHASE_COLORS[currentWeekPhase.phase] ?? "bg-neutral-100 text-neutral-700",
+                  )}
+                >
+                  {t(PHASE_TRANSLATION_KEYS[currentWeekPhase.phase] ?? currentWeekPhase.phase)}
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -499,7 +619,13 @@ export default function WorkoutPlanPage() {
       {dayPlan && (
         <>
           {dayPlan.restDay ? (
-            <RestDayView t={t} prevWorkout={findPrevWorkout()} nextWorkout={findNextWorkout()} />
+            <RestDayView
+              t={t}
+              prevWorkout={findPrevWorkout()}
+              nextWorkout={findNextWorkout()}
+              activeRecovery={dayPlan.activeRecovery}
+              locale={locale}
+            />
           ) : (
             <>
               {/* Stats are now in the hero header — no standalone card needed */}
@@ -690,6 +816,35 @@ export default function WorkoutPlanPage() {
                             </div>
                           </div>
 
+                          {/* Suggested weight badge */}
+                          {exercise.suggestedWeight && (
+                            <div className="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5">
+                              <TrendingUp className="h-3.5 w-3.5 text-emerald-600" />
+                              <span className="text-xs font-medium text-emerald-700">
+                                {t("suggestedWeight", { weight: exercise.suggestedWeight })}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Superset indicator */}
+                          {dayPlan?.supersets?.some(
+                            (s) => s.exerciseA === exercise.name || s.exerciseB === exercise.name,
+                          ) && (
+                            <div className="flex items-center gap-1.5 rounded-lg border border-violet-200 bg-violet-50 px-2.5 py-1.5">
+                              <Zap className="h-3.5 w-3.5 text-violet-600" />
+                              <span className="text-xs font-medium text-violet-700">
+                                {t("supersetWith", {
+                                  exercise:
+                                    dayPlan.supersets!.find((s) => s.exerciseA === exercise.name)
+                                      ?.exerciseB ??
+                                    dayPlan.supersets!.find((s) => s.exerciseB === exercise.name)
+                                      ?.exerciseA ??
+                                    "",
+                                })}
+                              </span>
+                            </div>
+                          )}
+
                           {/* Equipment */}
                           {exercise.equipment && (
                             <span className="bg-fitness/12 text-fitness inline-block rounded-md px-2.5 py-1 text-xs font-medium">
@@ -741,6 +896,40 @@ export default function WorkoutPlanPage() {
                     ))}
                   </div>
                 </CollapsibleSection>
+              )}
+
+              {/* Cardio Finisher (for fat loss goals) */}
+              {dayPlan.cardioFinisher && (
+                <div className="animate-slide-up overflow-hidden rounded-xl border border-rose-200 bg-rose-50">
+                  <div className="flex items-center justify-between p-4">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-100">
+                        <Heart className="h-4 w-4 text-rose-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-rose-900">{t("cardioFinisher")}</p>
+                        <p className="text-xs text-rose-600">
+                          {t("cardioFinisherDuration", {
+                            duration: toLocalDigits(dayPlan.cardioFinisher.durationMinutes, locale),
+                            intensity: dayPlan.cardioFinisher.intensity,
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="border-t border-rose-200 px-4 py-3">
+                    <p className="text-sm font-medium text-rose-800">
+                      {dayPlan.cardioFinisher.name}
+                    </p>
+                    {dayPlan.cardioFinisher.instructions.length > 0 && (
+                      <ul className="mt-1 space-y-0.5 text-xs text-rose-600">
+                        {dayPlan.cardioFinisher.instructions.map((inst, i) => (
+                          <li key={i}>&#8226; {inst}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
               )}
             </>
           )}
@@ -841,10 +1030,14 @@ function RestDayView({
   t,
   prevWorkout,
   nextWorkout,
+  activeRecovery,
+  locale,
 }: {
   t: ReturnType<typeof useTranslations>;
   prevWorkout: NormalizedWorkoutDay | null;
   nextWorkout: NormalizedWorkoutDay | null;
+  activeRecovery?: NormalizedActiveRecovery;
+  locale: string;
 }) {
   return (
     <div className="border-border bg-card shadow-card animate-slide-up space-y-4 rounded-xl border p-8 text-center">
@@ -862,6 +1055,23 @@ function RestDayView({
         <p className="text-muted-foreground text-sm">
           {t("restDayRecovery", { workout: prevWorkout.workoutName })}
         </p>
+      )}
+
+      {/* Active Recovery recommendation (for fat loss goals) */}
+      {activeRecovery && activeRecovery.recommendation && (
+        <div className="mx-auto max-w-xs rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-start">
+          <div className="mb-1.5 flex items-center gap-1.5">
+            <Heart className="h-3.5 w-3.5 text-emerald-600" />
+            <p className="text-xs font-semibold text-emerald-700">{t("activeRecovery")}</p>
+          </div>
+          <p className="text-sm text-emerald-800">{activeRecovery.recommendation}</p>
+          <p className="text-muted-foreground mt-1 text-xs">
+            {t("cardioFinisherDuration", {
+              duration: toLocalDigits(activeRecovery.durationMinutes, locale),
+              intensity: activeRecovery.intensity,
+            })}
+          </p>
+        </div>
       )}
 
       {/* Next workout preview */}

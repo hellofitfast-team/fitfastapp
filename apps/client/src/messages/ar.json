@@ -271,7 +271,18 @@
     "restDayTitle": "راحة واستشفاء",
     "restDayRecovery": "عضلاتك تتعافى بعد {workout}",
     "nextWorkout": "التمرين القادم",
-    "exerciseGuide": "دليل التمرين"
+    "exerciseGuide": "دليل التمرين",
+    "suggestedWeight": "مقترح: {weight}",
+    "cardioFinisher": "كارديو ختامي",
+    "cardioFinisherDuration": "{duration} د · {intensity}",
+    "activeRecovery": "استشفاء نشط",
+    "supersetWith": "سوبرسيت مع {exercise}",
+
+    "phaseFoundation": "التأسيس",
+    "phaseBuild": "البناء",
+    "phasePeak": "الذروة",
+    "phaseDeload": "التخفيف",
+    "phaseRetest": "إعادة الاختبار"
   },
   "checkIn": {
     "title": "المتابعة",

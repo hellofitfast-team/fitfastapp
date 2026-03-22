@@ -77,6 +77,15 @@ interface WorkoutExercise {
   restBetweenSets: string;
   targetMuscles: string[];
   instructions: string[];
+  suggestedWeight?: string;
+}
+
+interface CardioFinisher {
+  name: string;
+  exerciseDbId: string;
+  durationMinutes: number;
+  intensity: string;
+  instructions: string[];
 }
 
 interface TrainingDay {
@@ -87,11 +96,26 @@ interface TrainingDay {
   warmup: { exercises: WarmupCooldownExercise[] };
   exercises: WorkoutExercise[];
   cooldown: { exercises: WarmupCooldownExercise[] };
+  cardioFinisher?: CardioFinisher;
+  supersets?: { exerciseA: string; exerciseB: string }[];
+}
+
+interface ActiveRecovery {
+  recommendation: string;
+  durationMinutes: number;
+  intensity: string;
 }
 
 interface RestDay {
   restDay: true;
   workoutName: string;
+  activeRecovery?: ActiveRecovery;
+}
+
+interface WeekPhase {
+  week: number;
+  phase: string;
+  volumeMultiplier: number;
 }
 
 export interface WorkoutPlanOutput {
@@ -101,6 +125,7 @@ export interface WorkoutPlanOutput {
   weeklyPlan: Record<string, TrainingDay | RestDay>;
   progressionNotes: string;
   safetyTips: string[];
+  weekPhases?: WeekPhase[];
 }
 
 // ---------------------------------------------------------------------------
@@ -177,7 +202,47 @@ const GOAL_PARAMS: Record<
 > = {
   strength: { sets: 4, repsMin: 3, repsMax: 6, restSeconds: 150 },
   hypertrophy: { sets: 3, repsMin: 8, repsMax: 12, restSeconds: 90 },
+  fat_loss: { sets: 3, repsMin: 10, repsMax: 15, restSeconds: 45 },
   endurance: { sets: 3, repsMin: 15, repsMax: 20, restSeconds: 45 },
+};
+
+/** Volume ranges per muscle group per week by experience level. */
+const WEEKLY_VOLUME_RANGES: Record<string, { min: number; max: number }> = {
+  beginner: { min: 8, max: 12 },
+  intermediate: { min: 10, max: 16 },
+  advanced: { min: 12, max: 20 },
+};
+
+/** Category sort priority (lower = earlier in session). */
+const CATEGORY_ORDER: Record<string, number> = {
+  compound: 0,
+  accessory: 1,
+  isolation: 2,
+  cardio: 3,
+};
+
+/** Periodization phase definitions for 8-week cycles. */
+const PERIODIZATION_PHASES: {
+  name: string;
+  volumeMultiplier: number;
+  weeks: [number, number];
+}[] = [
+  { name: "foundation", volumeMultiplier: 0.85, weeks: [1, 2] },
+  { name: "build", volumeMultiplier: 1.0, weeks: [3, 4] },
+  { name: "peak", volumeMultiplier: 1.15, weeks: [5, 6] },
+  { name: "deload", volumeMultiplier: 0.55, weeks: [7, 7] },
+  { name: "retest", volumeMultiplier: 1.0, weeks: [8, 8] },
+];
+
+/** Standard weight increments for progressive overload. */
+const WEIGHT_INCREMENT = { upper: 2.5, lower: 5 };
+
+/** Minimum rest floors by goal type (seconds). */
+const MIN_REST: Record<string, number> = {
+  fat_loss: 30,
+  endurance: 30,
+  hypertrophy: 60,
+  strength: 120,
 };
 
 // ---------------------------------------------------------------------------
@@ -238,20 +303,57 @@ function muscleMatchesTarget(ex: Exercise, targetSet: Set<string>): boolean {
   return false;
 }
 
-function baseGoalParams(goal: string) {
+function isFatLossGoal(goal: string): boolean {
   const key = goal.toLowerCase();
-  if (key.includes("strength") || key.includes("قوة")) return { ...GOAL_PARAMS.strength! };
-  if (key.includes("endurance") || key.includes("تحمل")) return { ...GOAL_PARAMS.endurance! };
-  // Default to hypertrophy for muscle gain, weight loss, general fitness, etc.
-  return { ...GOAL_PARAMS.hypertrophy! };
+  return (
+    key.includes("fat_loss") ||
+    key.includes("fat loss") ||
+    key.includes("weight_loss") ||
+    key.includes("weight loss") ||
+    key.includes("lose weight") ||
+    key.includes("lose fat") ||
+    key.includes("recomp") ||
+    key.includes("تنشيف") ||
+    key.includes("خسارة")
+  );
+}
+
+function baseGoalParams(
+  goal: string,
+  experienceLevel: "beginner" | "intermediate" | "advanced" = "intermediate",
+) {
+  const key = goal.toLowerCase();
+  let params: { sets: number; repsMin: number; repsMax: number; restSeconds: number };
+
+  if (key.includes("strength") || key.includes("قوة")) {
+    params = { ...GOAL_PARAMS.strength! };
+  } else if (key.includes("endurance") || key.includes("تحمل")) {
+    params = { ...GOAL_PARAMS.endurance! };
+  } else if (isFatLossGoal(goal)) {
+    params = { ...GOAL_PARAMS.fat_loss! };
+  } else {
+    // Default to hypertrophy for muscle gain, general fitness, etc.
+    params = { ...GOAL_PARAMS.hypertrophy! };
+  }
+
+  // Experience-based adjustment: beginners get fewer sets
+  if (experienceLevel === "beginner") {
+    params.sets = Math.max(2, params.sets - 1);
+  }
+
+  return params;
 }
 
 /**
  * Dynamic goal params adjusted by performance context.
  * If no performance data, falls back to static goal params.
  */
-function goalParams(goal: string, perf?: PerformanceContext) {
-  const params = baseGoalParams(goal);
+function goalParams(
+  goal: string,
+  perf?: PerformanceContext,
+  experienceLevel: "beginner" | "intermediate" | "advanced" = "intermediate",
+) {
+  const params = baseGoalParams(goal, experienceLevel);
   if (!perf || perf.checkInCount === 0) return params;
 
   // Adjust based on overall session completion rate
@@ -306,9 +408,10 @@ function adjustForExercisePerformance(
   if (exPerf.isOverperforming) {
     // User consistently completes all sets — bump volume
     if (exPerf.avgReps > baseRepsMax) {
-      // Exceeding rep range: increase reps (capped at base + 4)
-      repsMin = Math.min(baseRepsMin + 1, baseRepsMin + 4);
-      repsMax = Math.min(baseRepsMax + 2, baseRepsMax + 4);
+      // Exceeding rep range: bump reps toward actual avg (capped at +4 from goal baseline)
+      const repsIncrease = Math.min(Math.ceil(exPerf.avgReps - baseRepsMax), 4);
+      repsMin = baseRepsMin + Math.max(1, repsIncrease - 1);
+      repsMax = Math.min(baseRepsMax + repsIncrease, baseRepsMax + 4);
     } else {
       // Completing within range: add a set
       sets = Math.min(sets + 1, 6);
@@ -346,7 +449,11 @@ function findPreviousExercise(
 // Core scoring & selection
 // ---------------------------------------------------------------------------
 
-function scoreExercise(ex: Exercise, targetMuscles: string[]): number {
+function scoreExercise(
+  ex: Exercise,
+  targetMuscles: string[],
+  coveredPatterns?: Set<string>,
+): number {
   let score = 0;
   const targetSet = new Set(targetMuscles.map((m) => m.toLowerCase()));
 
@@ -363,6 +470,15 @@ function scoreExercise(ex: Exercise, targetMuscles: string[]): number {
   // Secondary muscle match
   for (const m of ex.secondaryMuscles) {
     if (targetSet.has(m.toLowerCase())) score += 5;
+  }
+
+  // Phase 2A: Movement pattern diversity bonus/penalty
+  if (coveredPatterns) {
+    if (coveredPatterns.has(ex.movementPattern)) {
+      score -= 8; // Penalize already-covered patterns
+    } else {
+      score += 12; // Bonus for uncovered patterns
+    }
   }
 
   // Stable sort tiebreaker
@@ -418,11 +534,28 @@ function selectExercisesForDay(
     );
   }
 
-  // Score and sort
+  // Phase 2: Score with pattern diversity awareness
   const targetSet = new Set(targetMuscles.map((m) => m.toLowerCase()));
-  const scored = eligible
+  const coveredPatterns = new Set<string>();
+
+  // First pass: score without pattern penalty to get initial ranking
+  const initialScored = eligible
     .map((ex) => ({ ex, score: scoreExercise(ex, targetMuscles) }))
     .sort((a, b) => b.score - a.score);
+
+  // Second pass: re-score with pattern diversity (greedy selection)
+  const scored: { ex: Exercise; score: number }[] = [];
+  const remaining = [...initialScored];
+  while (remaining.length > 0) {
+    // Re-score remaining with current pattern coverage
+    for (const item of remaining) {
+      item.score = scoreExercise(item.ex, targetMuscles, coveredPatterns);
+    }
+    remaining.sort((a, b) => b.score - a.score);
+    const best = remaining.shift()!;
+    scored.push(best);
+    coveredPatterns.add(best.ex.movementPattern);
+  }
 
   // Partition: muscle-matched exercises vs non-matched
   const matched = scored.filter((s) => muscleMatchesTarget(s.ex, targetSet));
@@ -430,7 +563,7 @@ function selectExercisesForDay(
 
   // Determine count based on session duration if available, otherwise use level-based ranges
   const range = EXERCISE_COUNTS[input.experienceLevel] ?? EXERCISE_COUNTS.intermediate!;
-  const gp = goalParams(input.goal, input.performanceContext);
+  const gp = goalParams(input.goal, input.performanceContext, input.experienceLevel);
   let count: number;
 
   if (input.sessionDuration && input.sessionDuration > 0) {
@@ -465,6 +598,33 @@ function selectExercisesForDay(
   const selected = matched.slice(0, count);
   if (selected.length < count) {
     selected.push(...unmatched.slice(0, count - selected.length));
+  }
+
+  // Phase 2B: Enforce minimum 3 distinct movement patterns
+  const selectedPatterns = new Set(selected.map((s) => s.ex.movementPattern));
+  if (selectedPatterns.size < 3 && selected.length >= 3) {
+    const missingPatternExercises = scored.filter(
+      (s) => !selectedPatterns.has(s.ex.movementPattern) && !selected.includes(s),
+    );
+    for (const replacement of missingPatternExercises) {
+      if (selectedPatterns.size >= 3) break;
+      // Find the last (lowest-scored) selected exercise whose pattern appears more than once
+      const patternCounts = new Map<string, number>();
+      for (const s of selected) {
+        patternCounts.set(s.ex.movementPattern, (patternCounts.get(s.ex.movementPattern) ?? 0) + 1);
+      }
+      let swapIdx = -1;
+      for (let k = selected.length - 1; k >= 0; k--) {
+        if ((patternCounts.get(selected[k]!.ex.movementPattern) ?? 0) > 1) {
+          swapIdx = k;
+          break;
+        }
+      }
+      if (swapIdx >= 0) {
+        selected[swapIdx] = replacement;
+        selectedPatterns.add(replacement.ex.movementPattern);
+      }
+    }
   }
 
   return selected.map((s) => s.ex);
@@ -520,6 +680,244 @@ function selectCooldownExercises(
 }
 
 // ---------------------------------------------------------------------------
+// Phase 3: Cardio helpers
+// ---------------------------------------------------------------------------
+
+function selectCardioFinisher(
+  allExercises: Exercise[],
+  input: WorkoutPlanInput,
+  dayIndex: number = 0,
+): CardioFinisher | undefined {
+  if (!isFatLossGoal(input.goal)) return undefined;
+
+  const cardioExercises = allExercises.filter(
+    (ex) =>
+      ex.isActive !== false &&
+      ex.category === "cardio" &&
+      !hasInjuryConflict(ex, input.injuries) &&
+      equipmentAvailable(ex, input.availableEquipment),
+  );
+
+  if (cardioExercises.length === 0) return undefined;
+
+  // Rotate through available cardio exercises by day index for variety
+  const sorted = [...cardioExercises].sort((a, b) => (a.sortOrder ?? 999) - (b.sortOrder ?? 999));
+  const ex = sorted[dayIndex % sorted.length]!;
+  const lang = input.language;
+
+  return {
+    name: exerciseName(ex, lang),
+    exerciseDbId: ex._id,
+    durationMinutes: 12,
+    intensity: lang === "ar" ? "متوسطة" : "moderate",
+    instructions: exerciseInstructions(ex, lang).slice(0, 2),
+  };
+}
+
+function buildActiveRecovery(lang: "en" | "ar"): ActiveRecovery {
+  return {
+    recommendation:
+      lang === "ar"
+        ? "كارديو منخفض الشدة (مشي سريع، سباحة خفيفة، أو دراجة) لمدة ٣٠-٦٠ دقيقة"
+        : "Zone 2 cardio (brisk walking, light swimming, or cycling) for 30-60 minutes",
+    durationMinutes: 45,
+    intensity: lang === "ar" ? "منخفضة (Zone 2)" : "low (Zone 2)",
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Phase 5: Periodization helpers
+// ---------------------------------------------------------------------------
+
+function getWeekPhase(
+  weekNumber: number,
+  totalWeeks: number,
+): { name: string; volumeMultiplier: number } {
+  // For plans < 4 weeks: linear progression only (no deload)
+  if (totalWeeks < 4) {
+    return { name: "build", volumeMultiplier: 1.0 };
+  }
+
+  // For longer plans, cycle through phases (modulo 8 weeks)
+  const cycleWeek = ((weekNumber - 1) % 8) + 1;
+  for (const phase of PERIODIZATION_PHASES) {
+    if (cycleWeek >= phase.weeks[0] && cycleWeek <= phase.weeks[1]) {
+      return { name: phase.name, volumeMultiplier: phase.volumeMultiplier };
+    }
+  }
+  return { name: "build", volumeMultiplier: 1.0 };
+}
+
+function generateWeekPhases(totalWeeks: number): WeekPhase[] {
+  const phases: WeekPhase[] = [];
+  for (let w = 1; w <= totalWeeks; w++) {
+    const { name, volumeMultiplier } = getWeekPhase(w, totalWeeks);
+    phases.push({ week: w, phase: name, volumeMultiplier });
+  }
+  return phases;
+}
+
+// ---------------------------------------------------------------------------
+// Phase 4: Volume tracking helpers
+// ---------------------------------------------------------------------------
+
+function validateWeeklyVolume(
+  weeklyPlan: Record<string, TrainingDay | RestDay>,
+  experienceLevel: "beginner" | "intermediate" | "advanced",
+): void {
+  const range = WEEKLY_VOLUME_RANGES[experienceLevel] ?? WEEKLY_VOLUME_RANGES.intermediate!;
+  const muscleVolume: Record<string, number> = {};
+
+  // Count sets per muscle group across the week
+  for (const day of Object.values(weeklyPlan)) {
+    if (day.restDay) continue;
+    for (const ex of (day as TrainingDay).exercises) {
+      for (const muscle of ex.targetMuscles) {
+        const key = muscle.toLowerCase();
+        muscleVolume[key] = (muscleVolume[key] ?? 0) + ex.sets;
+      }
+    }
+  }
+
+  // Auto-adjust: reduce isolation first (exercises are sorted compound → accessory → isolation)
+  // Process in reverse order so isolation exercises get reduced before compounds
+  for (const day of Object.values(weeklyPlan)) {
+    if (day.restDay) continue;
+    const td = day as TrainingDay;
+    // Process exercises in reverse order (isolation last in sorted order → reduce first)
+    for (let j = td.exercises.length - 1; j >= 0; j--) {
+      const ex = td.exercises[j]!;
+      // Take the max needed reduction across all target muscles (avoid double-reducing)
+      let maxReduction = 0;
+      for (const muscle of ex.targetMuscles) {
+        const key = muscle.toLowerCase();
+        const vol = muscleVolume[key] ?? 0;
+        if (vol > range.max) {
+          const excess = vol - range.max;
+          maxReduction = Math.max(maxReduction, Math.min(ex.sets - 2, excess));
+        }
+      }
+      if (maxReduction > 0) {
+        ex.sets -= maxReduction;
+        // Update volume for all target muscles
+        for (const muscle of ex.targetMuscles) {
+          const key = muscle.toLowerCase();
+          muscleVolume[key] = (muscleVolume[key] ?? 0) - maxReduction;
+        }
+      }
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Phase 6: Enhanced progressive overload helpers
+// ---------------------------------------------------------------------------
+
+function getSuggestedWeight(
+  ex: Exercise,
+  perf: PerformanceContext | undefined,
+  lang: "en" | "ar",
+): string | undefined {
+  if (!perf) return undefined;
+  const exPerf = perf.exercisePerformance[ex.name];
+  if (!exPerf || exPerf.sessionCount < 2 || exPerf.maxWeight === 0) return undefined;
+
+  // Only suggest weight increase if overperforming
+  if (!exPerf.isOverperforming) return undefined;
+
+  const isLower = ["squat", "hinge"].includes(ex.movementPattern);
+  const increment = isLower ? WEIGHT_INCREMENT.lower : WEIGHT_INCREMENT.upper;
+  const suggestedKg = exPerf.maxWeight + increment;
+
+  return lang === "ar" ? `${suggestedKg} كجم` : `${suggestedKg} kg`;
+}
+
+function findDifficultyUpgrade(
+  ex: Exercise,
+  allExercises: Exercise[],
+  perf: PerformanceContext | undefined,
+): Exercise | null {
+  if (!perf) return null;
+  const exPerf = perf.exercisePerformance[ex.name];
+  if (!exPerf || !exPerf.isOverperforming || exPerf.sessionCount < 4) return null;
+  if (ex.difficulty === "advanced") return null;
+
+  const nextDifficulty = ex.difficulty === "beginner" ? "intermediate" : "advanced";
+  const upgrade = allExercises.find(
+    (candidate) =>
+      candidate._id !== ex._id &&
+      candidate.isActive !== false &&
+      candidate.movementPattern === ex.movementPattern &&
+      candidate.difficulty === nextDifficulty &&
+      candidate.primaryMuscles.some((m) => ex.primaryMuscles.includes(m)),
+  );
+
+  return upgrade ?? null;
+}
+
+// ---------------------------------------------------------------------------
+// Phase 7: Tailoring helpers
+// ---------------------------------------------------------------------------
+
+function findAlternativeExercise(
+  ex: Exercise,
+  allExercises: Exercise[],
+  injuries: string[],
+  availableEquipment?: string[],
+): Exercise | null {
+  return (
+    allExercises.find(
+      (candidate) =>
+        candidate._id !== ex._id &&
+        candidate.isActive !== false &&
+        candidate.movementPattern === ex.movementPattern &&
+        !hasInjuryConflict(candidate, injuries) &&
+        equipmentAvailable(candidate, availableEquipment) &&
+        candidate.primaryMuscles.some((m) => ex.primaryMuscles.includes(m)),
+    ) ?? null
+  );
+}
+
+function buildSupersets(
+  exercises: WorkoutExercise[],
+  allExercises: Exercise[],
+): { exerciseA: string; exerciseB: string }[] {
+  const pairs: { exerciseA: string; exerciseB: string }[] = [];
+  // Use exerciseDbId for lookup (works for both English and Arabic display names)
+  const exMap = new Map(allExercises.map((e) => [e._id, e]));
+  const used = new Set<number>();
+
+  for (let i = 0; i < exercises.length; i++) {
+    if (used.has(i)) continue;
+    const exA = exMap.get(exercises[i]!.exerciseDbId);
+    if (!exA) continue;
+
+    for (let j = i + 1; j < exercises.length; j++) {
+      if (used.has(j)) continue;
+      const exB = exMap.get(exercises[j]!.exerciseDbId);
+      if (!exB) continue;
+
+      // Pair opposing patterns: push+pull, squat+hinge
+      const isPushPull =
+        (exA.movementPattern === "push" && exB.movementPattern === "pull") ||
+        (exA.movementPattern === "pull" && exB.movementPattern === "push");
+      const isSquatHinge =
+        (exA.movementPattern === "squat" && exB.movementPattern === "hinge") ||
+        (exA.movementPattern === "hinge" && exB.movementPattern === "squat");
+
+      if (isPushPull || isSquatHinge) {
+        pairs.push({ exerciseA: exercises[i]!.name, exerciseB: exercises[j]!.name });
+        used.add(i);
+        used.add(j);
+        break;
+      }
+    }
+  }
+
+  return pairs;
+}
+
+// ---------------------------------------------------------------------------
 // Build day
 // ---------------------------------------------------------------------------
 
@@ -528,18 +926,32 @@ function buildTrainingDay(
   targetMuscles: string[],
   dayLabel: string,
   input: WorkoutPlanInput,
+  dayIndex: number = 0,
 ): TrainingDay {
   const lang = input.language;
   // PHUL override: power days use strength params, hypertrophy days use hypertrophy params
   const labelLower = dayLabel.toLowerCase();
   const perf = input.performanceContext;
+  const exp = input.experienceLevel;
   const gp = labelLower.includes("power")
-    ? goalParams("strength", perf)
+    ? goalParams("strength", perf, exp)
     : labelLower.includes("hypertrophy") || labelLower.includes("تضخيم")
-      ? goalParams("hypertrophy", perf)
-      : goalParams(input.goal, perf);
+      ? goalParams("hypertrophy", perf, exp)
+      : goalParams(input.goal, perf, exp);
 
-  const mainExercises = selectExercisesForDay(allExercises, targetMuscles, input);
+  let mainExercises = selectExercisesForDay(allExercises, targetMuscles, input);
+
+  // Phase 1D: Sort exercises by category: compound → accessory → isolation → cardio
+  mainExercises = [...mainExercises].sort(
+    (a, b) => (CATEGORY_ORDER[a.category] ?? 9) - (CATEGORY_ORDER[b.category] ?? 9),
+  );
+
+  // Phase 7C: Beginner overwhelm detection — cap at 5 compound-focused exercises
+  if (exp === "beginner" && mainExercises.length > 6) {
+    const compounds = mainExercises.filter((ex) => ex.category === "compound");
+    const others = mainExercises.filter((ex) => ex.category !== "compound");
+    mainExercises = [...compounds.slice(0, 4), ...others.slice(0, 1)];
+  }
   const warmups = selectWarmupExercises(allExercises, targetMuscles, input);
   const cooldowns = selectCooldownExercises(allExercises, targetMuscles, input);
 
@@ -559,17 +971,45 @@ function buildTrainingDay(
       restSec = ex.defaultRestSeconds > 0 ? ex.defaultRestSeconds : restSec;
     }
 
+    // Phase 6C: Difficulty upgrade if consistently overperforming
+    const upgrade = findDifficultyUpgrade(ex, allExercises, perf);
+    const effectiveEx = upgrade ?? ex;
+    const effectiveName = upgrade ? exerciseName(upgrade, lang) : exName;
+
     // Per-exercise performance adjustments (from actual logged data)
-    const perfAdj = adjustForExercisePerformance(exName, sets, repsMin, repsMax, restSec, perf);
+    const perfAdj = adjustForExercisePerformance(
+      effectiveName,
+      sets,
+      repsMin,
+      repsMax,
+      restSec,
+      perf,
+    );
     sets = perfAdj.sets;
     repsMin = perfAdj.repsMin;
     repsMax = perfAdj.repsMax;
     restSec = perfAdj.restSeconds;
 
+    // Phase 6B: Rest time decrease as progression for high performers
+    if (perf && perf.avgEnergy >= 7 && perf.avgSleep >= 7) {
+      const exPerf = perf.exercisePerformance[effectiveName];
+      if (exPerf?.isOverperforming) {
+        const goalKey = isFatLossGoal(input.goal)
+          ? "fat_loss"
+          : input.goal.toLowerCase().includes("strength")
+            ? "strength"
+            : input.goal.toLowerCase().includes("endurance")
+              ? "endurance"
+              : "hypertrophy";
+        const minRest = MIN_REST[goalKey] ?? 60;
+        restSec = Math.max(minRest, restSec - 15);
+      }
+    }
+
     // Progressive overload from previous plan — only if performance adjustment didn't already bump
     const perfAlreadyAdjusted =
       sets !== gp.sets || repsMin !== gp.repsMin || repsMax !== gp.repsMax;
-    const prev = findPreviousExercise(input.previousPlan, exName);
+    const prev = findPreviousExercise(input.previousPlan, effectiveName);
     if (prev && !perfAlreadyAdjusted) {
       // Try to increment reps by 1-2 (capped at goal max + 4)
       const canAddReps = prev.repsMax + 2 <= gp.repsMax + 4; // allow slight overshoot
@@ -586,15 +1026,20 @@ function buildTrainingDay(
 
     const repsStr = repsMin === repsMax ? `${repsMin}` : `${repsMin}-${repsMax}`;
 
-    return {
-      name: exerciseName(ex, lang),
-      exerciseDbId: ex._id,
+    // Phase 6A: Suggested weight for progressive overload
+    const suggestedWeight = getSuggestedWeight(effectiveEx, perf, lang);
+
+    const result: WorkoutExercise = {
+      name: effectiveName,
+      exerciseDbId: effectiveEx._id,
       sets,
       reps: repsStr,
       restBetweenSets: `${restSec}s`,
-      targetMuscles: ex.primaryMuscles,
-      instructions: exerciseInstructions(ex, lang).slice(0, 2),
+      targetMuscles: effectiveEx.primaryMuscles,
+      instructions: exerciseInstructions(effectiveEx, lang).slice(0, 2),
     };
+    if (suggestedWeight) result.suggestedWeight = suggestedWeight;
+    return result;
   });
 
   // Warmup exercises
@@ -613,14 +1058,24 @@ function buildTrainingDay(
     instructions: exerciseInstructions(ex, lang).slice(0, 1),
   }));
 
-  // Estimate duration: warmup ~5min + exercises * (sets * ~1.5min) + cooldown ~5min
+  // Phase 3A: Cardio finisher for fat loss goals
+  const cardioFinisher = selectCardioFinisher(allExercises, input, dayIndex);
+
+  // Estimate duration: warmup ~5min + exercises * (sets * ~1.5min) + cooldown ~5min + cardio
   const exerciseMins = workoutExercises.reduce((sum, ex) => sum + ex.sets * 1.5, 0);
-  const duration = Math.round(5 + exerciseMins + 5);
+  const cardioMins = cardioFinisher?.durationMinutes ?? 0;
+  const duration = Math.round(5 + exerciseMins + 5 + cardioMins);
 
   // Determine workout name
   const workoutName = lang === "ar" ? `تمرين ${dayLabel}` : `${dayLabel} Day`;
 
-  return {
+  // Phase 7B: Superset support for time-poor sessions
+  const supersets =
+    input.sessionDuration && input.sessionDuration < 35
+      ? buildSupersets(workoutExercises, allExercises)
+      : undefined;
+
+  const day: TrainingDay = {
     workoutName,
     duration,
     targetMuscles,
@@ -629,13 +1084,21 @@ function buildTrainingDay(
     exercises: workoutExercises,
     cooldown: { exercises: cooldownList },
   };
+  if (cardioFinisher) day.cardioFinisher = cardioFinisher;
+  if (supersets && supersets.length > 0) day.supersets = supersets;
+  return day;
 }
 
-function buildRestDay(lang: "en" | "ar"): RestDay {
-  return {
+function buildRestDay(lang: "en" | "ar", goal: string): RestDay {
+  const day: RestDay = {
     restDay: true as const,
     workoutName: lang === "ar" ? "يوم راحة" : "Rest Day",
   };
+  // Phase 3B: Active recovery on rest days for fat loss goals
+  if (isFatLossGoal(goal)) {
+    day.activeRecovery = buildActiveRecovery(lang);
+  }
+  return day;
 }
 
 // ---------------------------------------------------------------------------
@@ -666,7 +1129,7 @@ function generateProgressionNotes(input: WorkoutPlanInput): string {
     : "adding reps or sets progressively";
   let note = `Focus on ${goalText} each week. Maintain proper form before increasing load. ${
     experienceLevel === "beginner"
-      ? "Master movement patterns first."
+      ? "Master movement patterns first. Keep 1-2 reps in reserve on every set."
       : "Track your lifts to ensure consistent progress."
   }`;
   if (gender === "female" && femaleHealth?.isPregnant) {
@@ -763,11 +1226,14 @@ export function generateWorkoutPlan(
   exercises: Exercise[],
   input: WorkoutPlanInput,
 ): WorkoutPlanOutput {
-  const { split, planDuration, language: lang } = input;
+  const { split, planDuration, language: lang, experienceLevel } = input;
   const dayLabels = lang === "ar" ? split.dayLabelsAr : split.dayLabels;
 
-  const weeklyPlan: Record<string, TrainingDay | RestDay> = {};
+  // Phase 5: Calculate periodization phases
+  const totalWeeks = Math.max(1, Math.ceil(planDuration / 7));
+  const weekPhases = generateWeekPhases(totalWeeks);
 
+  const weeklyPlan: Record<string, TrainingDay | RestDay> = {};
   const numDays = Math.min(planDuration, dayLabels.length);
 
   for (let i = 0; i < numDays; i++) {
@@ -776,19 +1242,40 @@ export function generateWorkoutPlan(
     const targetMuscles = musclesForLabel(label);
 
     if (targetMuscles === null) {
-      // Rest day
-      weeklyPlan[dayKey] = buildRestDay(lang);
+      weeklyPlan[dayKey] = buildRestDay(lang, input.goal);
     } else {
       weeklyPlan[dayKey] = buildTrainingDay(
         exercises,
         targetMuscles,
         lang === "ar" ? split.dayLabelsAr[i]! : split.dayLabels[i]!,
         input,
+        i,
       );
     }
   }
 
-  return {
+  // Phase 5B: Apply periodization volume multiplier to each week's training days
+  if (totalWeeks >= 4) {
+    for (let i = 0; i < numDays; i++) {
+      const dayKey = `day${i + 1}`;
+      const day = weeklyPlan[dayKey];
+      if (!day || day.restDay) continue;
+
+      const weekNum = Math.floor(i / 7) + 1;
+      const phase = weekPhases.find((p) => p.week === weekNum);
+      if (!phase || phase.volumeMultiplier === 1.0) continue;
+
+      const td = day as TrainingDay;
+      for (const ex of td.exercises) {
+        ex.sets = Math.max(2, Math.round(ex.sets * phase.volumeMultiplier));
+      }
+    }
+  }
+
+  // Phase 4B: Validate weekly volume against framework ranges
+  validateWeeklyVolume(weeklyPlan, experienceLevel);
+
+  const output: WorkoutPlanOutput = {
     splitType: split.splitType,
     splitName: lang === "ar" ? split.splitNameAr : split.splitName,
     splitDescription: lang === "ar" ? split.splitDescriptionAr : split.splitDescription,
@@ -796,6 +1283,13 @@ export function generateWorkoutPlan(
     progressionNotes: generateProgressionNotes(input),
     safetyTips: generateSafetyTips(input),
   };
+
+  // Phase 5C: Include week phases for plans >= 4 weeks
+  if (totalWeeks >= 4) {
+    output.weekPhases = weekPhases;
+  }
+
+  return output;
 }
 
 // ---------------------------------------------------------------------------

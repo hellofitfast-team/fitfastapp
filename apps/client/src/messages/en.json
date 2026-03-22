@@ -271,7 +271,18 @@
     "restDayTitle": "Rest & Recovery",
     "restDayRecovery": "Your muscles are recovering after {workout}",
     "nextWorkout": "Next workout",
-    "exerciseGuide": "Exercise Guide"
+    "exerciseGuide": "Exercise Guide",
+    "suggestedWeight": "Suggested: {weight}",
+    "cardioFinisher": "Cardio Finisher",
+    "cardioFinisherDuration": "{duration} min · {intensity}",
+    "activeRecovery": "Active Recovery",
+    "supersetWith": "Superset with {exercise}",
+
+    "phaseFoundation": "Foundation",
+    "phaseBuild": "Build",
+    "phasePeak": "Peak",
+    "phaseDeload": "Deload",
+    "phaseRetest": "Retest"
   },
   "checkIn": {
     "title": "Check-in",

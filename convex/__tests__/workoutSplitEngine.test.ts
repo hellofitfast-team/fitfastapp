@@ -37,9 +37,9 @@ describe("selectWorkoutSplit", () => {
       expect(result.splitType).toBe("full_body");
     });
 
-    it("selects phul for intermediate with 4 days/week", () => {
+    it("selects upper_lower for intermediate with 4 days/week", () => {
       const result = selectWorkoutSplit("intermediate", 4);
-      expect(result.splitType).toBe("phul");
+      expect(result.splitType).toBe("upper_lower");
     });
 
     it("selects anterior_posterior for intermediate with 5 days/week", () => {
@@ -100,17 +100,10 @@ describe("selectWorkoutSplit", () => {
       ]);
     });
 
-    it("generates correct phul labels (6-day cycle)", () => {
+    it("generates correct upper_lower labels for intermediate 4-day (6-day cycle)", () => {
       const result = selectWorkoutSplit("intermediate", 4, 6);
-      // phul: 0=Power Upper, 1=Power Lower, 2=Rest, 3=Hypertrophy Upper, 4=Hypertrophy Lower, 5=Rest
-      expect(result.dayLabels).toEqual([
-        "Power Upper",
-        "Power Lower",
-        "Rest",
-        "Hypertrophy Upper",
-        "Hypertrophy Lower",
-        "Rest",
-      ]);
+      // upper_lower: 0=Upper, 1=Lower, 2=Rest, 3=Upper, 4=Lower, 5=Rest
+      expect(result.dayLabels).toEqual(["Upper", "Lower", "Rest", "Upper", "Lower", "Rest"]);
     });
 
     it("generates correct anterior_posterior labels (3-day cycle)", () => {

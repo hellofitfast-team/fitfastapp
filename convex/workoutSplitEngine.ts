@@ -233,7 +233,7 @@ function generateDayLabels(splitType: string, totalDays: number): { en: string[]
  * | Experience   | 2-3 days    | 4 days      | 5 days              | 6 days          |
  * |-------------|-------------|-------------|---------------------|-----------------|
  * | Beginner    | Full Body   | Full Body   | Upper/Lower         | Upper/Lower     |
- * | Intermediate| Full Body   | PHUL        | Anterior/Posterior  | Push/Pull/Legs  |
+ * | Intermediate| Full Body   | Upper/Lower | Anterior/Posterior  | Push/Pull/Legs  |
  * | Advanced    | Upper/Lower | PPL         | Bro Split           | Arnold          |
  */
 export function selectWorkoutSplit(
@@ -248,7 +248,8 @@ export function selectWorkoutSplit(
     splitType = exp === "advanced" ? "upper_lower" : "full_body";
   } else if (daysPerWeek === 4) {
     if (exp === "beginner") splitType = "full_body";
-    else if (exp === "intermediate") splitType = "phul";
+    else if (exp === "intermediate")
+      splitType = "upper_lower"; // Framework: U/L better than PHUL at 4 days
     else splitType = "push_pull_legs";
   } else if (daysPerWeek === 5) {
     if (exp === "beginner") splitType = "upper_lower";
