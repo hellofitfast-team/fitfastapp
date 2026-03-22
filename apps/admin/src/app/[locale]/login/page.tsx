@@ -8,9 +8,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuthActions } from "@convex-dev/auth/react";
-import { useConvexAuth, useQuery } from "convex/react";
+import { useConvexAuth, useQuery, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Mail, Lock, ArrowRight } from "lucide-react";
+import { Mail, Lock, ArrowRight, Sparkles, Loader2 } from "lucide-react";
 import * as Sentry from "@sentry/nextjs";
 
 function createLoginSchema(t: (key: string) => string) {
@@ -33,9 +33,13 @@ export default function AdminLoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [signInComplete, setSignInComplete] = useState(false);
+  const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const [magicLinkLoading, setMagicLinkLoading] = useState(false);
+  const requestSetupLink = useAction(api.adminInviteActions.requestInitialSetupLink);
 
   const { isAuthenticated: isConvexAuth } = useConvexAuth();
   const profile = useQuery(api.profiles.getMyProfile, isConvexAuth ? {} : "skip");
+  const hasOwner = useQuery(api.adminInvite.hasOwner);
   const isSigningOut = useRef(false);
 
   // Derive error from URL param instead of setting state in an effect
@@ -224,6 +228,49 @@ export default function AdminLoginPage() {
                 )}
               </button>
             </form>
+
+            {/* Initial owner setup — only shown when no owner exists */}
+            {hasOwner === false && (
+              <div className="border-t border-stone-100 px-8 pb-6">
+                {magicLinkSent ? (
+                  <div className="mt-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                    <Sparkles className="h-4 w-4 shrink-0 text-emerald-600" />
+                    <p className="text-sm text-emerald-700">{t("magicLinkSent")}</p>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={magicLinkLoading}
+                    onClick={async () => {
+                      const emailValue = (document.getElementById("email") as HTMLInputElement)
+                        ?.value;
+                      if (!emailValue) {
+                        setError(t("enterEmailFirst"));
+                        return;
+                      }
+                      setMagicLinkLoading(true);
+                      setError(null);
+                      try {
+                        await requestSetupLink({ email: emailValue, fullName: "Owner" });
+                        setMagicLinkSent(true);
+                      } catch (err) {
+                        setError(err instanceof Error ? err.message : t("magicLinkFailed"));
+                      } finally {
+                        setMagicLinkLoading(false);
+                      }
+                    }}
+                    className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-stone-200 bg-stone-50 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-100 disabled:opacity-50"
+                  >
+                    {magicLinkLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-4 w-4 text-[#FF4500]" />
+                    )}
+                    {t("setupWithMagicLink")}
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

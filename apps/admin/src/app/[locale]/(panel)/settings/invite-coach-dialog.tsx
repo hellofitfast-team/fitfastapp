@@ -13,7 +13,7 @@ export function InviteCoachDialog() {
   const [fullName, setFullName] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
-  const inviteAdmin = useAction(api.adminInvite.inviteAdmin);
+  const inviteAdmin = useAction(api.adminInviteActions.inviteAdmin);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

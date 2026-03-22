@@ -296,3 +296,70 @@ export const sendRejectionEmail = internalAction({
     await sendEmail(email, subject, html);
   },
 });
+
+/**
+ * Send admin/coach invite email with a setup link.
+ * The recipient clicks the link to set their own password.
+ */
+export const sendAdminInviteEmail = internalAction({
+  args: {
+    email: v.string(),
+    fullName: v.string(),
+    setupLink: v.string(),
+  },
+  handler: async (_ctx, { email, fullName, setupLink }): Promise<void> => {
+    const safeName = escapeHtml(fullName);
+
+    const subject = "You're Invited to FitFast Coach Panel";
+    const html = `
+      <div dir="ltr" style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
+        <h1 style="color:#FF4500">Welcome to FitFast, ${safeName}!</h1>
+        <p>You've been invited to join FitFast as a coach. Click the button below to set up your account and create your password.</p>
+        <div style="text-align:center;margin:32px 0">
+          <a href="${setupLink}" style="background:#FF4500;color:#fff;padding:14px 32px;border-radius:12px;text-decoration:none;font-weight:600;display:inline-block">
+            Set Up Your Account
+          </a>
+        </div>
+        <p style="color:#6b7280;font-size:13px">This link expires in 7 days. If you didn't expect this invitation, you can safely ignore this email.</p>
+        <p style="color:#6b7280;font-size:12px;margin-top:32px">— FitFast</p>
+      </div>`;
+
+    await sendEmail(email, subject, html);
+  },
+});
+
+/** @deprecated Use sendAdminInviteEmail instead */
+export const sendAdminCredentialsEmail = internalAction({
+  args: {
+    email: v.string(),
+    fullName: v.string(),
+    password: v.string(),
+    adminUrl: v.optional(v.string()),
+  },
+  handler: async (_ctx, { email, fullName, password, adminUrl }): Promise<void> => {
+    const safeName = escapeHtml(fullName);
+    const safeEmail = escapeHtml(email);
+    const safePassword = escapeHtml(password);
+    const loginUrl = adminUrl ?? "https://admin.fitfast.app";
+
+    const subject = "Your FitFast Coach Account is Ready";
+    const html = `
+      <div dir="ltr" style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
+        <h1 style="color:#FF4500">Welcome to FitFast, ${safeName}!</h1>
+        <p>Your coach account has been created. Here are your login credentials:</p>
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:20px;margin:24px 0">
+          <p style="margin:0 0 8px"><strong>Email:</strong> ${safeEmail}</p>
+          <p style="margin:0 0 8px"><strong>Password:</strong> <code style="background:#fee2e2;padding:2px 8px;border-radius:4px;font-size:15px">${safePassword}</code></p>
+        </div>
+        <div style="text-align:center;margin:32px 0">
+          <a href="${loginUrl}" style="background:#FF4500;color:#fff;padding:14px 32px;border-radius:12px;text-decoration:none;font-weight:600;display:inline-block">
+            Sign In to Coach Panel
+          </a>
+        </div>
+        <p style="color:#ef4444;font-size:13px;font-weight:600">⚠️ Please change your password after your first login.</p>
+        <p style="color:#6b7280;font-size:12px;margin-top:32px">— FitFast</p>
+      </div>`;
+
+    await sendEmail(email, subject, html);
+  },
+});

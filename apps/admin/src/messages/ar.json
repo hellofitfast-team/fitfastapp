@@ -30,6 +30,10 @@
     "signingIn": "جاري تسجيل الدخول",
     "notAuthorized": "هذا الحساب ليس لديه صلاحية المدرب",
     "invalidCredentials": "البريد الإلكتروني أو كلمة المرور غير صحيحة",
+    "setupWithMagicLink": "إعداد حساب المالك",
+    "magicLinkSent": "تم إرسال رابط الإعداد! تحقق من بريدك الإلكتروني.",
+    "magicLinkFailed": "فشل إرسال رابط الإعداد",
+    "enterEmailFirst": "أدخل بريدك الإلكتروني أولاً",
     "verificationCodeSent": "تم إرسال رمز التحقق إلى بريدك الإلكتروني",
     "verificationCode": "رمز التحقق",
     "verify": "تحقق",
@@ -286,6 +290,24 @@
     "noScreenshot": "لم يتم رفع صورة",
     "clickToZoom": "انقر للتكبير"
   },
+  "setup": {
+    "title": "إعداد حسابك",
+    "subtitle": "أنشئ كلمة مرورك للوصول إلى لوحة المدرب",
+    "password": "كلمة المرور",
+    "passwordPlaceholder": "أدخل كلمة مرورك (8 أحرف كحد أدنى)",
+    "confirmPassword": "تأكيد كلمة المرور",
+    "confirmPasswordPlaceholder": "أعد إدخال كلمة مرورك",
+    "createAccount": "إنشاء الحساب",
+    "creating": "جاري الإعداد...",
+    "setupComplete": "تم إنشاء الحساب!",
+    "redirecting": "جاري التحويل إلى لوحة التحكم...",
+    "setupFailed": "فشل إنشاء الحساب. حاول مرة أخرى.",
+    "invalidLink": "رابط إعداد غير صالح",
+    "invalidLinkDesc": "هذا الرابط غير صالح أو مفقود. تحقق من بريد الدعوة.",
+    "inviteUsed": "تم استخدام الدعوة بالفعل",
+    "inviteExpired": "انتهت صلاحية الدعوة",
+    "contactAdmin": "تواصل مع الشخص الذي دعاك للحصول على رابط جديد."
+  },
   "settings": {
     "pricingPlans": "خطط الأسعار",
     "paymentMethods": "طرق الدفع",
@@ -482,7 +504,8 @@
   },
   "validation": {
     "invalidEmail": "يرجى إدخال بريد إلكتروني صالح",
-    "passwordMinLength": "يجب أن تكون كلمة المرور ٦ أحرف على الأقل"
+    "passwordMinLength": "يجب أن تكون كلمة المرور ٨ أحرف على الأقل",
+    "passwordMismatch": "كلمتا المرور غير متطابقتين"
   },
   "routeErrors": {
     "checkIn": {

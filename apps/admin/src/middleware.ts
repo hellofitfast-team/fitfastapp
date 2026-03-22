@@ -49,8 +49,8 @@ export default convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
   const path = stripLocale(pathname);
   const locale = getLocaleFromPath(pathname);
 
-  // Login page is public
-  if (path === "/login") {
+  // Login and setup pages are public
+  if (path === "/login" || path === "/setup") {
     const response = intlMiddleware(request);
     response.headers.set("x-request-id", requestId);
     return response;

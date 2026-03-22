@@ -74,6 +74,7 @@ export default defineSchema({
     planStartDate: v.optional(v.string()),
     planEndDate: v.optional(v.string()),
     isCoach: v.boolean(),
+    isOwner: v.optional(v.boolean()),
     notificationReminderTime: v.optional(v.string()),
     inactiveSince: v.optional(v.number()),
     updatedAt: v.number(),
@@ -526,4 +527,16 @@ export default defineSchema({
     .index("by_movement", ["movementPattern", "isActive"])
     .index("by_difficulty", ["difficulty", "isActive"])
     .searchIndex("search_name", { searchField: "name" }),
+
+  adminInvites: defineTable({
+    email: v.string(),
+    fullName: v.string(),
+    token: v.string(),
+    expiresAt: v.number(),
+    usedAt: v.optional(v.number()),
+    invitedBy: v.optional(v.string()), // userId of the coach who sent the invite
+    createdAt: v.number(),
+  })
+    .index("by_token", ["token"])
+    .index("by_email", ["email"]),
 });

@@ -1,66 +1,122 @@
-"use node";
-
 import { v } from "convex/values";
-import { action } from "./_generated/server";
+import { query, internalMutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { Scrypt } from "lucia";
-import { getAuthUserId } from "@convex-dev/auth/server";
 
-/**
- * Invite a new admin/coach user from the admin panel.
- * Requires the caller to be an authenticated coach.
- * Creates the user account, sets isCoach=true, and sends credentials via email.
- */
-export const inviteAdmin = action({
-  args: {
-    email: v.string(),
-    fullName: v.string(),
-  },
-  handler: async (ctx, { email, fullName }): Promise<string> => {
-    // Verify caller is an authenticated coach
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+const INVITE_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
-    const profile = await ctx.runQuery(internal.helpers.getProfileInternal, {
-      userId,
-    });
-    if (!profile?.isCoach) throw new Error("Not authorized — coach only");
+// ---------------------------------------------------------------------------
+// Queries
+// ---------------------------------------------------------------------------
 
-    // Check if user already exists
-    const existing = await ctx.runQuery(internal.seed.findAuthAccountByEmail, { email });
-    if (existing) {
-      throw new Error(`User with email ${email} already exists`);
-    }
+/** Validate an invite token (public — used by the setup page). */
+export const validateInvite = query({
+  args: { token: v.string() },
+  handler: async (ctx, { token }) => {
+    const invite = await ctx.db
+      .query("adminInvites")
+      .withIndex("by_token", (q) => q.eq("token", token))
+      .unique();
 
-    // Generate a random temporary password
-    const tempPassword = generateTempPassword();
-    const hashedPassword = await new Scrypt().hash(tempPassword);
+    if (!invite) return { valid: false as const, error: "invalid" as const };
+    if (invite.usedAt) return { valid: false as const, error: "used" as const };
+    if (Date.now() > invite.expiresAt) return { valid: false as const, error: "expired" as const };
 
-    // Create the user account with isCoach=true
-    await ctx.runMutation(internal.seed.insertAuthUser, {
-      email,
-      hashedPassword,
-      fullName,
-      isCoach: true,
-    });
-
-    // Send credentials email
-    const adminUrl = process.env.ADMIN_APP_URL ?? "https://admin.fitfast.app";
-    await ctx.runAction(internal.email.sendAdminCredentialsEmail, {
-      email,
-      fullName,
-      password: tempPassword,
-      adminUrl,
-    });
-
-    return `Invited ${fullName} (${email}) — credentials sent via email.`;
+    return {
+      valid: true as const,
+      email: invite.email,
+      fullName: invite.fullName,
+    };
   },
 });
 
-/** Generate a random 12-character password with mixed case, digits, and symbols. */
-function generateTempPassword(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%";
-  const bytes = new Uint8Array(12);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes, (b) => chars[b % chars.length]).join("");
-}
+/** Check if a profile with isOwner exists (to determine if initial setup is needed). */
+export const hasOwner = query({
+  args: {},
+  handler: async (ctx) => {
+    const owner = await ctx.db
+      .query("profiles")
+      .withIndex("by_isCoach", (q) => q.eq("isCoach", true))
+      .filter((q) => q.eq(q.field("isOwner"), true))
+      .first();
+    return !!owner;
+  },
+});
+
+/** Internal version of hasOwner for use in actions. */
+export const hasOwnerInternal = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const owner = await ctx.db
+      .query("profiles")
+      .withIndex("by_isCoach", (q) => q.eq("isCoach", true))
+      .filter((q) => q.eq(q.field("isOwner"), true))
+      .first();
+    return !!owner;
+  },
+});
+
+/** Check if an admin invite exists for an email (internal — used by profile callback). */
+export const getInviteByEmail = internalQuery({
+  args: { email: v.string() },
+  handler: async (ctx, { email }) => {
+    return ctx.db
+      .query("adminInvites")
+      .withIndex("by_email", (q) => q.eq("email", email))
+      .order("desc")
+      .first();
+  },
+});
+
+// ---------------------------------------------------------------------------
+// Mutations
+// ---------------------------------------------------------------------------
+
+/** Mark an invite as used (internal — called after account creation). */
+export const markInviteUsed = internalMutation({
+  args: { token: v.string() },
+  handler: async (ctx, { token }) => {
+    const invite = await ctx.db
+      .query("adminInvites")
+      .withIndex("by_token", (q) => q.eq("token", token))
+      .unique();
+    if (invite) {
+      await ctx.db.patch(invite._id, { usedAt: Date.now() });
+    }
+  },
+});
+
+/** Create an invite record (internal — used by actions). */
+export const createInviteRecord = internalMutation({
+  args: {
+    email: v.string(),
+    fullName: v.string(),
+    token: v.string(),
+    invitedBy: v.optional(v.string()),
+  },
+  handler: async (ctx, { email, fullName, token, invitedBy }) => {
+    // Check for existing unused invite
+    const existing = await ctx.db
+      .query("adminInvites")
+      .withIndex("by_email", (q) => q.eq("email", email))
+      .order("desc")
+      .first();
+    if (existing && !existing.usedAt && Date.now() < existing.expiresAt) {
+      throw new Error(`An active invite already exists for ${email}`);
+    }
+
+    // Check if user already has an account
+    const existingAccount = await ctx.runQuery(internal.seed.findAuthAccountByEmail, { email });
+    if (existingAccount) {
+      throw new Error(`User with email ${email} already has an account`);
+    }
+
+    return ctx.db.insert("adminInvites", {
+      email,
+      fullName,
+      token,
+      expiresAt: Date.now() + INVITE_EXPIRY_MS,
+      invitedBy,
+      createdAt: Date.now(),
+    });
+  },
+});

@@ -30,6 +30,10 @@
     "signingIn": "Signing in",
     "notAuthorized": "This account does not have coach access",
     "invalidCredentials": "Invalid email or password",
+    "setupWithMagicLink": "Set Up Owner Account",
+    "magicLinkSent": "Setup link sent! Check your email.",
+    "magicLinkFailed": "Failed to send setup link",
+    "enterEmailFirst": "Enter your email address first",
     "verificationCodeSent": "A verification code has been sent to your email",
     "verificationCode": "Verification Code",
     "verify": "Verify",
@@ -286,6 +290,24 @@
     "noScreenshot": "No screenshot uploaded",
     "clickToZoom": "Click to zoom"
   },
+  "setup": {
+    "title": "Set Up Your Account",
+    "subtitle": "Create your password to access the coach panel",
+    "password": "Password",
+    "passwordPlaceholder": "Enter your password (min 8 characters)",
+    "confirmPassword": "Confirm Password",
+    "confirmPasswordPlaceholder": "Re-enter your password",
+    "createAccount": "Create Account",
+    "creating": "Setting up...",
+    "setupComplete": "Account Created!",
+    "redirecting": "Redirecting to dashboard...",
+    "setupFailed": "Failed to create account. Please try again.",
+    "invalidLink": "Invalid Setup Link",
+    "invalidLinkDesc": "This link is invalid or missing. Please check your invitation email.",
+    "inviteUsed": "Invite Already Used",
+    "inviteExpired": "Invite Expired",
+    "contactAdmin": "Please contact the person who invited you for a new link."
+  },
   "settings": {
     "pricingPlans": "Pricing Plans",
     "paymentMethods": "Payment Methods",
@@ -482,7 +504,8 @@
   },
   "validation": {
     "invalidEmail": "Please enter a valid email",
-    "passwordMinLength": "Password must be at least 6 characters"
+    "passwordMinLength": "Password must be at least 8 characters",
+    "passwordMismatch": "Passwords do not match"
   },
   "routeErrors": {
     "checkIn": {

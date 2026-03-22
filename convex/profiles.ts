@@ -226,7 +226,33 @@ export const onNewUserCreated = internalMutation({
       .unique();
     if (existing) return;
 
-    // Check if this user came from an approved pending signup (invite flow)
+    // Check if this user came from an admin invite (coach setup flow)
+    const adminInvite = await ctx.db
+      .query("adminInvites")
+      .withIndex("by_email", (q) => q.eq("email", email))
+      .order("desc")
+      .first();
+
+    if (adminInvite && !adminInvite.usedAt && Date.now() <= adminInvite.expiresAt) {
+      // Create coach profile from admin invite
+      // If no invitedBy, this is the initial owner setup
+      const isOwner = !adminInvite.invitedBy;
+      await ctx.db.insert("profiles", {
+        userId,
+        email: adminInvite.email,
+        fullName: adminInvite.fullName,
+        language: "en",
+        status: "active",
+        isCoach: true,
+        isOwner: isOwner || undefined,
+        updatedAt: Date.now(),
+      });
+      // Mark invite as used
+      await ctx.db.patch(adminInvite._id, { usedAt: Date.now() });
+      return;
+    }
+
+    // Check if this user came from an approved pending signup (client invite flow)
     const signup = await ctx.db
       .query("pendingSignups")
       .withIndex("by_email", (q) => q.eq("email", email))
