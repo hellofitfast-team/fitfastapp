@@ -129,8 +129,8 @@ export const seedFAQs = internalMutation({
  * Run: npx convex run seed:makeCoach '{"userId":"..."}'
  */
 export const makeCoach = internalMutation({
-  args: { userId: v.string() },
-  handler: async (ctx, { userId }) => {
+  args: { userId: v.string(), isOwner: v.optional(v.boolean()) },
+  handler: async (ctx, { userId, isOwner }) => {
     const profile = await ctx.db
       .query("profiles")
       .withIndex("by_userId", (q) => q.eq("userId", userId))
@@ -152,6 +152,7 @@ export const makeCoach = internalMutation({
 
     await ctx.db.patch(profile._id, {
       isCoach: true,
+      ...(isOwner ? { isOwner: true } : {}),
       status: "active",
       fullName: profile.fullName || "Coach",
       updatedAt: Date.now(),
