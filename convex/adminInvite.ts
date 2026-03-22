@@ -108,7 +108,10 @@ export const createInviteRecord = internalMutation({
     invitedBy: v.optional(v.string()),
     requireNoOwner: v.optional(v.boolean()),
   },
-  handler: async (ctx, { email, fullName, token, invitedBy, requireNoOwner }) => {
+  handler: async (ctx, { email: rawEmail, fullName, token, invitedBy, requireNoOwner }) => {
+    // Normalize email to lowercase to prevent case-sensitivity bugs
+    const email = rawEmail.toLowerCase();
+
     // Atomic owner check — prevents TOCTOU race where two initial invites slip through
     if (requireNoOwner) {
       const owner = await ctx.db

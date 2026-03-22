@@ -121,6 +121,7 @@ export const createInitialInvite = internalAction({
       email,
       fullName,
       token,
+      invitedBy: "cli", // Prevent owner inference in onNewUserCreated
     });
 
     // Send invite email

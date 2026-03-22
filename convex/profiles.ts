@@ -118,23 +118,44 @@ export const removeTeamMember = mutation({
 
     if (target?.isOwner) throw new Error("Cannot remove the owner account");
 
+    const emailLower = email.toLowerCase();
+
     if (target) {
       // Delete profile
       await ctx.db.delete(target._id);
 
-      // Delete auth account
+      // Delete auth account + user record + sessions
       const authAccount = await ctx.db
         .query("authAccounts")
         .filter((q) =>
           q.and(
             q.eq(q.field("provider"), "password"),
-            q.eq(q.field("providerAccountId"), email.toLowerCase()),
+            q.eq(q.field("providerAccountId"), emailLower),
           ),
         )
         .first();
       if (authAccount) {
+        // Kill active sessions so removed coach loses access immediately
+        const sessions = await ctx.db
+          .query("authSessions")
+          .filter((q) => q.eq(q.field("userId"), authAccount.userId))
+          .collect();
+        for (const session of sessions) {
+          await ctx.db.delete(session._id);
+        }
+        // Delete refresh tokens for each session
+        for (const session of sessions) {
+          const refreshTokens = await ctx.db
+            .query("authRefreshTokens")
+            .filter((q) => q.eq(q.field("sessionId"), session._id))
+            .collect();
+          for (const rt of refreshTokens) {
+            await ctx.db.delete(rt._id);
+          }
+        }
+
         await ctx.db.delete(authAccount._id);
-        // Delete users record too
+        // Delete users record
         const userDoc = await ctx.db
           .query("users")
           .filter((q) => q.eq(q.field("_id"), authAccount.userId))
@@ -143,12 +164,18 @@ export const removeTeamMember = mutation({
       }
     }
 
-    // Also delete any pending invite for this email
+    // Delete any pending invites for this email (case-insensitive)
     const invites = await ctx.db
+      .query("adminInvites")
+      .withIndex("by_email", (q) => q.eq("email", emailLower))
+      .collect();
+    // Also check original case
+    const invitesOriginal = await ctx.db
       .query("adminInvites")
       .withIndex("by_email", (q) => q.eq("email", email))
       .collect();
-    for (const inv of invites) {
+    const allInvites = new Map([...invites, ...invitesOriginal].map((i) => [i._id, i]));
+    for (const inv of allInvites.values()) {
       await ctx.db.delete(inv._id);
     }
 
