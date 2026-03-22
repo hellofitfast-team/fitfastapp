@@ -35,6 +35,7 @@ import type * as faqs from "../faqs.js";
 import type * as foodDatabase from "../foodDatabase.js";
 import type * as helpers from "../helpers.js";
 import type * as http from "../http.js";
+import type * as inAppNotifications from "../inAppNotifications.js";
 import type * as knowledgeBase from "../knowledgeBase.js";
 import type * as knowledgeBaseActions from "../knowledgeBaseActions.js";
 import type * as langfuse from "../langfuse.js";
@@ -109,6 +110,7 @@ declare const fullApi: ApiFromModules<{
   foodDatabase: typeof foodDatabase;
   helpers: typeof helpers;
   http: typeof http;
+  inAppNotifications: typeof inAppNotifications;
   knowledgeBase: typeof knowledgeBase;
   knowledgeBaseActions: typeof knowledgeBaseActions;
   langfuse: typeof langfuse;

@@ -92,7 +92,7 @@ export const getTeamMembers = query({
       }
     }
 
-    return members;
+    return { members, callerIsOwner: !!callerProfile.isOwner };
   },
 });
 

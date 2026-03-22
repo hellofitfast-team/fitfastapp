@@ -9,11 +9,12 @@ import { Shield, User, Clock, CheckCircle2, Trash2, Loader2 } from "lucide-react
 export function TeamTable() {
   const t = useTranslations("settings");
   const { isAuthenticated } = useConvexAuth();
-  const members = useQuery(api.profiles.getTeamMembers, isAuthenticated ? {} : "skip");
+  const data = useQuery(api.profiles.getTeamMembers, isAuthenticated ? {} : "skip");
   const removeMember = useMutation(api.profiles.removeTeamMember);
   const [removingEmail, setRemovingEmail] = useState<string | null>(null);
 
-  const isOwner = members?.some((m) => m.role === "owner" && m.status === "active");
+  const members = data?.members;
+  const callerIsOwner = data?.callerIsOwner ?? false;
 
   if (!members) return null;
 
@@ -46,7 +47,7 @@ export function TeamTable() {
             <th className="px-4 py-3 text-start text-xs font-semibold text-stone-500 uppercase">
               {t("teamStatus")}
             </th>
-            {isOwner && (
+            {callerIsOwner && (
               <th className="px-4 py-3 text-end text-xs font-semibold text-stone-500 uppercase">
                 {t("teamActions")}
               </th>
@@ -84,7 +85,7 @@ export function TeamTable() {
                   </span>
                 )}
               </td>
-              {isOwner && (
+              {callerIsOwner && (
                 <td className="px-4 py-3 text-end">
                   {member.role !== "owner" && (
                     <button
@@ -107,7 +108,7 @@ export function TeamTable() {
           ))}
           {members.length === 0 && (
             <tr>
-              <td colSpan={isOwner ? 5 : 4} className="px-4 py-8 text-center text-stone-400">
+              <td colSpan={callerIsOwner ? 5 : 4} className="px-4 py-8 text-center text-stone-400">
                 {t("noTeamMembers")}
               </td>
             </tr>
