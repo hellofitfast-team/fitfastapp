@@ -106,7 +106,7 @@ export function AdminSidebar({
         className={cn(
           "flex w-64 flex-col bg-stone-900 transition-transform duration-300",
           "fixed inset-y-0 start-0 z-50",
-          "lg:relative lg:z-auto lg:shrink-0",
+          "lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:shrink-0",
           isOpen
             ? "translate-x-0"
             : "-translate-x-full lg:translate-x-0 rtl:translate-x-full lg:rtl:translate-x-0",
