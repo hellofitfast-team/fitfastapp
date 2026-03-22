@@ -108,10 +108,13 @@ export default function AdminLoginPage() {
   });
 
   const watchedEmail = watch("email");
+  const hasOwner = useQuery(api.adminInvite.hasOwner);
+  // Only check for pending invite when no owner exists (initial setup only)
   const hasPendingInvite = useQuery(
     api.adminInvite.hasPendingInvite,
-    watchedEmail?.includes("@") ? { email: watchedEmail } : "skip",
+    hasOwner === false && watchedEmail?.includes("@") ? { email: watchedEmail } : "skip",
   );
+  const showOwnerSetup = hasOwner === false && hasPendingInvite === true;
 
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
@@ -236,8 +239,8 @@ export default function AdminLoginPage() {
               </button>
             </form>
 
-            {/* Magic link setup — only shown when typed email has a pending admin invite */}
-            {hasPendingInvite === true && (
+            {/* Owner setup — only shown when NO owner exists AND typed email has a pending invite */}
+            {showOwnerSetup && (
               <div className="border-t border-stone-100 px-8 pb-6">
                 {magicLinkSent ? (
                   <div className="mt-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
