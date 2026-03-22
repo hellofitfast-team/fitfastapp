@@ -25,7 +25,6 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@ai-sdk/deepseek": "^2.0.24",
     "@ai-sdk/google": "^3.0.43",
     "@convex-dev/action-cache": "^0.3.0",
     "@convex-dev/action-retrier": "^0.3.0",
