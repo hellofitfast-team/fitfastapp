@@ -386,7 +386,16 @@
     "inviteEmailPlaceholder": "coach@example.com",
     "inviteSending": "Sending...",
     "inviteSendButton": "Send Invitation",
-    "inviteCancel": "Cancel"
+    "inviteCancel": "Cancel",
+    "teamName": "Name",
+    "teamEmail": "Email",
+    "teamRole": "Role",
+    "teamStatus": "Status",
+    "roleOwner": "Owner",
+    "roleCoach": "Coach",
+    "statusActive": "Active",
+    "statusPending": "Invited",
+    "noTeamMembers": "No team members yet."
   },
   "adminNav": {
     "dashboard": "Dashboard",

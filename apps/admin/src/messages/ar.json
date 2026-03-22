@@ -386,7 +386,16 @@
     "inviteEmailPlaceholder": "coach@example.com",
     "inviteSending": "جاري الإرسال...",
     "inviteSendButton": "إرسال الدعوة",
-    "inviteCancel": "إلغاء"
+    "inviteCancel": "إلغاء",
+    "teamName": "الاسم",
+    "teamEmail": "البريد الإلكتروني",
+    "teamRole": "الدور",
+    "teamStatus": "الحالة",
+    "roleOwner": "مالك",
+    "roleCoach": "مدرب",
+    "statusActive": "نشط",
+    "statusPending": "مدعو",
+    "noTeamMembers": "لا يوجد أعضاء فريق بعد."
   },
   "adminNav": {
     "dashboard": "لوحة التحكم",

@@ -38,6 +38,64 @@ export const getProfileByUserId = query({
   },
 });
 
+/** Get all team members (coaches) + pending admin invites for the team management table. */
+export const getTeamMembers = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const callerProfile = await ctx.db
+      .query("profiles")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .unique();
+    if (!callerProfile?.isCoach) throw new Error("Not authorized");
+
+    // Get all coach profiles
+    const coaches = await ctx.db
+      .query("profiles")
+      .withIndex("by_isCoach", (q) => q.eq("isCoach", true))
+      .collect();
+
+    // Get all pending (unused, not expired) admin invites
+    const allInvites = await ctx.db.query("adminInvites").collect();
+    const now = Date.now();
+    const pendingInvites = allInvites.filter((inv) => !inv.usedAt && now <= inv.expiresAt);
+
+    // Merge: active coaches + pending invites (exclude invites for existing coaches)
+    const coachEmails = new Set(coaches.map((c) => c.email?.toLowerCase()));
+
+    const members: {
+      email: string;
+      fullName: string;
+      role: "owner" | "coach";
+      status: "active" | "pending";
+    }[] = [];
+
+    for (const coach of coaches) {
+      members.push({
+        email: coach.email ?? "",
+        fullName: coach.fullName ?? "",
+        role: coach.isOwner ? "owner" : "coach",
+        status: "active",
+      });
+    }
+
+    for (const invite of pendingInvites) {
+      if (!coachEmails.has(invite.email.toLowerCase())) {
+        members.push({
+          email: invite.email,
+          fullName: invite.fullName,
+          role: "coach",
+          status: "pending",
+        });
+      }
+    }
+
+    return members;
+  },
+});
+
 export const getAllClients = query({
   args: {},
   handler: async (ctx) => {
@@ -227,11 +285,25 @@ export const onNewUserCreated = internalMutation({
     if (existing) return;
 
     // Check if this user came from an admin invite (coach setup flow)
-    const adminInvite = await ctx.db
+    // Try exact match first, then case-insensitive fallback
+    let adminInvite = await ctx.db
       .query("adminInvites")
       .withIndex("by_email", (q) => q.eq("email", email))
       .order("desc")
       .first();
+
+    // Case-insensitive fallback (email field may differ in case)
+    if (!adminInvite) {
+      adminInvite = await ctx.db
+        .query("adminInvites")
+        .withIndex("by_email", (q) => q.eq("email", email.toLowerCase()))
+        .order("desc")
+        .first();
+    }
+
+    console.log(
+      `[onNewUserCreated] email=${email}, adminInvite=${adminInvite ? `found(usedAt=${adminInvite.usedAt}, expires=${adminInvite.expiresAt})` : "not found"}`,
+    );
 
     if (adminInvite && !adminInvite.usedAt && Date.now() <= adminInvite.expiresAt) {
       // Create coach profile from admin invite

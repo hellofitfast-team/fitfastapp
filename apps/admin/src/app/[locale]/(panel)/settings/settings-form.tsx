@@ -13,6 +13,7 @@ import { SocialLinksManager } from "./social-links-manager";
 import { SaveButton } from "./save-button";
 import { NotificationToggle } from "./notification-toggle";
 import { InviteCoachDialog } from "./invite-coach-dialog";
+import { TeamTable } from "./team-table";
 
 export function AdminSettingsForm() {
   const t = useTranslations("admin");
@@ -187,6 +188,7 @@ export function AdminSettingsForm() {
             <p className="mt-0.5 text-xs text-stone-400">{tSettings("teamManagementDesc")}</p>
           </div>
         </div>
+        <TeamTable />
         <InviteCoachDialog />
       </div>
     </div>
