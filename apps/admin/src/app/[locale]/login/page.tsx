@@ -39,7 +39,6 @@ export default function AdminLoginPage() {
 
   const { isAuthenticated: isConvexAuth } = useConvexAuth();
   const profile = useQuery(api.profiles.getMyProfile, isConvexAuth ? {} : "skip");
-  const hasOwner = useQuery(api.adminInvite.hasOwner);
   const isSigningOut = useRef(false);
 
   // Derive error from URL param instead of setting state in an effect
@@ -102,10 +101,17 @@ export default function AdminLoginPage() {
     register,
     handleSubmit,
     getValues,
+    watch,
     formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
+
+  const watchedEmail = watch("email");
+  const hasPendingInvite = useQuery(
+    api.adminInvite.hasPendingInvite,
+    watchedEmail?.includes("@") ? { email: watchedEmail } : "skip",
+  );
 
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
@@ -230,8 +236,8 @@ export default function AdminLoginPage() {
               </button>
             </form>
 
-            {/* Initial owner setup — only shown when no owner exists */}
-            {hasOwner === false && (
+            {/* Magic link setup — only shown when typed email has a pending admin invite */}
+            {hasPendingInvite === true && (
               <div className="border-t border-stone-100 px-8 pb-6">
                 {magicLinkSent ? (
                   <div className="mt-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">

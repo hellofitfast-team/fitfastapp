@@ -29,6 +29,20 @@ export const validateInvite = query({
   },
 });
 
+/** Check if an email has a pending (unused, not expired) admin invite. */
+export const hasPendingInvite = query({
+  args: { email: v.string() },
+  handler: async (ctx, { email }) => {
+    if (!email || !email.includes("@")) return false;
+    const invite = await ctx.db
+      .query("adminInvites")
+      .withIndex("by_email", (q) => q.eq("email", email.toLowerCase()))
+      .order("desc")
+      .first();
+    return !!invite && !invite.usedAt && Date.now() <= invite.expiresAt;
+  },
+});
+
 /** Check if a profile with isOwner exists (to determine if initial setup is needed). */
 export const hasOwner = query({
   args: {},
