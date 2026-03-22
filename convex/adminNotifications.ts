@@ -6,7 +6,7 @@ import { internal } from "./_generated/api";
 import { getAuthUserId } from "./auth";
 import { sendWebPushNotification, SubscriptionExpiredError } from "./notifications";
 
-/** Coach action: send push notification to a single client */
+/** Coach action: send push notification to a single client (with email fallback) */
 export const sendToIndividual = action({
   args: {
     userId: v.string(),
@@ -44,23 +44,51 @@ export const sendToIndividual = action({
       throw new Error("Notifications are currently disabled");
     }
 
+    // Always create in-app notification (never lost guarantee)
+    await ctx.runMutation(internal.inAppNotifications.createInAppNotification, {
+      userId,
+      type: "individual",
+      title: trimmedTitle,
+      body: trimmedBody,
+      url: "/",
+    });
+
     // Look up subscription
     const subscription = await ctx.runQuery(internal.pushSubscriptions.getSubscriptionByUserId, {
       userId,
     });
 
     if (!subscription?.isActive || !subscription.endpoint) {
-      await ctx.runMutation(internal.notificationLog.logNotification, {
-        type: "individual",
-        title,
-        body,
-        recipientCount: 0,
-        recipientUserId: userId,
-        sentBy: coachId,
-        status: "failed",
-        failedCount: 1,
-      });
-      throw new Error("Client has no active push subscription");
+      // No push subscription — fall back to email
+      try {
+        await ctx.runAction(internal.email.sendCoachNotificationEmail, {
+          userId,
+          title: trimmedTitle,
+          body: trimmedBody,
+        });
+        await ctx.runMutation(internal.notificationLog.logNotification, {
+          type: "individual",
+          title: trimmedTitle,
+          body: trimmedBody,
+          recipientCount: 1,
+          recipientUserId: userId,
+          sentBy: coachId,
+          status: "sent",
+        });
+        return;
+      } catch {
+        await ctx.runMutation(internal.notificationLog.logNotification, {
+          type: "individual",
+          title: trimmedTitle,
+          body: trimmedBody,
+          recipientCount: 0,
+          recipientUserId: userId,
+          sentBy: coachId,
+          status: "failed",
+          failedCount: 1,
+        });
+        throw new Error("Client has no push subscription and email fallback failed");
+      }
     }
 
     try {
@@ -70,13 +98,13 @@ export const sendToIndividual = action({
           p256dh: subscription.p256dh,
           auth: subscription.auth,
         },
-        { title, body, url: "/" },
+        { title: trimmedTitle, body: trimmedBody, url: "/" },
       );
 
       await ctx.runMutation(internal.notificationLog.logNotification, {
         type: "individual",
-        title,
-        body,
+        title: trimmedTitle,
+        body: trimmedBody,
         recipientCount: 1,
         recipientUserId: userId,
         sentBy: coachId,
@@ -88,26 +116,41 @@ export const sendToIndividual = action({
           endpoint: subscription.endpoint,
         });
       }
-      await ctx.runMutation(internal.notificationLog.logNotification, {
-        type: "individual",
-        title,
-        body,
-        recipientCount: 0,
-        recipientUserId: userId,
-        sentBy: coachId,
-        status: "failed",
-        failedCount: 1,
-      });
-      throw new Error(
-        err instanceof SubscriptionExpiredError
-          ? "Client's push subscription has expired"
-          : "Failed to send push notification",
-      );
+      // Push failed — try email fallback
+      try {
+        await ctx.runAction(internal.email.sendCoachNotificationEmail, {
+          userId,
+          title: trimmedTitle,
+          body: trimmedBody,
+        });
+        await ctx.runMutation(internal.notificationLog.logNotification, {
+          type: "individual",
+          title: trimmedTitle,
+          body: trimmedBody,
+          recipientCount: 1,
+          recipientUserId: userId,
+          sentBy: coachId,
+          status: "sent",
+        });
+        return;
+      } catch {
+        await ctx.runMutation(internal.notificationLog.logNotification, {
+          type: "individual",
+          title: trimmedTitle,
+          body: trimmedBody,
+          recipientCount: 0,
+          recipientUserId: userId,
+          sentBy: coachId,
+          status: "failed",
+          failedCount: 1,
+        });
+        throw new Error("Push notification failed and email fallback also failed");
+      }
     }
   },
 });
 
-/** Coach action: broadcast push notification to all active clients */
+/** Coach action: broadcast notification to all active clients (push + email fallback) */
 export const broadcastToAllActive = action({
   args: {
     title: v.string(),
@@ -146,24 +189,28 @@ export const broadcastToAllActive = action({
       throw new Error("Notifications are currently disabled");
     }
 
-    const subscriptions = await ctx.runQuery(internal.pushSubscriptions.getAllActiveSubscriptions);
+    // Fetch push subscriptions and all active client profiles in parallel
+    const [subscriptions, allActiveProfiles] = await Promise.all([
+      ctx.runQuery(internal.pushSubscriptions.getAllActiveSubscriptions),
+      ctx.runQuery(internal.pushSubscriptions.getAllActiveClientProfiles),
+    ]);
 
-    if (subscriptions.length === 0) {
-      await ctx.runMutation(internal.notificationLog.logNotification, {
-        type: "broadcast",
-        title,
-        body,
-        recipientCount: 0,
-        sentBy: coachId,
-        status: "partial",
+    // Create in-app notifications for ALL active clients (never lost guarantee)
+    const allUserIds = allActiveProfiles.map((p) => p.userId);
+    const BULK_CHUNK = 500;
+    for (let i = 0; i < allUserIds.length; i += BULK_CHUNK) {
+      await ctx.runMutation(internal.inAppNotifications.createBulkInAppNotifications, {
+        userIds: allUserIds.slice(i, i + BULK_CHUNK),
+        title: trimmedTitle,
+        body: trimmedBody,
       });
-      return { sent: 0, failed: 0 };
     }
 
-    let sentCount = 0;
-    let failedCount = 0;
+    // Track unique users reached vs failed (not delivery attempts)
+    const reachedUserIds = new Set<string>();
+    const failedUserIds = new Set<string>();
 
-    // Process in chunks of 50
+    // --- Phase 1: Push notifications to clients with active subscriptions ---
     const CHUNK_SIZE = 50;
     const expiredEndpoints: string[] = [];
 
@@ -173,7 +220,7 @@ export const broadcastToAllActive = action({
         chunk.map((sub) =>
           sendWebPushNotification(
             { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
-            { title, body, url: "/" },
+            { title: trimmedTitle, body: trimmedBody, url: "/" },
           ),
         ),
       );
@@ -181,12 +228,12 @@ export const broadcastToAllActive = action({
       for (let j = 0; j < results.length; j++) {
         const result = results[j];
         if (result.status === "fulfilled") {
-          sentCount++;
+          reachedUserIds.add(chunk[j].userId);
         } else {
-          failedCount++;
           if (result.reason instanceof SubscriptionExpiredError) {
             expiredEndpoints.push(chunk[j].endpoint);
           }
+          // Push failed — will try email fallback in phase 2
         }
       }
     }
@@ -198,6 +245,33 @@ export const broadcastToAllActive = action({
       ),
     );
 
+    // --- Phase 2: Email fallback for clients NOT reached via push ---
+    const emailTargets = allActiveProfiles.filter((p) => !reachedUserIds.has(p.userId));
+
+    for (let i = 0; i < emailTargets.length; i += CHUNK_SIZE) {
+      const chunk = emailTargets.slice(i, i + CHUNK_SIZE);
+      const results = await Promise.allSettled(
+        chunk.map((p) =>
+          ctx.runAction(internal.email.sendCoachNotificationEmail, {
+            userId: p.userId,
+            title: trimmedTitle,
+            body: trimmedBody,
+          }),
+        ),
+      );
+
+      for (let j = 0; j < results.length; j++) {
+        if (results[j].status === "fulfilled") {
+          reachedUserIds.add(chunk[j].userId);
+        } else {
+          failedUserIds.add(chunk[j].userId);
+        }
+      }
+    }
+
+    const sentCount = reachedUserIds.size;
+    const failedCount = failedUserIds.size;
+
     const status =
       failedCount === 0
         ? ("sent" as const)
@@ -207,8 +281,8 @@ export const broadcastToAllActive = action({
 
     await ctx.runMutation(internal.notificationLog.logNotification, {
       type: "broadcast",
-      title,
-      body,
+      title: trimmedTitle,
+      body: trimmedBody,
       recipientCount: sentCount,
       sentBy: coachId,
       status,

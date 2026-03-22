@@ -63,6 +63,7 @@ export const cascadeDeleteUser = internalMutation({
     await deleteByIndex("assessmentHistory", "by_userId");
     await deleteByIndex("tickets", "by_userId");
     await deleteByIndex("pushSubscriptions", "by_userId");
+    await deleteByIndex("inAppNotifications", "by_userId_createdAt");
 
     // Delete file metadata + storage objects
     const fileMeta = await ctx.db

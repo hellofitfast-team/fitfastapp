@@ -238,31 +238,173 @@ function DeleteTestUserModal({
   );
 }
 
+function BulkDeleteModal({
+  count,
+  open,
+  onOpenChange,
+  onConfirm,
+  isDeleting,
+}: {
+  count: number;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onConfirm: () => void;
+  isDeleting: boolean;
+}) {
+  const t = useTranslations("admin");
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(value) => {
+        if (!isDeleting) onOpenChange(value);
+      }}
+    >
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>{t("bulkDeleteTitle")}</DialogTitle>
+          <DialogDescription>{t("bulkDeleteDesc", { count })}</DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            disabled={isDeleting}
+            className="rounded-lg border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-600 transition-colors hover:bg-stone-50 disabled:opacity-50"
+          >
+            {t("cancel")}
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={isDeleting}
+            className="flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+          >
+            {isDeleting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="h-4 w-4" />
+            )}
+            {t("bulkDeleteConfirm", { count })}
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function ClientsList({ clients }: { clients: Client[] }) {
   const t = useTranslations("admin");
   const locale = useLocale();
+  const bulkDelete = useMutation(api.profiles.bulkDeleteClients);
 
   const [search, setSearch] = useState("");
   const [rejectTarget, setRejectTarget] = useState<Client | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Client | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [showBulkDelete, setShowBulkDelete] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    setSelected(new Set()); // Clear selection when search changes to prevent deleting invisible clients
+  };
 
   const filtered = clients.filter((c) => {
     const q = search.toLowerCase();
     return (c.fullName?.toLowerCase().includes(q) ?? false) || (c.phone?.includes(q) ?? false);
   });
 
+  const allFilteredSelected = filtered.length > 0 && filtered.every((c) => selected.has(c.id));
+
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (allFilteredSelected) {
+      // Deselect all filtered
+      setSelected((prev) => {
+        const next = new Set(prev);
+        for (const c of filtered) next.delete(c.id);
+        return next;
+      });
+    } else {
+      // Select all filtered
+      setSelected((prev) => {
+        const next = new Set(prev);
+        for (const c of filtered) next.add(c.id);
+        return next;
+      });
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    setIsBulkDeleting(true);
+    try {
+      const profileIds = [...selected] as Id<"profiles">[];
+      const result = await bulkDelete({ profileIds });
+      toast({
+        title: t("bulkDeleteSuccess", { count: result.deleted }),
+        variant: "success",
+      });
+      setSelected(new Set());
+      setShowBulkDelete(false);
+    } catch (err) {
+      console.error("Bulk delete failed:", err);
+      toast({
+        title: t("actionError"),
+        description: err instanceof Error ? err.message : t("bulkDeleteFailed"),
+        variant: "destructive",
+      });
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
-        <input
-          type="text"
-          placeholder={t("search")}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="focus:ring-primary/20 focus:border-primary h-11 w-full rounded-xl border border-stone-200 bg-white ps-10 pe-4 text-sm text-stone-900 transition-all placeholder:text-stone-400 focus:ring-2 focus:outline-none"
-        />
+      {/* Search + bulk actions bar */}
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+          <input
+            type="text"
+            placeholder={t("search")}
+            value={search}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            className="focus:ring-primary/20 focus:border-primary h-11 w-full rounded-xl border border-stone-200 bg-white ps-10 pe-4 text-sm text-stone-900 transition-all placeholder:text-stone-400 focus:ring-2 focus:outline-none"
+          />
+        </div>
+
+        {selected.size > 0 && (
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setSelected(new Set())}
+              className="flex h-11 items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 text-sm font-medium text-stone-500 transition-colors hover:bg-stone-50"
+            >
+              <X className="h-3.5 w-3.5" />
+              {t("clearSelection")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowBulkDelete(true)}
+              className="flex h-11 items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 text-sm font-medium text-red-700 transition-colors hover:bg-red-100"
+            >
+              <Trash2 className="h-4 w-4" />
+              {t("bulkDeleteBtn", { count: selected.size })}
+            </button>
+          </div>
+        )}
       </div>
 
       {filtered.length === 0 ? (
@@ -275,6 +417,15 @@ export function ClientsList({ clients }: { clients: Client[] }) {
           <table className="w-full">
             <thead>
               <tr className="border-b border-stone-100 bg-stone-50/50">
+                <th className="w-12 px-4 py-3">
+                  <input
+                    type="checkbox"
+                    checked={allFilteredSelected}
+                    onChange={toggleSelectAll}
+                    className="text-primary focus:ring-primary/20 h-4 w-4 cursor-pointer rounded border-stone-300"
+                    aria-label={t("selectAll")}
+                  />
+                </th>
                 <th className="px-4 py-3 text-start text-xs font-medium tracking-wide text-stone-500 uppercase">
                   {t("client")}
                 </th>
@@ -291,84 +442,102 @@ export function ClientsList({ clients }: { clients: Client[] }) {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((client) => (
-                <tr
-                  key={client.id}
-                  className="border-b border-stone-100 transition-colors last:border-0 focus-within:bg-stone-50 hover:bg-stone-50/50"
-                >
-                  <td className="px-4 py-4">
-                    <p className="text-sm font-medium text-stone-900">{client.fullName ?? "---"}</p>
-                    {client.phone && <p className="text-xs text-stone-400">{client.phone}</p>}
-                  </td>
-                  <td className="px-4 py-4">
-                    <span className="text-primary text-xs font-semibold">
-                      {client.planTier
-                        ? t(`tierLabels.${client.planTier}`, { defaultMessage: client.planTier })
-                        : "---"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-4">
-                    {(() => {
-                      const StatusIcon = STATUS_ICONS[client.status ?? ""] ?? MinusCircle;
-                      return (
-                        <span
-                          className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium ${
-                            statusStyles[client.status ?? ""] ?? statusStyles.inactive
-                          }`}
-                        >
-                          <StatusIcon className="h-3 w-3" />
-                          {client.status
-                            ? t(`statusLabels.${client.status}`, { defaultMessage: client.status })
-                            : "—"}
-                        </span>
-                      );
-                    })()}
-                  </td>
-                  <td className="px-4 py-4 text-xs text-stone-500">
-                    {client.planEndDate ? formatDate(client.planEndDate, locale) : "---"}
-                  </td>
-                  <td className="px-4 py-4">
-                    <div className="flex items-center justify-end gap-2">
-                      {client.status === "pending_approval" && (
-                        <>
-                          <Link
-                            href={`/clients/${client.userId}`}
-                            className="border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors"
+              {filtered.map((client) => {
+                const isSelected = selected.has(client.id);
+                return (
+                  <tr
+                    key={client.id}
+                    className={`border-b border-stone-100 transition-colors last:border-0 focus-within:bg-stone-50 ${
+                      isSelected ? "bg-primary/5" : "hover:bg-stone-50/50"
+                    }`}
+                  >
+                    <td className="px-4 py-4">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSelect(client.id)}
+                        className="text-primary focus:ring-primary/20 h-4 w-4 cursor-pointer rounded border-stone-300"
+                        aria-label={t("selectClient", { name: client.fullName ?? "" })}
+                      />
+                    </td>
+                    <td className="px-4 py-4">
+                      <p className="text-sm font-medium text-stone-900">
+                        {client.fullName ?? "---"}
+                      </p>
+                      {client.phone && <p className="text-xs text-stone-400">{client.phone}</p>}
+                    </td>
+                    <td className="px-4 py-4">
+                      <span className="text-primary text-xs font-semibold">
+                        {client.planTier
+                          ? t(`tierLabels.${client.planTier}`, { defaultMessage: client.planTier })
+                          : "---"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4">
+                      {(() => {
+                        const StatusIcon = STATUS_ICONS[client.status ?? ""] ?? MinusCircle;
+                        return (
+                          <span
+                            className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium ${
+                              statusStyles[client.status ?? ""] ?? statusStyles.inactive
+                            }`}
                           >
-                            <Zap className="h-3.5 w-3.5" />
-                            {t("activate")}
-                          </Link>
+                            <StatusIcon className="h-3 w-3" />
+                            {client.status
+                              ? t(`statusLabels.${client.status}`, {
+                                  defaultMessage: client.status,
+                                })
+                              : "—"}
+                          </span>
+                        );
+                      })()}
+                    </td>
+                    <td className="px-4 py-4 text-xs text-stone-500">
+                      {client.planEndDate ? formatDate(client.planEndDate, locale) : "---"}
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center justify-end gap-2">
+                        {client.status === "pending_approval" && (
+                          <>
+                            <Link
+                              href={`/clients/${client.userId}`}
+                              className="border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors"
+                            >
+                              <Zap className="h-3.5 w-3.5" />
+                              {t("activate")}
+                            </Link>
+                            <button
+                              type="button"
+                              onClick={() => setRejectTarget(client)}
+                              className="flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700 transition-colors hover:bg-red-100"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                              {t("reject")}
+                            </button>
+                          </>
+                        )}
+                        {client.email?.endsWith("@fitfast.test") && (
                           <button
                             type="button"
-                            onClick={() => setRejectTarget(client)}
-                            className="flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700 transition-colors hover:bg-red-100"
+                            onClick={() => setDeleteTarget(client)}
+                            aria-label={t("deleteTestUser")}
+                            className="flex h-11 w-11 items-center justify-center rounded-lg border border-red-200 text-red-400 transition-colors hover:border-red-300 hover:text-red-600"
                           >
-                            <X className="h-3.5 w-3.5" />
-                            {t("reject")}
+                            <Trash2 className="h-4 w-4" />
                           </button>
-                        </>
-                      )}
-                      {client.email?.endsWith("@fitfast.test") && (
-                        <button
-                          type="button"
-                          onClick={() => setDeleteTarget(client)}
-                          aria-label={t("deleteTestUser")}
-                          className="flex h-11 w-11 items-center justify-center rounded-lg border border-red-200 text-red-400 transition-colors hover:border-red-300 hover:text-red-600"
+                        )}
+                        <Link
+                          href={`/clients/${client.userId}`}
+                          aria-label={t("viewClient")}
+                          className="hover:border-primary/30 hover:text-primary flex h-11 w-11 items-center justify-center rounded-lg border border-stone-200 text-stone-400 transition-colors"
                         >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      )}
-                      <Link
-                        href={`/clients/${client.userId}`}
-                        aria-label={t("viewClient")}
-                        className="hover:border-primary/30 hover:text-primary flex h-11 w-11 items-center justify-center rounded-lg border border-stone-200 text-stone-400 transition-colors"
-                      >
-                        <ArrowRight className="h-4 w-4 rtl:rotate-180" />
-                      </Link>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                          <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -395,6 +564,15 @@ export function ClientsList({ clients }: { clients: Client[] }) {
           }}
         />
       )}
+
+      {/* Bulk delete confirmation modal */}
+      <BulkDeleteModal
+        count={selected.size}
+        open={showBulkDelete}
+        onOpenChange={setShowBulkDelete}
+        onConfirm={handleBulkDelete}
+        isDeleting={isBulkDeleting}
+      />
     </div>
   );
 }

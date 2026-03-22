@@ -1098,5 +1098,14 @@
       "description": "حدث خطأ في لوحة المشرف. يرجى المحاولة مرة أخرى.",
       "retry": "حاول مرة أخرى"
     }
+  },
+  "notificationCenter": {
+    "title": "الإشعارات",
+    "markAllRead": "تحديد الكل كمقروء",
+    "empty": "لا توجد إشعارات بعد",
+    "justNow": "الآن",
+    "minutesAgo": "منذ {count} دقيقة",
+    "hoursAgo": "منذ {count} ساعة",
+    "daysAgo": "منذ {count} يوم"
   }
 }

@@ -1098,5 +1098,14 @@
       "description": "Something went wrong in the admin panel. Please try again.",
       "retry": "TRY AGAIN"
     }
+  },
+  "notificationCenter": {
+    "title": "Notifications",
+    "markAllRead": "Mark all as read",
+    "empty": "No notifications yet",
+    "justNow": "Just now",
+    "minutesAgo": "{count}m ago",
+    "hoursAgo": "{count}h ago",
+    "daysAgo": "{count}d ago"
   }
 }

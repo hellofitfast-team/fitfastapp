@@ -56,6 +56,19 @@ export const getAllActiveSubscriptions = internalQuery({
   },
 });
 
+/** Internal: returns all active non-coach client profiles (for broadcast email fallback) */
+export const getAllActiveClientProfiles = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const profiles = await ctx.db
+      .query("profiles")
+      .withIndex("by_isCoach", (q) => q.eq("isCoach", false))
+      .filter((q) => q.eq(q.field("status"), "active"))
+      .collect();
+    return profiles.map((p) => ({ userId: p.userId, email: p.email }));
+  },
+});
+
 export const saveSubscription = mutation({
   args: {
     endpoint: v.string(),

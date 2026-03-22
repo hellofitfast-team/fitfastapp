@@ -75,6 +75,15 @@ export const sendPlanReadyNotification = internalAction({
           ? "Your new meal plan is ready!"
           : "Your new workout plan is ready!";
 
+    // Always create in-app notification (never lost guarantee)
+    await ctx.runMutation(internal.inAppNotifications.createInAppNotification, {
+      userId,
+      type: "plan_ready",
+      title,
+      body,
+      url: "/",
+    });
+
     if (subscription?.isActive && subscription.endpoint) {
       try {
         await retrier.run(ctx, internal.notifications.sendPushToEndpoint, {
@@ -156,6 +165,17 @@ export const sendReminderToUser = internalAction({
 
     const title = "FitFast";
     const body = "Time for your check-in! Track your progress today";
+
+    // Always create in-app notification (never lost guarantee)
+    if (enabled) {
+      await ctx.runMutation(internal.inAppNotifications.createInAppNotification, {
+        userId,
+        type: "reminder",
+        title,
+        body,
+        url: "/check-in",
+      });
+    }
 
     if (enabled && subscription?.isActive && subscription.endpoint) {
       try {

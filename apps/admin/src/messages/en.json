@@ -254,7 +254,16 @@
     "deleteTestUser": "Delete Test User",
     "deleteTestUserDesc": "This will permanently delete this test user including their assessment, plans, check-ins, and all activity data. This cannot be undone.",
     "deleteTestUserSuccess": "Test user deleted",
-    "deleteTestUserFailed": "Failed to delete test user"
+    "deleteTestUserFailed": "Failed to delete test user",
+    "selectAll": "Select all",
+    "selectClient": "Select {name}",
+    "clearSelection": "Clear",
+    "bulkDeleteBtn": "Delete ({count})",
+    "bulkDeleteTitle": "Delete Selected Clients",
+    "bulkDeleteDesc": "This will permanently delete {count} client(s) and all their data including plans, check-ins, and activity. This cannot be undone.",
+    "bulkDeleteConfirm": "Delete {count} Client(s)",
+    "bulkDeleteSuccess": "{count} client(s) deleted successfully",
+    "bulkDeleteFailed": "Failed to delete clients"
   },
   "signupDetail": {
     "backToList": "Back to Signups",

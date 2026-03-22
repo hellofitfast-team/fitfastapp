@@ -4,7 +4,8 @@ import { useId } from "react";
 import { useTranslations } from "next-intl";
 import { Link, useRouter, usePathname } from "@fitfast/i18n/navigation";
 import { useParams } from "next/navigation";
-import { Bell, User, LogOut, Settings } from "lucide-react";
+import { User, LogOut, Settings } from "lucide-react";
+import { NotificationDropdown } from "@/components/notification-dropdown";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,12 +56,7 @@ export function DesktopHeader({ userName }: DesktopHeaderProps) {
           </button>
 
           {/* Notifications */}
-          <button
-            className="text-muted-foreground hover:text-foreground flex h-11 w-11 items-center justify-center rounded-lg transition-colors hover:bg-neutral-100"
-            aria-label="Notifications"
-          >
-            <Bell className="h-4 w-4" />
-          </button>
+          <NotificationDropdown />
 
           {/* User Menu */}
           <DropdownMenu>

@@ -329,6 +329,54 @@ export const sendAdminInviteEmail = internalAction({
   },
 });
 
+/** Coach-initiated notification email (used as fallback when push unavailable) */
+function getCoachNotificationEmail(
+  fullName: string,
+  title: string,
+  body: string,
+  language: "en" | "ar",
+) {
+  const isAr = language === "ar";
+  const safeName = escapeHtml(fullName);
+  const safeTitle = escapeHtml(title);
+  const safeBody = escapeHtml(body);
+  return {
+    subject: isAr ? `رسالة من مدربك: ${safeTitle}` : `Message from your coach: ${safeTitle}`,
+    html: `
+      <div dir="${isAr ? "rtl" : "ltr"}" style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
+        <h1 style="color:#10B981">${isAr ? `${safeName}، رسالة من مدربك` : `${safeName}, a message from your coach`}</h1>
+        <div style="background:#f5f5f5;border-radius:8px;padding:16px;margin:16px 0">
+          <p style="margin:0 0 8px;font-weight:600">${safeTitle}</p>
+          <p style="margin:0">${safeBody}</p>
+        </div>
+        <p>${isAr ? "افتح التطبيق لمزيد من التفاصيل." : "Open the app for more details."}</p>
+        <p style="color:#6b7280;font-size:12px;margin-top:32px">— FitFast</p>
+      </div>`,
+  };
+}
+
+export const sendCoachNotificationEmail = internalAction({
+  args: {
+    userId: v.string(),
+    title: v.string(),
+    body: v.string(),
+  },
+  handler: async (ctx, { userId, title, body }): Promise<void> => {
+    const profile = await ctx.runQuery(internal.helpers.getProfileInternal, { userId });
+    if (!profile?.email) {
+      throw new Error("Client has no email address on profile");
+    }
+
+    const { subject, html } = getCoachNotificationEmail(
+      profile.fullName ?? "there",
+      title,
+      body,
+      profile.language,
+    );
+    await sendEmail(profile.email, subject, html);
+  },
+});
+
 /** @deprecated Use sendAdminInviteEmail instead */
 export const sendAdminCredentialsEmail = internalAction({
   args: {

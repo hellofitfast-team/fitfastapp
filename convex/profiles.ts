@@ -337,6 +337,45 @@ export const rejectClient = mutation({
   },
 });
 
+/** Bulk-delete multiple client profiles and all their data. Coach-only. */
+export const bulkDeleteClients = mutation({
+  args: {
+    profileIds: v.array(v.id("profiles")),
+  },
+  handler: async (ctx, { profileIds }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const callerProfile = await ctx.db
+      .query("profiles")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .unique();
+    if (!callerProfile?.isCoach) throw new Error("Not authorized");
+
+    if (profileIds.length > 50) throw new Error("Cannot delete more than 50 clients at once");
+
+    let deleted = 0;
+    for (const profileId of profileIds) {
+      const profile = await ctx.db.get(profileId);
+      if (!profile || profile.isCoach) continue; // Skip missing or coach profiles
+
+      // Remove from active count if applicable
+      if (profile.status === "active") {
+        await activeClientsCount.deleteIfExists(ctx, { key: profileId, id: profileId });
+      }
+
+      // Schedule cascade-delete for each user
+      await ctx.scheduler.runAfter(0, internal.dataRetention.cascadeDeleteUser, {
+        userId: profile.userId,
+        profileId: profile._id,
+      });
+      deleted++;
+    }
+
+    return { deleted };
+  },
+});
+
 // Internal: create a profile for a new user (called during signup acceptance)
 export const createProfileForNewUser = internalMutation({
   args: {

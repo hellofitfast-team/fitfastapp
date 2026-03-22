@@ -254,7 +254,16 @@
     "deleteTestUser": "حذف المستخدم التجريبي",
     "deleteTestUserDesc": "سيتم حذف هذا المستخدم التجريبي نهائياً بما في ذلك التقييم والخطط والمتابعات وجميع بيانات النشاط. لا يمكن التراجع عن هذا.",
     "deleteTestUserSuccess": "تم حذف المستخدم التجريبي",
-    "deleteTestUserFailed": "فشل حذف المستخدم التجريبي"
+    "deleteTestUserFailed": "فشل حذف المستخدم التجريبي",
+    "selectAll": "تحديد الكل",
+    "selectClient": "تحديد {name}",
+    "clearSelection": "مسح",
+    "bulkDeleteBtn": "حذف ({count})",
+    "bulkDeleteTitle": "حذف العملاء المحددين",
+    "bulkDeleteDesc": "سيتم حذف {count} عميل(عملاء) نهائياً وجميع بياناتهم بما في ذلك الخطط والمتابعات والنشاط. لا يمكن التراجع عن هذا.",
+    "bulkDeleteConfirm": "حذف {count} عميل(عملاء)",
+    "bulkDeleteSuccess": "تم حذف {count} عميل(عملاء) بنجاح",
+    "bulkDeleteFailed": "فشل حذف العملاء"
   },
   "signupDetail": {
     "backToList": "العودة إلى التسجيلات",

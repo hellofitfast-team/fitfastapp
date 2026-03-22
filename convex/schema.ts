@@ -445,6 +445,23 @@ export default defineSchema({
     failedCount: v.optional(v.number()),
   }).index("by_sentAt", ["sentAt"]),
 
+  inAppNotifications: defineTable({
+    userId: v.string(),
+    type: v.union(
+      v.literal("plan_ready"),
+      v.literal("reminder"),
+      v.literal("broadcast"),
+      v.literal("individual"),
+    ),
+    title: v.string(),
+    body: v.string(),
+    isRead: v.boolean(),
+    url: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_userId_createdAt", ["userId", "createdAt"])
+    .index("by_userId_isRead", ["userId", "isRead"]),
+
   coachKnowledge: defineTable({
     title: v.string(),
     type: v.union(v.literal("text"), v.literal("pdf")),
