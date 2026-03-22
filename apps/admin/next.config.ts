@@ -87,7 +87,6 @@ const finalConfig =
         widenClientFileUpload: !!process.env.CI,
         tunnelRoute: "/monitoring",
         sourcemaps: {
-          disable: !process.env.SENTRY_AUTH_TOKEN,
           deleteSourcemapsAfterUpload: true,
         },
       });

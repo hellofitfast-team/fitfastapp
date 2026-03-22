@@ -9,6 +9,8 @@
  */
 
 import type * as actionCache from "../actionCache.js";
+import type * as adminInvite from "../adminInvite.js";
+import type * as adminInviteActions from "../adminInviteActions.js";
 import type * as adminNotifications from "../adminNotifications.js";
 import type * as adminStats from "../adminStats.js";
 import type * as ai from "../ai.js";
@@ -81,6 +83,8 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   actionCache: typeof actionCache;
+  adminInvite: typeof adminInvite;
+  adminInviteActions: typeof adminInviteActions;
   adminNotifications: typeof adminNotifications;
   adminStats: typeof adminStats;
   ai: typeof ai;
