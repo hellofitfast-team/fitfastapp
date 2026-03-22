@@ -309,6 +309,7 @@ export const sendAdminInviteEmail = internalAction({
   },
   handler: async (_ctx, { email, fullName, setupLink }): Promise<void> => {
     const safeName = escapeHtml(fullName);
+    const safeLink = escapeHtml(setupLink);
 
     const subject = "You're Invited to FitFast Coach Panel";
     const html = `
@@ -316,7 +317,7 @@ export const sendAdminInviteEmail = internalAction({
         <h1 style="color:#FF4500">Welcome to FitFast, ${safeName}!</h1>
         <p>You've been invited to join FitFast as a coach. Click the button below to set up your account and create your password.</p>
         <div style="text-align:center;margin:32px 0">
-          <a href="${setupLink}" style="background:#FF4500;color:#fff;padding:14px 32px;border-radius:12px;text-decoration:none;font-weight:600;display:inline-block">
+          <a href="${safeLink}" style="background:#FF4500;color:#fff;padding:14px 32px;border-radius:12px;text-decoration:none;font-weight:600;display:inline-block">
             Set Up Your Account
           </a>
         </div>

@@ -57,10 +57,13 @@ export const requestInitialSetupLink = action({
     fullName: v.string(),
   },
   handler: async (ctx, { email, fullName }): Promise<string> => {
-    // Only allow if no owner exists yet
-    const ownerExists = await ctx.runQuery(internal.adminInvite.hasOwnerInternal);
-    if (ownerExists) {
-      throw new Error("Owner account already exists. Please sign in with your password.");
+    // Rate limit: 3 requests per hour to prevent email spam
+    const { ok, retryAfter } = await ctx.runMutation(internal.rateLimiter.checkRateLimit, {
+      name: "initialSetupLink",
+      key: email.toLowerCase(),
+    });
+    if (!ok) {
+      throw new Error(`Too many requests — try again in ${Math.ceil(retryAfter / 1000)}s`);
     }
 
     // Check if user already has an account
@@ -69,29 +72,27 @@ export const requestInitialSetupLink = action({
       throw new Error("Account already exists. Please sign in with your password.");
     }
 
+    // Check if there's already an active invite — resend it instead of creating a new one
+    const existingInvite = await ctx.runQuery(internal.adminInvite.getInviteByEmail, { email });
+    if (existingInvite && !existingInvite.usedAt && Date.now() < existingInvite.expiresAt) {
+      const adminUrl = process.env.ADMIN_APP_URL ?? "https://admin.fitfast.app";
+      await ctx.runAction(internal.email.sendAdminInviteEmail, {
+        email,
+        fullName: existingInvite.fullName,
+        setupLink: `${adminUrl}/en/setup?token=${existingInvite.token}`,
+      });
+      return "Setup link sent — check your email";
+    }
+
     const token = crypto.randomBytes(32).toString("hex");
 
-    // Create or refresh invite
-    try {
-      await ctx.runMutation(internal.adminInvite.createInviteRecord, {
-        email,
-        fullName,
-        token,
-      });
-    } catch {
-      // Active invite exists — resend it
-      const existingInvite = await ctx.runQuery(internal.adminInvite.getInviteByEmail, { email });
-      if (existingInvite && !existingInvite.usedAt) {
-        const adminUrl = process.env.ADMIN_APP_URL ?? "https://admin.fitfast.app";
-        await ctx.runAction(internal.email.sendAdminInviteEmail, {
-          email,
-          fullName: existingInvite.fullName,
-          setupLink: `${adminUrl}/en/setup?token=${existingInvite.token}`,
-        });
-        return "Setup link sent — check your email";
-      }
-      throw new Error("Could not create invite. Please try again.");
-    }
+    // Atomic: create invite + check no owner exists (in same mutation transaction)
+    await ctx.runMutation(internal.adminInvite.createInviteRecord, {
+      email,
+      fullName,
+      token,
+      requireNoOwner: true,
+    });
 
     const adminUrl = process.env.ADMIN_APP_URL ?? "https://admin.fitfast.app";
     await ctx.runAction(internal.email.sendAdminInviteEmail, {

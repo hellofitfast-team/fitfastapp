@@ -101,6 +101,7 @@ export default function AdminLoginPage() {
   const {
     register,
     handleSubmit,
+    getValues,
     formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -242,8 +243,7 @@ export default function AdminLoginPage() {
                     type="button"
                     disabled={magicLinkLoading}
                     onClick={async () => {
-                      const emailValue = (document.getElementById("email") as HTMLInputElement)
-                        ?.value;
+                      const emailValue = getValues("email");
                       if (!emailValue) {
                         setError(t("enterEmailFirst"));
                         return;

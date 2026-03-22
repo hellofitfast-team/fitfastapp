@@ -38,6 +38,8 @@ export const rateLimiter = new RateLimiter(components.rateLimiter, {
   sendNotification: { kind: "fixed window", rate: 50, period: DAY },
   // Broadcast notification: 5 per day per coach (abuse prevention)
   broadcastNotification: { kind: "fixed window", rate: 5, period: DAY },
+  // Initial setup link: 3 per hour per email (prevent email spam from public endpoint)
+  initialSetupLink: { kind: "fixed window", rate: 3, period: HOUR },
 });
 
 /**
@@ -50,6 +52,7 @@ const actionRateLimitNames = [
   "changePassword",
   "sendNotification",
   "broadcastNotification",
+  "initialSetupLink",
 ] as const;
 type ActionRateLimitName = (typeof actionRateLimitNames)[number];
 

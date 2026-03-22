@@ -379,7 +379,7 @@
     "teamManagement": "Team Management",
     "teamManagementDesc": "Invite other coaches to manage the platform.",
     "inviteCoach": "Invite Coach",
-    "inviteCoachDesc": "Send an invitation email with login credentials to a new coach. They will be able to access the admin panel.",
+    "inviteCoachDesc": "Send an invitation email with a setup link to a new coach. They will create their own password.",
     "inviteFullName": "Full Name",
     "inviteFullNamePlaceholder": "e.g. Ahmed Hassan",
     "inviteEmail": "Email Address",

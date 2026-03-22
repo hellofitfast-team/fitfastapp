@@ -92,8 +92,19 @@ export const createInviteRecord = internalMutation({
     fullName: v.string(),
     token: v.string(),
     invitedBy: v.optional(v.string()),
+    requireNoOwner: v.optional(v.boolean()),
   },
-  handler: async (ctx, { email, fullName, token, invitedBy }) => {
+  handler: async (ctx, { email, fullName, token, invitedBy, requireNoOwner }) => {
+    // Atomic owner check — prevents TOCTOU race where two initial invites slip through
+    if (requireNoOwner) {
+      const owner = await ctx.db
+        .query("profiles")
+        .withIndex("by_isCoach", (q) => q.eq("isCoach", true))
+        .filter((q) => q.eq(q.field("isOwner"), true))
+        .first();
+      if (owner) throw new Error("Owner account already exists");
+    }
+
     // Check for existing unused invite
     const existing = await ctx.db
       .query("adminInvites")
