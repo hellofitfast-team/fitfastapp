@@ -112,6 +112,7 @@
     "english": "English",
     "arabic": "العربية",
     "coachAccountError": "This is a coach account. Please use the admin panel to sign in.",
+    "accountNotFound": "No account found. Please contact your coach or sign up first.",
     "acceptInvite": "Welcome to FitFast",
     "createAccount": "Create Account",
     "invalidInviteLink": "Invalid invitation link. Please contact your coach.",

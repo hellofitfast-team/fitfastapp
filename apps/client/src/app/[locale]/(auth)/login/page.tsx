@@ -60,6 +60,16 @@ export default function LoginPage() {
       return;
     }
 
+    // Authenticated but no profile — invalid state, sign out to prevent redirect loop
+    if (profile === null) {
+      isSigningOut.current = true;
+      signOut().then(() => {
+        isSigningOut.current = false;
+        setError(t("accountNotFound"));
+      });
+      return;
+    }
+
     // Regular client — proceed to dashboard
     if (isAuthenticated) {
       router.replace("/");
