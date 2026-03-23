@@ -394,6 +394,23 @@ export const patchOcrData = internalMutation({
   },
 });
 
+/** Delete a signup record and its payment screenshot (internal — for CLI cleanup) */
+export const deleteSignupInternal = internalMutation({
+  args: { signupId: v.id("pendingSignups") },
+  handler: async (ctx, { signupId }) => {
+    const signup = await ctx.db.get(signupId);
+    if (!signup) throw new Error("Signup not found");
+
+    if (signup.paymentScreenshotId) {
+      await ctx.storage.delete(signup.paymentScreenshotId);
+    }
+    if (signup.status === "pending") {
+      await pendingSignupsCount.deleteIfExists(ctx, { key: signupId, id: signupId });
+    }
+    await ctx.db.delete(signupId);
+  },
+});
+
 export const patchInvitationId = internalMutation({
   args: {
     signupId: v.id("pendingSignups"),
