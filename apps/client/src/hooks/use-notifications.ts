@@ -114,8 +114,7 @@ export function useNotifications() {
 
       setIsSubscribed(true);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to enable notifications";
-      setError(message);
+      setError("subscribe_failed");
       Sentry.captureException(err instanceof Error ? err : new Error("Push subscribe failed"), {
         tags: { feature: "push-notifications", operation: "subscribe" },
       });
@@ -141,8 +140,7 @@ export function useNotifications() {
 
       setIsSubscribed(false);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to disable notifications";
-      setError(message);
+      setError("unsubscribe_failed");
       Sentry.captureException(err instanceof Error ? err : new Error("Push unsubscribe failed"), {
         tags: { feature: "push-notifications", operation: "unsubscribe" },
       });

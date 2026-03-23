@@ -1113,6 +1113,8 @@
     "not_configured": "Notification service is not configured. Please contact your coach.",
     "profile_not_loaded": "Profile not loaded yet. Please try again.",
     "permission_denied": "Notifications were blocked. Please enable them in your browser settings.",
-    "permission_dismissed": "Permission request was dismissed. Please try again to enable notifications."
+    "permission_dismissed": "Permission request was dismissed. Please try again to enable notifications.",
+    "subscribe_failed": "Failed to enable notifications. Please try again.",
+    "unsubscribe_failed": "Failed to disable notifications. Please try again."
   }
 }
