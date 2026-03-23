@@ -293,7 +293,7 @@ export default function InitialAssessmentPage() {
       router.push("/");
     } catch (err) {
       console.error("Assessment error:", err); // Sentry captures this
-      setError(err instanceof Error ? err.message : tErrors("unexpectedError"));
+      setError(tErrors("unexpectedError"));
     } finally {
       setIsLoading(false);
     }
