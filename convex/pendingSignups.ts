@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { query, mutation, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getAuthUserId } from "./auth";
-import { pendingSignupsCount } from "./adminStats";
+import { activeClientsCount, pendingSignupsCount } from "./adminStats";
 import { rateLimiter } from "./rateLimiter";
 
 export const getPendingSignups = query({
@@ -136,7 +136,17 @@ export const createSignup = mutation({
       .first();
     if (existingPending) throw new Error("A signup with this email is already pending");
 
-    const id = await ctx.db.insert("pendingSignups", { ...args, email, status: "pending" });
+    // Generate invite token upfront so the prospect can create their account
+    // immediately and land on the pending-approval screen while the coach reviews.
+    const inviteToken =
+      crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
+
+    const id = await ctx.db.insert("pendingSignups", {
+      ...args,
+      email,
+      status: "pending",
+      inviteToken,
+    });
     // Increment the denormalized pending count for the admin dashboard
     await pendingSignupsCount.insert(ctx, { key: id, id });
 
@@ -155,6 +165,14 @@ export const createSignup = mutation({
       language: "en",
     });
 
+    // Send invitation email with magic link to create account
+    await ctx.scheduler.runAfter(0, internal.email.sendInvitationEmail, {
+      email,
+      fullName: args.fullName,
+      inviteToken,
+      language: "en" as const,
+    });
+
     return id;
   },
 });
@@ -165,33 +183,47 @@ export const approveSignup = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    const profile = await ctx.db
+    const coachProfile = await ctx.db
       .query("profiles")
       .withIndex("by_userId", (q) => q.eq("userId", userId))
       .unique();
-    if (!profile?.isCoach) throw new Error("Not authorized");
+    if (!coachProfile?.isCoach) throw new Error("Not authorized");
 
     const signup = await ctx.db.get(signupId);
     if (!signup) throw new Error("Signup not found");
 
-    // Generate a secure invite token
-    const inviteToken =
-      crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
     await ctx.db.patch(signupId, {
       status: "approved",
       reviewedAt: Date.now(),
-      inviteToken,
     });
     // Decrement pending count — signup is no longer "pending"
     await pendingSignupsCount.deleteIfExists(ctx, { key: signupId, id: signupId });
 
-    // Schedule invitation email
-    await ctx.scheduler.runAfter(0, internal.email.sendInvitationEmail, {
-      email: signup.email,
-      fullName: signup.fullName,
-      inviteToken,
-      language: "en" as const,
-    });
+    // Check if the prospect already created their account (has a pending_approval profile)
+    const clientProfile = await ctx.db
+      .query("profiles")
+      .withIndex("by_email", (q) => q.eq("email", signup.email))
+      .first();
+
+    if (clientProfile && clientProfile.status === "pending_approval") {
+      // Activate the existing profile — prospect already set their password
+      await ctx.scheduler.runAfter(0, internal.pendingSignups.activateClientProfile, {
+        profileId: clientProfile._id,
+        signupId,
+      });
+    } else {
+      // Prospect hasn't created their account yet — send a fresh invite email
+      const inviteToken =
+        crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
+      await ctx.db.patch(signupId, { inviteToken });
+
+      await ctx.scheduler.runAfter(0, internal.email.sendInvitationEmail, {
+        email: signup.email,
+        fullName: signup.fullName,
+        inviteToken,
+        language: "en" as const,
+      });
+    }
   },
 });
 
@@ -372,5 +404,52 @@ export const patchInvitationId = internalMutation({
   },
   handler: async (ctx, { signupId, inviteToken }) => {
     await ctx.db.patch(signupId, { inviteToken });
+  },
+});
+
+/**
+ * Activate a client profile that was created at signup (pending_approval)
+ * when the coach approves. Sets status to active, populates plan dates,
+ * and sends the welcome email.
+ */
+export const activateClientProfile = internalMutation({
+  args: {
+    profileId: v.id("profiles"),
+    signupId: v.id("pendingSignups"),
+  },
+  handler: async (ctx, { profileId, signupId }) => {
+    const profile = await ctx.db.get(profileId);
+    if (!profile || profile.status !== "pending_approval") return;
+
+    const signup = await ctx.db.get(signupId);
+    if (!signup) return;
+
+    const planMonths = signup.planTier === "quarterly" ? 3 : 1;
+    const endDate = new Date();
+    endDate.setMonth(endDate.getMonth() + planMonths);
+
+    await ctx.db.patch(profileId, {
+      fullName: signup.fullName,
+      status: "active",
+      planTier: signup.planTier,
+      planStartDate: new Date().toISOString().split("T")[0],
+      planEndDate: endDate.toISOString().split("T")[0],
+      updatedAt: Date.now(),
+    });
+
+    // Maintain active clients aggregate counter
+    await activeClientsCount.insert(ctx, { key: profileId, id: profileId });
+
+    // Clear invite token — no longer needed
+    if (signup.inviteToken) {
+      await ctx.db.patch(signupId, { inviteToken: undefined });
+    }
+
+    // Send welcome email
+    await ctx.scheduler.runAfter(0, internal.email.sendWelcomeEmail, {
+      email: profile.email ?? signup.email,
+      fullName: signup.fullName,
+      language: profile.language ?? "en",
+    });
   },
 });
