@@ -85,8 +85,25 @@ export const getFileUrlsBatch = query({
     const userId = await getAuthUserId(ctx);
     if (!userId) return {};
 
+    // Check access: coaches can access anything, clients only their own files
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .unique();
+    const isCoach = !!profile?.isCoach;
+
     const urls: Record<string, string | null> = {};
     for (const id of storageIds) {
+      if (!isCoach) {
+        const meta = await ctx.db
+          .query("fileMetadata")
+          .withIndex("by_storageId", (q) => q.eq("storageId", id))
+          .first();
+        if (meta && meta.uploadedBy !== userId) {
+          urls[id] = null;
+          continue;
+        }
+      }
       urls[id] = await ctx.storage.getUrl(id);
     }
     return urls;

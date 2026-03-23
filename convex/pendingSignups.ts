@@ -110,15 +110,33 @@ export const createSignup = mutation({
     paymentScreenshotId: v.id("_storage"),
   },
   handler: async (ctx, args) => {
-    await rateLimiter.limit(ctx, "createSignup", { key: args.email });
-    // Duplicate email guard
+    // Server-side input validation
+    const email = args.email.trim().toLowerCase();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw new Error("Invalid email address");
+    }
+    if (!args.fullName || args.fullName.length < 2 || args.fullName.length > 100) {
+      throw new Error("Full name must be 2-100 characters");
+    }
+    if (args.phone && (args.phone.length > 20 || !/^\+?[0-9\s-]{7,20}$/.test(args.phone))) {
+      throw new Error("Invalid phone number");
+    }
+    if (args.transferReferenceNumber.length > 50) {
+      throw new Error("Transfer reference too long");
+    }
+    if (args.transferAmount.length > 20) {
+      throw new Error("Transfer amount too long");
+    }
+
+    await rateLimiter.limit(ctx, "createSignup", { key: email });
+    // Duplicate email guard (case-insensitive)
     const existingPending = await ctx.db
       .query("pendingSignups")
-      .withIndex("by_email_status", (q) => q.eq("email", args.email).eq("status", "pending"))
+      .withIndex("by_email_status", (q) => q.eq("email", email).eq("status", "pending"))
       .first();
     if (existingPending) throw new Error("A signup with this email is already pending");
 
-    const id = await ctx.db.insert("pendingSignups", { ...args, status: "pending" });
+    const id = await ctx.db.insert("pendingSignups", { ...args, email, status: "pending" });
     // Increment the denormalized pending count for the admin dashboard
     await pendingSignupsCount.insert(ctx, { key: id, id });
 
@@ -183,6 +201,9 @@ export const rejectSignup = mutation({
     rejectionReason: v.string(),
   },
   handler: async (ctx, { signupId, rejectionReason }) => {
+    if (rejectionReason.length > 1000)
+      throw new Error("Rejection reason too long (max 1000 characters)");
+
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 

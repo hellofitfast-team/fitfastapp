@@ -9,7 +9,9 @@ function escapeHtml(str: string): string {
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+    .replace(/`/g, "&#96;");
 }
 
 // ---------------------------------------------------------------------------
@@ -189,7 +191,7 @@ function getInvitationEmail(fullName: string, inviteToken: string, language: "en
   const safeName = escapeHtml(fullName);
   const clientUrl = process.env.CLIENT_APP_URL ?? "https://app.fitfast.app";
   const locale = isAr ? "ar" : "en";
-  const acceptLink = `${clientUrl}/${locale}/accept-invite?token=${inviteToken}`;
+  const acceptLink = `${clientUrl}/${locale}/accept-invite?token=${encodeURIComponent(inviteToken)}`;
 
   return {
     subject: isAr
