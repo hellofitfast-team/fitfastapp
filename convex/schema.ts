@@ -80,6 +80,7 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index("by_userId", ["userId"])
+    .index("by_email", ["email"])
     .index("by_isCoach", ["isCoach"])
     .index("by_status", ["status"]),
 

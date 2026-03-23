@@ -158,14 +158,8 @@ export const createSignup = mutation({
       });
     }
 
-    // Send signup confirmation email
-    await ctx.scheduler.runAfter(0, internal.email.sendSignupReceivedEmail, {
-      email: args.email,
-      fullName: args.fullName,
-      language: "en",
-    });
-
     // Send invitation email with magic link to create account
+    // (serves as both confirmation and account-setup in a single email)
     await ctx.scheduler.runAfter(0, internal.email.sendInvitationEmail, {
       email,
       fullName: args.fullName,
@@ -212,10 +206,13 @@ export const approveSignup = mutation({
         signupId,
       });
     } else {
-      // Prospect hasn't created their account yet — send a fresh invite email
+      // Prospect hasn't created their account yet — reuse existing token or generate fresh
       const inviteToken =
+        signup.inviteToken ??
         crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
-      await ctx.db.patch(signupId, { inviteToken });
+      if (!signup.inviteToken) {
+        await ctx.db.patch(signupId, { inviteToken });
+      }
 
       await ctx.scheduler.runAfter(0, internal.email.sendInvitationEmail, {
         email: signup.email,

@@ -44,6 +44,14 @@ function getAllowedOrigin(request?: Request): string {
   return process.env.MARKETING_SITE_URL ?? "https://fitfast.app";
 }
 
+/** Standard CORS headers for all responses — includes Vary: Origin for cache correctness */
+function corsHeaders(request: Request): Record<string, string> {
+  return {
+    "Access-Control-Allow-Origin": getAllowedOrigin(request),
+    Vary: "Origin",
+  };
+}
+
 const http = httpRouter();
 
 // Convex Auth HTTP routes (JWT verification, JWKS, etc.)
@@ -76,7 +84,7 @@ http.route({
       status: 200,
       headers: {
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": getAllowedOrigin(request),
+        ...corsHeaders(request),
       },
     });
   }),
@@ -105,7 +113,7 @@ http.route({
           status: 429,
           headers: {
             "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": getAllowedOrigin(request),
+            ...corsHeaders(request),
           },
         },
       );
@@ -116,7 +124,7 @@ http.route({
       status: 200,
       headers: {
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": getAllowedOrigin(request),
+        ...corsHeaders(request),
       },
     });
   }),
@@ -130,7 +138,7 @@ http.route({
     return new Response(null, {
       status: 204,
       headers: {
-        "Access-Control-Allow-Origin": getAllowedOrigin(request),
+        ...corsHeaders(request),
         "Access-Control-Allow-Methods": "POST, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type",
       },
