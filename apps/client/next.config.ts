@@ -68,7 +68,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: blob: https://*.convex.cloud",
               "font-src 'self' data: https://fonts.gstatic.com",
-              "connect-src 'self' https://*.convex.cloud wss://*.convex.cloud https://*.sentry.io",
+              "connect-src 'self' https://*.convex.cloud wss://*.convex.cloud https://*.convex.site https://*.sentry.io",
               "worker-src 'self' blob:",
               "frame-src 'self'",
               "frame-ancestors 'none'",
