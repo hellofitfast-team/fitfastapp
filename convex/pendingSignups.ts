@@ -228,10 +228,18 @@ export const approveSignup = mutation({
     await pendingSignupsCount.deleteIfExists(ctx, { key: signupId, id: signupId });
 
     // Check if the prospect already created their account (has a pending_approval profile)
-    const clientProfile = await ctx.db
+    // Try exact match first, then case-insensitive fallback (auth may normalize email case)
+    let clientProfile = await ctx.db
       .query("profiles")
       .withIndex("by_email", (q) => q.eq("email", signup.email))
       .first();
+
+    if (!clientProfile) {
+      clientProfile = await ctx.db
+        .query("profiles")
+        .withIndex("by_email", (q) => q.eq("email", signup.email.toLowerCase()))
+        .first();
+    }
 
     if (clientProfile && clientProfile.status === "pending_approval") {
       // Activate the existing profile — prospect already set their password

@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Clock, CheckCircle2, Mail } from "lucide-react";
+import { Clock, CheckCircle2, Mail, RefreshCw } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent } from "@fitfast/ui/card";
 import { cn } from "@fitfast/ui/cn";
@@ -23,6 +23,11 @@ export default function PendingPage() {
       router.replace("/login?error=rejected");
     }
   }, [profile, router]);
+
+  // Manual refresh — full reload re-establishes Convex WebSocket connection
+  const handleManualRefresh = useCallback(() => {
+    window.location.reload();
+  }, []);
 
   const steps = [
     {
@@ -118,6 +123,16 @@ export default function PendingPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Check status button */}
+      <button
+        type="button"
+        onClick={handleManualRefresh}
+        className="border-border hover:bg-muted flex w-full items-center justify-center gap-2 rounded-xl border bg-neutral-50 p-4 text-sm font-medium transition-colors"
+      >
+        <RefreshCw className="h-4 w-4" />
+        {t("checkStatus")}
+      </button>
 
       {/* Approval time notice */}
       <div className="border-border rounded-xl border bg-neutral-50 p-6 text-center">

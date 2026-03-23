@@ -426,7 +426,7 @@ export const createProfileForNewUser = internalMutation({
   handler: async (ctx, { userId, email, fullName }) => {
     await ctx.db.insert("profiles", {
       userId,
-      email,
+      email: email?.toLowerCase(),
       fullName,
       language: "en",
       status: "pending_approval",
@@ -491,10 +491,36 @@ export const onNewUserCreated = internalMutation({
     }
 
     // Check if this user came from an approved pending signup (client invite flow)
-    const signup = await ctx.db
+    // Use desc order to get the most recent signup (handles multiple signups for same email)
+    // Try exact match first, then case-insensitive fallback
+    let signup = await ctx.db
       .query("pendingSignups")
       .withIndex("by_email", (q) => q.eq("email", email))
+      .order("desc")
       .first();
+
+    // If found but not approved, check if there's an approved one
+    if (signup && signup.status !== "approved") {
+      const approvedSignup = await ctx.db
+        .query("pendingSignups")
+        .withIndex("by_email_status", (q) => q.eq("email", email).eq("status", "approved"))
+        .order("desc")
+        .first();
+      if (approvedSignup) signup = approvedSignup;
+    }
+
+    // Case-insensitive fallback
+    if (!signup || signup.status !== "approved") {
+      const lowerEmail = email.toLowerCase();
+      if (lowerEmail !== email) {
+        const fallback = await ctx.db
+          .query("pendingSignups")
+          .withIndex("by_email_status", (q) => q.eq("email", lowerEmail).eq("status", "approved"))
+          .order("desc")
+          .first();
+        if (fallback) signup = fallback;
+      }
+    }
 
     if (signup && signup.status === "approved") {
       // Create profile from the approved signup data
@@ -504,7 +530,7 @@ export const onNewUserCreated = internalMutation({
 
       const profileId = await ctx.db.insert("profiles", {
         userId,
-        email: signup.email,
+        email: signup.email.toLowerCase(),
         fullName: signup.fullName,
         language: "en",
         status: "active",
@@ -526,9 +552,10 @@ export const onNewUserCreated = internalMutation({
       }
     } else {
       // Fallback: create a basic pending profile
+      // Normalize email to lowercase so index lookups in approveSignup match
       await ctx.db.insert("profiles", {
         userId,
-        email,
+        email: email.toLowerCase(),
         language: "en",
         status: "pending_approval",
         isCoach: false,

@@ -26,7 +26,8 @@ export default function AcceptInvitePage() {
   // Validate the invite token
   const inviteData = useQuery(api.pendingSignups.validateInviteToken, token ? { token } : "skip");
 
-  // If already signed in, redirect to pending
+  // If already signed in, redirect to pending — it reactively checks status
+  // and auto-redirects to /initial-assessment when profile becomes active
   useEffect(() => {
     if (isAuthenticated) {
       router.replace("/pending");

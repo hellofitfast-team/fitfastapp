@@ -62,8 +62,14 @@ function emailWrapper(isAr: boolean, content: string): string {
 function getWelcomeEmail(fullName: string, language: "en" | "ar") {
   const isAr = language === "ar";
   const safeName = escapeHtml(fullName);
+  const clientUrl = process.env.CLIENT_APP_URL ?? "https://client.fitfast.app";
+  const locale = isAr ? "ar" : "en";
+  const loginLink = `${clientUrl}/${locale}/login`;
+
   return {
-    subject: isAr ? "مرحبًا بك في فيت فاست! 🎉" : "Welcome to FitFast! 🎉",
+    subject: isAr
+      ? "تمت الموافقة على حسابك في فيت فاست! 🎉"
+      : "Your FitFast account has been approved! 🎉",
     html: emailWrapper(
       isAr,
       `
@@ -77,7 +83,12 @@ function getWelcomeEmail(fullName: string, language: "en" | "ar") {
           isAr
             ? "أكمل التقييم الأولي للحصول على خطة وجباتك وتمارينك المخصصة."
             : "Complete your initial assessment to get your personalized meal and workout plans."
-        }</p>`,
+        }</p>
+        <div style="text-align:center;margin:32px 0">
+          <a href="${loginLink}" style="background:#10B981;color:#fff;padding:14px 32px;border-radius:12px;text-decoration:none;font-weight:600;display:inline-block">
+            ${isAr ? "ادخل إلى حسابك" : "Access Your Account"}
+          </a>
+        </div>`,
     ),
   };
 }

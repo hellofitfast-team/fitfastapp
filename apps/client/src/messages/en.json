@@ -885,6 +885,7 @@
       "subtitle": "Your coach is reviewing your application",
       "message": "We'll notify you once your account is approved",
       "currentStatus": "Current Status",
+      "checkStatus": "Check Status",
       "approvalTime": "Approval typically takes 24-48 hours. You'll receive an email notification when approved.",
       "stepSignupComplete": "Signup Complete",
       "stepSignupCompleteDesc": "Your account has been created successfully",
