@@ -1,11 +1,11 @@
 "use client";
 
-import { useConvexAuth } from "convex/react";
+import { useConvexAuth, useQuery } from "convex/react";
 import { usePaginatedQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useTranslations } from "next-intl";
 import { ClientsList } from "./clients-list";
-import { Loader2 } from "lucide-react";
+import { Loader2, Clock, Mail } from "lucide-react";
 import { Button } from "@fitfast/ui/button";
 import { CreateTestUserButton } from "./create-test-user-dialog";
 
@@ -18,6 +18,11 @@ export default function AdminClientsPage() {
     api.profiles.listClientsPaginated,
     isAuthenticated ? {} : "skip",
     { initialNumItems: PAGE_SIZE },
+  );
+
+  const awaitingSignups = useQuery(
+    api.pendingSignups.getApprovedAwaitingAccount,
+    isAuthenticated ? {} : "skip",
   );
 
   const isLoading = status === "LoadingFirstPage";
@@ -55,6 +60,40 @@ export default function AdminClientsPage() {
         </div>
         <CreateTestUserButton />
       </div>
+
+      {/* Approved signups awaiting account creation */}
+      {awaitingSignups && awaitingSignups.length > 0 && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <div className="mb-3 flex items-center gap-2">
+            <Clock className="h-4 w-4 text-amber-600" />
+            <h2 className="text-sm font-semibold text-amber-900">{t("awaitingAccountCreation")}</h2>
+          </div>
+          <div className="space-y-2">
+            {awaitingSignups.map((signup) => (
+              <div
+                key={signup._id}
+                className="flex items-center justify-between rounded-lg bg-white/70 px-4 py-3"
+              >
+                <div>
+                  <p className="text-sm font-medium text-stone-900">{signup.fullName}</p>
+                  <p className="text-xs text-stone-500">{signup.email}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  {signup.planTier && (
+                    <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700">
+                      {signup.planTier === "quarterly" ? t("quarterly") : t("monthly")}
+                    </span>
+                  )}
+                  <div className="flex items-center gap-1 text-xs text-amber-600">
+                    <Mail className="h-3 w-3" />
+                    <span>{t("inviteSent")}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <ClientsList clients={adaptedClients} />
 

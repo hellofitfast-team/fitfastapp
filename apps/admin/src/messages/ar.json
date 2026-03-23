@@ -44,6 +44,8 @@
     "overview": "نظرة عامة",
     "totalClients": "إجمالي العملاء",
     "loadMore": "تحميل المزيد",
+    "awaitingAccountCreation": "تمت الموافقة — في انتظار إنشاء الحساب",
+    "inviteSent": "تم إرسال الدعوة",
     "activeClients": "العملاء النشطون",
     "pendingSignups": "التسجيلات المعلقة",
     "openTickets": "التذاكر المفتوحة",

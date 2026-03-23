@@ -24,6 +24,39 @@ export const getPendingSignups = query({
   },
 });
 
+/** Approved signups where the prospect hasn't created their account yet */
+export const getApprovedAwaitingAccount = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .unique();
+    if (!profile?.isCoach) throw new Error("Not authorized");
+
+    const approved = await ctx.db
+      .query("pendingSignups")
+      .withIndex("by_status", (q) => q.eq("status", "approved"))
+      .collect();
+
+    // Filter out signups where the prospect already has a profile
+    const awaiting = [];
+    for (const signup of approved) {
+      const existing = await ctx.db
+        .query("profiles")
+        .withIndex("by_email", (q) => q.eq("email", signup.email))
+        .first();
+      if (!existing) {
+        awaiting.push(signup);
+      }
+    }
+    return awaiting;
+  },
+});
+
 export const getAllSignups = query({
   args: {},
   handler: async (ctx) => {
