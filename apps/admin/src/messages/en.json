@@ -44,6 +44,8 @@
     "overview": "Overview",
     "totalClients": "Total Clients",
     "loadMore": "Load More",
+    "awaitingAccountCreation": "Approved — Awaiting Account Creation",
+    "inviteSent": "Invite sent",
     "activeClients": "Active Clients",
     "pendingSignups": "Pending Signups",
     "openTickets": "Open Tickets",
