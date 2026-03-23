@@ -45,7 +45,8 @@ self.addEventListener("message", (event) => {
 
 // Handle incoming push notifications
 self.addEventListener("push", (event) => {
-  let data = { title: "FitFast", body: "You have a new notification" };
+  const fallbackBody = { en: "You have a new notification", ar: "لديك إشعار جديد" };
+  let data = { title: "FitFast", body: fallbackBody.en, lang: "en" };
 
   if (event.data) {
     try {
@@ -56,9 +57,13 @@ self.addEventListener("push", (event) => {
     }
   }
 
+  // Use language-appropriate fallback if body is missing
+  const lang = data.lang || "en";
+  const body = data.body || fallbackBody[lang] || fallbackBody.en;
+
   event.waitUntil(
     self.registration.showNotification(data.title || "FitFast", {
-      body: data.body,
+      body,
       icon: "/icons/icon-192x192.png",
       badge: "/icons/icon-192x192.png",
       data: { url: data.url || "/" },

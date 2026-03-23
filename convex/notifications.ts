@@ -60,20 +60,22 @@ export const sendPlanReadyNotification = internalAction({
       return;
     }
 
-    // Check global toggle and fetch subscription in parallel
-    const [enabled, subscription] = await Promise.all([
+    // Check global toggle, fetch subscription and profile in parallel
+    const [enabled, subscription, profile] = await Promise.all([
       isNotificationsEnabled(ctx),
       ctx.runQuery(internal.pushSubscriptions.getSubscriptionByUserId, { userId }),
+      ctx.runQuery(internal.helpers.getProfileInternal, { userId }),
     ]);
     if (!enabled) return;
 
+    const lang: Lang = (profile?.language as Lang) || "en";
     const title = "FitFast";
     const body =
       mealPlanId && workoutPlanId
-        ? "Your new meal and workout plans are ready!"
+        ? msg("plan_ready_both", lang)
         : mealPlanId
-          ? "Your new meal plan is ready!"
-          : "Your new workout plan is ready!";
+          ? msg("plan_ready_meal", lang)
+          : msg("plan_ready_workout", lang);
 
     // Always create in-app notification (never lost guarantee)
     await ctx.runMutation(internal.inAppNotifications.createInAppNotification, {
@@ -93,6 +95,7 @@ export const sendPlanReadyNotification = internalAction({
           title,
           body,
           url: "/",
+          lang,
         });
 
         await ctx.runMutation(internal.notificationLog.logNotification, {
@@ -137,10 +140,11 @@ export const sendPushToEndpoint = internalAction({
     title: v.string(),
     body: v.string(),
     url: v.optional(v.string()),
+    lang: v.optional(v.string()),
   },
-  handler: async (ctx, { endpoint, p256dh, auth, title, body, url }) => {
+  handler: async (ctx, { endpoint, p256dh, auth, title, body, url, lang }) => {
     try {
-      await sendWebPushNotification({ endpoint, p256dh, auth }, { title, body, url });
+      await sendWebPushNotification({ endpoint, p256dh, auth }, { title, body, url, lang });
     } catch (err) {
       if (err instanceof SubscriptionExpiredError) {
         await ctx.runMutation(internal.pushSubscriptions.deactivateByEndpoint, { endpoint });
@@ -157,14 +161,16 @@ export const sendPushToEndpoint = internalAction({
 export const sendReminderToUser = internalAction({
   args: { userId: v.string() },
   handler: async (ctx, { userId }) => {
-    // Check global toggle and fetch subscription in parallel
-    const [enabled, subscription] = await Promise.all([
+    // Check global toggle, fetch subscription and profile in parallel
+    const [enabled, subscription, profile] = await Promise.all([
       isNotificationsEnabled(ctx),
       ctx.runQuery(internal.pushSubscriptions.getSubscriptionByUserId, { userId }),
+      ctx.runQuery(internal.helpers.getProfileInternal, { userId }),
     ]);
 
+    const lang: Lang = (profile?.language as Lang) || "en";
     const title = "FitFast";
-    const body = "Time for your check-in! Track your progress today";
+    const body = msg("reminder", lang);
 
     // Always create in-app notification (never lost guarantee)
     if (enabled) {
@@ -186,6 +192,7 @@ export const sendReminderToUser = internalAction({
           title,
           body,
           url: "/check-in",
+          lang,
         });
 
         await ctx.runMutation(internal.notificationLog.logNotification, {
@@ -226,6 +233,26 @@ export class SubscriptionExpiredError extends Error {
   }
 }
 
+// T001: Bilingual notification content map
+const NOTIFICATION_MESSAGES = {
+  plan_ready_both: {
+    en: "Your new meal and workout plans are ready!",
+    ar: "خطط الوجبات والتمارين الجديدة جاهزة!",
+  },
+  plan_ready_meal: { en: "Your new meal plan is ready!", ar: "خطة الوجبات الجديدة جاهزة!" },
+  plan_ready_workout: { en: "Your new workout plan is ready!", ar: "خطة التمارين الجديدة جاهزة!" },
+  reminder: {
+    en: "Time for your check-in! Track your progress today",
+    ar: "حان وقت المتابعة! تابع تقدمك اليوم",
+  },
+  fallback: { en: "You have a new notification", ar: "لديك إشعار جديد" },
+} as const;
+
+type Lang = "en" | "ar";
+function msg(key: keyof typeof NOTIFICATION_MESSAGES, lang: Lang): string {
+  return NOTIFICATION_MESSAGES[key][lang] || NOTIFICATION_MESSAGES[key].en;
+}
+
 let vapidConfigured = false;
 function ensureVapidConfigured() {
   if (vapidConfigured) return;
@@ -237,7 +264,7 @@ function ensureVapidConfigured() {
 /** Exported for use by adminNotifications.ts */
 export async function sendWebPushNotification(
   sub: { endpoint: string; p256dh: string; auth: string },
-  payload: { title: string; body: string; url?: string },
+  payload: { title: string; body: string; url?: string; lang?: string },
 ) {
   ensureVapidConfigured();
 

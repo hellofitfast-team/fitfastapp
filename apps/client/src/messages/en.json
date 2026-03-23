@@ -1107,5 +1107,12 @@
     "minutesAgo": "{count}m ago",
     "hoursAgo": "{count}h ago",
     "daysAgo": "{count}d ago"
+  },
+  "notificationErrors": {
+    "not_supported": "Push notifications are not supported on this device",
+    "not_configured": "Notification service is not configured. Please contact your coach.",
+    "profile_not_loaded": "Profile not loaded yet. Please try again.",
+    "permission_denied": "Notifications were blocked. Please enable them in your browser settings.",
+    "permission_dismissed": "Permission request was dismissed. Please try again to enable notifications."
   }
 }

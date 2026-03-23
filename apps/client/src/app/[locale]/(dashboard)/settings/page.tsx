@@ -57,6 +57,7 @@ export default function SettingsPage() {
   const t = useTranslations("settings");
   const tTracking = useTranslations("tracking");
   const tValidation = useTranslations("validation");
+  const tNotifErrors = useTranslations("notificationErrors");
   const profileSchema = createProfileSchema((key) => tValidation(key));
   const locale = useLocale();
   const { profile, signOut } = useAuth();
@@ -335,7 +336,7 @@ export default function SettingsPage() {
               </div>
               {notifError && (
                 <p className="text-xs text-red-600" role="alert">
-                  {notifError}
+                  {tNotifErrors.has(notifError) ? tNotifErrors(notifError) : notifError}
                 </p>
               )}
               <div>
