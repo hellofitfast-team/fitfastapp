@@ -215,8 +215,6 @@
     scroll-behavior: smooth;
     color-scheme: light;
     overflow-x: hidden;
-    /* Prevent double-tap zoom and pinch-zoom — iOS + Android */
-    touch-action: pan-x pan-y;
     /* Prevent text inflation on orientation change — iOS + Android Chrome */
     -webkit-text-size-adjust: 100%;
     /* Remove blue tap highlight on Android Chrome */
