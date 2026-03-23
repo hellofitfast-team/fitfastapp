@@ -4,15 +4,44 @@ import { internal } from "./_generated/api";
 import { auth } from "./auth";
 import { rateLimiter } from "./rateLimiter";
 
-function getAllowedOrigin(): string {
-  const origin = process.env.MARKETING_SITE_URL;
-  if (!origin) {
-    console.error(
-      "MARKETING_SITE_URL environment variable is not set — CORS will reject all cross-origin requests",
-    );
-    return "https://fitfast.app";
+/**
+ * Build the set of origins allowed to call these HTTP endpoints.
+ * Includes the configured marketing URL plus its www variant (and vice-versa)
+ * so CORS works regardless of whether users visit with or without "www".
+ */
+function buildAllowedOrigins(): Set<string> {
+  const base = process.env.MARKETING_SITE_URL ?? "https://fitfast.app";
+  const origins = new Set<string>([base]);
+
+  // Automatically allow both www and non-www variants
+  try {
+    const url = new URL(base);
+    if (url.hostname.startsWith("www.")) {
+      origins.add(`${url.protocol}//${url.hostname.slice(4)}`);
+    } else {
+      origins.add(`${url.protocol}//www.${url.hostname}`);
+    }
+  } catch {
+    // base wasn't a valid URL — keep just the literal value
   }
-  return origin;
+
+  return origins;
+}
+
+const ALLOWED_ORIGINS = buildAllowedOrigins();
+
+/**
+ * Return the request's Origin if it is in the allowlist, otherwise fall back
+ * to the configured MARKETING_SITE_URL. This lets CORS work for both
+ * https://fitfast.app and https://www.fitfast.app.
+ */
+function getAllowedOrigin(request?: Request): string {
+  const requestOrigin = request?.headers.get("Origin") ?? "";
+  if (ALLOWED_ORIGINS.has(requestOrigin)) {
+    return requestOrigin;
+  }
+  // Fallback — still returns a value so non-browser clients get a response
+  return process.env.MARKETING_SITE_URL ?? "https://fitfast.app";
 }
 
 const http = httpRouter();
@@ -47,7 +76,7 @@ http.route({
       status: 200,
       headers: {
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": getAllowedOrigin(),
+        "Access-Control-Allow-Origin": getAllowedOrigin(request),
       },
     });
   }),
@@ -76,7 +105,7 @@ http.route({
           status: 429,
           headers: {
             "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": getAllowedOrigin(),
+            "Access-Control-Allow-Origin": getAllowedOrigin(request),
           },
         },
       );
@@ -87,7 +116,7 @@ http.route({
       status: 200,
       headers: {
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": getAllowedOrigin(),
+        "Access-Control-Allow-Origin": getAllowedOrigin(request),
       },
     });
   }),
@@ -97,11 +126,11 @@ http.route({
 http.route({
   path: "/marketing/upload-url",
   method: "OPTIONS",
-  handler: httpAction(async (_ctx, _request) => {
+  handler: httpAction(async (_ctx, request) => {
     return new Response(null, {
       status: 204,
       headers: {
-        "Access-Control-Allow-Origin": getAllowedOrigin(),
+        "Access-Control-Allow-Origin": getAllowedOrigin(request),
         "Access-Control-Allow-Methods": "POST, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type",
       },
