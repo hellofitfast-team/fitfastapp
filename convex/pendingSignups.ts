@@ -130,6 +130,13 @@ export const createSignup = mutation({
       });
     }
 
+    // Send signup confirmation email
+    await ctx.scheduler.runAfter(0, internal.email.sendSignupReceivedEmail, {
+      email: args.email,
+      fullName: args.fullName,
+      language: "en",
+    });
+
     return id;
   },
 });

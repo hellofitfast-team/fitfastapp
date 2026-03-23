@@ -33,6 +33,27 @@ async function sendEmail(to: string, subject: string, html: string): Promise<voi
 }
 
 // ---------------------------------------------------------------------------
+// Shared email layout with branded header
+// ---------------------------------------------------------------------------
+
+function emailWrapper(isAr: boolean, content: string): string {
+  return `
+    <div style="background:#f5f5f4;padding:32px 16px">
+      <div dir="${isAr ? "rtl" : "ltr"}" style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden">
+        <div style="background:#1c1917;padding:24px 32px;text-align:center">
+          <span style="font-size:24px;font-weight:900;letter-spacing:-0.5px;color:#ffffff;font-style:italic;text-transform:uppercase">Fit<span style="color:#FF4500">Fast</span></span>
+        </div>
+        <div style="padding:32px">
+          ${content}
+        </div>
+        <div style="border-top:1px solid #e7e5e4;padding:16px 32px;text-align:center">
+          <p style="color:#a8a29e;font-size:11px;margin:0">© ${new Date().getFullYear()} FitFast. ${isAr ? "جميع الحقوق محفوظة." : "All rights reserved."}</p>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ---------------------------------------------------------------------------
 // Bilingual email templates
 // ---------------------------------------------------------------------------
 
@@ -41,21 +62,21 @@ function getWelcomeEmail(fullName: string, language: "en" | "ar") {
   const safeName = escapeHtml(fullName);
   return {
     subject: isAr ? "مرحبًا بك في فيت فاست! 🎉" : "Welcome to FitFast! 🎉",
-    html: `
-      <div dir="${isAr ? "rtl" : "ltr"}" style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
-        <h1 style="color:#10B981">${isAr ? `أهلاً ${safeName}!` : `Hey ${safeName}!`}</h1>
-        <p>${
+    html: emailWrapper(
+      isAr,
+      `
+        <h2 style="color:#10B981;margin:0 0 16px">${isAr ? `أهلاً ${safeName}!` : `Hey ${safeName}!`}</h2>
+        <p style="color:#44403c;line-height:1.6">${
           isAr
             ? "تمت الموافقة على حسابك. يمكنك الآن تسجيل الدخول وبدء رحلتك في اللياقة البدنية."
             : "Your account has been approved. You can now sign in and start your fitness journey."
         }</p>
-        <p>${
+        <p style="color:#44403c;line-height:1.6">${
           isAr
             ? "أكمل التقييم الأولي للحصول على خطة وجباتك وتمارينك المخصصة."
             : "Complete your initial assessment to get your personalized meal and workout plans."
-        }</p>
-        <p style="color:#6b7280;font-size:12px;margin-top:32px">— FitFast</p>
-      </div>`,
+        }</p>`,
+    ),
   };
 }
 
@@ -64,19 +85,19 @@ function getPlanReadyEmail(fullName: string, language: "en" | "ar") {
   const safeName = escapeHtml(fullName);
   return {
     subject: isAr ? "خططك الجديدة جاهزة! 💪" : "Your new plans are ready! 💪",
-    html: `
-      <div dir="${isAr ? "rtl" : "ltr"}" style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
-        <h1 style="color:#10B981">${isAr ? `${safeName}، خططك جاهزة!` : `${safeName}, your plans are ready!`}</h1>
-        <p>${
+    html: emailWrapper(
+      isAr,
+      `
+        <h2 style="color:#10B981;margin:0 0 16px">${isAr ? `${safeName}، خططك جاهزة!` : `${safeName}, your plans are ready!`}</h2>
+        <p style="color:#44403c;line-height:1.6">${
           isAr
             ? "تم إنشاء خطة الوجبات وخطة التمارين الجديدة بنجاح بناءً على آخر تسجيل متابعة."
             : "Your new meal plan and workout plan have been generated based on your latest check-in."
         }</p>
-        <p>${
+        <p style="color:#44403c;line-height:1.6">${
           isAr ? "افتح التطبيق لعرض خططك المحدثة." : "Open the app to view your updated plans."
-        }</p>
-        <p style="color:#6b7280;font-size:12px;margin-top:32px">— FitFast</p>
-      </div>`,
+        }</p>`,
+    ),
   };
 }
 
@@ -94,20 +115,20 @@ function getTicketReplyEmail(
     subject: isAr
       ? `رد المدرب: ${escapeHtml(ticketSubject)}`
       : `Coach replied: ${escapeHtml(ticketSubject)}`,
-    html: `
-      <div dir="${isAr ? "rtl" : "ltr"}" style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
-        <h1 style="color:#10B981">${isAr ? `${safeName}، رد مدربك` : `${safeName}, your coach replied`}</h1>
-        <p style="font-weight:600">${isAr ? "الموضوع:" : "Subject:"} ${safeSubject}</p>
-        <div style="background:#f5f5f5;border-radius:8px;padding:16px;margin:16px 0">
-          <p style="margin:0">${safeMessage}</p>
+    html: emailWrapper(
+      isAr,
+      `
+        <h2 style="color:#10B981;margin:0 0 16px">${isAr ? `${safeName}، رد مدربك` : `${safeName}, your coach replied`}</h2>
+        <p style="font-weight:600;color:#44403c">${isAr ? "الموضوع:" : "Subject:"} ${safeSubject}</p>
+        <div style="background:#f5f5f4;border-radius:8px;padding:16px;margin:16px 0">
+          <p style="margin:0;color:#44403c">${safeMessage}</p>
         </div>
-        <p>${
+        <p style="color:#44403c;line-height:1.6">${
           isAr
             ? "افتح التطبيق للرد أو عرض المحادثة الكاملة."
             : "Open the app to reply or view the full conversation."
-        }</p>
-        <p style="color:#6b7280;font-size:12px;margin-top:32px">— FitFast</p>
-      </div>`,
+        }</p>`,
+    ),
   };
 }
 
@@ -116,16 +137,16 @@ function getReminderEmail(fullName: string, language: "en" | "ar") {
   const safeName = escapeHtml(fullName);
   return {
     subject: isAr ? "حان وقت المتابعة! 📊" : "Time for your check-in! 📊",
-    html: `
-      <div dir="${isAr ? "rtl" : "ltr"}" style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
-        <h1 style="color:#10B981">${isAr ? `${safeName}، حان وقت المتابعة` : `${safeName}, it's check-in time`}</h1>
-        <p>${
+    html: emailWrapper(
+      isAr,
+      `
+        <h2 style="color:#10B981;margin:0 0 16px">${isAr ? `${safeName}، حان وقت المتابعة` : `${safeName}, it's check-in time`}</h2>
+        <p style="color:#44403c;line-height:1.6">${
           isAr
             ? "سجّل تقدمك اليوم حتى يتمكن مدربك من تحديث خططك."
             : "Track your progress today so your coach can update your plans."
-        }</p>
-        <p style="color:#6b7280;font-size:12px;margin-top:32px">— FitFast</p>
-      </div>`,
+        }</p>`,
+    ),
   };
 }
 
@@ -135,10 +156,11 @@ function getRejectionEmail(fullName: string, rejectionReason: string, language: 
   const safeReason = escapeHtml(rejectionReason);
   return {
     subject: isAr ? "تحديث على طلبك في فيت فاست" : "Your FitFast Application Update",
-    html: `
-      <div dir="${isAr ? "rtl" : "ltr"}" style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
-        <h1 style="color:#374151">${isAr ? `${safeName}، شكرًا لاهتمامك` : `Hi ${safeName},`}</h1>
-        <p>${
+    html: emailWrapper(
+      isAr,
+      `
+        <h2 style="color:#374151;margin:0 0 16px">${isAr ? `${safeName}، شكرًا لاهتمامك` : `Hi ${safeName},`}</h2>
+        <p style="color:#44403c;line-height:1.6">${
           isAr
             ? "شكرًا لتقديمك للانضمام إلى فيت فاست. بعد مراجعة طلبك، لم نتمكن من الموافقة عليه في هذا الوقت."
             : "Thank you for applying to join FitFast. After reviewing your application, we're unable to approve it at this time."
@@ -146,20 +168,19 @@ function getRejectionEmail(fullName: string, rejectionReason: string, language: 
         ${
           safeReason
             ? `
-        <div style="background:#f9fafb;border-left:4px solid #d1d5db;border-radius:4px;padding:16px;margin:16px 0">
+        <div style="background:#f5f5f4;border-${isAr ? "right" : "left"}:4px solid #d1d5db;border-radius:4px;padding:16px;margin:16px 0">
           <p style="margin:0;font-weight:600;color:#374151">${isAr ? "السبب:" : "Reason:"}</p>
-          <p style="margin:8px 0 0;color:#6b7280">${safeReason}</p>
+          <p style="margin:8px 0 0;color:#78716c">${safeReason}</p>
         </div>
         `
             : ""
         }
-        <p>${
+        <p style="color:#44403c;line-height:1.6">${
           isAr
             ? "يمكنك إعادة التقديم في المستقبل. إذا كان لديك أي أسئلة، يُرجى التواصل معنا."
             : "You're welcome to reapply in the future. If you have any questions, please reach out."
-        }</p>
-        <p style="color:#6b7280;font-size:12px;margin-top:32px">— FitFast</p>
-      </div>`,
+        }</p>`,
+    ),
   };
 }
 
@@ -174,10 +195,11 @@ function getInvitationEmail(fullName: string, inviteToken: string, language: "en
     subject: isAr
       ? "مرحبًا بك في فيت فاست! أنشئ حسابك 🎉"
       : "Welcome to FitFast! Create your account 🎉",
-    html: `
-      <div dir="${isAr ? "rtl" : "ltr"}" style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
-        <h1 style="color:#FF4500">${isAr ? `أهلاً ${safeName}!` : `Hey ${safeName}!`}</h1>
-        <p>${
+    html: emailWrapper(
+      isAr,
+      `
+        <h2 style="color:#FF4500;margin:0 0 16px">${isAr ? `أهلاً ${safeName}!` : `Hey ${safeName}!`}</h2>
+        <p style="color:#44403c;line-height:1.6">${
           isAr
             ? "تمت الموافقة على طلبك للانضمام إلى فيت فاست. اضغط على الزر أدناه لإنشاء حسابك وبدء رحلتك."
             : "Your application to join FitFast has been approved. Click the button below to create your account and start your fitness journey."
@@ -187,17 +209,58 @@ function getInvitationEmail(fullName: string, inviteToken: string, language: "en
             ${isAr ? "أنشئ حسابك" : "Create Your Account"}
           </a>
         </div>
-        <p style="color:#6b7280;font-size:13px">${
+        <p style="color:#a8a29e;font-size:13px">${
           isAr ? "هذا الرابط مخصص لك فقط." : "This link is unique to you."
+        }</p>`,
+    ),
+  };
+}
+
+function getSignupReceivedEmail(fullName: string, language: "en" | "ar") {
+  const isAr = language === "ar";
+  const safeName = escapeHtml(fullName);
+  return {
+    subject: isAr ? "تم استلام طلبك في فيت فاست 📋" : "FitFast Signup Received 📋",
+    html: emailWrapper(
+      isAr,
+      `
+        <h2 style="color:#FF4500;margin:0 0 16px">${isAr ? `أهلاً ${safeName}!` : `Hey ${safeName}!`}</h2>
+        <p style="color:#44403c;line-height:1.6">${
+          isAr
+            ? "شكرًا لتسجيلك في فيت فاست! لقد استلمنا طلبك وإثبات الدفع."
+            : "Thank you for signing up for FitFast! We've received your application and payment proof."
         }</p>
-        <p style="color:#6b7280;font-size:12px;margin-top:32px">— FitFast</p>
-      </div>`,
+        <p style="color:#44403c;line-height:1.6">${
+          isAr
+            ? "مدربك يراجع طلبك الآن. ستصلك رسالة بريد إلكتروني بمجرد الموافقة على حسابك."
+            : "Your coach is reviewing your application now. You'll receive an email once your account is approved."
+        }</p>
+        <div style="background:#f5f5f4;border-radius:8px;padding:16px;margin:24px 0">
+          <p style="margin:0;color:#78716c;font-size:14px">${
+            isAr
+              ? "⏱ تستغرق المراجعة عادةً من 24 إلى 48 ساعة"
+              : "⏱ Review typically takes 24–48 hours"
+          }</p>
+        </div>`,
+    ),
   };
 }
 
 // ---------------------------------------------------------------------------
 // Internal actions — called from workflows and other actions
 // ---------------------------------------------------------------------------
+
+export const sendSignupReceivedEmail = internalAction({
+  args: {
+    email: v.string(),
+    fullName: v.string(),
+    language: v.union(v.literal("en"), v.literal("ar")),
+  },
+  handler: async (_ctx, { email, fullName, language }): Promise<void> => {
+    const { subject, html } = getSignupReceivedEmail(fullName, language);
+    await sendEmail(email, subject, html);
+  },
+});
 
 export const sendInvitationEmail = internalAction({
   args: {
@@ -312,18 +375,18 @@ export const sendAdminInviteEmail = internalAction({
     const safeLink = escapeHtml(setupLink);
 
     const subject = "You're Invited to FitFast Coach Panel";
-    const html = `
-      <div dir="ltr" style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
-        <h1 style="color:#FF4500">Welcome to FitFast, ${safeName}!</h1>
-        <p>You've been invited to join FitFast as a coach. Click the button below to set up your account and create your password.</p>
+    const html = emailWrapper(
+      false,
+      `
+        <h2 style="color:#FF4500;margin:0 0 16px">Welcome to FitFast, ${safeName}!</h2>
+        <p style="color:#44403c;line-height:1.6">You've been invited to join FitFast as a coach. Click the button below to set up your account and create your password.</p>
         <div style="text-align:center;margin:32px 0">
           <a href="${safeLink}" style="background:#FF4500;color:#fff;padding:14px 32px;border-radius:12px;text-decoration:none;font-weight:600;display:inline-block">
             Set Up Your Account
           </a>
         </div>
-        <p style="color:#6b7280;font-size:13px">This link expires in 7 days. If you didn't expect this invitation, you can safely ignore this email.</p>
-        <p style="color:#6b7280;font-size:12px;margin-top:32px">— FitFast</p>
-      </div>`;
+        <p style="color:#a8a29e;font-size:13px">This link expires in 7 days. If you didn't expect this invitation, you can safely ignore this email.</p>`,
+    );
 
     await sendEmail(email, subject, html);
   },
@@ -342,16 +405,16 @@ function getCoachNotificationEmail(
   const safeBody = escapeHtml(body);
   return {
     subject: isAr ? `رسالة من مدربك: ${safeTitle}` : `Message from your coach: ${safeTitle}`,
-    html: `
-      <div dir="${isAr ? "rtl" : "ltr"}" style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
-        <h1 style="color:#10B981">${isAr ? `${safeName}، رسالة من مدربك` : `${safeName}, a message from your coach`}</h1>
-        <div style="background:#f5f5f5;border-radius:8px;padding:16px;margin:16px 0">
-          <p style="margin:0 0 8px;font-weight:600">${safeTitle}</p>
-          <p style="margin:0">${safeBody}</p>
+    html: emailWrapper(
+      isAr,
+      `
+        <h2 style="color:#10B981;margin:0 0 16px">${isAr ? `${safeName}، رسالة من مدربك` : `${safeName}, a message from your coach`}</h2>
+        <div style="background:#f5f5f4;border-radius:8px;padding:16px;margin:16px 0">
+          <p style="margin:0 0 8px;font-weight:600;color:#44403c">${safeTitle}</p>
+          <p style="margin:0;color:#44403c">${safeBody}</p>
         </div>
-        <p>${isAr ? "افتح التطبيق لمزيد من التفاصيل." : "Open the app for more details."}</p>
-        <p style="color:#6b7280;font-size:12px;margin-top:32px">— FitFast</p>
-      </div>`,
+        <p style="color:#44403c;line-height:1.6">${isAr ? "افتح التطبيق لمزيد من التفاصيل." : "Open the app for more details."}</p>`,
+    ),
   };
 }
 
