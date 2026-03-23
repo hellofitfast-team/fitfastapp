@@ -218,6 +218,7 @@ export const approveSignup = mutation({
 
     const signup = await ctx.db.get(signupId);
     if (!signup) throw new Error("Signup not found");
+    if (signup.status !== "pending") throw new Error("Signup has already been reviewed");
 
     await ctx.db.patch(signupId, {
       status: "approved",
@@ -277,6 +278,7 @@ export const rejectSignup = mutation({
 
     const signup = await ctx.db.get(signupId);
     if (!signup) throw new Error("Signup not found");
+    if (signup.status !== "pending") throw new Error("Signup has already been reviewed");
 
     await ctx.db.patch(signupId, {
       status: "rejected",

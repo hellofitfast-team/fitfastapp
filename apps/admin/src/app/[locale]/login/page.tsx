@@ -283,9 +283,7 @@ export default function AdminLoginPage() {
           </div>
         </div>
 
-        <p className="mt-6 text-center text-xs text-stone-400">
-          Coach Panel &middot; Authorized Access Only
-        </p>
+        <p className="mt-6 text-center text-xs text-stone-400">{t("coachPanelFooter")}</p>
       </div>
     </div>
   );

@@ -17,6 +17,14 @@ import {
   Search,
 } from "lucide-react";
 import { cn } from "@fitfast/ui/cn";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@fitfast/ui/dialog";
 import type { Id } from "@/convex/_generated/dataModel";
 import { useToast } from "@/hooks/use-toast";
 
@@ -157,6 +165,7 @@ function KnowledgeTab() {
         headers: { "Content-Type": file.type },
         body: file,
       });
+      if (!uploadResult.ok) throw new Error(`Upload failed: ${uploadResult.status}`);
       const { storageId } = await uploadResult.json();
 
       await processPdf({
@@ -173,7 +182,10 @@ function KnowledgeTab() {
     }
   };
 
+  const [confirmDeleteId, setConfirmDeleteId] = useState<Id<"coachKnowledge"> | null>(null);
+
   const handleDelete = async (entryId: Id<"coachKnowledge">) => {
+    setConfirmDeleteId(null);
     setDeletingId(entryId);
     try {
       await deleteEntry({ entryId });
@@ -429,7 +441,7 @@ function KnowledgeTab() {
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDelete(entry._id);
+                        setConfirmDeleteId(entry._id);
                       }}
                       disabled={deletingId === entry._id}
                       aria-label={tCommon("delete")}
@@ -521,6 +533,37 @@ function KnowledgeTab() {
           })}
         </div>
       )}
+
+      {/* Delete confirmation dialog */}
+      <Dialog
+        open={!!confirmDeleteId}
+        onOpenChange={(open) => {
+          if (!open) setConfirmDeleteId(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{tCommon("delete")}</DialogTitle>
+            <DialogDescription>{t("confirmDelete")}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <button
+              type="button"
+              onClick={() => setConfirmDeleteId(null)}
+              className="rounded-lg border border-stone-200 px-4 py-2 text-sm font-medium text-stone-600 transition-colors hover:bg-stone-50"
+            >
+              {tCommon("cancel")}
+            </button>
+            <button
+              type="button"
+              onClick={() => confirmDeleteId && handleDelete(confirmDeleteId)}
+              className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
+            >
+              {tCommon("delete")}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

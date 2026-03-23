@@ -203,6 +203,46 @@ export const getAllClients = query({
   },
 });
 
+/**
+ * Lightweight count-only query for dashboard stats.
+ * Avoids transferring full client records just for counts.
+ */
+export const getClientCounts = query({
+  args: {},
+  handler: async (ctx): Promise<{ total: number; active: number; expired: number }> => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .unique();
+    if (!profile?.isCoach) throw new Error("Not authorized");
+
+    const clients = await ctx.db
+      .query("profiles")
+      .withIndex("by_isCoach", (q) => q.eq("isCoach", false))
+      .take(1500);
+
+    const now = Date.now();
+    let active = 0;
+    let expired = 0;
+    for (const c of clients) {
+      if (c.status === "active") {
+        if (c.planEndDate && new Date(c.planEndDate).getTime() < now) {
+          expired++;
+        } else {
+          active++;
+        }
+      } else if (c.status === "expired") {
+        expired++;
+      }
+    }
+
+    return { total: clients.length, active, expired };
+  },
+});
+
 export const listClientsPaginated = query({
   args: { paginationOpts: paginationOptsValidator },
   handler: async (ctx, { paginationOpts }) => {

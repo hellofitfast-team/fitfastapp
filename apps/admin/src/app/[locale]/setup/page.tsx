@@ -190,12 +190,12 @@ export default function AdminSetupPage() {
                 {t("password")}
               </label>
               <div className="group relative">
-                <Lock className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-stone-400 transition-colors group-focus-within:text-[#FF4500]" />
+                <Lock className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400 transition-colors group-focus-within:text-[#FF4500]" />
                 <input
                   id="password"
                   type="password"
                   {...register("password")}
-                  className="h-12 w-full rounded-xl border border-stone-200 bg-stone-50 pr-4 pl-10 text-sm transition-all focus:border-[#FF4500] focus:bg-white focus:ring-2 focus:ring-[#FF4500]/20 focus:outline-none"
+                  className="h-12 w-full rounded-xl border border-stone-200 bg-stone-50 ps-10 pe-4 text-sm transition-all focus:border-[#FF4500] focus:bg-white focus:ring-2 focus:ring-[#FF4500]/20 focus:outline-none"
                   placeholder={t("passwordPlaceholder")}
                   disabled={isLoading}
                 />
@@ -214,12 +214,12 @@ export default function AdminSetupPage() {
                 {t("confirmPassword")}
               </label>
               <div className="group relative">
-                <Lock className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-stone-400 transition-colors group-focus-within:text-[#FF4500]" />
+                <Lock className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400 transition-colors group-focus-within:text-[#FF4500]" />
                 <input
                   id="confirmPassword"
                   type="password"
                   {...register("confirmPassword")}
-                  className="h-12 w-full rounded-xl border border-stone-200 bg-stone-50 pr-4 pl-10 text-sm transition-all focus:border-[#FF4500] focus:bg-white focus:ring-2 focus:ring-[#FF4500]/20 focus:outline-none"
+                  className="h-12 w-full rounded-xl border border-stone-200 bg-stone-50 ps-10 pe-4 text-sm transition-all focus:border-[#FF4500] focus:bg-white focus:ring-2 focus:ring-[#FF4500]/20 focus:outline-none"
                   placeholder={t("confirmPasswordPlaceholder")}
                   disabled={isLoading}
                 />

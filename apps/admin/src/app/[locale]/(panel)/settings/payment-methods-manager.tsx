@@ -81,6 +81,10 @@ export function PaymentMethodsManager() {
     setMethods(methods.map((m, i) => (i === index ? { ...m, [field]: value } : m)));
   };
 
+  const hasInvalidPaymentMethod = methods.some(
+    (m) => !m.accountName.trim() || !m.accountNumber.trim(),
+  );
+
   const handleSave = async () => {
     try {
       const cleanMethods = methods.map((m) => ({
@@ -89,6 +93,7 @@ export function PaymentMethodsManager() {
         accountNumber: m.accountNumber.trim(),
         instructions: m.instructions?.trim() || undefined,
       }));
+      if (cleanMethods.some((m) => !m.accountName || !m.accountNumber)) return;
       await updatePaymentMethods({ paymentMethods: cleanMethods });
     } catch (error) {
       Sentry.captureException(error, {

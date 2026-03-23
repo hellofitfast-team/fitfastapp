@@ -539,7 +539,8 @@ export default function ClientDetailPage() {
     setIsActing(true);
     try {
       const tier = tierOptions.find((opt) => opt.value === effectiveTier)!;
-      const startDate = new Date().toISOString().split("T")[0];
+      // Use local date to avoid timezone off-by-one when converting to YYYY-MM-DD
+      const startDate = new Date().toLocaleDateString("en-CA");
       const endDate = new Date();
       endDate.setMonth(endDate.getMonth() + tier.months);
 
@@ -548,7 +549,7 @@ export default function ClientDetailPage() {
         status: "active",
         planTier: effectiveTier,
         planStartDate: startDate,
-        planEndDate: endDate.toISOString().split("T")[0],
+        planEndDate: endDate.toLocaleDateString("en-CA"),
       });
 
       toast({

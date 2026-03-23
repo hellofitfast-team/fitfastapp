@@ -47,6 +47,7 @@ function getTimeAgo(timestamp: number, locale: string): string {
   const hours = Math.floor(diff / 3600000);
   const days = Math.floor(diff / 86400000);
 
+  if (minutes < 1) return locale === "ar" ? "الآن" : "just now";
   if (minutes < 60)
     return locale === "ar" ? `${toLocalDigits(minutes, locale)}د` : `${minutes}m ago`;
   if (hours < 24) return locale === "ar" ? `${toLocalDigits(hours, locale)}س` : `${hours}h ago`;
@@ -102,6 +103,7 @@ export default function TicketsPage() {
         headers: { "Content-Type": screenshotFile.type },
         body: screenshotFile,
       });
+      if (!result.ok) throw new Error(`Upload failed: ${result.status}`);
       const { storageId } = await result.json();
       return storageId as Id<"_storage">;
     } catch (err) {

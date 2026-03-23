@@ -1,7 +1,8 @@
 "use client";
 
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
+import { useRouter, usePathname } from "@fitfast/i18n/navigation";
 import { User, Bell, Shield, CreditCard, LogOut, AlertTriangle, X, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useNotifications } from "@/hooks/use-notifications";
@@ -60,6 +61,8 @@ export default function SettingsPage() {
   const tNotifErrors = useTranslations("notificationErrors");
   const profileSchema = createProfileSchema((key) => tValidation(key));
   const locale = useLocale();
+  const router = useRouter();
+  const pathname = usePathname();
   const { profile, signOut } = useAuth();
   const {
     isSupported,
@@ -123,6 +126,10 @@ export default function SettingsPage() {
         language: data.language,
       });
       toast({ title: t("saveSuccess"), variant: "success" });
+      // If language changed, switch locale immediately via i18n-aware router
+      if (data.language !== locale) {
+        router.replace(pathname, { locale: data.language });
+      }
     } catch (err) {
       console.error("Failed to update profile:", err);
       toast({ title: t("errors.saveFailed"), variant: "destructive" });
@@ -130,14 +137,19 @@ export default function SettingsPage() {
     setIsSaving(false);
   };
 
-  const handleReminderTimeChange = async (newTime: string) => {
+  const reminderDebounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(reminderDebounceRef.current), []);
+  const handleReminderTimeChange = (newTime: string) => {
     setReminderTime(newTime);
-    try {
-      // Convert local time to UTC before saving — cron engine runs in UTC
-      await updateProfile({ notificationReminderTime: localTimeToUtc(newTime) });
-    } catch {
-      toast({ title: t("errors.saveFailed"), variant: "destructive" });
-    }
+    clearTimeout(reminderDebounceRef.current);
+    reminderDebounceRef.current = setTimeout(async () => {
+      try {
+        // Convert local time to UTC before saving — cron engine runs in UTC
+        await updateProfile({ notificationReminderTime: localTimeToUtc(newTime) });
+      } catch {
+        toast({ title: t("errors.saveFailed"), variant: "destructive" });
+      }
+    }, 300);
   };
 
   const calculatePlanDetails = () => {
@@ -324,7 +336,9 @@ export default function SettingsPage() {
                     <span
                       className={cn(
                         "absolute top-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-sm transition-transform duration-200",
-                        isSubscribed ? "translate-x-5" : "translate-x-0.5",
+                        isSubscribed
+                          ? "translate-x-5 rtl:-translate-x-5"
+                          : "translate-x-0.5 rtl:-translate-x-0.5",
                       )}
                     >
                       {notifToggling && (

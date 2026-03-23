@@ -219,6 +219,9 @@ export default function NotificationsPage() {
               <Bell className="h-4 w-4" />
             </div>
             <h2 className="text-sm font-semibold text-stone-900">{t("history")}</h2>
+            {logs && logs.length >= 200 && (
+              <span className="ms-auto text-xs text-stone-400">{t("showingLast200")}</span>
+            )}
           </div>
 
           {logs === undefined && (

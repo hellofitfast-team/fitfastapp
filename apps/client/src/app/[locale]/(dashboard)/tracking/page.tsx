@@ -25,7 +25,8 @@ export default function TrackingPage() {
   const tEmpty = useTranslations("emptyStates");
   const router = useRouter();
 
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split("T")[0]);
+  // Use local date (not UTC) so "today" matches the user's timezone
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toLocaleDateString("en-CA"));
   const [isMealsExpanded, setIsMealsExpanded] = useState(true);
   const [isWorkoutsExpanded, setIsWorkoutsExpanded] = useState(true);
   const [mealNotes, setMealNotes] = useState<{ [key: number]: string }>({});

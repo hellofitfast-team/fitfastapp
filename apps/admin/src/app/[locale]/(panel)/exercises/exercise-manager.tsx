@@ -7,8 +7,10 @@ import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@fitfast/ui/button";
 import { Input } from "@fitfast/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@fitfast/ui/dialog";
 import { cn } from "@fitfast/ui/cn";
-import { Plus, Search, Pencil, Trash2, Power, Loader2, X } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Plus, Search, Pencil, Trash2, Power, Loader2 } from "lucide-react";
 import Image from "next/image";
 
 type Category = "compound" | "accessory" | "isolation" | "warmup" | "cooldown" | "cardio";
@@ -65,6 +67,7 @@ const INITIAL_FORM: ExerciseFormData = {
 export function ExerciseManager() {
   const t = useTranslations("exercises");
   const tCommon = useTranslations("common");
+  const { toast } = useToast();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState<Category | "all">("all");
@@ -124,7 +127,21 @@ export function ExerciseManager() {
     setShowModal(true);
   }
 
+  // Validate exercise form fields
+  const formValidationError = (() => {
+    if (!form.name || !form.nameAr) return null; // handled by disabled state
+    if (form.defaultSets < 1) return t("validation.setsMin");
+    if (form.defaultRepsMin < 1) return t("validation.repsMin");
+    if (form.defaultRepsMax < form.defaultRepsMin) return t("validation.repsMaxMin");
+    if (form.defaultRestSeconds < 0) return t("validation.restNegative");
+    return null;
+  })();
+
   async function handleSave() {
+    if (formValidationError) {
+      setSaveError(formValidationError);
+      return;
+    }
     setSaving(true);
     setSaveError(null);
     try {
@@ -174,7 +191,10 @@ export function ExerciseManager() {
       await toggleActive({ id });
     } catch (err) {
       console.error("Toggle failed:", err);
-      alert(err instanceof Error ? err.message : t("saveFailed"));
+      toast({
+        title: err instanceof Error ? err.message : t("saveFailed"),
+        variant: "destructive",
+      });
     } finally {
       setTogglingId(null);
     }
@@ -186,7 +206,10 @@ export function ExerciseManager() {
       await deleteExercise({ id });
     } catch (err) {
       console.error("Delete failed:", err);
-      alert(err instanceof Error ? err.message : t("saveFailed"));
+      toast({
+        title: err instanceof Error ? err.message : t("saveFailed"),
+        variant: "destructive",
+      });
     }
   }
 
@@ -341,281 +364,266 @@ export function ExerciseManager() {
         </div>
       )}
 
-      {/* Add/Edit Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-20 backdrop-blur-sm">
-          <div className="w-full max-w-2xl rounded-xl bg-white p-6 shadow-xl">
-            <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-lg font-bold">
-                {editingId ? t("editExercise") : t("addExercise")}
-              </h2>
-              <button
-                onClick={() => setShowModal(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-stone-400 hover:bg-stone-100 hover:text-stone-600"
-              >
-                <X className="h-4 w-4" />
-              </button>
+      {/* Add/Edit Modal — uses Dialog for focus trap, Escape key, aria-modal */}
+      <Dialog open={showModal} onOpenChange={setShowModal}>
+        <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingId ? t("editExercise") : t("addExercise")}</DialogTitle>
+          </DialogHeader>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-stone-600">{t("name")}</label>
+              <Input
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-stone-600">{t("nameAr")}</label>
+              <Input
+                dir="rtl"
+                value={form.nameAr}
+                onChange={(e) => setForm({ ...form, nameAr: e.target.value })}
+              />
             </div>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-xs font-medium text-stone-600">{t("name")}</label>
-                <Input
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-stone-600">
-                  {t("nameAr")}
-                </label>
-                <Input
-                  dir="rtl"
-                  value={form.nameAr}
-                  onChange={(e) => setForm({ ...form, nameAr: e.target.value })}
-                />
-              </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-stone-600">
+                {t("category")}
+              </label>
+              <select
+                value={form.category}
+                onChange={(e) => setForm({ ...form, category: e.target.value as Category })}
+                className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm"
+              >
+                {CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {t(cat)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-stone-600">
+                {t("movementPattern")}
+              </label>
+              <select
+                value={form.movementPattern}
+                onChange={(e) => setForm({ ...form, movementPattern: e.target.value })}
+                className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm"
+              >
+                {["push", "pull", "squat", "hinge", "carry", "rotation", "other"].map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-              <div>
-                <label className="mb-1 block text-xs font-medium text-stone-600">
-                  {t("category")}
-                </label>
-                <select
-                  value={form.category}
-                  onChange={(e) => setForm({ ...form, category: e.target.value as Category })}
-                  className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm"
-                >
-                  {CATEGORIES.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {t(cat)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-stone-600">
-                  {t("movementPattern")}
-                </label>
-                <select
-                  value={form.movementPattern}
-                  onChange={(e) => setForm({ ...form, movementPattern: e.target.value })}
-                  className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm"
-                >
-                  {["push", "pull", "squat", "hinge", "carry", "rotation", "other"].map((p) => (
-                    <option key={p} value={p}>
-                      {p}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-stone-600">
+                {t("difficulty")}
+              </label>
+              <select
+                value={form.difficulty}
+                onChange={(e) => setForm({ ...form, difficulty: e.target.value as any })}
+                className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm"
+              >
+                {["beginner", "intermediate", "advanced"].map((d) => (
+                  <option key={d} value={d}>
+                    {t(d)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-stone-600">
+                {t("sortOrder")}
+              </label>
+              <Input
+                type="number"
+                value={form.sortOrder}
+                onChange={(e) => setForm({ ...form, sortOrder: Number(e.target.value) })}
+              />
+            </div>
 
-              <div>
-                <label className="mb-1 block text-xs font-medium text-stone-600">
-                  {t("difficulty")}
-                </label>
-                <select
-                  value={form.difficulty}
-                  onChange={(e) => setForm({ ...form, difficulty: e.target.value as any })}
-                  className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm"
-                >
-                  {["beginner", "intermediate", "advanced"].map((d) => (
-                    <option key={d} value={d}>
-                      {t(d)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-stone-600">
-                  {t("sortOrder")}
-                </label>
-                <Input
-                  type="number"
-                  value={form.sortOrder}
-                  onChange={(e) => setForm({ ...form, sortOrder: Number(e.target.value) })}
-                />
-              </div>
+            <div className="md:col-span-2">
+              <label className="mb-1 block text-xs font-medium text-stone-600">
+                {t("primaryMuscles")} (comma-separated)
+              </label>
+              <Input
+                value={form.primaryMuscles}
+                onChange={(e) => setForm({ ...form, primaryMuscles: e.target.value })}
+                placeholder="chest, shoulders, triceps"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="mb-1 block text-xs font-medium text-stone-600">
+                {t("secondaryMuscles")} (comma-separated)
+              </label>
+              <Input
+                value={form.secondaryMuscles}
+                onChange={(e) => setForm({ ...form, secondaryMuscles: e.target.value })}
+                placeholder="core, back"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="mb-1 block text-xs font-medium text-stone-600">
+                {t("equipment")} (comma-separated)
+              </label>
+              <Input
+                value={form.equipment}
+                onChange={(e) => setForm({ ...form, equipment: e.target.value })}
+                placeholder="barbell, bench"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="mb-1 block text-xs font-medium text-stone-600">
+                {t("contraindications")} (comma-separated)
+              </label>
+              <Input
+                value={form.contraindications}
+                onChange={(e) => setForm({ ...form, contraindications: e.target.value })}
+                placeholder="knee, lower back"
+              />
+            </div>
 
-              <div className="md:col-span-2">
-                <label className="mb-1 block text-xs font-medium text-stone-600">
-                  {t("primaryMuscles")} (comma-separated)
-                </label>
-                <Input
-                  value={form.primaryMuscles}
-                  onChange={(e) => setForm({ ...form, primaryMuscles: e.target.value })}
-                  placeholder="chest, shoulders, triceps"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <label className="mb-1 block text-xs font-medium text-stone-600">
-                  {t("secondaryMuscles")} (comma-separated)
-                </label>
-                <Input
-                  value={form.secondaryMuscles}
-                  onChange={(e) => setForm({ ...form, secondaryMuscles: e.target.value })}
-                  placeholder="core, back"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <label className="mb-1 block text-xs font-medium text-stone-600">
-                  {t("equipment")} (comma-separated)
-                </label>
-                <Input
-                  value={form.equipment}
-                  onChange={(e) => setForm({ ...form, equipment: e.target.value })}
-                  placeholder="barbell, bench"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <label className="mb-1 block text-xs font-medium text-stone-600">
-                  {t("contraindications")} (comma-separated)
-                </label>
-                <Input
-                  value={form.contraindications}
-                  onChange={(e) => setForm({ ...form, contraindications: e.target.value })}
-                  placeholder="knee, lower back"
-                />
-              </div>
+            <div className="md:col-span-2">
+              <label className="mb-1 block text-xs font-medium text-stone-600">
+                {t("instructions")}
+              </label>
+              <textarea
+                value={form.instructions}
+                onChange={(e) => setForm({ ...form, instructions: e.target.value })}
+                rows={2}
+                className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="mb-1 block text-xs font-medium text-stone-600">
+                {t("instructionsAr")}
+              </label>
+              <textarea
+                dir="rtl"
+                value={form.instructionsAr}
+                onChange={(e) => setForm({ ...form, instructionsAr: e.target.value })}
+                rows={2}
+                className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm"
+              />
+            </div>
 
-              <div className="md:col-span-2">
-                <label className="mb-1 block text-xs font-medium text-stone-600">
-                  {t("instructions")}
-                </label>
-                <textarea
-                  value={form.instructions}
-                  onChange={(e) => setForm({ ...form, instructions: e.target.value })}
-                  rows={2}
-                  className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm"
+            <div className="md:col-span-2">
+              {/* Show stored image if it exists */}
+              {editingId &&
+                (() => {
+                  const editExercise = filteredExercises?.find((e) => e._id === editingId);
+                  return editExercise?.imageUrl && !form.gifUrl.trim() ? (
+                    <div className="mb-3">
+                      <p className="mb-1 text-xs font-medium text-stone-600">{t("currentImage")}</p>
+                      <Image
+                        src={editExercise.imageUrl}
+                        alt={editExercise.name}
+                        width={128}
+                        height={128}
+                        className="rounded-lg border border-stone-200 object-contain"
+                      />
+                    </div>
+                  ) : null;
+                })()}
+              <label className="mb-1 block text-xs font-medium text-stone-600">{t("gifUrl")}</label>
+              <div className="flex gap-2">
+                <Input
+                  value={form.gifUrl}
+                  onChange={(e) => setForm({ ...form, gifUrl: e.target.value })}
+                  placeholder={t("gifUrlPlaceholder")}
+                  className="flex-1"
                 />
-              </div>
-              <div className="md:col-span-2">
-                <label className="mb-1 block text-xs font-medium text-stone-600">
-                  {t("instructionsAr")}
-                </label>
-                <textarea
-                  dir="rtl"
-                  value={form.instructionsAr}
-                  onChange={(e) => setForm({ ...form, instructionsAr: e.target.value })}
-                  rows={2}
-                  className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                {/* Show stored image if it exists */}
-                {editingId &&
-                  (() => {
-                    const editExercise = filteredExercises?.find((e) => e._id === editingId);
-                    return editExercise?.imageUrl && !form.gifUrl.trim() ? (
-                      <div className="mb-3">
-                        <p className="mb-1 text-xs font-medium text-stone-600">
-                          {t("currentImage")}
-                        </p>
-                        <Image
-                          src={editExercise.imageUrl}
-                          alt={editExercise.name}
-                          width={128}
-                          height={128}
-                          className="rounded-lg border border-stone-200 object-contain"
-                        />
-                      </div>
-                    ) : null;
-                  })()}
-                <label className="mb-1 block text-xs font-medium text-stone-600">
-                  {t("gifUrl")}
-                </label>
-                <div className="flex gap-2">
-                  <Input
-                    value={form.gifUrl}
-                    onChange={(e) => setForm({ ...form, gifUrl: e.target.value })}
-                    placeholder={t("gifUrlPlaceholder")}
-                    className="flex-1"
-                  />
-                  {form.gifUrl.trim() && (
-                    <button
-                      type="button"
-                      onClick={() => setForm({ ...form, gifUrl: "" })}
-                      className="rounded-md border border-stone-200 px-2 text-xs text-stone-500 hover:bg-stone-50"
-                    >
-                      {t("removeGif")}
-                    </button>
-                  )}
-                </div>
-                {form.gifUrl.trim() && /^https:\/\/.+/.test(form.gifUrl.trim()) && (
-                  <div className="mt-2">
-                    <p className="mb-1 text-xs text-stone-500">{t("gifPreview")}</p>
-                    <img
-                      src={form.gifUrl}
-                      alt="Exercise GIF preview"
-                      className="h-32 w-32 rounded-lg border border-stone-200 object-contain"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = "none";
-                      }}
-                    />
-                  </div>
+                {form.gifUrl.trim() && (
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, gifUrl: "" })}
+                    className="rounded-md border border-stone-200 px-2 text-xs text-stone-500 hover:bg-stone-50"
+                  >
+                    {t("removeGif")}
+                  </button>
                 )}
               </div>
-
-              <div>
-                <label className="mb-1 block text-xs font-medium text-stone-600">
-                  {t("defaultSets")}
-                </label>
-                <Input
-                  type="number"
-                  value={form.defaultSets}
-                  onChange={(e) => setForm({ ...form, defaultSets: Number(e.target.value) })}
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-stone-600">
-                  {t("defaultRepsMin")}
-                </label>
-                <Input
-                  type="number"
-                  value={form.defaultRepsMin}
-                  onChange={(e) => setForm({ ...form, defaultRepsMin: Number(e.target.value) })}
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-stone-600">
-                  {t("defaultRepsMax")}
-                </label>
-                <Input
-                  type="number"
-                  value={form.defaultRepsMax}
-                  onChange={(e) => setForm({ ...form, defaultRepsMax: Number(e.target.value) })}
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-stone-600">
-                  {t("defaultRestSeconds")}
-                </label>
-                <Input
-                  type="number"
-                  value={form.defaultRestSeconds}
-                  onChange={(e) => setForm({ ...form, defaultRestSeconds: Number(e.target.value) })}
-                />
-              </div>
+              {form.gifUrl.trim() && /^https:\/\/.+/.test(form.gifUrl.trim()) && (
+                <div className="mt-2">
+                  <p className="mb-1 text-xs text-stone-500">{t("gifPreview")}</p>
+                  <img
+                    src={form.gifUrl}
+                    alt="Exercise GIF preview"
+                    className="h-32 w-32 rounded-lg border border-stone-200 object-contain"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = "none";
+                    }}
+                  />
+                </div>
+              )}
             </div>
 
-            {saveError && (
-              <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
-                {saveError}
-              </p>
-            )}
-
-            <div className="mt-6 flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setShowModal(false)}>
-                {tCommon("cancel")}
-              </Button>
-              <Button onClick={handleSave} disabled={saving || !form.name || !form.nameAr}>
-                {saving && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
-                {tCommon("save")}
-              </Button>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-stone-600">
+                {t("defaultSets")}
+              </label>
+              <Input
+                type="number"
+                value={form.defaultSets}
+                onChange={(e) => setForm({ ...form, defaultSets: Number(e.target.value) })}
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-stone-600">
+                {t("defaultRepsMin")}
+              </label>
+              <Input
+                type="number"
+                value={form.defaultRepsMin}
+                onChange={(e) => setForm({ ...form, defaultRepsMin: Number(e.target.value) })}
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-stone-600">
+                {t("defaultRepsMax")}
+              </label>
+              <Input
+                type="number"
+                value={form.defaultRepsMax}
+                onChange={(e) => setForm({ ...form, defaultRepsMax: Number(e.target.value) })}
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-stone-600">
+                {t("defaultRestSeconds")}
+              </label>
+              <Input
+                type="number"
+                value={form.defaultRestSeconds}
+                onChange={(e) => setForm({ ...form, defaultRestSeconds: Number(e.target.value) })}
+              />
             </div>
           </div>
-        </div>
-      )}
+
+          {saveError && (
+            <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{saveError}</p>
+          )}
+
+          <div className="mt-6 flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setShowModal(false)}>
+              {tCommon("cancel")}
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={saving || !form.name || !form.nameAr || !!formValidationError}
+            >
+              {saving && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+              {tCommon("save")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

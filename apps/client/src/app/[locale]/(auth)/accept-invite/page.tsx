@@ -43,8 +43,8 @@ export default function AcceptInvitePage() {
       return;
     }
 
-    if (password.length < 8) {
-      setError(t("invalidPassword"));
+    if (password.length < 8 || !/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
+      setError(t("passwordComplexity"));
       return;
     }
 

@@ -103,6 +103,7 @@ export default function InitialAssessmentPage() {
         if (isNaN(w) || w < 30 || w > 300) return tErrors("weightOutOfRange");
         if (isNaN(h) || h < 100 || h > 250) return tErrors("heightOutOfRange");
         if (isNaN(a) || a < 13 || a > 120) return tErrors("ageOutOfRange");
+        if (!activityLevel) return tErrors("activityLevelRequired");
         if (!experienceLevel) return tErrors("experienceLevelRequired");
         if (!equipment) return tErrors("equipmentRequired");
         if (equipment === "other" && !equipmentOther.trim()) return tErrors("equipmentSpecify");

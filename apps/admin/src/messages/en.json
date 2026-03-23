@@ -25,6 +25,7 @@
   "admin": {
     "signIn": "Coach Sign In",
     "signInDescription": "FitFast Coach Panel",
+    "coachPanelFooter": "Coach Panel \u00b7 Authorized Access Only",
     "email": "Email",
     "password": "Password",
     "signingIn": "Signing in",
@@ -136,6 +137,8 @@
     "translating": "Translating...",
     "translationFailed": "Translation failed",
     "autoTranslated": "Arabic translation is generated automatically",
+    "englishFields": "English",
+    "arabicFields": "Arabic (optional — auto-translated if empty)",
     "noPlansYet": "No plans yet. Add your first pricing plan.",
     "noPaymentMethods": "No payment methods yet. Add a method for clients to pay.",
     "rejectDialogTitle": "Reject {name}",
@@ -445,6 +448,7 @@
     "sendFailedDesc": "Failed to send notification. The client may not have push enabled.",
     "notificationsDisabled": "Notifications are currently disabled. Enable them in Settings first.",
     "history": "History",
+    "showingLast200": "Showing last 200 entries",
     "historyEmpty": "No notifications sent yet.",
     "date": "Date",
     "type": "Type",
@@ -694,7 +698,8 @@
       "uploadFailed": "Upload failed. Please try again.",
       "deleteFailed": "Failed to delete. Please try again.",
       "invalidMacros": "Please enter valid numeric values for all macros."
-    }
+    },
+    "confirmDelete": "Are you sure you want to delete this entry?"
   },
   "tickets": {
     "title": "Support",
@@ -778,6 +783,12 @@
     "exerciseDeleted": "Exercise deleted successfully",
     "exerciseCount": "{count} exercises",
     "saveFailed": "Failed to save. Please try again.",
+    "validation": {
+      "setsMin": "Sets must be at least 1",
+      "repsMin": "Minimum reps must be at least 1",
+      "repsMaxMin": "Maximum reps must be greater than or equal to minimum reps",
+      "restNegative": "Rest seconds cannot be negative"
+    },
     "image": "Image",
     "currentImage": "Current Image",
     "gifUrl": "GIF URL (override)",

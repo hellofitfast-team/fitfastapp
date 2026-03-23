@@ -312,7 +312,11 @@ export function ClientsList({ clients }: { clients: Client[] }) {
 
   const filtered = clients.filter((c) => {
     const q = search.toLowerCase();
-    return (c.fullName?.toLowerCase().includes(q) ?? false) || (c.phone?.includes(q) ?? false);
+    return (
+      (c.fullName?.toLowerCase().includes(q) ?? false) ||
+      (c.email?.toLowerCase().includes(q) ?? false) ||
+      (c.phone?.includes(q) ?? false)
+    );
   });
 
   const allFilteredSelected = filtered.length > 0 && filtered.every((c) => selected.has(c.id));

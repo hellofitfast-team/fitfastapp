@@ -13,10 +13,11 @@ export default async function AdminPanelLayout({ children }: { children: React.R
   }
 
   // Fetch profile, pending signups count, and open tickets count in parallel
-  const [profile, pendingSignups, openTickets] = await Promise.all([
+  // Uses count-only query for tickets to avoid fetching all ticket records
+  const [profile, pendingSignups, openTicketCount] = await Promise.all([
     fetchQuery(api.profiles.getMyProfile, {}, { token }).catch(() => null),
     fetchQuery(api.pendingSignups.getPendingSignups, {}, { token }).catch(() => []),
-    fetchQuery(api.tickets.getAllTickets, {}, { token }).catch(() => []),
+    fetchQuery(api.tickets.getOpenTicketCount, {}, { token }).catch(() => 0),
   ]);
 
   if (!profile?.isCoach) {
@@ -28,7 +29,7 @@ export default async function AdminPanelLayout({ children }: { children: React.R
       <AdminShell
         coachName={profile.fullName ?? "Coach"}
         pendingSignups={pendingSignups.length}
-        openTickets={openTickets.filter((t) => t.status === "open").length}
+        openTickets={openTicketCount}
       >
         {children}
       </AdminShell>

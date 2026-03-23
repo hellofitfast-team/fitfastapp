@@ -101,6 +101,7 @@
     "passwordMismatch": "Passwords don't match",
     "invalidEmail": "Please enter a valid email",
     "invalidPassword": "Password must be at least 8 characters",
+    "passwordComplexity": "Password must be at least 8 characters with uppercase, lowercase, and a number",
     "createPasswordDescription": "Create a secure password for your account",
     "updatingPassword": "Updating...",
     "passwordSet": "Password set successfully!",
@@ -382,7 +383,8 @@
       "weightTooLow": "Weight seems too low",
       "weightTooHigh": "Weight seems too high",
       "workoutPerformanceMin": "Please provide at least 10 characters about your workout performance",
-      "ratingRange": "Must be between 1 and 10"
+      "ratingRange": "Must be between 1 and 10",
+      "measurementRange": "Measurement must be between 10 and 500 cm"
     }
   },
   "tracking": {
@@ -969,6 +971,7 @@
     "weightOutOfRange": "Weight must be between 30 and 300 kg",
     "heightOutOfRange": "Height must be between 100 and 250 cm",
     "ageOutOfRange": "Age must be between 13 and 120 years",
+    "activityLevelRequired": "Please select your activity level",
     "experienceLevelRequired": "Please select your experience level",
     "workoutDaysRequired": "Please select at least one workout day",
     "workoutDaysMin": "Please select at least {min} workout days for meaningful results",

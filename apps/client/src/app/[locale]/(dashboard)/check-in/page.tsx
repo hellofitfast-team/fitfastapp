@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { useSwipeable } from "react-swipeable";
@@ -35,11 +35,39 @@ function createCheckInSchema(t: (key: string) => string) {
       .min(20, t("validation.weightTooLow"))
       .max(300, t("validation.weightTooHigh")),
     measurementMethod: z.enum(["manual", "inbody"]).default("manual"),
-    chest: z.coerce.number().optional(),
-    waist: z.coerce.number().optional(),
-    hips: z.coerce.number().optional(),
-    arms: z.coerce.number().optional(),
-    thighs: z.coerce.number().optional(),
+    // Measurement fields: optional, but if provided must be 10–500 cm.
+    // z.coerce.number() turns empty string "" → 0, so z.literal(0) branch
+    // catches that case and transforms it to undefined (= "not provided").
+    chest: z.coerce
+      .number()
+      .min(10, t("validation.measurementRange"))
+      .max(500, t("validation.measurementRange"))
+      .optional()
+      .or(z.literal(0).transform(() => undefined)),
+    waist: z.coerce
+      .number()
+      .min(10, t("validation.measurementRange"))
+      .max(500, t("validation.measurementRange"))
+      .optional()
+      .or(z.literal(0).transform(() => undefined)),
+    hips: z.coerce
+      .number()
+      .min(10, t("validation.measurementRange"))
+      .max(500, t("validation.measurementRange"))
+      .optional()
+      .or(z.literal(0).transform(() => undefined)),
+    arms: z.coerce
+      .number()
+      .min(10, t("validation.measurementRange"))
+      .max(500, t("validation.measurementRange"))
+      .optional()
+      .or(z.literal(0).transform(() => undefined)),
+    thighs: z.coerce
+      .number()
+      .min(10, t("validation.measurementRange"))
+      .max(500, t("validation.measurementRange"))
+      .optional()
+      .or(z.literal(0).transform(() => undefined)),
     workoutPerformance: z.string().min(10, t("validation.workoutPerformanceMin")),
     energyLevel: z.coerce
       .number()
@@ -240,9 +268,13 @@ export default function CheckInPage() {
   // Swipe support: In LTR, swipe left = next, swipe right = back
   // In RTL (Arabic), directions are inverted: swipe right = next, swipe left = back
   // Uses useLocale() for RTL detection (more reliable than document.dir)
+  // Ref to always access the latest validateStep without recreating swipe handler every render
+  const validateStepRef = useRef(validateStep);
+  validateStepRef.current = validateStep;
+
   const handleSwipeNext = useCallback(async () => {
     if (currentStep === 4) return; // Disable swipe on photos step to avoid drag/drop conflicts
-    const isValid = await validateStep(currentStep);
+    const isValid = await validateStepRef.current(currentStep);
     if (isValid && currentStep < STEPS.length) setCurrentStep((s) => s + 1);
   }, [currentStep, STEPS.length]);
 

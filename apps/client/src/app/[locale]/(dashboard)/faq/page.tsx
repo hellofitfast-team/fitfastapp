@@ -7,6 +7,7 @@ import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Search, ChevronDown, MessageSquarePlus } from "lucide-react";
 import { Link } from "@fitfast/i18n/navigation";
+import { toLocalDigits } from "@/lib/utils";
 import { Skeleton } from "@fitfast/ui/skeleton";
 import { cn } from "@fitfast/ui/cn";
 import { DEFAULT_CHECK_IN_FREQUENCY_DAYS } from "@/lib/constants";
@@ -105,7 +106,7 @@ export default function FAQPage() {
                         : "text-muted-foreground bg-neutral-100",
                     )}
                   >
-                    {String(index + 1).padStart(2, "0")}
+                    {toLocalDigits(String(index + 1).padStart(2, "0"), locale)}
                   </div>
                   <span className="pt-1 text-sm font-medium">{faq.question}</span>
                 </div>
@@ -119,7 +120,7 @@ export default function FAQPage() {
               <div
                 className={cn(
                   "overflow-hidden transition-all duration-200 ease-in-out",
-                  expandedIndex === index ? "max-h-[300px] opacity-100" : "max-h-0 opacity-0",
+                  expandedIndex === index ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0",
                 )}
               >
                 <div className="px-4 pt-0 pb-4">

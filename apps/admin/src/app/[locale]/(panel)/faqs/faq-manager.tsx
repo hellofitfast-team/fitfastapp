@@ -37,6 +37,8 @@ export function FaqManager() {
   const [showNew, setShowNew] = useState(false);
   const [newQuestion, setNewQuestion] = useState("");
   const [newAnswer, setNewAnswer] = useState("");
+  const [newQuestionAr, setNewQuestionAr] = useState("");
+  const [newAnswerAr, setNewAnswerAr] = useState("");
   const [editQuestionEn, setEditQuestionEn] = useState("");
   const [editAnswerEn, setEditAnswerEn] = useState("");
   const [editQuestionAr, setEditQuestionAr] = useState("");
@@ -82,10 +84,14 @@ export function FaqManager() {
       await createFAQ({
         questionEn: newQuestion,
         answerEn: newAnswer,
+        questionAr: newQuestionAr || undefined,
+        answerAr: newAnswerAr || undefined,
         displayOrder: allFaqs.length,
       });
       setNewQuestion("");
       setNewAnswer("");
+      setNewQuestionAr("");
+      setNewAnswerAr("");
       setShowNew(false);
     } catch (err) {
       log.error({ err }, "Failed to create FAQ");
@@ -120,8 +126,10 @@ export function FaqManager() {
     setIsSaving(false);
   };
 
-  const handleDelete = async (faqId: Id<"faqs">) => {
-    if (!window.confirm(t("confirmDeleteFaq"))) return;
+  const [deletingFaqId, setDeletingFaqId] = useState<Id<"faqs"> | null>(null);
+
+  const handleDeleteConfirmed = async (faqId: Id<"faqs">) => {
+    setDeletingFaqId(null);
     try {
       await deleteFAQ({ faqId });
       setSelectedIds((prev) => {
@@ -201,7 +209,7 @@ export function FaqManager() {
       {/* New FAQ form */}
       {showNew && (
         <div className="space-y-3 rounded-xl border border-stone-200 bg-white p-5">
-          <p className="text-xs font-medium text-stone-500">{t("autoTranslated")}</p>
+          <p className="text-xs font-medium text-stone-500">{t("englishFields")}</p>
           <input
             type="text"
             value={newQuestion}
@@ -213,6 +221,23 @@ export function FaqManager() {
             value={newAnswer}
             onChange={(e) => setNewAnswer(e.target.value)}
             placeholder={t("answerEnPlaceholder")}
+            rows={3}
+            className="focus:ring-primary/20 focus:border-primary w-full resize-none rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm text-stone-900 transition-all placeholder:text-stone-400 focus:ring-2 focus:outline-none"
+          />
+          <p className="text-xs font-medium text-stone-500">{t("arabicFields")}</p>
+          <input
+            type="text"
+            dir="rtl"
+            value={newQuestionAr}
+            onChange={(e) => setNewQuestionAr(e.target.value)}
+            placeholder={t("questionArPlaceholder")}
+            className="focus:ring-primary/20 focus:border-primary w-full rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm font-medium text-stone-900 transition-all placeholder:text-stone-400 focus:ring-2 focus:outline-none"
+          />
+          <textarea
+            dir="rtl"
+            value={newAnswerAr}
+            onChange={(e) => setNewAnswerAr(e.target.value)}
+            placeholder={t("answerArPlaceholder")}
             rows={3}
             className="focus:ring-primary/20 focus:border-primary w-full resize-none rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm text-stone-900 transition-all placeholder:text-stone-400 focus:ring-2 focus:outline-none"
           />
@@ -358,7 +383,7 @@ export function FaqManager() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleDelete(faq._id)}
+                      onClick={() => setDeletingFaqId(faq._id)}
                       aria-label={tCommon("delete")}
                       className="flex h-11 w-11 items-center justify-center rounded-lg border border-stone-200 text-stone-400 transition-colors hover:border-red-300 hover:text-red-600"
                     >
@@ -371,6 +396,37 @@ export function FaqManager() {
           ))}
         </div>
       )}
+
+      {/* Individual delete confirmation dialog */}
+      <Dialog
+        open={!!deletingFaqId}
+        onOpenChange={(open) => {
+          if (!open) setDeletingFaqId(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("deleteFaq")}</DialogTitle>
+            <DialogDescription>{t("confirmDeleteFaq")}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <button
+              type="button"
+              onClick={() => setDeletingFaqId(null)}
+              className="rounded-lg border border-stone-200 px-4 py-2 text-sm font-medium text-stone-600 transition-colors hover:bg-stone-50"
+            >
+              {t("cancel")}
+            </button>
+            <button
+              type="button"
+              onClick={() => deletingFaqId && handleDeleteConfirmed(deletingFaqId)}
+              className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
+            >
+              {t("deleteFaq")}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Bulk delete confirmation dialog */}
       <Dialog

@@ -39,7 +39,20 @@ export function SocialLinksManager() {
     setLinks({ ...links, [key]: value });
   };
 
+  const isValidUrl = (url: string) => {
+    if (!url.trim()) return true; // empty is OK
+    try {
+      new URL(url);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const hasInvalidUrl = Object.values(links).some((v) => v && !isValidUrl(v));
+
   const handleSave = async () => {
+    if (hasInvalidUrl) return;
     try {
       await updateSocialLinks({ links: links as Parameters<typeof updateSocialLinks>[0]["links"] });
     } catch (error) {

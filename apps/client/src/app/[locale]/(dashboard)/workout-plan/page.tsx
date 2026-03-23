@@ -762,7 +762,7 @@ export default function WorkoutPlanPage() {
                       <div
                         className={cn(
                           "overflow-hidden transition-all duration-200 ease-in-out",
-                          isExpanded ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0",
+                          isExpanded ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0",
                         )}
                       >
                         <div className="border-border space-y-3 border-t px-3.5 pt-3 pb-3.5">

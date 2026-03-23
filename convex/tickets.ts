@@ -30,6 +30,22 @@ export const getAllTickets = query({
   },
 });
 
+/**
+ * Lightweight count of open tickets for dashboard/sidebar badges.
+ * Avoids fetching all ticket records.
+ */
+export const getOpenTicketCount = query({
+  args: {},
+  handler: async (ctx): Promise<number> => {
+    await requireCoach(ctx);
+    const openTickets = await ctx.db
+      .query("tickets")
+      .withIndex("by_status", (q) => q.eq("status", "open"))
+      .take(500);
+    return openTickets.length;
+  },
+});
+
 export const searchTickets = query({
   args: {
     search: v.string(),

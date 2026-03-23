@@ -9,11 +9,13 @@ import { Link } from "@fitfast/i18n/navigation";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { ArrowLeft, Mail, CheckCircle2, Zap, Loader2 } from "lucide-react";
 
-const forgotPasswordSchema = z.object({
-  email: z.string().email("Please enter a valid email"),
-});
+function createForgotPasswordSchema(t: (key: string) => string) {
+  return z.object({
+    email: z.string().email(t("invalidEmail")),
+  });
+}
 
-type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
+type ForgotPasswordFormData = z.infer<ReturnType<typeof createForgotPasswordSchema>>;
 
 export default function ForgotPasswordPage() {
   const t = useTranslations("auth");
@@ -23,6 +25,8 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const [emailSent, setEmailSent] = useState(false);
   const [sentEmail, setSentEmail] = useState<string>("");
+
+  const forgotPasswordSchema = createForgotPasswordSchema((key) => t(key));
 
   const {
     register,
@@ -45,8 +49,8 @@ export default function ForgotPasswordPage() {
       setSentEmail(data.email);
       setEmailSent(true);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : t("unexpectedError");
-      setError(message);
+      console.error("Magic link error:", err);
+      setError(t("unexpectedError"));
     } finally {
       setIsLoading(false);
     }

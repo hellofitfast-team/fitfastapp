@@ -101,6 +101,7 @@
     "passwordMismatch": "كلمات المرور غير متطابقة",
     "invalidEmail": "يرجى إدخال بريد إلكتروني صحيح",
     "invalidPassword": "يجب أن تكون كلمة المرور 8 أحرف على الأقل",
+    "passwordComplexity": "يجب أن تكون كلمة المرور 8 أحرف على الأقل وتحتوي على حرف كبير وصغير ورقم",
     "createPasswordDescription": "قم بإنشاء كلمة مرور آمنة لحسابك",
     "updatingPassword": "جاري التحديث...",
     "passwordSet": "تم تعيين كلمة المرور بنجاح!",
@@ -382,7 +383,8 @@
       "weightTooLow": "الوزن يبدو منخفضًا جدًا",
       "weightTooHigh": "الوزن يبدو مرتفعًا جدًا",
       "workoutPerformanceMin": "يرجى كتابة 10 أحرف على الأقل عن أدائك في التمارين",
-      "ratingRange": "يجب أن يكون بين 1 و 10"
+      "ratingRange": "يجب أن يكون بين 1 و 10",
+      "measurementRange": "يجب أن يكون القياس بين 10 و 500 سم"
     }
   },
   "tracking": {
@@ -969,6 +971,7 @@
     "weightOutOfRange": "يجب أن يكون الوزن بين 30 و 300 كجم",
     "heightOutOfRange": "يجب أن يكون الطول بين 100 و 250 سم",
     "ageOutOfRange": "يجب أن يكون العمر بين 13 و 120 سنة",
+    "activityLevelRequired": "يرجى اختيار مستوى النشاط",
     "experienceLevelRequired": "يرجى اختيار مستوى الخبرة",
     "workoutDaysRequired": "يرجى اختيار يوم تمرين واحد على الأقل",
     "workoutDaysMin": "يرجى اختيار {min} أيام تمرين على الأقل لنتائج فعلية",

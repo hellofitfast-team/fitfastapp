@@ -123,7 +123,12 @@ export default function DashboardPage() {
   const checkInLock = dashboardData.checkInLock;
   const nextCheckInDays =
     checkInLock.isLocked && checkInLock.nextCheckInDate
-      ? Math.ceil((new Date(checkInLock.nextCheckInDate).getTime() - now) / (1000 * 60 * 60 * 24))
+      ? Math.max(
+          0,
+          Math.ceil(
+            (new Date(checkInLock.nextCheckInDate).getTime() - now) / (1000 * 60 * 60 * 24),
+          ),
+        )
       : null;
   const nextCheckInDisplay = nextCheckInDays !== null ? `${nextCheckInDays}d` : "-";
 
@@ -131,12 +136,18 @@ export default function DashboardPage() {
     dashboardData.profile?.fullName?.split(" ")[0] || (locale === "ar" ? "مستخدم" : "User");
 
   // Resolve a day plan from weeklyPlan — tries "dayN" first, then weekday names
+  // Returns null if plan has ended (dayIndex exceeds plan length)
   function resolveDayPlan<T>(
     weeklyPlan: Record<string, T> | undefined,
     startDate?: string,
   ): T | null {
     if (!weeklyPlan || !startDate) return null;
     const diff = Math.floor((now - new Date(startDate).getTime()) / 86400000);
+    // Count only day keys (day1, day2, ...) or weekday names — ignore metadata keys
+    const dayKeyPattern = /^(day\d+|sunday|monday|tuesday|wednesday|thursday|friday|saturday)$/;
+    const planLength = Object.keys(weeklyPlan).filter((k) => dayKeyPattern.test(k)).length;
+    // Beyond plan length means plan has ended
+    if (diff >= planLength) return null;
     const dayIndex = Math.max(0, diff);
 
     // Try new format: "day1", "day2", ...

@@ -61,12 +61,16 @@ export function TicketsList() {
     setRespondingId(null);
   };
 
+  const [closingId, setClosingId] = useState<string | null>(null);
   const handleClose = async (ticketId: Id<"tickets">) => {
+    setClosingId(ticketId);
     try {
       await closeTicket({ ticketId });
     } catch (err) {
       console.error("Failed to close:", err); // Sentry captures this
       toast({ title: t("closeFailed"), variant: "destructive" });
+    } finally {
+      setClosingId(null);
     }
   };
 
@@ -168,9 +172,14 @@ export function TicketsList() {
                         <button
                           type="button"
                           onClick={() => handleClose(ticket._id)}
-                          className="flex items-center gap-2 rounded-lg border border-stone-200 px-4 py-2 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-50"
+                          disabled={closingId === ticket._id}
+                          className="flex items-center gap-2 rounded-lg border border-stone-200 px-4 py-2 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-50 disabled:opacity-50"
                         >
-                          <CheckCircle className="h-3 w-3" />
+                          {closingId === ticket._id ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <CheckCircle className="h-3 w-3" />
+                          )}
                           {t("close")}
                         </button>
                       )}
