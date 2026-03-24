@@ -102,7 +102,7 @@ export function CheckoutForm({ selectedPlan, onSuccess }: CheckoutFormProps) {
   );
 
   const handleDrop = useCallback(
-    (e: React.DragEvent<HTMLDivElement>) => {
+    (e: React.DragEvent) => {
       e.preventDefault();
       setIsDragging(false);
       const file = e.dataTransfer.files[0];
@@ -111,7 +111,7 @@ export function CheckoutForm({ selectedPlan, onSuccess }: CheckoutFormProps) {
     [handleFile],
   );
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
   };
