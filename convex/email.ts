@@ -235,8 +235,8 @@ function getInvitationEmail(fullName: string, inviteToken: string, language: "en
         <h2 style="color:#FF4500;margin:0 0 16px">${isAr ? `أهلاً ${safeName}!` : `Hey ${safeName}!`}</h2>
         <p style="color:#44403c;line-height:1.6">${
           isAr
-            ? "تمت الموافقة على طلبك للانضمام إلى فيت فاست. اضغط على الزر أدناه لإنشاء حسابك وبدء رحلتك."
-            : "Your application to join FitFast has been approved. Click the button below to create your account and start your fitness journey."
+            ? "شكرًا لتسجيلك في فيت فاست! اضغط على الزر أدناه لإنشاء حسابك وتعيين كلمة المرور. بعد ذلك سيراجع مدربك طلبك."
+            : "Thanks for signing up for FitFast! Click the button below to create your account and set your password. Your coach will then review your application."
         }</p>
         <div style="text-align:center;margin:32px 0">
           <a href="${acceptLink}" style="background:#FF4500;color:#fff;padding:14px 32px;border-radius:12px;text-decoration:none;font-weight:600;display:inline-block">

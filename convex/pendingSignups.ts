@@ -170,11 +170,16 @@ export const createSignup = mutation({
       .first();
     if (existingPending) throw new Error("A signup with this email is already pending");
 
+    // Generate invite token so the user can create their account immediately
+    // and land on the pending-approval screen while the coach reviews.
+    const inviteToken =
+      crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
+
     const id = await ctx.db.insert("pendingSignups", {
       ...args,
       email,
       status: "pending",
-      // No inviteToken yet — it will be generated when the coach approves
+      inviteToken,
     });
     // Increment the denormalized pending count for the admin dashboard
     await pendingSignupsCount.insert(ctx, { key: id, id });
@@ -187,11 +192,13 @@ export const createSignup = mutation({
       });
     }
 
-    // Send confirmation email — NOT the invitation to create an account.
-    // The invite link is only sent after the coach approves the signup.
-    await ctx.scheduler.runAfter(0, internal.email.sendSignupReceivedEmail, {
+    // Send "Create Your Account" email with invite link.
+    // The user creates their account now but stays on a pending-approval screen
+    // until the coach approves their signup.
+    await ctx.scheduler.runAfter(0, internal.email.sendInvitationEmail, {
       email,
       fullName: args.fullName,
+      inviteToken,
       language: "en" as const,
     });
 
@@ -242,19 +249,13 @@ export const approveSignup = mutation({
         profileId: clientProfile._id,
         signupId,
       });
+      // activateClientProfile sends the welcome email ("Access Your Account" CTA)
     } else {
-      // Prospect hasn't created their account yet — reuse existing token or generate fresh
-      const inviteToken =
-        signup.inviteToken ??
-        crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
-      if (!signup.inviteToken) {
-        await ctx.db.patch(signupId, { inviteToken });
-      }
-
-      await ctx.scheduler.runAfter(0, internal.email.sendInvitationEmail, {
+      // Prospect hasn't created their account yet — send welcome/approval email.
+      // They already have the invite link from signup; the welcome email confirms approval.
+      await ctx.scheduler.runAfter(0, internal.email.sendWelcomeEmail, {
         email: signup.email,
         fullName: signup.fullName,
-        inviteToken,
         language: "en" as const,
       });
     }
@@ -395,10 +396,9 @@ export const validateInviteToken = query({
 
     if (!signup) return null;
 
-    // Only allow account creation for approved signups.
-    // Tokens should only exist on approved signups (generated at approval time),
-    // but guard against legacy tokens from the old flow.
-    if (signup.status !== "approved") return null;
+    // Allow account creation for both pending and approved signups.
+    // Rejected signups should not allow account creation.
+    if (signup.status === "rejected") return null;
 
     // Minimized response — only return what the accept-invite page needs
     return {
