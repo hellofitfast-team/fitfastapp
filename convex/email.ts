@@ -96,6 +96,9 @@ function getWelcomeEmail(fullName: string, language: "en" | "ar") {
 function getPlanReadyEmail(fullName: string, language: "en" | "ar") {
   const isAr = language === "ar";
   const safeName = escapeHtml(fullName);
+  const clientUrl = process.env.CLIENT_APP_URL ?? "https://client.fitfast.app";
+  const locale = isAr ? "ar" : "en";
+  const appLink = `${clientUrl}/${locale}`;
   return {
     subject: isAr ? "خططك الجديدة جاهزة! 💪" : "Your new plans are ready! 💪",
     html: emailWrapper(
@@ -107,9 +110,11 @@ function getPlanReadyEmail(fullName: string, language: "en" | "ar") {
             ? "تم إنشاء خطة الوجبات وخطة التمارين الجديدة بنجاح بناءً على آخر تسجيل متابعة."
             : "Your new meal plan and workout plan have been generated based on your latest check-in."
         }</p>
-        <p style="color:#44403c;line-height:1.6">${
-          isAr ? "افتح التطبيق لعرض خططك المحدثة." : "Open the app to view your updated plans."
-        }</p>`,
+        <div style="text-align:center;margin:32px 0">
+          <a href="${appLink}" style="background:#10B981;color:#fff;padding:14px 32px;border-radius:12px;text-decoration:none;font-weight:600;display:inline-block">
+            ${isAr ? "عرض خططك" : "View Your Plans"}
+          </a>
+        </div>`,
     ),
   };
 }
@@ -124,6 +129,9 @@ function getTicketReplyEmail(
   const safeName = escapeHtml(fullName);
   const safeSubject = escapeHtml(ticketSubject);
   const safeMessage = escapeHtml(coachMessage);
+  const clientUrl = process.env.CLIENT_APP_URL ?? "https://client.fitfast.app";
+  const locale = isAr ? "ar" : "en";
+  const ticketsLink = `${clientUrl}/${locale}/tickets`;
   return {
     subject: isAr
       ? `رد المدرب: ${escapeHtml(ticketSubject)}`
@@ -136,11 +144,11 @@ function getTicketReplyEmail(
         <div style="background:#f5f5f4;border-radius:8px;padding:16px;margin:16px 0">
           <p style="margin:0;color:#44403c">${safeMessage}</p>
         </div>
-        <p style="color:#44403c;line-height:1.6">${
-          isAr
-            ? "افتح التطبيق للرد أو عرض المحادثة الكاملة."
-            : "Open the app to reply or view the full conversation."
-        }</p>`,
+        <div style="text-align:center;margin:32px 0">
+          <a href="${ticketsLink}" style="background:#10B981;color:#fff;padding:14px 32px;border-radius:12px;text-decoration:none;font-weight:600;display:inline-block">
+            ${isAr ? "عرض المحادثة" : "View Conversation"}
+          </a>
+        </div>`,
     ),
   };
 }
@@ -148,6 +156,9 @@ function getTicketReplyEmail(
 function getReminderEmail(fullName: string, language: "en" | "ar") {
   const isAr = language === "ar";
   const safeName = escapeHtml(fullName);
+  const clientUrl = process.env.CLIENT_APP_URL ?? "https://client.fitfast.app";
+  const locale = isAr ? "ar" : "en";
+  const checkInLink = `${clientUrl}/${locale}/check-in`;
   return {
     subject: isAr ? "حان وقت المتابعة! 📊" : "Time for your check-in! 📊",
     html: emailWrapper(
@@ -158,7 +169,12 @@ function getReminderEmail(fullName: string, language: "en" | "ar") {
           isAr
             ? "سجّل تقدمك اليوم حتى يتمكن مدربك من تحديث خططك."
             : "Track your progress today so your coach can update your plans."
-        }</p>`,
+        }</p>
+        <div style="text-align:center;margin:32px 0">
+          <a href="${checkInLink}" style="background:#FF4500;color:#fff;padding:14px 32px;border-radius:12px;text-decoration:none;font-weight:600;display:inline-block">
+            ${isAr ? "سجّل متابعتك" : "Start Check-in"}
+          </a>
+        </div>`,
     ),
   };
 }
@@ -426,7 +442,11 @@ function getCoachNotificationEmail(
           <p style="margin:0 0 8px;font-weight:600;color:#44403c">${safeTitle}</p>
           <p style="margin:0;color:#44403c">${safeBody}</p>
         </div>
-        <p style="color:#44403c;line-height:1.6">${isAr ? "افتح التطبيق لمزيد من التفاصيل." : "Open the app for more details."}</p>`,
+        <div style="text-align:center;margin:32px 0">
+          <a href="${process.env.CLIENT_APP_URL ?? "https://client.fitfast.app"}/${isAr ? "ar" : "en"}" style="background:#10B981;color:#fff;padding:14px 32px;border-radius:12px;text-decoration:none;font-weight:600;display:inline-block">
+            ${isAr ? "افتح التطبيق" : "Open App"}
+          </a>
+        </div>`,
     ),
   };
 }
