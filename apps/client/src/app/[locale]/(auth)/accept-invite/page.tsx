@@ -26,13 +26,23 @@ export default function AcceptInvitePage() {
   // Validate the invite token
   const inviteData = useQuery(api.pendingSignups.validateInviteToken, token ? { token } : "skip");
 
-  // If already signed in, redirect to pending — it reactively checks status
-  // and auto-redirects to /initial-assessment when profile becomes active
+  // If already signed in, redirect — they already have an account
   useEffect(() => {
     if (isAuthenticated) {
-      router.replace("/pending");
+      router.replace("/");
     }
   }, [isAuthenticated, router]);
+
+  // Block rendering while authenticated — prevent form flash before redirect
+  if (isAuthenticated) {
+    return (
+      <div className="border-border bg-card animate-fade-in overflow-hidden rounded-2xl border shadow-sm">
+        <div className="flex items-center justify-center p-6">
+          <Loader2 className="text-primary h-6 w-6 animate-spin" />
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
