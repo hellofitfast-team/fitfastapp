@@ -1,19 +1,36 @@
 "use client";
 
-import { useConvexAuth, useQuery } from "convex/react";
+import { useState } from "react";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { usePaginatedQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 import { useTranslations } from "next-intl";
 import { ClientsList } from "./clients-list";
-import { Loader2, Clock, Mail } from "lucide-react";
+import { Loader2, Clock, Mail, Trash2 } from "lucide-react";
 import { Button } from "@fitfast/ui/button";
 import { CreateTestUserButton } from "./create-test-user-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@fitfast/ui/dialog";
+import { toast } from "@/hooks/use-toast";
 
 const PAGE_SIZE = 50;
 
 export default function AdminClientsPage() {
   const t = useTranslations("admin");
   const { isAuthenticated } = useConvexAuth();
+  const [deleteTarget, setDeleteTarget] = useState<{
+    _id: Id<"pendingSignups">;
+    fullName: string;
+  } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const deleteApprovedSignup = useMutation(api.pendingSignups.deleteApprovedSignup);
   const { results, status, loadMore } = usePaginatedQuery(
     api.profiles.listClientsPaginated,
     isAuthenticated ? {} : "skip",
@@ -88,12 +105,73 @@ export default function AdminClientsPage() {
                     <Mail className="h-3 w-3" />
                     <span>{t("inviteSent")}</span>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setDeleteTarget({ _id: signup._id, fullName: signup.fullName })}
+                    aria-label={t("deleteAwaitingSignup")}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-red-200 text-red-400 transition-colors hover:border-red-300 hover:bg-red-50 hover:text-red-600"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               </div>
             ))}
           </div>
         </div>
       )}
+
+      {/* Delete awaiting signup confirmation */}
+      <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("deleteAwaitingSignup")}</DialogTitle>
+            <DialogDescription>{t("deleteAwaitingSignupConfirm")}</DialogDescription>
+          </DialogHeader>
+          <p className="text-sm font-medium text-stone-700">{deleteTarget?.fullName}</p>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <button
+              type="button"
+              onClick={() => setDeleteTarget(null)}
+              disabled={isDeleting}
+              className="rounded-lg border border-stone-200 px-4 py-2 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50"
+            >
+              {t("cancel")}
+            </button>
+            <button
+              type="button"
+              disabled={isDeleting}
+              onClick={async () => {
+                if (!deleteTarget) return;
+                setIsDeleting(true);
+                try {
+                  await deleteApprovedSignup({
+                    signupId: deleteTarget._id,
+                  });
+                  toast({ title: t("deleteAwaitingSignupSuccess"), variant: "success" });
+                  setDeleteTarget(null);
+                } catch (err) {
+                  console.error("Delete awaiting signup failed:", err);
+                  toast({
+                    title: t("deleteAwaitingSignupFailed"),
+                    description: err instanceof Error ? err.message : undefined,
+                    variant: "destructive",
+                  });
+                } finally {
+                  setIsDeleting(false);
+                }
+              }}
+              className="flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+            >
+              {isDeleting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4" />
+              )}
+              {t("deleteAwaitingSignup")}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <ClientsList clients={adaptedClients} />
 

@@ -437,6 +437,41 @@ export const patchOcrData = internalMutation({
   },
 });
 
+/** Delete an approved signup that hasn't created an account yet (coach UI) */
+export const deleteApprovedSignup = mutation({
+  args: { signupId: v.id("pendingSignups") },
+  handler: async (ctx, { signupId }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .unique();
+    if (!profile?.isCoach) throw new Error("Not authorized");
+
+    const signup = await ctx.db.get(signupId);
+    if (!signup) throw new Error("Signup not found");
+    if (signup.status !== "approved") {
+      throw new Error("Only approved signups can be deleted from this action");
+    }
+
+    // Ensure the signup hasn't already created a profile (email is lowercased on insert)
+    const existingProfile = await ctx.db
+      .query("profiles")
+      .withIndex("by_email", (q) => q.eq("email", signup.email.toLowerCase()))
+      .first();
+    if (existingProfile) {
+      throw new Error("This signup already has an account — delete the client instead");
+    }
+
+    if (signup.paymentScreenshotId) {
+      await ctx.storage.delete(signup.paymentScreenshotId);
+    }
+    await ctx.db.delete(signupId);
+  },
+});
+
 /** Delete a signup record and its payment screenshot (internal — for CLI cleanup) */
 export const deleteSignupInternal = internalMutation({
   args: { signupId: v.id("pendingSignups") },
