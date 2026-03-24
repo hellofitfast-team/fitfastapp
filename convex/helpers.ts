@@ -36,6 +36,78 @@ export async function requireCoach(ctx: { db: any; auth: any }): Promise<string>
   return userId;
 }
 
+/**
+ * Delete all Convex Auth records for a user: verification codes, verifiers,
+ * refresh tokens, sessions, auth accounts, and the users record.
+ * Call this from any mutation that needs to fully remove a user's auth footprint.
+ */
+export async function deleteAuthRecords(ctx: { db: any }, userId: string): Promise<void> {
+  // Find all auth accounts for this user
+  const authAccounts = await ctx.db
+    .query("authAccounts")
+    .filter((q: any) => q.eq(q.field("userId"), userId))
+    .collect();
+
+  for (const account of authAccounts) {
+    // Delete verification codes for this account
+    const verificationCodes = await ctx.db
+      .query("authVerificationCodes")
+      .withIndex("accountId", (q: any) => q.eq("accountId", account._id))
+      .collect();
+    for (const code of verificationCodes) {
+      await ctx.db.delete(code._id);
+    }
+
+    // Delete sessions, their refresh tokens, and verifiers
+    const sessions = await ctx.db
+      .query("authSessions")
+      .filter((q: any) => q.eq(q.field("userId"), account.userId))
+      .collect();
+    for (const session of sessions) {
+      const tokens = await ctx.db
+        .query("authRefreshTokens")
+        .filter((q: any) => q.eq(q.field("sessionId"), session._id))
+        .collect();
+      for (const token of tokens) {
+        await ctx.db.delete(token._id);
+      }
+      const verifiers = await ctx.db
+        .query("authVerifiers")
+        .filter((q: any) => q.eq(q.field("sessionId"), session._id))
+        .collect();
+      for (const v of verifiers) {
+        await ctx.db.delete(v._id);
+      }
+      await ctx.db.delete(session._id);
+    }
+
+    await ctx.db.delete(account._id);
+  }
+
+  // Delete the users record
+  const userDoc = await ctx.db.get(userId);
+  if (userDoc) await ctx.db.delete(userDoc._id);
+}
+
+/**
+ * Delete all Convex Auth records by email (for pre-profile cleanup).
+ * Finds the auth account by email, then delegates to deleteAuthRecords.
+ */
+export async function deleteAuthRecordsByEmail(ctx: { db: any }, email: string): Promise<void> {
+  const authAccount = await ctx.db
+    .query("authAccounts")
+    .filter((q: any) =>
+      q.and(
+        q.eq(q.field("provider"), "password"),
+        q.eq(q.field("providerAccountId"), email.toLowerCase()),
+      ),
+    )
+    .first();
+  if (authAccount) {
+    await deleteAuthRecords(ctx, authAccount.userId);
+  }
+}
+
 // Internal queries used by AI actions to fetch data
 export const getProfileInternal = internalQuery({
   args: { userId: v.string() },

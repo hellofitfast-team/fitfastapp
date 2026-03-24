@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery } from "./_generated/server";
 import { DEFAULT_CHECK_IN_FREQUENCY_DAYS } from "./constants";
+import { deleteAuthRecords } from "./helpers";
 
 // ============================================================================
 // Helper queries (previously seedDemo_helpers.ts)
@@ -417,25 +418,11 @@ export const deleteUserByEmail = internalMutation({
       await ctx.db.delete(fm._id);
     }
 
-    // Delete auth session/refresh tokens
-    const sessions = await ctx.db
-      .query("authSessions")
-      .filter((q) => q.eq(q.field("userId"), userId))
-      .collect();
-    for (const s of sessions) {
-      // Delete refresh tokens for this session
-      const tokens = await ctx.db
-        .query("authRefreshTokens")
-        .filter((q) => q.eq(q.field("sessionId"), s._id))
-        .collect();
-      for (const t of tokens) await ctx.db.delete(t._id);
-      await ctx.db.delete(s._id);
-    }
-
-    // Delete profile, auth account, and user
+    // Delete profile
     if (profile) await ctx.db.delete(profile._id);
-    await ctx.db.delete(authAccount._id);
-    await ctx.db.delete(userId);
+
+    // Delete all auth records (accounts, sessions, tokens, verifiers, user)
+    await deleteAuthRecords(ctx, userId);
 
     return `Deleted user ${email} and all associated data`;
   },

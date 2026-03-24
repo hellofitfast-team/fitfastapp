@@ -4,6 +4,7 @@ import { query, mutation, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getAuthUserId } from "./auth";
 import { activeClientsCount } from "./adminStats";
+import { deleteAuthRecords } from "./helpers";
 
 export const getMyProfile = query({
   args: {},
@@ -121,47 +122,11 @@ export const removeTeamMember = mutation({
     const emailLower = email.toLowerCase();
 
     if (target) {
+      // Delete all auth records (sessions, tokens, verifiers, accounts, user)
+      await deleteAuthRecords(ctx, target.userId);
+
       // Delete profile
       await ctx.db.delete(target._id);
-
-      // Delete auth account + user record + sessions
-      const authAccount = await ctx.db
-        .query("authAccounts")
-        .filter((q) =>
-          q.and(
-            q.eq(q.field("provider"), "password"),
-            q.eq(q.field("providerAccountId"), emailLower),
-          ),
-        )
-        .first();
-      if (authAccount) {
-        // Kill active sessions so removed coach loses access immediately
-        const sessions = await ctx.db
-          .query("authSessions")
-          .filter((q) => q.eq(q.field("userId"), authAccount.userId))
-          .collect();
-        for (const session of sessions) {
-          await ctx.db.delete(session._id);
-        }
-        // Delete refresh tokens for each session
-        for (const session of sessions) {
-          const refreshTokens = await ctx.db
-            .query("authRefreshTokens")
-            .filter((q) => q.eq(q.field("sessionId"), session._id))
-            .collect();
-          for (const rt of refreshTokens) {
-            await ctx.db.delete(rt._id);
-          }
-        }
-
-        await ctx.db.delete(authAccount._id);
-        // Delete users record
-        const userDoc = await ctx.db
-          .query("users")
-          .filter((q) => q.eq(q.field("_id"), authAccount.userId))
-          .first();
-        if (userDoc) await ctx.db.delete(userDoc._id);
-      }
     }
 
     // Delete any pending invites for this email (case-insensitive)

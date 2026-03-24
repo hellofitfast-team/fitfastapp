@@ -3,6 +3,7 @@ import { internalMutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { activeClientsCount } from "./adminStats";
 import type { Id } from "./_generated/dataModel";
+import { deleteAuthRecords } from "./helpers";
 
 // ─── Check if a user is a coach ────────────────────────────────────────────
 
@@ -478,40 +479,8 @@ export const deleteTestUserMutation = internalMutation({
       await activeClientsCount.deleteIfExists(ctx, { key: profileId, id: profileId });
     }
 
-    // Delete auth records
-    const authAccount = await ctx.db
-      .query("authAccounts")
-      .filter((q) =>
-        q.and(
-          q.eq(q.field("provider"), "password"),
-          q.eq(q.field("providerAccountId"), profile.email),
-        ),
-      )
-      .first();
-
-    if (authAccount) {
-      // Delete sessions + refresh tokens
-      const sessions = await ctx.db
-        .query("authSessions")
-        .filter((q) => q.eq(q.field("userId"), authAccount.userId))
-        .collect();
-      for (const s of sessions) {
-        const tokens = await ctx.db
-          .query("authRefreshTokens")
-          .filter((q) => q.eq(q.field("sessionId"), s._id))
-          .collect();
-        for (const t of tokens) await ctx.db.delete(t._id);
-        await ctx.db.delete(s._id);
-      }
-      await ctx.db.delete(authAccount._id);
-    }
-
-    // Delete user record
-    try {
-      await ctx.db.delete(profile.userId as Id<"users">);
-    } catch {
-      // User record may already be deleted
-    }
+    // Delete all auth records (accounts, sessions, tokens, verifiers, user)
+    await deleteAuthRecords(ctx, profile.userId);
 
     // Delete profile synchronously before scheduling cascade to avoid race condition
     await ctx.db.delete(profile._id);

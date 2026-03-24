@@ -3,6 +3,7 @@ import { internalQuery, internalMutation, internalAction } from "./_generated/se
 import { internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 import { DATA_RETENTION_DAYS as RETENTION_DAYS } from "./constants";
+import { deleteAuthRecords } from "./helpers";
 
 // ---------------------------------------------------------------------------
 // Find users whose data should be purged (inactive > 90 days)
@@ -79,32 +80,8 @@ export const cascadeDeleteUser = internalMutation({
       await ctx.db.delete(fm._id);
     }
 
-    // Delete auth records (sessions, refresh tokens, accounts)
-    const authAccounts = await ctx.db
-      .query("authAccounts")
-      .filter((q) => q.eq(q.field("userId"), userId as Id<"users">))
-      .collect();
-    for (const account of authAccounts) {
-      const sessions = await ctx.db
-        .query("authSessions")
-        .filter((q) => q.eq(q.field("userId"), account.userId))
-        .collect();
-      for (const session of sessions) {
-        const tokens = await ctx.db
-          .query("authRefreshTokens")
-          .filter((q) => q.eq(q.field("sessionId"), session._id))
-          .collect();
-        for (const token of tokens) {
-          await ctx.db.delete(token._id);
-        }
-        await ctx.db.delete(session._id);
-      }
-      await ctx.db.delete(account._id);
-    }
-
-    // Delete the users record
-    const userDoc = await ctx.db.get(userId as Id<"users">);
-    if (userDoc) await ctx.db.delete(userDoc._id);
+    // Delete all auth records (accounts, sessions, tokens, verifiers, user)
+    await deleteAuthRecords(ctx, userId);
 
     // Finally, delete the profile (may already be deleted by test user cleanup)
     const profileDoc = await ctx.db.get(profileId);
