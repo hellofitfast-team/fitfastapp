@@ -48,7 +48,12 @@ function emailWrapper(isAr: boolean, content: string): string {
         <div style="padding:32px">
           ${content}
         </div>
-        <div style="border-top:1px solid #e7e5e4;padding:16px 32px;text-align:center">
+        <div style="border-top:1px solid #e7e5e4;padding:20px 32px">
+          <p style="color:#44403c;font-size:13px;margin:0 0 4px;font-weight:600">${isAr ? "مع تحياتي،" : "Best regards,"}</p>
+          <p style="color:#FF4500;font-size:14px;margin:0 0 2px;font-weight:700">${isAr ? "محمد خالد" : "Mohamed Khaled"}</p>
+          <p style="color:#78716c;font-size:12px;margin:0">${isAr ? "مدربك في فيت فاست" : "Your FitFast Coach"}</p>
+        </div>
+        <div style="border-top:1px solid #e7e5e4;padding:12px 32px;text-align:center">
           <p style="color:#a8a29e;font-size:11px;margin:0">© ${new Date().getFullYear()} FitFast. ${isAr ? "جميع الحقوق محفوظة." : "All rights reserved."}</p>
         </div>
       </div>
