@@ -468,6 +468,40 @@ export const deleteApprovedSignup = mutation({
     if (signup.paymentScreenshotId) {
       await ctx.storage.delete(signup.paymentScreenshotId);
     }
+
+    // Clean up orphaned auth records if the prospect created an account but has no profile
+    const authAccount = await ctx.db
+      .query("authAccounts")
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("provider"), "password"),
+          q.eq(q.field("providerAccountId"), signup.email.toLowerCase()),
+        ),
+      )
+      .first();
+    if (authAccount) {
+      // Delete sessions + refresh tokens
+      const sessions = await ctx.db
+        .query("authSessions")
+        .filter((q) => q.eq(q.field("userId"), authAccount.userId))
+        .collect();
+      for (const session of sessions) {
+        const tokens = await ctx.db
+          .query("authRefreshTokens")
+          .filter((q) => q.eq(q.field("sessionId"), session._id))
+          .collect();
+        for (const token of tokens) {
+          await ctx.db.delete(token._id);
+        }
+        await ctx.db.delete(session._id);
+      }
+      await ctx.db.delete(authAccount._id);
+
+      // Delete the users record
+      const userDoc = await ctx.db.get(authAccount.userId);
+      if (userDoc) await ctx.db.delete(userDoc._id);
+    }
+
     await ctx.db.delete(signupId);
   },
 });
