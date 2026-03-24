@@ -359,8 +359,8 @@ export function CheckoutForm({ selectedPlan, onSuccess }: CheckoutFormProps) {
           type="file"
           accept="image/*"
           onChange={handleInputChange}
-          className="hidden"
-          aria-hidden="true"
+          className="sr-only"
+          tabIndex={-1}
         />
 
         {fileError && <p className="text-xs text-red-500">{fileError}</p>}
