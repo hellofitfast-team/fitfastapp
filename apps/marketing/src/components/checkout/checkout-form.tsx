@@ -323,6 +323,7 @@ export function CheckoutForm({ selectedPlan, onSuccess }: CheckoutFormProps) {
           </div>
         ) : (
           <div
+            data-vaul-no-drag
             onDrop={handleDrop}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
