@@ -4,10 +4,19 @@ import { useState, useRef, useEffect } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { useConvexAuth, useQuery, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Bell, Send, Loader2, BellOff } from "lucide-react";
+import { Bell, Send, Loader2, BellOff, FlaskConical } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Link } from "@fitfast/i18n/navigation";
 import { formatDateTime } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@fitfast/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@fitfast/ui/select";
 
 const typeBadgeColors: Record<string, string> = {
   plan_ready: "bg-blue-50 text-blue-700 border-blue-200",
@@ -24,6 +33,8 @@ const statusBadgeColors: Record<string, string> = {
 
 const PAGE_SIZE = 10;
 
+type TestNotificationType = "plan_ready" | "reminder" | "individual";
+
 export default function NotificationsPage() {
   const t = useTranslations("notifications");
   const tAdmin = useTranslations("admin");
@@ -39,15 +50,28 @@ export default function NotificationsPage() {
   const isNotifEnabled = notifConfig === undefined ? undefined : notifConfig?.value !== false;
 
   const logs = useQuery(api.notificationLog.getNotificationLogs, isAuthenticated ? {} : "skip");
+  const clients = useQuery(api.profiles.getAllClients, isAuthenticated ? {} : "skip");
 
   const broadcastAction = useAction(api.adminNotifications.broadcastToAllActive);
+  const sendTestPlanReady = useAction(api.notifications.sendTestPlanReady);
+  const sendTestReminder = useAction(api.notifications.sendTestReminder);
+  const sendIndividual = useAction(api.adminNotifications.sendToIndividual);
 
+  // Broadcast state
   const [page, setPage] = useState(1);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const confirmBtnRef = useRef<HTMLButtonElement>(null);
+
+  // Test notification dialog state
+  const [showTestDialog, setShowTestDialog] = useState(false);
+  const [testType, setTestType] = useState<TestNotificationType | "">("");
+  const [testUserId, setTestUserId] = useState("");
+  const [testTitle, setTestTitle] = useState("");
+  const [testBody, setTestBody] = useState("");
+  const [isTestSending, setIsTestSending] = useState(false);
 
   // Auto-focus confirm button when confirmation appears
   useEffect(() => {
@@ -91,11 +115,69 @@ export default function NotificationsPage() {
     setIsSending(false);
   };
 
+  const isTestSendDisabled =
+    !testType ||
+    !testUserId ||
+    isTestSending ||
+    (testType === "individual" && (!testTitle.trim() || !testBody.trim()));
+
+  const handleTestSend = async () => {
+    if (isTestSendDisabled) return;
+    setIsTestSending(true);
+    try {
+      if (testType === "plan_ready") {
+        await sendTestPlanReady({ userId: testUserId });
+      } else if (testType === "reminder") {
+        await sendTestReminder({ userId: testUserId });
+      } else if (testType === "individual") {
+        await sendIndividual({
+          userId: testUserId,
+          title: testTitle.trim(),
+          body: testBody.trim(),
+        });
+      }
+      toast({
+        title: t("testSent"),
+        description: t("testSentDesc"),
+        variant: "success",
+      });
+      setShowTestDialog(false);
+      resetTestDialog();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "";
+      toast({
+        title: t("testFailed"),
+        description: message.includes("disabled")
+          ? t("notificationsDisabled")
+          : message.includes("rate")
+            ? message
+            : t("testFailedDesc"),
+        variant: "destructive",
+      });
+    }
+    setIsTestSending(false);
+  };
+
+  const resetTestDialog = () => {
+    setTestType("");
+    setTestUserId("");
+    setTestTitle("");
+    setTestBody("");
+  };
+
   return (
     <div className="space-y-8">
       {/* Page header */}
-      <div>
+      <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight text-stone-900">{t("title")}</h1>
+        <button
+          type="button"
+          onClick={() => setShowTestDialog(true)}
+          className="flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50"
+        >
+          <FlaskConical className="h-4 w-4" />
+          {t("sendTestNotification")}
+        </button>
       </div>
 
       <div className="max-w-3xl space-y-8">
@@ -373,6 +455,144 @@ export default function NotificationsPage() {
           )}
         </div>
       </div>
+
+      {/* Test Notification Dialog */}
+      <Dialog
+        open={showTestDialog}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowTestDialog(false);
+            resetTestDialog();
+          }
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50">
+              <FlaskConical className="h-5 w-5 text-blue-600" />
+            </div>
+            <DialogTitle>{t("sendTestNotification")}</DialogTitle>
+            <DialogDescription>{t("testNotificationDesc")}</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Notification type selector */}
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-stone-500">
+                {t("selectType")}
+              </label>
+              <Select
+                value={testType}
+                onValueChange={(v) => {
+                  setTestType(v as TestNotificationType);
+                  setTestTitle("");
+                  setTestBody("");
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t("selectTypePlaceholder")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="plan_ready">{t("typePlanReady")}</SelectItem>
+                  <SelectItem value="reminder">{t("typeReminder")}</SelectItem>
+                  <SelectItem value="individual">{t("typeIndividual")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Client selector */}
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-stone-500">
+                {t("selectClient")}
+              </label>
+              {clients && clients.length === 0 ? (
+                <p className="text-xs text-stone-400">{t("noActiveClients")}</p>
+              ) : (
+                <Select value={testUserId} onValueChange={setTestUserId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("selectClientPlaceholder")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clients?.map((client) => (
+                      <SelectItem key={client._id} value={client.userId}>
+                        {client.fullName ?? client.email ?? "—"}
+                        {client.email && client.fullName ? (
+                          <span className="ms-2 text-stone-400">{client.email}</span>
+                        ) : null}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+
+            {/* Custom title/body for Individual type */}
+            {testType === "individual" && (
+              <>
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-stone-500">
+                    {t("notificationTitle")}
+                  </label>
+                  <input
+                    type="text"
+                    value={testTitle}
+                    onChange={(e) => setTestTitle(e.target.value)}
+                    placeholder={t("titlePlaceholder")}
+                    maxLength={50}
+                    autoFocus
+                    className="focus:ring-primary/20 focus:border-primary h-10 w-full rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm text-stone-900 transition-all placeholder:text-stone-400 focus:ring-2 focus:outline-none"
+                  />
+                  <span className="mt-1 block text-end text-xs text-stone-400">
+                    {testTitle.length}/50
+                  </span>
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-stone-500">
+                    {t("notificationBody")}
+                  </label>
+                  <textarea
+                    value={testBody}
+                    onChange={(e) => setTestBody(e.target.value)}
+                    placeholder={t("bodyPlaceholder")}
+                    rows={3}
+                    maxLength={150}
+                    className="focus:ring-primary/20 focus:border-primary w-full resize-none rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-900 transition-all placeholder:text-stone-400 focus:ring-2 focus:outline-none"
+                  />
+                  <span className="mt-1 block text-end text-xs text-stone-400">
+                    {testBody.length}/150
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <button
+              type="button"
+              onClick={() => {
+                setShowTestDialog(false);
+                resetTestDialog();
+              }}
+              className="rounded-lg border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-600 transition-colors hover:bg-stone-50"
+            >
+              {t("cancelSend")}
+            </button>
+            <button
+              type="button"
+              onClick={handleTestSend}
+              disabled={isTestSendDisabled}
+              className="bg-primary hover:bg-primary/90 flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors disabled:opacity-50"
+            >
+              {isTestSending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+              {isTestSending ? t("sending") : t("sendTest")}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

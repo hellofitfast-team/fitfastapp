@@ -1,7 +1,8 @@
 "use node";
 
 import { v } from "convex/values";
-import { internalAction } from "./_generated/server";
+import { action, internalAction } from "./_generated/server";
+import { getAuthUserId } from "./auth";
 import { internal } from "./_generated/api";
 import { ActionRetrier } from "@convex-dev/action-retrier";
 import { components } from "./_generated/api";
@@ -286,3 +287,164 @@ export async function sendWebPushNotification(
     throw err;
   }
 }
+
+// ---------------------------------------------------------------------------
+// Coach-facing test notification actions
+// ---------------------------------------------------------------------------
+
+async function requireCoach(
+  ctx: {
+    runQuery: (
+      ref: typeof internal.helpers.getProfileInternal,
+      args: { userId: string },
+    ) => Promise<{ isCoach?: boolean } | null>;
+  },
+  userId: string,
+): Promise<void> {
+  const profile = await ctx.runQuery(internal.helpers.getProfileInternal, { userId });
+  if (!profile?.isCoach) throw new Error("Not authorized — coach access required");
+}
+
+/**
+ * Coach-authenticated action to send a Plan Ready notification to a specific client.
+ * Reuses the same bilingual templates and full delivery pipeline as the automated system.
+ */
+export const sendTestPlanReady = action({
+  args: { userId: v.string() },
+  handler: async (ctx, { userId }): Promise<void> => {
+    const callerId = await getAuthUserId(ctx);
+    if (!callerId) throw new Error("Not authenticated");
+    await requireCoach(ctx, callerId);
+
+    const [subscription, profile] = await Promise.all([
+      ctx.runQuery(internal.pushSubscriptions.getSubscriptionByUserId, { userId }),
+      ctx.runQuery(internal.helpers.getProfileInternal, { userId }),
+    ]);
+
+    const lang: Lang = (profile?.language as Lang) || "en";
+    const title = "FitFast";
+    const body = msg("plan_ready_both", lang);
+
+    // In-app notification (never lost)
+    await ctx.runMutation(internal.inAppNotifications.createInAppNotification, {
+      userId,
+      type: "plan_ready",
+      title,
+      body,
+      url: "/",
+    });
+
+    if (subscription?.isActive && subscription.endpoint) {
+      try {
+        await sendWebPushNotification(
+          { endpoint: subscription.endpoint, p256dh: subscription.p256dh, auth: subscription.auth },
+          { title, body, url: "/", lang },
+        );
+        await ctx.runMutation(internal.notificationLog.logNotification, {
+          type: "plan_ready",
+          title,
+          body,
+          recipientCount: 1,
+          recipientUserId: userId,
+          sentBy: "coach",
+          status: "sent",
+        });
+      } catch {
+        await ctx.runMutation(internal.notificationLog.logNotification, {
+          type: "plan_ready",
+          title,
+          body,
+          recipientCount: 1,
+          recipientUserId: userId,
+          sentBy: "coach",
+          status: "failed",
+          failedCount: 1,
+        });
+        await ctx.runAction(internal.email.sendPlanReadyEmail, { userId, force: true });
+      }
+    } else {
+      await ctx.runAction(internal.email.sendPlanReadyEmail, { userId, force: true });
+      await ctx.runMutation(internal.notificationLog.logNotification, {
+        type: "plan_ready",
+        title,
+        body,
+        recipientCount: 1,
+        recipientUserId: userId,
+        sentBy: "coach",
+        status: "sent",
+      });
+    }
+  },
+});
+
+/**
+ * Coach-authenticated action to send a Reminder notification to a specific client.
+ * Reuses the same bilingual templates and full delivery pipeline as the cron system.
+ */
+export const sendTestReminder = action({
+  args: { userId: v.string() },
+  handler: async (ctx, { userId }): Promise<void> => {
+    const callerId = await getAuthUserId(ctx);
+    if (!callerId) throw new Error("Not authenticated");
+    await requireCoach(ctx, callerId);
+
+    const [subscription, profile] = await Promise.all([
+      ctx.runQuery(internal.pushSubscriptions.getSubscriptionByUserId, { userId }),
+      ctx.runQuery(internal.helpers.getProfileInternal, { userId }),
+    ]);
+
+    const lang: Lang = (profile?.language as Lang) || "en";
+    const title = "FitFast";
+    const body = msg("reminder", lang);
+
+    // In-app notification (never lost)
+    await ctx.runMutation(internal.inAppNotifications.createInAppNotification, {
+      userId,
+      type: "reminder",
+      title,
+      body,
+      url: "/check-in",
+    });
+
+    if (subscription?.isActive && subscription.endpoint) {
+      try {
+        await sendWebPushNotification(
+          { endpoint: subscription.endpoint, p256dh: subscription.p256dh, auth: subscription.auth },
+          { title, body, url: "/check-in", lang },
+        );
+        await ctx.runMutation(internal.notificationLog.logNotification, {
+          type: "reminder",
+          title,
+          body,
+          recipientCount: 1,
+          recipientUserId: userId,
+          sentBy: "coach",
+          status: "sent",
+        });
+      } catch {
+        await ctx.runMutation(internal.notificationLog.logNotification, {
+          type: "reminder",
+          title,
+          body,
+          recipientCount: 1,
+          recipientUserId: userId,
+          sentBy: "coach",
+          status: "failed",
+          failedCount: 1,
+        });
+        await ctx.runAction(internal.email.sendReminderEmail, { userId });
+      }
+    } else {
+      await ctx.runAction(internal.email.sendReminderEmail, { userId });
+      await ctx.runMutation(internal.notificationLog.logNotification, {
+        type: "reminder",
+        title,
+        body,
+        recipientCount: 1,
+        recipientUserId: userId,
+        sentBy: "coach",
+        status: "sent",
+      });
+    }
+  },
+});

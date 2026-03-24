@@ -469,7 +469,22 @@
       "failed": "فشل",
       "partial": "جزئي"
     },
-    "failedSuffix": "فشل"
+    "failedSuffix": "فشل",
+    "sendTestNotification": "إرسال إشعار تجريبي",
+    "testNotificationDesc": "إرسال إشعار تجريبي لعميل محدد للتحقق من وصول الإشعارات.",
+    "selectType": "نوع الإشعار",
+    "selectTypePlaceholder": "اختر النوع...",
+    "selectClient": "العميل",
+    "selectClientPlaceholder": "اختر عميلاً...",
+    "typePlanReady": "الخطة جاهزة",
+    "typeReminder": "تذكير المتابعة",
+    "typeIndividual": "رسالة فردية",
+    "sendTest": "إرسال تجريبي",
+    "testSent": "تم إرسال الإشعار التجريبي",
+    "testSentDesc": "تم تسليم الإشعار للعميل.",
+    "testFailed": "فشل الاختبار",
+    "testFailedDesc": "فشل إرسال الإشعار التجريبي.",
+    "noActiveClients": "لا يوجد عملاء نشطون."
   },
   "brand": {
     "name": "فيت فاست",

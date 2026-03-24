@@ -469,7 +469,22 @@
       "failed": "Failed",
       "partial": "Partial"
     },
-    "failedSuffix": "failed"
+    "failedSuffix": "failed",
+    "sendTestNotification": "Send Test Notification",
+    "testNotificationDesc": "Send a test notification to a specific client to verify push delivery.",
+    "selectType": "Notification Type",
+    "selectTypePlaceholder": "Select type...",
+    "selectClient": "Client",
+    "selectClientPlaceholder": "Select a client...",
+    "typePlanReady": "Plan Ready",
+    "typeReminder": "Check-in Reminder",
+    "typeIndividual": "Individual Message",
+    "sendTest": "Send Test",
+    "testSent": "Test Notification Sent",
+    "testSentDesc": "The notification has been delivered to the client.",
+    "testFailed": "Test Failed",
+    "testFailedDesc": "Failed to send test notification.",
+    "noActiveClients": "No active clients found."
   },
   "brand": {
     "name": "FITFAST",
