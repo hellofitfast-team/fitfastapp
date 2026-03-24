@@ -322,12 +322,12 @@ export function CheckoutForm({ selectedPlan, onSuccess }: CheckoutFormProps) {
             </button>
           </div>
         ) : (
-          <div
+          <label
+            htmlFor="screenshot-upload"
             data-vaul-no-drag
             onDrop={handleDrop}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
-            onClick={() => fileInputRef.current?.click()}
             className={cn(
               "flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-6 transition-colors",
               isDragging
@@ -351,11 +351,12 @@ export function CheckoutForm({ selectedPlan, onSuccess }: CheckoutFormProps) {
                 {t("uploadHint")}
               </p>
             </div>
-          </div>
+          </label>
         )}
 
         <input
           ref={fileInputRef}
+          id="screenshot-upload"
           type="file"
           accept="image/*"
           onChange={handleInputChange}
