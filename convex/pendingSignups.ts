@@ -251,13 +251,12 @@ export const approveSignup = mutation({
           signupId,
         });
         // activateClientProfile sends the welcome email ("Access Your Account" CTA)
-      }
-      // else: profile already exists and is active/inactive/expired — no action needed,
-      // just send the welcome email so the user knows they're approved
-      if (clientProfile.status !== "pending_approval") {
+      } else {
+        // Profile already exists and is active/inactive/expired — no action needed,
+        // just send the welcome email so the user knows they're approved
         await ctx.scheduler.runAfter(0, internal.email.sendWelcomeEmail, {
-          email: signup.email,
-          fullName: signup.fullName,
+          email: clientProfile.email ?? signup.email,
+          fullName: clientProfile.fullName ?? signup.fullName,
           language: (clientProfile.language as "en" | "ar") ?? "en",
         });
       }
