@@ -288,6 +288,22 @@ export const approveSignup = mutation({
 
       if (authAccount) {
         // User HAS an account but no profile — onNewUserCreated failed silently.
+        // Double-check no profile was created in the meantime (race condition guard)
+        const raceCheck = await ctx.db
+          .query("profiles")
+          .withIndex("by_userId", (q) => q.eq("userId", authAccount.userId))
+          .unique();
+        if (raceCheck) {
+          // Profile was just created by onNewUserCreated — activate if needed
+          if (raceCheck.status === "pending_approval") {
+            await ctx.scheduler.runAfter(0, internal.pendingSignups.activateClientProfile, {
+              profileId: raceCheck._id,
+              signupId,
+            });
+          }
+          return;
+        }
+
         // Create the profile and activate it directly.
         const planMonths = signup.planTier === "quarterly" ? 3 : 1;
         const endDate = new Date();
