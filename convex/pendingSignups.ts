@@ -243,20 +243,49 @@ export const approveSignup = mutation({
         .first();
     }
 
-    if (clientProfile && clientProfile.status === "pending_approval") {
-      // Activate the existing profile — prospect already set their password
-      await ctx.scheduler.runAfter(0, internal.pendingSignups.activateClientProfile, {
-        profileId: clientProfile._id,
-        signupId,
-      });
-      // activateClientProfile sends the welcome email ("Access Your Account" CTA)
+    if (clientProfile) {
+      if (clientProfile.status === "pending_approval") {
+        // Activate the existing profile — prospect already set their password
+        await ctx.scheduler.runAfter(0, internal.pendingSignups.activateClientProfile, {
+          profileId: clientProfile._id,
+          signupId,
+        });
+        // activateClientProfile sends the welcome email ("Access Your Account" CTA)
+      }
+      // else: profile already exists and is active/inactive/expired — no action needed,
+      // just send the welcome email so the user knows they're approved
+      if (clientProfile.status !== "pending_approval") {
+        await ctx.scheduler.runAfter(0, internal.email.sendWelcomeEmail, {
+          email: signup.email,
+          fullName: signup.fullName,
+          language: (clientProfile.language as "en" | "ar") ?? "en",
+        });
+      }
     } else {
-      // Check if user has an auth account but onNewUserCreated failed to create profile
-      // (safety net for silent scheduler failures)
-      const authAccount = await ctx.db
+      // No profile found — check if user has an auth account but onNewUserCreated
+      // failed to create their profile (safety net for silent scheduler failures)
+      let authAccount = await ctx.db
         .query("authAccounts")
-        .filter((q) => q.eq(q.field("providerAccountId"), signup.email))
+        .filter((q) =>
+          q.and(
+            q.eq(q.field("provider"), "password"),
+            q.eq(q.field("providerAccountId"), signup.email),
+          ),
+        )
         .first();
+
+      // Case-insensitive fallback
+      if (!authAccount) {
+        authAccount = await ctx.db
+          .query("authAccounts")
+          .filter((q) =>
+            q.and(
+              q.eq(q.field("provider"), "password"),
+              q.eq(q.field("providerAccountId"), signup.email.toLowerCase()),
+            ),
+          )
+          .first();
+      }
 
       if (authAccount) {
         // User HAS an account but no profile — onNewUserCreated failed silently.
@@ -279,6 +308,11 @@ export const approveSignup = mutation({
         });
 
         await activeClientsCount.insert(ctx, { key: profileId, id: profileId });
+
+        // Clear invite token — no longer needed
+        if (signup.inviteToken) {
+          await ctx.db.patch(signupId, { inviteToken: undefined });
+        }
 
         // Send welcome email
         await ctx.scheduler.runAfter(0, internal.email.sendWelcomeEmail, {
