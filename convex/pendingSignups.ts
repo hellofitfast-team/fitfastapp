@@ -251,13 +251,60 @@ export const approveSignup = mutation({
       });
       // activateClientProfile sends the welcome email ("Access Your Account" CTA)
     } else {
-      // Prospect hasn't created their account yet — send welcome/approval email.
-      // They already have the invite link from signup; the welcome email confirms approval.
-      await ctx.scheduler.runAfter(0, internal.email.sendWelcomeEmail, {
-        email: signup.email,
-        fullName: signup.fullName,
-        language: "en" as const,
-      });
+      // Check if user has an auth account but onNewUserCreated failed to create profile
+      // (safety net for silent scheduler failures)
+      const authAccount = await ctx.db
+        .query("authAccounts")
+        .filter((q) => q.eq(q.field("providerAccountId"), signup.email))
+        .first();
+
+      if (authAccount) {
+        // User HAS an account but no profile — onNewUserCreated failed silently.
+        // Create the profile and activate it directly.
+        const planMonths = signup.planTier === "quarterly" ? 3 : 1;
+        const endDate = new Date();
+        endDate.setMonth(endDate.getMonth() + planMonths);
+
+        const profileId = await ctx.db.insert("profiles", {
+          userId: authAccount.userId,
+          email: signup.email.toLowerCase(),
+          fullName: signup.fullName,
+          language: "en",
+          status: "active",
+          isCoach: false,
+          planTier: signup.planTier,
+          planStartDate: new Date().toISOString().split("T")[0],
+          planEndDate: endDate.toISOString().split("T")[0],
+          updatedAt: Date.now(),
+        });
+
+        await activeClientsCount.insert(ctx, { key: profileId, id: profileId });
+
+        // Send welcome email
+        await ctx.scheduler.runAfter(0, internal.email.sendWelcomeEmail, {
+          email: signup.email,
+          fullName: signup.fullName,
+          language: "en" as const,
+        });
+      } else {
+        // Prospect hasn't created their account yet — send approval email
+        // with invite link so they can create their account (now as active user).
+        // Reuse existing token or generate a fresh one.
+        const inviteToken =
+          signup.inviteToken ??
+          crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
+        if (!signup.inviteToken) {
+          await ctx.db.patch(signupId, { inviteToken });
+        }
+
+        // Send welcome email with invite link for account creation
+        await ctx.scheduler.runAfter(0, internal.email.sendInvitationEmail, {
+          email: signup.email,
+          fullName: signup.fullName,
+          inviteToken,
+          language: "en" as const,
+        });
+      }
     }
   },
 });

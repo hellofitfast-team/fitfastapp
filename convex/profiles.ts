@@ -408,124 +408,140 @@ export const onNewUserCreated = internalMutation({
     email: v.string(),
   },
   handler: async (ctx, { userId, email }) => {
-    // Check if a profile already exists
-    const existing = await ctx.db
-      .query("profiles")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .unique();
-    if (existing) return;
+    try {
+      // Check if a profile already exists
+      const existing = await ctx.db
+        .query("profiles")
+        .withIndex("by_userId", (q) => q.eq("userId", userId))
+        .unique();
+      if (existing) {
+        console.log(`[onNewUserCreated] Profile already exists for userId=${userId}, skipping`);
+        return;
+      }
 
-    // Check if this user came from an admin invite (coach setup flow)
-    // Try exact match first, then case-insensitive fallback
-    let adminInvite = await ctx.db
-      .query("adminInvites")
-      .withIndex("by_email", (q) => q.eq("email", email))
-      .order("desc")
-      .first();
-
-    // Case-insensitive fallback (email field may differ in case)
-    if (!adminInvite) {
-      adminInvite = await ctx.db
+      // Check if this user came from an admin invite (coach setup flow)
+      // Try exact match first, then case-insensitive fallback
+      let adminInvite = await ctx.db
         .query("adminInvites")
-        .withIndex("by_email", (q) => q.eq("email", email.toLowerCase()))
+        .withIndex("by_email", (q) => q.eq("email", email))
         .order("desc")
         .first();
-    }
 
-    console.log(
-      `[onNewUserCreated] email=${email}, adminInvite=${adminInvite ? `found(usedAt=${adminInvite.usedAt}, expires=${adminInvite.expiresAt})` : "not found"}`,
-    );
-
-    if (adminInvite && !adminInvite.usedAt && Date.now() <= adminInvite.expiresAt) {
-      // Create coach profile from admin invite
-      // If no invitedBy, this is the initial owner setup
-      const isOwner = !adminInvite.invitedBy;
-      await ctx.db.insert("profiles", {
-        userId,
-        email: adminInvite.email,
-        fullName: adminInvite.fullName,
-        language: "en",
-        status: "active",
-        isCoach: true,
-        isOwner: isOwner || undefined,
-        updatedAt: Date.now(),
-      });
-      // Mark invite as used
-      await ctx.db.patch(adminInvite._id, { usedAt: Date.now() });
-      return;
-    }
-
-    // Check if this user came from an approved pending signup (client invite flow)
-    // Use desc order to get the most recent signup (handles multiple signups for same email)
-    // Try exact match first, then case-insensitive fallback
-    let signup = await ctx.db
-      .query("pendingSignups")
-      .withIndex("by_email", (q) => q.eq("email", email))
-      .order("desc")
-      .first();
-
-    // If found but not approved, check if there's an approved one
-    if (signup && signup.status !== "approved") {
-      const approvedSignup = await ctx.db
-        .query("pendingSignups")
-        .withIndex("by_email_status", (q) => q.eq("email", email).eq("status", "approved"))
-        .order("desc")
-        .first();
-      if (approvedSignup) signup = approvedSignup;
-    }
-
-    // Case-insensitive fallback
-    if (!signup || signup.status !== "approved") {
-      const lowerEmail = email.toLowerCase();
-      if (lowerEmail !== email) {
-        const fallback = await ctx.db
-          .query("pendingSignups")
-          .withIndex("by_email_status", (q) => q.eq("email", lowerEmail).eq("status", "approved"))
+      // Case-insensitive fallback (email field may differ in case)
+      if (!adminInvite) {
+        adminInvite = await ctx.db
+          .query("adminInvites")
+          .withIndex("by_email", (q) => q.eq("email", email.toLowerCase()))
           .order("desc")
           .first();
-        if (fallback) signup = fallback;
       }
-    }
 
-    if (signup && signup.status === "approved") {
-      // Create profile from the approved signup data
-      const planMonths = signup.planTier === "quarterly" ? 3 : 1;
-      const endDate = new Date();
-      endDate.setMonth(endDate.getMonth() + planMonths);
+      console.log(
+        `[onNewUserCreated] email=${email}, adminInvite=${adminInvite ? `found(usedAt=${adminInvite.usedAt}, expires=${adminInvite.expiresAt})` : "not found"}`,
+      );
 
-      const profileId = await ctx.db.insert("profiles", {
-        userId,
-        email: signup.email.toLowerCase(),
-        fullName: signup.fullName,
-        language: "en",
-        status: "active",
-        isCoach: false,
-        planTier: signup.planTier,
-        planStartDate: new Date().toISOString().split("T")[0],
-        planEndDate: endDate.toISOString().split("T")[0],
-        updatedAt: Date.now(),
-      });
+      if (adminInvite && !adminInvite.usedAt && Date.now() <= adminInvite.expiresAt) {
+        // Create coach profile from admin invite
+        // If no invitedBy, this is the initial owner setup
+        const isOwner = !adminInvite.invitedBy;
+        await ctx.db.insert("profiles", {
+          userId,
+          email: adminInvite.email,
+          fullName: adminInvite.fullName,
+          language: "en",
+          status: "active",
+          isCoach: true,
+          isOwner: isOwner || undefined,
+          updatedAt: Date.now(),
+        });
+        // Mark invite as used
+        await ctx.db.patch(adminInvite._id, { usedAt: Date.now() });
+        return;
+      }
 
-      // Maintain active clients aggregate counter
-      await activeClientsCount.insert(ctx, { key: profileId, id: profileId });
+      // Check if this user came from an approved pending signup (client invite flow)
+      // Use desc order to get the most recent signup (handles multiple signups for same email)
+      // Try exact match first, then case-insensitive fallback
+      let signup = await ctx.db
+        .query("pendingSignups")
+        .withIndex("by_email", (q) => q.eq("email", email))
+        .order("desc")
+        .first();
 
-      // Mark invite token as used
-      if (signup.inviteToken) {
-        await ctx.db.patch(signup._id, {
-          inviteToken: undefined,
+      // If found but not approved, check if there's an approved one
+      if (signup && signup.status !== "approved") {
+        const approvedSignup = await ctx.db
+          .query("pendingSignups")
+          .withIndex("by_email_status", (q) => q.eq("email", email).eq("status", "approved"))
+          .order("desc")
+          .first();
+        if (approvedSignup) signup = approvedSignup;
+      }
+
+      // Case-insensitive fallback
+      if (!signup || signup.status !== "approved") {
+        const lowerEmail = email.toLowerCase();
+        if (lowerEmail !== email) {
+          const fallback = await ctx.db
+            .query("pendingSignups")
+            .withIndex("by_email_status", (q) => q.eq("email", lowerEmail).eq("status", "approved"))
+            .order("desc")
+            .first();
+          if (fallback) signup = fallback;
+        }
+      }
+
+      console.log(
+        `[onNewUserCreated] signup lookup: found=${!!signup}, status=${signup?.status ?? "N/A"}, email=${signup?.email ?? "N/A"}`,
+      );
+
+      if (signup && signup.status === "approved") {
+        // Create profile from the approved signup data
+        const planMonths = signup.planTier === "quarterly" ? 3 : 1;
+        const endDate = new Date();
+        endDate.setMonth(endDate.getMonth() + planMonths);
+
+        const profileId = await ctx.db.insert("profiles", {
+          userId,
+          email: signup.email.toLowerCase(),
+          fullName: signup.fullName,
+          language: "en",
+          status: "active",
+          isCoach: false,
+          planTier: signup.planTier,
+          planStartDate: new Date().toISOString().split("T")[0],
+          planEndDate: endDate.toISOString().split("T")[0],
+          updatedAt: Date.now(),
+        });
+
+        // Maintain active clients aggregate counter
+        await activeClientsCount.insert(ctx, { key: profileId, id: profileId });
+
+        // Mark invite token as used
+        if (signup.inviteToken) {
+          await ctx.db.patch(signup._id, {
+            inviteToken: undefined,
+          });
+        }
+      } else {
+        // Fallback: create a basic pending profile
+        // Normalize email to lowercase so index lookups in approveSignup match
+        console.log(`[onNewUserCreated] Creating pending_approval profile for ${email}`);
+        await ctx.db.insert("profiles", {
+          userId,
+          email: email.toLowerCase(),
+          language: "en",
+          status: "pending_approval",
+          isCoach: false,
+          updatedAt: Date.now(),
         });
       }
-    } else {
-      // Fallback: create a basic pending profile
-      // Normalize email to lowercase so index lookups in approveSignup match
-      await ctx.db.insert("profiles", {
-        userId,
-        email: email.toLowerCase(),
-        language: "en",
-        status: "pending_approval",
-        isCoach: false,
-        updatedAt: Date.now(),
-      });
+    } catch (error) {
+      console.error(
+        `[onNewUserCreated] FAILED for userId=${userId}, email=${email}:`,
+        error instanceof Error ? error.message : String(error),
+      );
+      throw error; // Re-throw so Convex logs the failure
     }
   },
 });
