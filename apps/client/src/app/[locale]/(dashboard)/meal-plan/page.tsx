@@ -411,7 +411,7 @@ export default function MealPlanPage() {
     : null;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5 px-4 py-6 lg:px-6">
+    <div className="mx-auto max-w-3xl space-y-4 py-4 lg:space-y-5 lg:px-6 lg:py-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold">

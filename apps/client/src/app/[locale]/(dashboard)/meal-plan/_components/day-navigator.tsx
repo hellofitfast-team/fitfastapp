@@ -81,7 +81,7 @@ export function DayNavigator({
       <button
         onClick={() => onSelectDay(selectedDay - 1)}
         disabled={atStart}
-        className="flex items-center gap-1 text-sm font-medium transition-opacity disabled:opacity-30"
+        className="flex shrink-0 items-center gap-1 text-sm font-medium transition-opacity disabled:opacity-30"
         aria-label="Previous day"
       >
         <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
@@ -91,8 +91,8 @@ export function DayNavigator({
       </button>
 
       {/* Center: date + back to today */}
-      <div className="flex flex-col items-center gap-1">
-        <span className="flex items-center gap-1.5 text-sm font-semibold">
+      <div className="flex min-w-0 flex-1 flex-col items-center gap-1">
+        <span className="flex max-w-full items-center gap-1.5 truncate text-sm font-semibold">
           {isToday && <span className={cn("text-xs", accent.dot)}>●</span>}
           {centerLabel}
         </span>
@@ -114,7 +114,7 @@ export function DayNavigator({
       <button
         onClick={() => onSelectDay(selectedDay + 1)}
         disabled={atEnd}
-        className="flex items-center gap-1 text-sm font-medium transition-opacity disabled:opacity-30"
+        className="flex shrink-0 items-center gap-1 text-sm font-medium transition-opacity disabled:opacity-30"
         aria-label="Next day"
       >
         {nextHint && (
