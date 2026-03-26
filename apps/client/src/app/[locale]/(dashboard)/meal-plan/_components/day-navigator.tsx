@@ -76,7 +76,7 @@ export function DayNavigator({
   const nextHint = nextDate ? getWeekdayShort(nextDate, locale) : "";
 
   return (
-    <div className="bg-card border-border flex items-center justify-between rounded-xl border p-3">
+    <div className="bg-card border-border flex items-center justify-between rounded-xl border px-2 py-2 sm:p-3">
       {/* Previous button */}
       <button
         onClick={() => onSelectDay(selectedDay - 1)}
@@ -92,7 +92,7 @@ export function DayNavigator({
 
       {/* Center: date + back to today */}
       <div className="flex min-w-0 flex-1 flex-col items-center gap-1">
-        <span className="flex max-w-full items-center gap-1.5 truncate text-sm font-semibold">
+        <span className="flex max-w-full items-center gap-1 truncate text-xs font-semibold sm:gap-1.5 sm:text-sm">
           {isToday && <span className={cn("text-xs", accent.dot)}>●</span>}
           {centerLabel}
         </span>

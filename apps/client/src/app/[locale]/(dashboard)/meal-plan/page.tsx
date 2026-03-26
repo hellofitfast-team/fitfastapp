@@ -411,13 +411,13 @@ export default function MealPlanPage() {
     : null;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4 py-4 lg:space-y-5 lg:px-6 lg:py-6">
+    <div className="mx-auto max-w-3xl space-y-3 py-2 sm:space-y-4 sm:py-4 lg:space-y-5 lg:px-6 lg:py-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold">
+        <h1 className="text-xl font-bold sm:text-2xl">
           {selectedDay === todayDayIndex ? t("todaysMeals") : t("title")}
         </h1>
-        <p className="text-muted-foreground mt-0.5 text-sm">
+        <p className="text-muted-foreground mt-0.5 text-xs sm:text-sm">
           {formatDateShort(mealPlan.startDate, locale)} -{" "}
           {formatDateShort(mealPlan.endDate, locale)}
         </p>
@@ -495,18 +495,18 @@ export default function MealPlanPage() {
       {/* Daily Nutrition Summary */}
       {dailyTotals && (
         <div className="scrollbar-hide flex gap-2 overflow-x-auto">
-          <span className="bg-nutrition/10 text-nutrition flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold">
+          <span className="bg-nutrition/10 text-nutrition flex-shrink-0 rounded-full px-2 py-1 text-[11px] font-semibold sm:px-3 sm:py-1.5 sm:text-xs">
             {toLocalDigits(dailyTotals.calories, locale)} {t("calories")}
           </span>
-          <span className="bg-nutrition/10 text-nutrition flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold">
+          <span className="bg-nutrition/10 text-nutrition flex-shrink-0 rounded-full px-2 py-1 text-[11px] font-semibold sm:px-3 sm:py-1.5 sm:text-xs">
             {toLocalDigits(dailyTotals.protein, locale)}
             {tUnits("g")} {t("protein")}
           </span>
-          <span className="bg-nutrition/10 text-nutrition flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold">
+          <span className="bg-nutrition/10 text-nutrition flex-shrink-0 rounded-full px-2 py-1 text-[11px] font-semibold sm:px-3 sm:py-1.5 sm:text-xs">
             {toLocalDigits(dailyTotals.carbs, locale)}
             {tUnits("g")} {t("carbs")}
           </span>
-          <span className="bg-nutrition/10 text-nutrition flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold">
+          <span className="bg-nutrition/10 text-nutrition flex-shrink-0 rounded-full px-2 py-1 text-[11px] font-semibold sm:px-3 sm:py-1.5 sm:text-xs">
             {toLocalDigits(dailyTotals.fat, locale)}
             {tUnits("g")} {t("fat")}
           </span>

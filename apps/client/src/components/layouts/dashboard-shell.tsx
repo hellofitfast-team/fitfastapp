@@ -62,7 +62,7 @@ export function DashboardShell({ children, userName, daysUntilExpiry }: Dashboar
         {/* Single main content — scrolls on desktop, mobile bottom-nav padding */}
         <main
           aria-label="Main content"
-          className="relative z-0 flex-1 overflow-x-hidden overflow-y-auto p-4 pb-[calc(var(--height-bottom-nav)+max(0.5rem,env(safe-area-inset-bottom))+0.75rem)] lg:p-8 lg:pb-8"
+          className="relative z-0 flex-1 overflow-x-hidden overflow-y-auto px-3 pt-3 pb-[calc(var(--height-bottom-nav)+max(0.5rem,env(safe-area-inset-bottom))+0.5rem)] sm:p-4 sm:pb-[calc(var(--height-bottom-nav)+max(0.5rem,env(safe-area-inset-bottom))+0.75rem)] lg:p-8 lg:pb-8"
         >
           {children}
         </main>
