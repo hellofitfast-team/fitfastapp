@@ -5,6 +5,7 @@ import { routing } from "@fitfast/i18n/routing";
 import { Toaster } from "@fitfast/ui/toaster";
 import { ConvexClientProvider } from "@/components/providers/convex-provider";
 import { PWAProviders } from "@/components/pwa/PWAProviders";
+import { DirSync } from "@/components/dir-sync";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -30,6 +31,7 @@ export default async function LocaleLayout({
   return (
     <ConvexClientProvider>
       <NextIntlClientProvider messages={messages}>
+        <DirSync />
         <PWAProviders />
         {children}
         <Toaster />

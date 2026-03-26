@@ -380,6 +380,64 @@ const USER_DATA_TABLES = [
   ["pushSubscriptions", "by_userId"],
 ] as const;
 
+/** Diagnostic: reset translation status for a user's meal plan. */
+export const resetTranslationStatus = internalMutation({
+  args: { email: v.string() },
+  handler: async (ctx, { email }) => {
+    const account = await ctx.db
+      .query("authAccounts")
+      .filter((q) =>
+        q.and(q.eq(q.field("provider"), "password"), q.eq(q.field("providerAccountId"), email)),
+      )
+      .first();
+    if (!account) return `No user: ${email}`;
+    const plan = await ctx.db
+      .query("mealPlans")
+      .withIndex("by_userId", (q) => q.eq("userId", account.userId))
+      .order("desc")
+      .first();
+    if (!plan) return "No meal plan";
+    await ctx.db.patch(plan._id, {
+      translationStatus: undefined,
+      translationError: undefined,
+      translatedPlanData: undefined,
+      translatedLanguage: undefined,
+    });
+    return `Reset translation status for plan ${plan._id}`;
+  },
+});
+
+/** Diagnostic: get translation status for a user's meal plan by email. */
+export const getTranslationStatus = internalQuery({
+  args: { email: v.string() },
+  handler: async (ctx, { email }) => {
+    const account = await ctx.db
+      .query("authAccounts")
+      .filter((q) =>
+        q.and(q.eq(q.field("provider"), "password"), q.eq(q.field("providerAccountId"), email)),
+      )
+      .first();
+    if (!account) return { error: `No user: ${email}` };
+
+    const plan = await ctx.db
+      .query("mealPlans")
+      .withIndex("by_userId", (q) => q.eq("userId", account.userId))
+      .order("desc")
+      .first();
+    if (!plan) return { error: "No meal plan", userId: account.userId };
+
+    return {
+      planId: plan._id,
+      userId: account.userId,
+      language: plan.language,
+      translationStatus: plan.translationStatus ?? null,
+      translationError: plan.translationError ?? null,
+      translatedLanguage: plan.translatedLanguage ?? null,
+      hasTranslatedPlanData: !!plan.translatedPlanData,
+    };
+  },
+});
+
 /** Full cascade-delete a user by email: auth tables + profile + all data. */
 export const deleteUserByEmail = internalMutation({
   args: { email: v.string() },

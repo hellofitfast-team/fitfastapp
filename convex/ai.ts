@@ -1482,6 +1482,7 @@ export const translatePlanContent = internalAction({
       ): Promise<{ dayKey: string; result: Record<string, unknown> }> {
         const dayJson = JSON.stringify({ [dayKey]: weeklyPlan![dayKey] });
         const RETRY_DELAYS = [2000, 4000, 8000]; // exponential backoff
+        const TOKEN_LIMITS = [8000, 12000, 16000, 16000]; // scale up per retry (truncation recovery)
 
         // Try primary model (Mercury 2) with retries
         let lastError: unknown;
@@ -1489,6 +1490,7 @@ export const translatePlanContent = internalAction({
           if (attempt > 0) {
             await new Promise((r) => setTimeout(r, RETRY_DELAYS[attempt - 1]));
           }
+          const maxTokens = TOKEN_LIMITS[attempt] ?? 16000;
           const dayGen = parallelSpan?.generation({
             name: `translate-${dayKey}-attempt-${attempt}`,
             model: PLAN_MODEL_PRIMARY,
@@ -1496,13 +1498,13 @@ export const translatePlanContent = internalAction({
           try {
             const dayRes = await generateText({
               model: openrouter(PLAN_MODEL_PRIMARY),
-              maxOutputTokens: 4000,
+              maxOutputTokens: maxTokens,
               temperature: 0.3,
               messages: [
                 { role: "system" as const, content: systemPrompt },
                 { role: "user" as const, content: dayJson },
               ],
-              abortSignal: AbortSignal.timeout(45_000),
+              abortSignal: AbortSignal.timeout(60_000),
             });
             dayGen?.end({
               usage: { input: dayRes.usage?.inputTokens, output: dayRes.usage?.outputTokens },
@@ -1531,13 +1533,13 @@ export const translatePlanContent = internalAction({
           try {
             const dayRes = await generateText({
               model: google(PLAN_MODEL_FALLBACK),
-              maxOutputTokens: 4000,
+              maxOutputTokens: 16000,
               temperature: 0.3,
               messages: [
                 { role: "system" as const, content: systemPrompt },
                 { role: "user" as const, content: dayJson },
               ],
-              abortSignal: AbortSignal.timeout(45_000),
+              abortSignal: AbortSignal.timeout(60_000),
             });
             fallbackGen?.end({
               usage: { input: dayRes.usage?.inputTokens, output: dayRes.usage?.outputTokens },
@@ -1572,11 +1574,26 @@ export const translatePlanContent = internalAction({
         );
       }
 
-      // Merge all translated days
+      // Merge all translated days, validating each has actual meal content
       const translatedWeeklyPlan: Record<string, unknown> = {};
       for (const s of settled) {
         if (s.status === "fulfilled") {
           Object.assign(translatedWeeklyPlan, s.value.result);
+        }
+      }
+
+      // Validate: if a translated day lost its meals, fall back to original data
+      for (const dayKey of dayKeys) {
+        const original = weeklyPlan[dayKey] as Record<string, unknown> | undefined;
+        const translated = translatedWeeklyPlan[dayKey] as Record<string, unknown> | undefined;
+        const originalMeals = Array.isArray(original?.["meals"]) ? original["meals"] : [];
+        const translatedMeals = Array.isArray(translated?.["meals"]) ? translated["meals"] : [];
+        // If original had meals but translation lost them, keep original
+        if (originalMeals.length > 0 && translatedMeals.length === 0) {
+          console.warn(
+            `[AI] Translation for ${dayKey} returned empty meals (original had ${originalMeals.length}), keeping original`,
+          );
+          translatedWeeklyPlan[dayKey] = original;
         }
       }
 

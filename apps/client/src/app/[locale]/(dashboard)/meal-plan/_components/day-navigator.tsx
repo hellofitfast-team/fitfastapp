@@ -59,7 +59,6 @@ export function DayNavigator({
 }: DayNavigatorProps) {
   const locale = useLocale();
   const tCommon = useTranslations("common");
-  const isRTL = locale === "ar";
   const accent = ACCENT[featureColor];
 
   const isToday = selectedDay === todayDayIndex;
@@ -76,10 +75,6 @@ export function DayNavigator({
   const prevHint = prevDate ? getWeekdayShort(prevDate, locale) : "";
   const nextHint = nextDate ? getWeekdayShort(nextDate, locale) : "";
 
-  // In RTL, visual left means "next" and visual right means "prev"
-  const LeftIcon = isRTL ? ChevronRight : ChevronLeft;
-  const RightIcon = isRTL ? ChevronLeft : ChevronRight;
-
   return (
     <div className="bg-card border-border flex items-center justify-between rounded-xl border p-3">
       {/* Previous button */}
@@ -89,7 +84,7 @@ export function DayNavigator({
         className="flex items-center gap-1 text-sm font-medium transition-opacity disabled:opacity-30"
         aria-label="Previous day"
       >
-        <LeftIcon className="h-4 w-4" />
+        <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
         {prevHint && (
           <span className="text-muted-foreground hidden text-xs sm:inline">{prevHint}</span>
         )}
@@ -125,7 +120,7 @@ export function DayNavigator({
         {nextHint && (
           <span className="text-muted-foreground hidden text-xs sm:inline">{nextHint}</span>
         )}
-        <RightIcon className="h-4 w-4" />
+        <ChevronRight className="h-4 w-4 rtl:rotate-180" />
       </button>
     </div>
   );
