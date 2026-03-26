@@ -1467,7 +1467,7 @@ export const translatePlanContent = internalAction({
 
       // Set up Gemini fallback for days that fail with Mercury 2
       const { createGoogleGenerativeAI } = await import("@ai-sdk/google");
-      const googleApiKey = process.env.GOOGLE_API_KEY;
+      const googleApiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
       const google = googleApiKey ? createGoogleGenerativeAI({ apiKey: googleApiKey }) : null;
 
       const dayKeys = Object.keys(weeklyPlan);

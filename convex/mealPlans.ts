@@ -322,16 +322,15 @@ export const swapMeal = mutation({
     // Perform swap on primary planData
     const updatedPlanData = performSwap(planData, dayKey, mealIndex, alternativeIndex);
 
-    // Mirror swap on translatedPlanData if it exists
-    const patch: Record<string, unknown> = { planData: updatedPlanData };
-    if (plan.translatedPlanData) {
-      try {
-        const translatedData = plan.translatedPlanData as MealPlanData;
-        patch.translatedPlanData = performSwap(translatedData, dayKey, mealIndex, alternativeIndex);
-      } catch {
-        // Translation may have different structure; skip mirroring
-      }
-    }
+    // Invalidate cached translation — swap changes plan content, so translation is stale.
+    // A fresh re-translation will trigger automatically if the user's locale differs from plan language.
+    const patch: Record<string, unknown> = {
+      planData: updatedPlanData,
+      translatedPlanData: undefined,
+      translatedLanguage: undefined,
+      translationStatus: undefined,
+      translationError: undefined,
+    };
 
     await ctx.db.patch(planId, patch);
   },
