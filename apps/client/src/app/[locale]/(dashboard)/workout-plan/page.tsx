@@ -417,7 +417,7 @@ export default function WorkoutPlanPage() {
   // Show streaming banner while AI generates the plan (only if planData not yet parsed)
   if (workoutPlan && isStreaming && streamedText && !workoutPlan.planData) {
     return (
-      <div className="mx-auto max-w-3xl space-y-5 px-4 py-6 lg:px-6">
+      <div className="mx-auto max-w-3xl space-y-5 py-4 lg:px-6 lg:py-6">
         <div>
           <h1 className="text-2xl font-bold">{t("title")}</h1>
           <p className="text-muted-foreground mt-0.5 text-sm">{t("generating")}</p>
@@ -438,7 +438,7 @@ export default function WorkoutPlanPage() {
   if (error || !workoutPlan) {
     const isPlansGenerating = !workoutPlan && !!assessment;
     return (
-      <div className="mx-auto max-w-3xl space-y-6 px-4 py-6 lg:px-6">
+      <div className="mx-auto max-w-3xl space-y-6 py-4 lg:px-6 lg:py-6">
         <div>
           <h1 className="text-2xl font-bold">{t("title")}</h1>
           <p className="text-muted-foreground mt-1 text-sm">{t("getStarted")}</p>
@@ -508,7 +508,7 @@ export default function WorkoutPlanPage() {
   const isToday = selectedDay === todayDayIndex;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5 px-4 py-6 lg:px-6">
+    <div className="mx-auto max-w-3xl space-y-5 py-4 lg:px-6 lg:py-6">
       {/* Hero header — title, split badge, date range, and workout summary */}
       <div className="border-border bg-card shadow-card animate-slide-up overflow-hidden rounded-2xl border">
         {/* Top: title row + split badge */}

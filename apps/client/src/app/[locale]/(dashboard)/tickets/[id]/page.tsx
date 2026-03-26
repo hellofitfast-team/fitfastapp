@@ -118,7 +118,7 @@ export default function TicketDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-3xl space-y-4 px-4 py-6 lg:px-6">
+      <div className="mx-auto max-w-3xl space-y-4 py-4 lg:px-6 lg:py-6">
         <Skeleton className="h-10 w-32 rounded-lg" />
         <Skeleton className="h-20 w-full rounded-xl" />
         <Skeleton className="h-32 w-full rounded-xl" />
@@ -128,7 +128,7 @@ export default function TicketDetailPage() {
 
   if (!ticket) {
     return (
-      <div className="mx-auto max-w-3xl space-y-6 px-4 py-6 lg:px-6">
+      <div className="mx-auto max-w-3xl space-y-6 py-4 lg:px-6 lg:py-6">
         <Link
           href="/tickets"
           className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-sm font-medium transition-colors"
@@ -151,7 +151,7 @@ export default function TicketDetailPage() {
   );
 
   return (
-    <div className="mx-auto flex min-h-[calc(100vh-8rem)] max-w-3xl flex-col space-y-4 px-4 py-6 lg:px-6">
+    <div className="mx-auto flex min-h-[calc(100vh-8rem)] max-w-3xl flex-col space-y-4 py-4 lg:px-6 lg:py-6">
       {/* Back button */}
       <Link
         href="/tickets"

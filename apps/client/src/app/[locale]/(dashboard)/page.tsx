@@ -251,7 +251,7 @@ export default function DashboardPage() {
   if (!dashboardData.currentMealPlan && !dashboardData.currentWorkoutPlan) {
     const hasAssessment = !!dashboardData.assessment;
     return (
-      <div className="mx-auto max-w-5xl space-y-6 px-4 py-6 lg:px-6">
+      <div className="mx-auto max-w-5xl space-y-6 py-4 lg:px-6 lg:py-6">
         <div>
           <p className="text-muted-foreground text-sm">
             {formatDateWithWeekday(new Date(), locale)}
@@ -404,7 +404,7 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-5xl space-y-5 px-4 py-6 lg:px-6">
+    <div className="mx-auto max-w-5xl space-y-5 py-4 lg:px-6 lg:py-6">
       {/* Greeting (HOME-01) */}
       <div>
         <p className="text-muted-foreground text-sm">{formatDateWithWeekday(new Date(), locale)}</p>

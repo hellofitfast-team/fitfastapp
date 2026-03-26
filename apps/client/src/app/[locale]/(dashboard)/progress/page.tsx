@@ -217,7 +217,7 @@ export default function ProgressPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-5xl space-y-5 px-4 py-6 lg:px-6">
+    <div className="mx-auto max-w-5xl space-y-5 py-4 lg:px-6 lg:py-6">
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>

@@ -211,7 +211,7 @@ export default function TrackingPage() {
   // Show empty state if no plans exist
   if (!mealPlan && !workoutPlan) {
     return (
-      <div className="mx-auto max-w-5xl space-y-6 px-4 py-6 lg:px-6">
+      <div className="mx-auto max-w-5xl space-y-6 py-4 lg:px-6 lg:py-6">
         <TrackingHeader
           selectedDate={selectedDate}
           completionPercentage={0}
@@ -238,7 +238,7 @@ export default function TrackingPage() {
     exerciseLogs.filter((l) => l.completedAt != null).length >= todaysWorkout.exercises.length;
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 px-4 py-6 lg:px-6">
+    <div className="mx-auto max-w-5xl space-y-6 py-4 lg:px-6 lg:py-6">
       <TrackingHeader
         selectedDate={selectedDate}
         completionPercentage={completionPercentage}

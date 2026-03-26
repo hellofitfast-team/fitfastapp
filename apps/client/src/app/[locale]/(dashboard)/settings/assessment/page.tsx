@@ -21,7 +21,7 @@ export default function AssessmentEditPage() {
 
   if (assessment === undefined) {
     return (
-      <div className="mx-auto max-w-2xl space-y-5 px-4 py-6 lg:px-6">
+      <div className="mx-auto max-w-2xl space-y-5 py-4 lg:px-6 lg:py-6">
         <div className="flex items-center gap-3">
           <Skeleton className="h-9 w-9 rounded-lg" />
           <Skeleton className="h-7 w-48" />
@@ -35,7 +35,7 @@ export default function AssessmentEditPage() {
 
   if (!assessment) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-6 lg:px-6">
+      <div className="mx-auto max-w-2xl py-4 lg:px-6 lg:py-6">
         <Link
           href="/settings"
           className="text-muted-foreground hover:text-foreground mb-4 inline-flex items-center gap-1.5 text-sm transition-colors"
@@ -53,7 +53,7 @@ export default function AssessmentEditPage() {
   const gender = assessment.gender as string | undefined;
 
   return (
-    <div className="mx-auto max-w-2xl space-y-5 px-4 py-6 lg:px-6">
+    <div className="mx-auto max-w-2xl space-y-5 py-4 lg:px-6 lg:py-6">
       {/* Header */}
       <div>
         <Link

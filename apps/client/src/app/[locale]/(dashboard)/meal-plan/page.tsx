@@ -242,7 +242,7 @@ export default function MealPlanPage() {
     const hasAnyDays = streamingDayKeys.length > 0;
 
     return (
-      <div className="mx-auto max-w-3xl space-y-5 px-4 py-6 lg:px-6">
+      <div className="mx-auto max-w-3xl space-y-5 py-4 lg:px-6 lg:py-6">
         <div>
           <h1 className="text-2xl font-bold">{t("title")}</h1>
           <p className="text-muted-foreground mt-0.5 text-sm">{t("generating")}</p>
@@ -294,7 +294,7 @@ export default function MealPlanPage() {
   if (error || !mealPlan) {
     // Check if plans are being generated (assessment exists but no plan yet)
     return (
-      <div className="mx-auto max-w-3xl space-y-6 px-4 py-6 lg:px-6">
+      <div className="mx-auto max-w-3xl space-y-6 py-4 lg:px-6 lg:py-6">
         <div>
           <h1 className="text-2xl font-bold">{t("title")}</h1>
           <p className="text-muted-foreground mt-1 text-sm">{t("getStarted")}</p>
@@ -365,7 +365,7 @@ export default function MealPlanPage() {
   // Guard: if weeklyPlan is missing, show empty state instead of crashing
   if (!planData?.weeklyPlan) {
     return (
-      <div className="mx-auto max-w-3xl space-y-6 px-4 py-6 lg:px-6">
+      <div className="mx-auto max-w-3xl space-y-6 py-4 lg:px-6 lg:py-6">
         <div>
           <h1 className="text-2xl font-bold">{t("title")}</h1>
           <p className="text-muted-foreground mt-1 text-sm">{t("getStarted")}</p>

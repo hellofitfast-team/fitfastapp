@@ -161,7 +161,7 @@ export default function TicketsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 px-4 py-6 lg:px-6">
+    <div className="mx-auto max-w-3xl space-y-6 py-4 lg:px-6 lg:py-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold">{t("title")}</h1>
