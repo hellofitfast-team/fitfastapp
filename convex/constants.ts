@@ -77,3 +77,11 @@ export const WORKOUT_OUTPUT_TOKENS_EN = 16000;
 export const WORKOUT_OUTPUT_TOKENS_AR = 30000;
 export const PLAN_GENERATION_TIMEOUT_MS = 240_000; // 4 minutes (2 min per model attempt with fallback)
 export const PLAN_GENERATION_MAX_RETRIES = 2;
+
+// ── Chunked Meal Plan Generation ─────────────────────────────────────────
+// Langfuse data: EN ~2.3-3K tokens/day, AR ~3.9K tokens/day
+// 3-day chunk: EN ~7-9K, AR ~12K → 50% buffer applied
+export const MEAL_CHUNK_SIZE = 3;
+export const MEAL_CHUNK_TOKENS_EN = 14000;
+export const MEAL_CHUNK_TOKENS_AR = 18000;
+export const MEAL_CHUNK_TIMEOUT_MS = 90_000; // 90s per chunk (60s primary + 30s buffer)

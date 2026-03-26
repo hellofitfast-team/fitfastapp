@@ -388,6 +388,14 @@ export default function MealPlanPage() {
       : 10;
   const dayPlan = resolveDayPlan(planData.weeklyPlan, selectedDay, mealPlan.startDate);
 
+  // Detect if more days are still being generated (chunked generation)
+  const populatedDays = Object.keys(planData.weeklyPlan).filter((k) => {
+    const d = planData.weeklyPlan[k] as MealDayPlan | undefined;
+    return d && Array.isArray(d.meals) && d.meals.length > 0;
+  }).length;
+  const isChunkGenerating = populatedDays > 0 && populatedDays < totalDays;
+  const isDayStillGenerating = !dayPlan && isChunkGenerating;
+
   // Normalize meals to handle both old (nested macros) and new (flat) formats
   const rawMeals = dayPlan?.meals ?? [];
   const meals = rawMeals.map(normalizeMeal);
@@ -512,6 +520,17 @@ export default function MealPlanPage() {
           <button onClick={() => setSwapError(null)} className="text-error-500 text-xs font-medium">
             ✕
           </button>
+        </div>
+      )}
+
+      {/* Day still generating indicator */}
+      {isDayStillGenerating && (
+        <div className="border-nutrition/30 bg-nutrition/5 rounded-xl border p-6 text-center">
+          <Loader2 className="text-nutrition mx-auto h-8 w-8 animate-spin" />
+          <p className="text-nutrition mt-3 text-sm font-semibold">
+            {t("generatingDay", { day: String(selectedDay + 1) })}
+          </p>
+          <p className="text-muted-foreground mt-1 text-xs">{t("generatingDayDescription")}</p>
         </div>
       )}
 

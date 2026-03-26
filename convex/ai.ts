@@ -19,12 +19,13 @@ import {
   type ValidationWarning,
 } from "./aiUtils";
 import {
-  MEAL_OUTPUT_TOKENS_EN,
-  MEAL_OUTPUT_TOKENS_AR,
   WORKOUT_OUTPUT_TOKENS_EN,
   WORKOUT_OUTPUT_TOKENS_AR,
-  PLAN_GENERATION_TIMEOUT_MS,
   PLAN_GENERATION_MAX_RETRIES,
+  MEAL_CHUNK_SIZE,
+  MEAL_CHUNK_TOKENS_EN,
+  MEAL_CHUNK_TOKENS_AR,
+  MEAL_CHUNK_TIMEOUT_MS,
 } from "./constants";
 
 // ---------------------------------------------------------------------------
@@ -685,41 +686,7 @@ ${isArabic ? "ALL content MUST be in Arabic language. Focus on Egyptian/Middle E
 ${foodReference}
 IMPORTANT: Respond ONLY with valid JSON. No markdown, no code blocks, just raw JSON.`;
 
-  const mealOutputTokens = isArabic ? MEAL_OUTPUT_TOKENS_AR : MEAL_OUTPUT_TOKENS_EN;
-
-  const userPrompt = `Create a ${safeDuration}-day meal plan ${isArabic ? "ENTIRELY IN ARABIC" : "in English"}:
-
-CLIENT PROFILE:
-${contextBlock}
-
-DAILY NUTRITION TARGETS: ${nutritionTargets.calories} kcal | ${nutritionTargets.protein}g protein | ${nutritionTargets.carbs}g carbs | ${nutritionTargets.fat}g fat
-
-Be concise — short ingredient lists (3-5 per meal), 1-2 instruction steps, 3 alternatives per meal.
-
-Return a JSON object with this structure:
-{
-  "dailyTargets": { "calories": number, "protein": number, "carbs": number, "fat": number },
-  "weeklyPlan": {
-    "day1": {
-      "dailyTotals": { "calories": number, "protein": number, "carbs": number, "fat": number },
-      "meals": [
-        {
-          "name": "string",
-          "type": "breakfast|snack|lunch|dinner",
-          "calories": number, "protein": number, "carbs": number, "fat": number,
-          "ingredients": ["string with amount"],
-          "instructions": ["step with time/temp"],
-          "alternatives": [{ same fields as meal, without alternatives }]  // exactly 3 alternatives per meal
-        }
-      ]
-    },
-    ...up to "day${safeDuration}"
-  },
-  "notes": "string"
-}
-Each meal MUST have: name, type, calories, protein, carbs, fat, ingredients, instructions, alternatives (exactly 3 per meal, each with ±10% calorie match).
-Keep instructions to 1-2 steps with cooking times. Keep ingredient lists to 3-5 items.
-Daily meal macros MUST sum to the targets above (±5% tolerance). Respond ONLY with valid JSON.`;
+  const chunkTokens = isArabic ? MEAL_CHUNK_TOKENS_AR : MEAL_CHUNK_TOKENS_EN;
 
   // Create stream for live progress
   const streamId: string = await ctx.runMutation(internal.streamingManager.createStream, {});
@@ -732,255 +699,342 @@ Daily meal macros MUST sum to the targets above (±5% tolerance). Respond ONLY w
     tags: ["meal-plan", `complexity:${promptComplexity}`],
   });
 
-  // --- Attempt with primary model (OpenRouter Mercury 2) + fallback (Google Gemini) ---
-  // Wrapped in try-finally to ensure Langfuse traces are flushed on all exit paths
+  // --- Chunked generation: generate in batches of MEAL_CHUNK_SIZE days ---
+  // Each chunk is small enough to guarantee zero truncation.
+  // Langfuse data: EN ~2.3-3K/day, AR ~3.9K/day. Chunk tokens have 50% buffer.
   try {
-    const halfTimeout = PLAN_GENERATION_TIMEOUT_MS / 2;
-    const generateParams = {
-      system: systemPrompt,
-      prompt: userPrompt,
-      temperature: 0.4,
-      maxOutputTokens: mealOutputTokens,
-      maxRetries: PLAN_GENERATION_MAX_RETRIES,
-    };
-
-    // Use streaming to push progress chunks to the client in real-time
-    let result;
-    const streamChunkSize = 500; // Flush every ~500 chars
-
-    async function streamAndCollect(model: Parameters<typeof streamText>[0]["model"]): Promise<{
-      text: string;
-      finishReason: string;
-      usage: { inputTokens: number; outputTokens: number };
-    }> {
-      const streamResult = streamText({
-        model,
-        ...generateParams,
-        abortSignal: AbortSignal.timeout(halfTimeout),
-      });
-      let fullText = "";
-      let lastFlushed = 0;
-      try {
-        for await (const chunk of streamResult.textStream) {
-          fullText += chunk;
-          if (fullText.length - lastFlushed > streamChunkSize) {
-            await ctx.runMutation(internal.streamingManager.appendChunk, {
-              streamId,
-              text: fullText.substring(lastFlushed),
-              final: false,
-            });
-            lastFlushed = fullText.length;
-          }
-        }
-      } finally {
-        // Always finalize the stream so clients don't hang
-        if (fullText.length > lastFlushed) {
-          await ctx.runMutation(internal.streamingManager.appendChunk, {
-            streamId,
-            text: fullText.substring(lastFlushed),
-            final: true,
-          });
-        } else {
-          await ctx.runMutation(internal.streamingManager.appendChunk, {
-            streamId,
-            text: "",
-            final: true,
-          });
-        }
+    // Build day chunks: e.g. 10 days → [[1,2,3], [4,5,6], [7,8,9], [10]]
+    const allDays: number[][] = [];
+    for (let d = 1; d <= safeDuration; d += MEAL_CHUNK_SIZE) {
+      const chunk: number[] = [];
+      for (let j = d; j < d + MEAL_CHUNK_SIZE && j <= safeDuration; j++) {
+        chunk.push(j);
       }
-      const finishReason = await streamResult.finishReason;
-      const usage = await streamResult.usage;
-      return {
-        text: fullText,
-        finishReason,
-        usage: { inputTokens: usage.inputTokens ?? 0, outputTokens: usage.outputTokens ?? 0 },
-      };
+      allDays.push(chunk);
     }
+    console.log(
+      `[AI] Chunked generation: ${safeDuration} days → ${allDays.length} chunks: ${allDays.map((c) => c.join("-")).join(", ")}`,
+    );
 
-    const primaryGen = trace?.generation({
-      name: "primary-mercury-stream",
-      model: PLAN_MODEL_PRIMARY,
-      input: { systemPrompt: systemPrompt.slice(0, 500), userPrompt: userPrompt.slice(0, 500) },
-    });
-    try {
-      result = await streamAndCollect(openrouter(PLAN_MODEL_PRIMARY));
-      primaryGen?.end({
-        output: result.text.slice(0, 500),
-        usage: { input: result.usage.inputTokens, output: result.usage.outputTokens },
-        metadata: { finishReason: result.finishReason, textLength: result.text.length },
-      });
-    } catch (primaryErr) {
-      const errorType = classifyError(primaryErr);
-      primaryGen?.end({
-        metadata: {
-          errorType,
-          error: primaryErr instanceof Error ? primaryErr.message : String(primaryErr),
-        },
-        level: "ERROR",
-      });
-      console.warn(
-        `[AI] Primary model (Mercury 2) streaming failed for meal plan, falling back to Gemini: ${primaryErr}`,
-      );
-      const googleApiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-      if (!googleApiKey)
-        throw new Error("GOOGLE_GENERATIVE_AI_API_KEY environment variable is not set");
-      const google = createGoogleGenerativeAI({ apiKey: googleApiKey });
-      // Fallback uses batch generateText (simpler, more reliable)
-      const fallbackGen = trace?.generation({
-        name: "fallback-gemini-batch",
-        model: PLAN_MODEL_FALLBACK,
-        input: { systemPrompt: systemPrompt.slice(0, 500), userPrompt: userPrompt.slice(0, 500) },
-      });
-      try {
-        const batchResult = await generateText({
-          model: google(PLAN_MODEL_FALLBACK),
-          ...generateParams,
-          abortSignal: AbortSignal.timeout(halfTimeout),
-        });
-        result = { text: batchResult.text, finishReason: batchResult.finishReason };
-        fallbackGen?.end({
-          output: result.text.slice(0, 500),
-          usage: {
-            input: batchResult.usage?.inputTokens,
-            output: batchResult.usage?.outputTokens,
-          },
-          metadata: { finishReason: result.finishReason, textLength: result.text.length },
-        });
-      } catch (fallbackErr) {
-        fallbackGen?.end({
-          metadata: {
-            errorType: classifyError(fallbackErr),
-            error: fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr),
-          },
-          level: "ERROR",
-        });
-        throw fallbackErr;
-      }
-      // Write fallback result to stream so client can see it
-      await ctx.runMutation(internal.streamingManager.appendChunk, {
-        streamId,
-        text: result.text,
-        final: true,
-      });
-    }
+    const accumulatedWeeklyPlan: Record<string, unknown> = {};
+    let dailyTargets: Record<string, number> | null = null;
+    let allRawText = "";
+    let lastFinishReason = "stop";
+    const streamChunkSize = 500;
 
-    // --- Truncation detection + retry with reduced scope ---
-    if (result.finishReason === "length") {
-      console.warn(
-        `[AI] Meal plan truncated for user ${userId} (finishReason=length, ${result.text.length} chars). Retrying with simplified prompt.`,
-      );
-      const retryPrompt = `Create a ${safeDuration}-day meal plan ${isArabic ? "ENTIRELY IN ARABIC" : "in English"}:
+    // Helper: generate a single chunk with primary + fallback
+    async function generateChunk(
+      days: number[],
+      previousMealNames: string[],
+      chunkIndex: number,
+    ): Promise<{ text: string; finishReason: string }> {
+      const dayRange =
+        days.length === 1 ? `day ${days[0]}` : `days ${days[0]} to ${days[days.length - 1]}`;
+      const dayKeysStr = days.map((d) => `"day${d}"`).join(", ");
+
+      const previousMealsBlock =
+        previousMealNames.length > 0
+          ? `\nPREVIOUS DAYS' MEALS (vary from these — no repeats >2/week):\n${previousMealNames.join("\n")}`
+          : "";
+
+      const chunkPrompt = `Generate meals for ${dayRange} of a ${safeDuration}-day meal plan ${isArabic ? "ENTIRELY IN ARABIC" : "in English"}:
 
 CLIENT PROFILE:
 ${contextBlock}
 
 DAILY NUTRITION TARGETS: ${nutritionTargets.calories} kcal | ${nutritionTargets.protein}g protein | ${nutritionTargets.carbs}g carbs | ${nutritionTargets.fat}g fat
+${previousMealsBlock}
+Be concise — short ingredient lists (3-5 per meal), 1-2 instruction steps, 3 alternatives per meal.
 
-IMPORTANT: Keep output concise to avoid truncation.
-- 4 meals per day (breakfast, lunch, snack, dinner)
-- 3 ingredients per meal max
-- 1 instruction step per meal
-- NO alternatives
-- Short ingredient descriptions
+Return a JSON object with ONLY these day keys: ${dayKeysStr}
+{
+${chunkIndex === 0 ? `  "dailyTargets": { "calories": ${nutritionTargets.calories}, "protein": ${nutritionTargets.protein}, "carbs": ${nutritionTargets.carbs}, "fat": ${nutritionTargets.fat} },\n` : ""}  "weeklyPlan": {
+    "day${days[0]}": {
+      "dailyTotals": { "calories": number, "protein": number, "carbs": number, "fat": number },
+      "meals": [
+        {
+          "name": "string",
+          "type": "breakfast|snack|lunch|dinner",
+          "calories": number, "protein": number, "carbs": number, "fat": number,
+          "ingredients": ["string with amount"],
+          "instructions": ["step with time/temp"],
+          "alternatives": [{ same fields as meal, without alternatives }]
+        }
+      ]
+    }${days.length > 1 ? `,\n    ...same structure for ${dayKeysStr}` : ""}
+  }${chunkIndex === 0 ? `,\n  "notes": "string"` : ""}
+}
+Each meal MUST have: name, type, calories, protein, carbs, fat, ingredients, instructions, alternatives (exactly 3).
+Daily meal macros MUST sum to targets (±5% tolerance). Respond ONLY with valid JSON.`;
 
-Return JSON: { "dailyTargets": {...}, "weeklyPlan": { "day1": { "dailyTotals": {...}, "meals": [{ "name", "type", "calories", "protein", "carbs", "fat", "ingredients": [...], "instructions": [...] }] }, ...up to "day${safeDuration}" }, "notes": "string" }
-Respond ONLY with valid JSON.`;
+      const chunkMaxTokens = days.length < MEAL_CHUNK_SIZE ? 8000 : chunkTokens;
 
-      const retryPrimaryGen = trace?.generation({
-        name: "retry-primary-mercury",
+      // Primary model attempt
+      const gen = trace?.generation({
+        name: `chunk-${chunkIndex}-primary`,
         model: PLAN_MODEL_PRIMARY,
-        input: { prompt: retryPrompt.slice(0, 500) },
-        metadata: { reason: "truncation-retry" },
+        input: { prompt: chunkPrompt.slice(0, 500) },
+        metadata: { days: days.join(","), chunkIndex },
       });
       try {
-        const retryResult = await generateText({
-          model: openrouter(PLAN_MODEL_PRIMARY),
-          system: systemPrompt,
-          prompt: retryPrompt,
-          temperature: 0.3,
-          maxOutputTokens: mealOutputTokens,
-          maxRetries: 1,
-          abortSignal: AbortSignal.timeout(halfTimeout),
-        });
-        result = { text: retryResult.text, finishReason: retryResult.finishReason };
-        retryPrimaryGen?.end({
-          output: result.text.slice(0, 500),
-          usage: {
-            input: retryResult.usage?.inputTokens,
-            output: retryResult.usage?.outputTokens,
-          },
-          metadata: { finishReason: result.finishReason },
-        });
-      } catch (retryPrimaryErr) {
-        retryPrimaryGen?.end({
+        // Stream first chunk for live UX; batch for subsequent chunks
+        if (chunkIndex === 0) {
+          const streamResult = streamText({
+            model: openrouter(PLAN_MODEL_PRIMARY),
+            system: systemPrompt,
+            prompt: chunkPrompt,
+            temperature: 0.4,
+            maxOutputTokens: chunkMaxTokens,
+            maxRetries: PLAN_GENERATION_MAX_RETRIES,
+            abortSignal: AbortSignal.timeout(MEAL_CHUNK_TIMEOUT_MS),
+          });
+          let fullText = "";
+          let lastFlushed = 0;
+          try {
+            for await (const chunk of streamResult.textStream) {
+              fullText += chunk;
+              if (fullText.length - lastFlushed > streamChunkSize) {
+                await ctx.runMutation(internal.streamingManager.appendChunk, {
+                  streamId,
+                  text: fullText.substring(lastFlushed),
+                  final: false,
+                });
+                lastFlushed = fullText.length;
+              }
+            }
+          } finally {
+            await ctx.runMutation(internal.streamingManager.appendChunk, {
+              streamId,
+              text: fullText.length > lastFlushed ? fullText.substring(lastFlushed) : "",
+              final: true,
+            });
+          }
+          const finishReason = await streamResult.finishReason;
+          const usage = await streamResult.usage;
+          gen?.end({
+            output: fullText.slice(0, 500),
+            usage: { input: usage.inputTokens, output: usage.outputTokens },
+            metadata: { finishReason, textLength: fullText.length },
+          });
+          return { text: fullText, finishReason };
+        } else {
+          const batchResult = await generateText({
+            model: openrouter(PLAN_MODEL_PRIMARY),
+            system: systemPrompt,
+            prompt: chunkPrompt,
+            temperature: 0.4,
+            maxOutputTokens: chunkMaxTokens,
+            maxRetries: PLAN_GENERATION_MAX_RETRIES,
+            abortSignal: AbortSignal.timeout(MEAL_CHUNK_TIMEOUT_MS),
+          });
+          gen?.end({
+            output: batchResult.text.slice(0, 500),
+            usage: {
+              input: batchResult.usage?.inputTokens,
+              output: batchResult.usage?.outputTokens,
+            },
+            metadata: {
+              finishReason: batchResult.finishReason,
+              textLength: batchResult.text.length,
+            },
+          });
+          return { text: batchResult.text, finishReason: batchResult.finishReason };
+        }
+      } catch (primaryErr) {
+        gen?.end({
           metadata: {
-            errorType: classifyError(retryPrimaryErr),
-            error:
-              retryPrimaryErr instanceof Error ? retryPrimaryErr.message : String(retryPrimaryErr),
+            errorType: classifyError(primaryErr),
+            error: primaryErr instanceof Error ? primaryErr.message : String(primaryErr),
           },
           level: "ERROR",
         });
-        const googleApiKey2 = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-        if (!googleApiKey2)
+        console.warn(
+          `[AI] Chunk ${chunkIndex} primary failed, falling back to Gemini: ${primaryErr}`,
+        );
+
+        // Fallback to Gemini
+        const googleApiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+        if (!googleApiKey)
           throw new Error("GOOGLE_GENERATIVE_AI_API_KEY environment variable is not set");
-        const google2 = createGoogleGenerativeAI({ apiKey: googleApiKey2 });
-        const retryFallbackGen = trace?.generation({
-          name: "retry-fallback-gemini",
+        const google = createGoogleGenerativeAI({ apiKey: googleApiKey });
+        const fallbackGen = trace?.generation({
+          name: `chunk-${chunkIndex}-fallback`,
           model: PLAN_MODEL_FALLBACK,
-          input: { prompt: retryPrompt.slice(0, 500) },
-          metadata: { reason: "truncation-retry-fallback" },
+          metadata: { days: days.join(","), chunkIndex },
         });
         try {
-          const retryResult = await generateText({
-            model: google2(PLAN_MODEL_FALLBACK),
+          const fbResult = await generateText({
+            model: google(PLAN_MODEL_FALLBACK),
             system: systemPrompt,
-            prompt: retryPrompt,
-            temperature: 0.3,
-            maxOutputTokens: mealOutputTokens,
+            prompt: chunkPrompt,
+            temperature: 0.4,
+            maxOutputTokens: chunkMaxTokens,
             maxRetries: 1,
-            abortSignal: AbortSignal.timeout(halfTimeout),
+            abortSignal: AbortSignal.timeout(MEAL_CHUNK_TIMEOUT_MS),
           });
-          result = { text: retryResult.text, finishReason: retryResult.finishReason };
-          retryFallbackGen?.end({
-            output: result.text.slice(0, 500),
-            usage: {
-              input: retryResult.usage?.inputTokens,
-              output: retryResult.usage?.outputTokens,
-            },
-            metadata: { finishReason: result.finishReason },
+          fallbackGen?.end({
+            output: fbResult.text.slice(0, 500),
+            usage: { input: fbResult.usage?.inputTokens, output: fbResult.usage?.outputTokens },
+            metadata: { finishReason: fbResult.finishReason },
           });
-        } catch (retryFallbackErr) {
-          retryFallbackGen?.end({
+          return { text: fbResult.text, finishReason: fbResult.finishReason };
+        } catch (fbErr) {
+          fallbackGen?.end({
             metadata: {
-              errorType: classifyError(retryFallbackErr),
-              error:
-                retryFallbackErr instanceof Error
-                  ? retryFallbackErr.message
-                  : String(retryFallbackErr),
+              errorType: classifyError(fbErr),
+              error: fbErr instanceof Error ? fbErr.message : String(fbErr),
             },
             level: "ERROR",
           });
-          throw retryFallbackErr;
+          throw fbErr;
         }
       }
     }
 
-    let planData: Record<string, unknown>;
-    try {
-      planData = extractJSON(result.text);
-    } catch (parseErr) {
-      console.error(
-        `[AI] Meal plan JSON parse failed for user ${userId}. Text length: ${result.text.length}, finish reason: ${result.finishReason}. First 500 chars: ${result.text.slice(0, 500)}`,
-      );
-      if (result.finishReason === "length") {
-        throw new Error(
-          "Meal plan too long for AI model output limit. Try reducing plan duration or simplifying requirements.",
-        );
+    // Plan ID for intermediate saves (created after first chunk)
+    let planId: Id<"mealPlans"> | null = null;
+    let planNotes: string | null = null;
+
+    const startDate = new Date().toISOString().split("T")[0]!;
+    const endDate = new Date(Date.now() + safeDuration * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0]!;
+
+    // --- Execute chunks sequentially ---
+    for (let ci = 0; ci < allDays.length; ci++) {
+      const days = allDays[ci];
+      console.log(`[AI] Generating chunk ${ci + 1}/${allDays.length}: days ${days.join(",")}`);
+
+      // Collect meal names from last 2 chunks only (cap prompt bloat)
+      const recentDayKeys = Object.keys(accumulatedWeeklyPlan).slice(-(MEAL_CHUNK_SIZE * 2));
+      const previousMealNames: string[] = [];
+      for (const dayKey of recentDayKeys) {
+        const meals = (accumulatedWeeklyPlan[dayKey] as any)?.meals;
+        if (Array.isArray(meals)) {
+          const names = meals
+            .map((m: any) => m.name)
+            .filter(Boolean)
+            .join(", ");
+          if (names) previousMealNames.push(`${dayKey}: ${names}`);
+        }
       }
-      throw new Error(
-        `Meal plan generation failed: AI returned invalid JSON (finish reason: ${result.finishReason})`,
+
+      // Per-chunk error recovery: if a chunk fails, log and continue with partial plan
+      let chunkResult: { text: string; finishReason: string };
+      try {
+        chunkResult = await generateChunk(days, previousMealNames, ci);
+      } catch (chunkErr) {
+        console.error(
+          `[AI] Chunk ${ci + 1} failed (days ${days.join(",")}): ${chunkErr instanceof Error ? chunkErr.message : String(chunkErr)}`,
+        );
+        // Save partial plan with days we have so far rather than losing everything
+        if (Object.keys(accumulatedWeeklyPlan).length > 0) {
+          console.warn(
+            `[AI] Saving partial plan with ${Object.keys(accumulatedWeeklyPlan).length} days`,
+          );
+          break; // Exit loop, proceed to save what we have
+        }
+        throw chunkErr; // No days at all — rethrow
+      }
+
+      allRawText += chunkResult.text + "\n";
+      lastFinishReason = chunkResult.finishReason;
+
+      // Parse chunk JSON and merge into accumulated plan
+      let chunkData: Record<string, unknown>;
+      try {
+        chunkData = extractJSON(chunkResult.text) as Record<string, unknown>;
+      } catch (parseErr) {
+        console.error(
+          `[AI] Chunk ${ci + 1} JSON parse failed: ${parseErr instanceof Error ? parseErr.message : String(parseErr)}`,
+        );
+        if (Object.keys(accumulatedWeeklyPlan).length > 0) {
+          console.warn(
+            `[AI] Saving partial plan with ${Object.keys(accumulatedWeeklyPlan).length} days`,
+          );
+          break;
+        }
+        throw parseErr;
+      }
+
+      const chunkWeekly = chunkData.weeklyPlan as Record<string, unknown> | undefined;
+      if (chunkWeekly) {
+        Object.assign(accumulatedWeeklyPlan, chunkWeekly);
+      } else {
+        // Chunk might return day keys at top level (no weeklyPlan wrapper)
+        for (const [key, val] of Object.entries(chunkData)) {
+          if (key.startsWith("day") && typeof val === "object") {
+            accumulatedWeeklyPlan[key] = val;
+          }
+        }
+      }
+
+      // Extract dailyTargets and notes from first chunk
+      if (ci === 0) {
+        if (chunkData.dailyTargets) dailyTargets = chunkData.dailyTargets as Record<string, number>;
+        if (typeof chunkData.notes === "string") planNotes = chunkData.notes;
+      }
+
+      console.log(
+        `[AI] Chunk ${ci + 1} complete: ${Object.keys(accumulatedWeeklyPlan).length} days accumulated`,
       );
+
+      // Persist intermediate results so client can progressively render
+      const intermediatePlanData: Record<string, unknown> = {
+        dailyTargets: dailyTargets ?? {
+          calories: nutritionTargets.calories,
+          protein: nutritionTargets.protein,
+          carbs: nutritionTargets.carbs,
+          fat: nutritionTargets.fat,
+        },
+        weeklyPlan: { ...accumulatedWeeklyPlan },
+        ...(planNotes ? { notes: planNotes } : {}),
+      };
+      if (!planId) {
+        // First chunk: create the plan record
+        planId = await ctx.runMutation(internal.mealPlans.savePlanInternal, {
+          userId,
+          checkInId,
+          planData: intermediatePlanData,
+          aiGeneratedContent: chunkResult.text,
+          streamId,
+          language,
+          startDate,
+          endDate,
+          assessmentVersion: clientCtx.assessmentVersion,
+        });
+      } else {
+        // Subsequent chunks: patch existing plan
+        await ctx.runMutation(internal.mealPlans.updatePlanData, {
+          planId,
+          planData: intermediatePlanData,
+          aiGeneratedContent: allRawText,
+        });
+      }
     }
+
+    // Assemble final planData from all chunks
+    const finalResult = {
+      text: allRawText,
+      finishReason: lastFinishReason,
+    };
+
+    let planData: Record<string, unknown> = {
+      dailyTargets: dailyTargets ?? {
+        calories: nutritionTargets.calories,
+        protein: nutritionTargets.protein,
+        carbs: nutritionTargets.carbs,
+        fat: nutritionTargets.fat,
+      },
+      weeklyPlan: accumulatedWeeklyPlan,
+      ...(planNotes ? { notes: planNotes } : {}),
+    };
+
+    // Log day coverage
+    const generatedDays = Object.keys(accumulatedWeeklyPlan).length;
+    console.log(
+      `[AI] Chunked generation complete: ${generatedDays}/${safeDuration} days generated`,
+    );
 
     // Post-generation validation & auto-correction
     const validationWarnings = validateAndCorrectMealPlan(planData, nutritionTargets);
@@ -998,9 +1052,11 @@ Respond ONLY with valid JSON.`;
     trace?.update({
       metadata: {
         durationMs,
-        finishReason: result.finishReason,
-        textLength: result.text.length,
+        finishReason: finalResult.finishReason,
+        textLength: finalResult.text.length,
         validationWarnings: validationWarnings.length,
+        chunksGenerated: allDays.length,
+        daysGenerated: generatedDays,
         cacheHit: false,
       },
     });
@@ -1092,16 +1148,21 @@ Respond ONLY with valid JSON.`;
           : "You are breastfeeding. Ensure adequate hydration (3-4L water daily). Consult your doctor before making major dietary changes.";
     }
 
-    const startDate = new Date().toISOString().split("T")[0]!;
-    const endDate = new Date(Date.now() + safeDuration * 24 * 60 * 60 * 1000)
-      .toISOString()
-      .split("T")[0]!;
-
+    // Final save with validated + post-processed planData
+    if (planId) {
+      await ctx.runMutation(internal.mealPlans.updatePlanData, {
+        planId,
+        planData,
+        aiGeneratedContent: finalResult.text,
+      });
+      return planId;
+    }
+    // Fallback: if no chunks succeeded (shouldn't happen due to earlier throw)
     return ctx.runMutation(internal.mealPlans.savePlanInternal, {
       userId,
       checkInId,
       planData,
-      aiGeneratedContent: result.text,
+      aiGeneratedContent: finalResult.text,
       streamId,
       language,
       startDate,

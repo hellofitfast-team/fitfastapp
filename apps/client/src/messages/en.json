@@ -222,6 +222,7 @@
     "kcal": "KCAL",
     "aiGenerating": "AI is crafting your meal plan...",
     "generatingDay": "Generating day {day}...",
+    "generatingDayDescription": "Your meals for this day are being prepared. Other days are ready to browse.",
     "calorieExplanation": "AI aims for around {calories} kcal/day ({protein}g protein) based on your profile and {trainingDays} training days/week. Actual meals may vary slightly.",
     "dayLabel": "Day {n}",
     "translating": "Translating your meal plan...",
