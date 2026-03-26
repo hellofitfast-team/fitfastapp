@@ -31,6 +31,7 @@ export interface Exercise {
   defaultRepsMax: number;
   defaultRestSeconds: number;
   isActive: boolean;
+  pregnancyUnsafe?: boolean;
   sortOrder?: number;
 }
 
@@ -288,9 +289,16 @@ function hasInjuryConflict(ex: Exercise, injuries: string[]): boolean {
 
 function equipmentAvailable(ex: Exercise, available: string[] | undefined): boolean {
   if (!available || available.length === 0) return true;
-  if (ex.equipment.length === 0) return true; // bodyweight
+  // Bodyweight-only sentinel: only allow exercises with no equipment requirement
+  if (available.includes("__bodyweight_only__")) return ex.equipment.length === 0;
+  if (ex.equipment.length === 0) return true; // bodyweight exercises always allowed
   const set = new Set(available.map((e) => e.toLowerCase()));
   return ex.equipment.some((eq) => set.has(eq.toLowerCase()));
+}
+
+function isPregnancySafe(ex: Exercise, isPregnant: boolean): boolean {
+  if (!isPregnant) return true;
+  return ex.pregnancyUnsafe !== true;
 }
 
 function muscleMatchesTarget(ex: Exercise, targetSet: Set<string>): boolean {
@@ -504,7 +512,8 @@ function selectExercisesForDay(
         ex.category === "cardio") &&
       (DIFFICULTY_RANK[ex.difficulty] ?? 0) <= levelRank &&
       !hasInjuryConflict(ex, input.injuries) &&
-      equipmentAvailable(ex, input.availableEquipment),
+      equipmentAvailable(ex, input.availableEquipment) &&
+      isPregnancySafe(ex, input.femaleHealth?.isPregnant ?? false),
   );
 
   // Fallback 1: if too few exercises pass the strict filter, relax difficulty constraint
@@ -517,11 +526,12 @@ function selectExercisesForDay(
           ex.category === "isolation" ||
           ex.category === "cardio") &&
         !hasInjuryConflict(ex, input.injuries) &&
-        equipmentAvailable(ex, input.availableEquipment),
+        equipmentAvailable(ex, input.availableEquipment) &&
+        isPregnancySafe(ex, input.femaleHealth?.isPregnant ?? false),
     );
   }
 
-  // Fallback 2: if still too few, also relax equipment constraint
+  // Fallback 2: if still too few, relax equipment constraint but NEVER relax pregnancy safety
   if (eligible.length < 6) {
     eligible = allExercises.filter(
       (ex) =>
@@ -530,7 +540,8 @@ function selectExercisesForDay(
           ex.category === "accessory" ||
           ex.category === "isolation" ||
           ex.category === "cardio") &&
-        !hasInjuryConflict(ex, input.injuries),
+        !hasInjuryConflict(ex, input.injuries) &&
+        isPregnancySafe(ex, input.femaleHealth?.isPregnant ?? false),
     );
   }
 
@@ -642,7 +653,8 @@ function selectWarmupExercises(
       ex.isActive !== false &&
       ex.category === "warmup" &&
       !hasInjuryConflict(ex, input.injuries) &&
-      equipmentAvailable(ex, input.availableEquipment),
+      equipmentAvailable(ex, input.availableEquipment) &&
+      isPregnancySafe(ex, input.femaleHealth?.isPregnant ?? false),
   );
 
   // Prefer warmups that target today's muscles
@@ -667,7 +679,8 @@ function selectCooldownExercises(
       ex.isActive !== false &&
       ex.category === "cooldown" &&
       !hasInjuryConflict(ex, input.injuries) &&
-      equipmentAvailable(ex, input.availableEquipment),
+      equipmentAvailable(ex, input.availableEquipment) &&
+      isPregnancySafe(ex, input.femaleHealth?.isPregnant ?? false),
   );
 
   const sorted = cooldowns.sort((a, b) => {
@@ -695,7 +708,8 @@ function selectCardioFinisher(
       ex.isActive !== false &&
       ex.category === "cardio" &&
       !hasInjuryConflict(ex, input.injuries) &&
-      equipmentAvailable(ex, input.availableEquipment),
+      equipmentAvailable(ex, input.availableEquipment) &&
+      isPregnancySafe(ex, input.femaleHealth?.isPregnant ?? false),
   );
 
   if (cardioExercises.length === 0) return undefined;
@@ -864,6 +878,7 @@ function findAlternativeExercise(
   allExercises: Exercise[],
   injuries: string[],
   availableEquipment?: string[],
+  isPregnant?: boolean,
 ): Exercise | null {
   return (
     allExercises.find(
@@ -873,6 +888,7 @@ function findAlternativeExercise(
         candidate.movementPattern === ex.movementPattern &&
         !hasInjuryConflict(candidate, injuries) &&
         equipmentAvailable(candidate, availableEquipment) &&
+        isPregnancySafe(candidate, isPregnant ?? false) &&
         candidate.primaryMuscles.some((m) => ex.primaryMuscles.includes(m)),
     ) ?? null
   );

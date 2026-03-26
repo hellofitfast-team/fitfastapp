@@ -3,7 +3,7 @@ import { type Page } from "@playwright/test";
 /**
  * Log in as the seed client user on the client app.
  *
- * Both apps use custom login forms (not Clerk) powered by @convex-dev/auth.
+ * Both apps use custom login forms powered by @convex-dev/auth.
  * The forms have inputs with id="email" and id="password", and a submit
  * button whose visible text comes from i18n translations.
  *

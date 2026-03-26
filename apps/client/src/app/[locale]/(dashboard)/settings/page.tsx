@@ -3,7 +3,19 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { useRouter, usePathname } from "@fitfast/i18n/navigation";
-import { User, Bell, Shield, CreditCard, LogOut, AlertTriangle, X, Loader2 } from "lucide-react";
+import {
+  User,
+  Bell,
+  Shield,
+  CreditCard,
+  ClipboardList,
+  LogOut,
+  AlertTriangle,
+  X,
+  Loader2,
+  ChevronRight,
+} from "lucide-react";
+import { Link } from "@fitfast/i18n/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useNotifications } from "@/hooks/use-notifications";
 import { useMutation, useAction } from "convex/react";
@@ -449,6 +461,22 @@ export default function SettingsPage() {
           )}
         </div>
       </SettingsCard>
+
+      {/* My Assessment */}
+      <Link
+        href="/settings/assessment"
+        className="border-border bg-card shadow-card animate-slide-up flex items-center gap-3 overflow-hidden rounded-xl border p-4 transition-colors hover:bg-neutral-50 active:scale-[0.99]"
+        style={{ animationDelay: "200ms" }}
+      >
+        <div className="bg-primary/10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full">
+          <ClipboardList className="text-primary h-4 w-4" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold">{t("assessment.myAssessment")}</p>
+          <p className="text-muted-foreground text-xs">{t("assessment.myAssessmentDesc")}</p>
+        </div>
+        <ChevronRight className="text-muted-foreground h-4 w-4 shrink-0 rtl:rotate-180" />
+      </Link>
 
       {/* Change Password Dialog */}
       {showPasswordDialog && (

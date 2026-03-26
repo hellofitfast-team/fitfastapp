@@ -186,6 +186,28 @@ export const submitAssessment = mutation({
           versionNumber: nextVersion,
           createdAt: Date.now(),
         });
+
+        // Notify coach(es) about assessment changes
+        const profile = await ctx.db
+          .query("profiles")
+          .withIndex("by_userId", (q) => q.eq("userId", userId))
+          .unique();
+        const clientName = profile?.fullName ?? "Client";
+        const coaches = await ctx.db
+          .query("profiles")
+          .withIndex("by_isCoach", (q) => q.eq("isCoach", true))
+          .collect();
+        for (const coach of coaches) {
+          await ctx.db.insert("inAppNotifications", {
+            userId: coach.userId,
+            type: "individual",
+            title: `${clientName} updated their assessment`,
+            body: `Changed: ${changedFields.join(", ")}`,
+            isRead: false,
+            url: `/clients/${userId}`,
+            createdAt: Date.now(),
+          });
+        }
       }
 
       await ctx.db.patch(existing._id, assessmentData);

@@ -125,6 +125,9 @@ export const saveTranslation = internalMutation({
   },
 });
 
+// Auto-retry delays: 30s, 60s, 120s (up to 3 background attempts)
+const TRANSLATION_RETRY_DELAYS = [30_000, 60_000, 120_000];
+
 export const setTranslationStatus = internalMutation({
   args: {
     planId: v.id("mealPlans"),
@@ -132,10 +135,42 @@ export const setTranslationStatus = internalMutation({
     error: v.optional(v.string()),
   },
   handler: async (ctx, { planId, status, error }) => {
-    await ctx.db.patch(planId, {
-      translationStatus: status,
-      translationError: error,
-    });
+    const plan = await ctx.db.get(planId);
+
+    // Track auto-retry attempt count in translationError prefix
+    let retryAttempt = 0;
+    if (status === "failed" && plan?.translationError) {
+      const match = plan.translationError.match(/^\[retry:(\d+)\]/);
+      if (match) retryAttempt = parseInt(match[1], 10);
+    }
+
+    if (status === "failed" && retryAttempt < TRANSLATION_RETRY_DELAYS.length && plan) {
+      // Schedule automatic background retry
+      const delay = TRANSLATION_RETRY_DELAYS[retryAttempt];
+      const nextAttempt = retryAttempt + 1;
+
+      await ctx.db.patch(planId, {
+        translationStatus: "pending",
+        translationError: `[retry:${nextAttempt}] Auto-retry ${nextAttempt}/${TRANSLATION_RETRY_DELAYS.length} scheduled (${delay / 1000}s delay). Last error: ${error?.slice(0, 400) ?? "unknown"}`,
+      });
+
+      // Determine target language from plan data
+      const targetLanguage = plan.language === "en" ? "ar" : "en";
+
+      await ctx.scheduler.runAfter(delay, internal.ai.translatePlanContent, {
+        planId,
+        planType: "meal",
+        planData: plan.planData,
+        sourceLanguage: plan.language,
+        targetLanguage: targetLanguage as "en" | "ar",
+      });
+    } else {
+      // All auto-retries exhausted or non-failed status — set final status
+      await ctx.db.patch(planId, {
+        translationStatus: status,
+        translationError: error,
+      });
+    }
   },
 });
 
@@ -152,6 +187,8 @@ export const requestTranslation = action({
 
     if (plan.language === targetLanguage) return;
     if (plan.translatedLanguage === targetLanguage && plan.translatedPlanData) return;
+    // Don't re-trigger if already pending (auto-retry in progress)
+    if (plan.translationStatus === "pending") return;
 
     // Mark as pending so client shows loading state
     await ctx.runMutation(internal.mealPlans.setTranslationStatus, {

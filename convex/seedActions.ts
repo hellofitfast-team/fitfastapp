@@ -46,7 +46,7 @@ async function hashPassword(password: string): Promise<string> {
  * Run: npx convex run seedActions:seedTestUsers
  *
  * Coach:  testadmin@admin.com / (set SEED_USER_PASSWORD env var)
- * Client: ziad.adel@scaleflow.digital / (set SEED_USER_PASSWORD env var)
+ * Client: client@fitfast.app / (set SEED_USER_PASSWORD env var)
  */
 /**
  * Delete all non-coach client users and create a fresh one.
@@ -627,8 +627,8 @@ export const seedTestUsers = internalAction({
         isCoach: true,
       },
       {
-        email: "ziad.adel@scaleflow.digital",
-        fullName: "Ziad Adel",
+        email: "client@fitfast.app",
+        fullName: "Test Client",
         isCoach: false,
       },
     ];

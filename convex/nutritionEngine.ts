@@ -20,6 +20,12 @@ interface NutritionInput {
   activityLevel?: ActivityLevel;
   /** InBody-measured BMR (kcal). When provided, overrides Mifflin-St Jeor estimate. */
   measuredBmr?: number;
+  /** Female health data — adjusts caloric targets for pregnancy/breastfeeding/amenorrhea. */
+  femaleHealth?: {
+    isPregnant?: boolean;
+    isBreastfeeding?: boolean;
+    menstrualStatus?: string;
+  };
 }
 
 export interface NutritionTargets {
@@ -136,9 +142,27 @@ export function calculateNutritionTargets(input: NutritionInput): NutritionTarge
   const activityMultiplier = getActivityMultiplier(trainingDaysPerWeek, activityLevel);
   const tdee = Math.round(bmr * activityMultiplier);
 
-  const goalMultiplier = getGoalMultiplier(goal);
+  let goalMultiplier = getGoalMultiplier(goal);
   const minCalories = gender === "male" ? NUTRITION.minCalories.male : NUTRITION.minCalories.female;
-  const calories = Math.max(minCalories, Math.round(tdee * goalMultiplier));
+  const fh = input.femaleHealth;
+
+  // Female health caloric adjustments (deterministic, not AI-dependent)
+  // Only apply for female clients — defense-in-depth against data corruption
+  let femaleCalorieSurplus = 0;
+  if (gender === "female" && fh?.isPregnant) {
+    // Pregnancy: maintenance + 400 kcal (midpoint of 300-500 range), never apply deficit
+    goalMultiplier = Math.max(goalMultiplier, 1.0);
+    femaleCalorieSurplus = 400;
+  } else if (gender === "female" && fh?.isBreastfeeding) {
+    // Breastfeeding: maintenance + 500 kcal, never apply deficit
+    goalMultiplier = Math.max(goalMultiplier, 1.0);
+    femaleCalorieSurplus = 500;
+  } else if (gender === "female" && fh?.menstrualStatus === "amenorrhea") {
+    // Amenorrhea: cap deficit at 10% (not 20%) to prevent RED-S
+    goalMultiplier = Math.max(goalMultiplier, 0.9);
+  }
+
+  const calories = Math.max(minCalories, Math.round(tdee * goalMultiplier) + femaleCalorieSurplus);
 
   // Macros (ISSN guidelines)
   const proteinPerKg = getProteinPerKg(goal);

@@ -22,8 +22,6 @@ interface BasicInfoSectionProps {
   setExperienceLevel: (value: string) => void;
   equipment: string;
   setEquipment: (value: string) => void;
-  equipmentOther: string;
-  setEquipmentOther: (value: string) => void;
   isLoading: boolean;
 }
 
@@ -35,7 +33,6 @@ const EQUIPMENT_IDS = [
   "home_advanced",
   "bodyweight",
   "resistance_bands",
-  "other",
 ] as const;
 
 export function BasicInfoSection({
@@ -53,8 +50,6 @@ export function BasicInfoSection({
   setExperienceLevel,
   equipment,
   setEquipment,
-  equipmentOther,
-  setEquipmentOther,
   isLoading,
 }: BasicInfoSectionProps) {
   const t = useTranslations("onboarding.assessment");
@@ -261,15 +256,6 @@ export function BasicInfoSection({
               </button>
             ))}
           </div>
-          {equipment === "other" && (
-            <Input
-              type="text"
-              placeholder={t("equipmentOtherPlaceholder")}
-              value={equipmentOther}
-              onChange={(e) => setEquipmentOther(e.target.value)}
-              disabled={isLoading}
-            />
-          )}
         </div>
       </SectionCard>
     </>

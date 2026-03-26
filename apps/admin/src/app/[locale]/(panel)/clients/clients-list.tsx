@@ -304,10 +304,13 @@ export function ClientsList({ clients }: { clients: Client[] }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [showBulkDelete, setShowBulkDelete] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const handleSearchChange = (value: string) => {
     setSearch(value);
     setSelected(new Set()); // Clear selection when search changes to prevent deleting invisible clients
+    setCurrentPage(1); // Reset to first page on search
   };
 
   const filtered = clients.filter((c) => {
@@ -318,6 +321,13 @@ export function ClientsList({ clients }: { clients: Client[] }) {
       (c.phone?.includes(q) ?? false)
     );
   });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedClients = filtered.slice(
+    (safeCurrentPage - 1) * rowsPerPage,
+    safeCurrentPage * rowsPerPage,
+  );
 
   const allFilteredSelected = filtered.length > 0 && filtered.every((c) => selected.has(c.id));
 
@@ -446,7 +456,7 @@ export function ClientsList({ clients }: { clients: Client[] }) {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((client) => {
+              {paginatedClients.map((client) => {
                 const isSelected = selected.has(client.id);
                 return (
                   <tr
@@ -544,6 +554,57 @@ export function ClientsList({ clients }: { clients: Client[] }) {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Pagination footer */}
+      {filtered.length > 0 && (
+        <div className="flex items-center justify-between rounded-xl border border-stone-200 bg-white px-4 py-3">
+          <div className="flex items-center gap-2 text-sm text-stone-500">
+            <span>{t("rowsPerPage")}:</span>
+            <select
+              value={rowsPerPage}
+              onChange={(e) => {
+                setRowsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="rounded-md border border-stone-200 bg-white px-2 py-1 text-sm text-stone-700"
+            >
+              {[5, 10, 20, 50].map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-4 text-sm text-stone-500">
+            <span>
+              {(safeCurrentPage - 1) * rowsPerPage + 1}–
+              {Math.min(safeCurrentPage * rowsPerPage, filtered.length)} {t("of")} {filtered.length}
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                disabled={safeCurrentPage <= 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                className="rounded-md border border-stone-200 px-2.5 py-1 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {t("previous")}
+              </button>
+              <span className="px-2 text-xs font-medium text-stone-700">
+                {safeCurrentPage} / {totalPages}
+              </span>
+              <button
+                type="button"
+                disabled={safeCurrentPage >= totalPages}
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                className="rounded-md border border-stone-200 px-2.5 py-1 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {t("next")}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

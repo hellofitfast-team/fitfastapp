@@ -535,6 +535,7 @@ export default defineSchema({
     defaultRepsMax: v.number(),
     defaultRestSeconds: v.number(),
     isActive: v.boolean(),
+    pregnancyUnsafe: v.optional(v.boolean()),
     sortOrder: v.optional(v.number()),
     gifUrl: v.optional(v.string()),
     gifStorageId: v.optional(v.id("_storage")),

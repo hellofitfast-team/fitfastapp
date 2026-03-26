@@ -61,6 +61,8 @@ import type * as seed from "../seed.js";
 import type * as seedActions from "../seedActions.js";
 import type * as seedCardioAndAdvanced from "../seedCardioAndAdvanced.js";
 import type * as seedExercises from "../seedExercises.js";
+import type * as seedPregnancySafety from "../seedPregnancySafety.js";
+import type * as seedResistanceBand from "../seedResistanceBand.js";
 import type * as staticCrons from "../staticCrons.js";
 import type * as storage from "../storage.js";
 import type * as streamingManager from "../streamingManager.js";
@@ -136,6 +138,8 @@ declare const fullApi: ApiFromModules<{
   seedActions: typeof seedActions;
   seedCardioAndAdvanced: typeof seedCardioAndAdvanced;
   seedExercises: typeof seedExercises;
+  seedPregnancySafety: typeof seedPregnancySafety;
+  seedResistanceBand: typeof seedResistanceBand;
   staticCrons: typeof staticCrons;
   storage: typeof storage;
   streamingManager: typeof streamingManager;

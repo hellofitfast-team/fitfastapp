@@ -192,6 +192,21 @@ export const toggleActive = mutation({
   },
 });
 
+export const togglePregnancyUnsafe = mutation({
+  args: { id: v.id("exerciseDatabase") },
+  handler: async (ctx, { id }) => {
+    await requireCoach(ctx);
+
+    const existing = await ctx.db.get(id);
+    if (!existing) throw new Error("Exercise not found");
+
+    await ctx.db.patch(id, {
+      pregnancyUnsafe: !(existing.pregnancyUnsafe ?? false),
+      updatedAt: Date.now(),
+    });
+  },
+});
+
 export const deleteExercise = mutation({
   args: { id: v.id("exerciseDatabase") },
   handler: async (ctx, { id }) => {

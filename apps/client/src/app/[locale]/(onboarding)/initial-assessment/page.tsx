@@ -67,7 +67,6 @@ export default function InitialAssessmentPage() {
   const [selectedRestrictions, setSelectedRestrictions] = useState<string[]>([]);
   const [restrictionsOther, setRestrictionsOther] = useState("");
   const [equipment, setEquipment] = useState("");
-  const [equipmentOther, setEquipmentOther] = useState("");
   const [measurementMethod, setMeasurementMethod] = useState<"manual" | "inbody">("manual");
   const [chest, setChest] = useState("");
   const [waist, setWaist] = useState("");
@@ -106,7 +105,6 @@ export default function InitialAssessmentPage() {
         if (!activityLevel) return tErrors("activityLevelRequired");
         if (!experienceLevel) return tErrors("experienceLevelRequired");
         if (!equipment) return tErrors("equipmentRequired");
-        if (equipment === "other" && !equipmentOther.trim()) return tErrors("equipmentSpecify");
         return null;
       }
       case 3: {
@@ -219,7 +217,7 @@ export default function InitialAssessmentPage() {
       const finalFoodPrefs = getFinalValues(selectedFoodPrefs, foodPrefsOther);
       const finalAllergies = getFinalValues(selectedAllergies, allergiesOther);
       const finalRestrictions = getFinalValues(selectedRestrictions, restrictionsOther);
-      const finalEquipment = equipment === "other" ? equipmentOther.trim() : equipment;
+      const finalEquipment = equipment;
 
       const language = (locale === "ar" ? "ar" : "en") as "en" | "ar";
 
@@ -382,8 +380,6 @@ export default function InitialAssessmentPage() {
                 setExperienceLevel={setExperienceLevel}
                 equipment={equipment}
                 setEquipment={setEquipment}
-                equipmentOther={equipmentOther}
-                setEquipmentOther={setEquipmentOther}
                 isLoading={isLoading}
               />
             </div>

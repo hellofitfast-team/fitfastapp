@@ -40,6 +40,73 @@ const PLAN_MODEL_FALLBACK = "gemini-2.5-flash";
 // are imported from ./aiUtils (extracted for testability)
 
 // ---------------------------------------------------------------------------
+// Pregnancy compliance: scan generated meal plan for prohibited foods
+// ---------------------------------------------------------------------------
+
+const PREGNANCY_PROHIBITED_FOODS = [
+  "sushi",
+  "raw fish",
+  "sashimi",
+  "unpasteurized",
+  "raw milk",
+  "deli meat",
+  "cold cuts",
+  "luncheon meat",
+  "shark",
+  "swordfish",
+  "king mackerel",
+  "tilefish",
+  "marlin",
+];
+
+interface ProhibitedFoodViolation {
+  dayKey: string;
+  mealIndex: number;
+  mealName: string;
+  matchedKeyword: string;
+}
+
+function scanForProhibitedFoods(planData: Record<string, unknown>): ProhibitedFoodViolation[] {
+  const violations: ProhibitedFoodViolation[] = [];
+  const weeklyPlan = planData.weeklyPlan as Record<string, unknown> | undefined;
+  if (!weeklyPlan) return violations;
+
+  for (const [dayKey, dayData] of Object.entries(weeklyPlan)) {
+    const meals = (dayData as any)?.meals;
+    if (!Array.isArray(meals)) continue;
+
+    for (let i = 0; i < meals.length; i++) {
+      const meal = meals[i];
+      // Scan primary meal + alternatives for prohibited foods
+      const mealsToScan = [meal, ...(Array.isArray(meal.alternatives) ? meal.alternatives : [])];
+      for (const m of mealsToScan) {
+        const searchText = [
+          m.name ?? "",
+          ...(Array.isArray(m.ingredients) ? m.ingredients : []),
+          m.description ?? "",
+        ]
+          .join(" ")
+          .toLowerCase();
+
+        for (const keyword of PREGNANCY_PROHIBITED_FOODS) {
+          if (searchText.includes(keyword.toLowerCase())) {
+            violations.push({
+              dayKey,
+              mealIndex: i,
+              mealName: m.name ?? meal.name ?? `Meal ${i + 1}`,
+              matchedKeyword: keyword,
+            });
+            break; // one violation per meal/alternative is enough
+          }
+        }
+      }
+    }
+  }
+
+  return violations;
+}
+
+// ---------------------------------------------------------------------------
 // InBody measured BMR extraction — prefer latest check-in, fallback to assessment
 // ---------------------------------------------------------------------------
 
@@ -172,6 +239,7 @@ async function generateDemoMealPlan(
 ): Promise<Id<"mealPlans">> {
   const assessment = clientCtx.assessment!;
   const isArabic = language === "ar";
+  const fhData = assessment.gender === "female" ? (assessment.femaleHealth as any) : undefined;
   const nutritionTargets = calculateNutritionTargets({
     weightKg: assessment.currentWeight ?? 75,
     heightCm: assessment.height ?? 170,
@@ -181,6 +249,13 @@ async function generateDemoMealPlan(
     goal: assessment.goals?.split(",")[0]?.trim() ?? "general_fitness",
     activityLevel: (assessment as any).activityLevel ?? undefined,
     measuredBmr: getLatestMeasuredBmr(clientCtx),
+    femaleHealth: fhData
+      ? {
+          isPregnant: fhData.isPregnant,
+          isBreastfeeding: fhData.isBreastfeeding,
+          menstrualStatus: fhData.menstrualStatus,
+        }
+      : undefined,
   });
 
   const makeMeal = (name: string, nameAr: string, type: string, calPct: number) => {
@@ -361,6 +436,7 @@ async function generateMealPlanHandler(
     age = 30;
   }
 
+  const fhCheck = assessment.gender === "female" ? (assessment.femaleHealth as any) : undefined;
   const nutritionTargets: NutritionTargets = calculateNutritionTargets({
     weightKg,
     heightCm,
@@ -370,6 +446,13 @@ async function generateMealPlanHandler(
     goal: assessment.goals?.split(",")[0]?.trim() ?? "general_fitness",
     activityLevel: (assessment as any).activityLevel ?? undefined,
     measuredBmr: getLatestMeasuredBmr(clientCtx),
+    femaleHealth: fhCheck
+      ? {
+          isPregnant: fhCheck.isPregnant,
+          isBreastfeeding: fhCheck.isBreastfeeding,
+          menstrualStatus: fhCheck.menstrualStatus,
+        }
+      : undefined,
   });
 
   // --- PLAN CACHE CHECK: per-user cache for identical nutrition targets ---
@@ -936,6 +1019,79 @@ Respond ONLY with valid JSON.`;
       }
     }
 
+    // --- Pregnancy compliance: scan + fix prohibited foods ---
+    const isPregnant =
+      assessment.gender === "female" && (assessment.femaleHealth as any)?.isPregnant;
+    if (isPregnant) {
+      const violations = scanForProhibitedFoods(planData as Record<string, unknown>);
+      if (violations.length > 0) {
+        console.log(
+          `[AI] Pregnancy compliance: ${violations.length} violation(s) found, re-generating meals`,
+        );
+        const weeklyPlan = (planData as any).weeklyPlan;
+        for (const v of violations) {
+          try {
+            const dayMeals = weeklyPlan[v.dayKey]?.meals;
+            if (!dayMeals?.[v.mealIndex]) continue;
+            const oldMeal = dayMeals[v.mealIndex];
+            const correctionRes = await generateText({
+              model: openrouter(PLAN_MODEL_PRIMARY),
+              maxOutputTokens: 1500,
+              temperature: 0.5,
+              messages: [
+                {
+                  role: "system" as const,
+                  content: `You are a pregnancy-safe nutrition expert. Generate a replacement meal in ${language === "ar" ? "Arabic" : "English"} as valid JSON. Match the same calorie/macro targets. Do NOT include any of these prohibited foods: ${PREGNANCY_PROHIBITED_FOODS.join(", ")}. Return JSON with: name, type, calories, protein, carbs, fat, ingredients (array), instructions (string).`,
+                },
+                {
+                  role: "user" as const,
+                  content: `Replace this meal that contained "${v.matchedKeyword}" (prohibited during pregnancy):\n${JSON.stringify(oldMeal)}\nReturn only the replacement meal as JSON.`,
+                },
+              ],
+              abortSignal: AbortSignal.timeout(30_000),
+            });
+            const replacement = extractJSON(correctionRes.text);
+            // Re-scan replacement to ensure it's also compliant
+            const recheck = scanForProhibitedFoods({
+              weeklyPlan: { [v.dayKey]: { meals: [replacement] } },
+            } as Record<string, unknown>);
+            if (recheck.length > 0) {
+              console.warn(
+                `[AI] Replacement meal still contains "${recheck[0].matchedKeyword}" — keeping original with warning`,
+              );
+            } else {
+              dayMeals[v.mealIndex] = replacement;
+              console.log(
+                `[AI] Replaced meal "${v.mealName}" in ${v.dayKey} (contained: ${v.matchedKeyword})`,
+              );
+            }
+          } catch (regenErr) {
+            console.warn(
+              `[AI] Failed to re-generate meal "${v.mealName}": ${regenErr instanceof Error ? regenErr.message : String(regenErr)}`,
+            );
+          }
+        }
+      }
+
+      // Inject pregnancy disclaimer (language-aware, no emoji — icon rendered client-side)
+      (planData as any).pregnancyDisclaimer =
+        language === "ar"
+          ? "أنتِ حامل. يرجى استشارة طبيبتك قبل اتباع أي خطة غذائية. هذه الخطة دليل عام فقط."
+          : "You are pregnant. Please consult your OB-GYN before following any diet plan. This plan is a general guide only.";
+    }
+
+    // Inject breastfeeding note
+    const isBreastfeeding =
+      assessment.gender === "female" &&
+      (assessment.femaleHealth as any)?.isBreastfeeding &&
+      !isPregnant;
+    if (isBreastfeeding) {
+      (planData as any).breastfeedingNote =
+        language === "ar"
+          ? "أنتِ مُرضعة. تأكدي من شرب ٣-٤ لترات ماء يومياً. استشيري طبيبتك قبل إجراء تغييرات غذائية كبيرة."
+          : "You are breastfeeding. Ensure adequate hydration (3-4L water daily). Consult your doctor before making major dietary changes.";
+    }
+
     const startDate = new Date().toISOString().split("T")[0]!;
     const endDate = new Date(Date.now() + safeDuration * 24 * 60 * 60 * 1000)
       .toISOString()
@@ -1046,23 +1202,31 @@ async function generateWorkoutPlanHandler(
       if (!eq) return undefined;
       if (Array.isArray(eq)) return eq;
       if (typeof eq !== "string") return undefined;
-      // Semantic mapping: assessment stores "home"/"gym" but exercises use specific equipment names
+      // Map assessment equipment options to exercise database equipment tags.
+      // Both "dumbbells" and "dumbbell" are included because seed data uses both forms.
       const EQUIPMENT_MAP: Record<string, string[]> = {
-        home: ["dumbbells", "resistance_band", "pull_up_bar"],
-        gym: [
-          "barbell",
-          "dumbbells",
-          "cable_machine",
-          "machines",
-          "bench",
-          "pull_up_bar",
-          "ez_bar",
-        ],
         full_gym: [], // empty = allow all
-        limited: ["dumbbells", "resistance_band"],
+        home_basic: ["dumbbells", "dumbbell", "resistance_band"],
+        home_advanced: [
+          "dumbbells",
+          "dumbbell",
+          "barbell",
+          "bench",
+          "incline_bench",
+          "decline_bench",
+          "ez_bar",
+          "pull_up_bar",
+        ],
+        bodyweight: ["__bodyweight_only__"], // sentinel: only exercises with empty equipment[]
+        resistance_bands: ["resistance_band"],
       };
-      const mapped = EQUIPMENT_MAP[eq.toLowerCase()];
-      return mapped !== undefined ? (mapped.length === 0 ? undefined : mapped) : undefined;
+      const key = eq.toLowerCase();
+      const mapped = EQUIPMENT_MAP[key];
+      // Unrecognized values (including legacy "other", "home", "gym", "limited") → allow all
+      if (mapped === undefined) return undefined;
+      // full_gym returns empty array → undefined means allow all
+      if (mapped.length === 0) return undefined;
+      return mapped;
     })(),
     gender: assessment.gender === "female" ? "female" : "male",
     femaleHealth:
@@ -1293,8 +1457,7 @@ export const translatePlanContent = internalAction({
         tags: ["translation"],
       });
 
-      // Parallel day-by-day translation — each day is a small, fast AI call
-      // 10 parallel requests of ~500 tokens each finish in ~2-3s total
+      // Parallel day-by-day translation with per-day retry + Gemini fallback
       const planObj = args.planData as Record<string, unknown>;
       const weeklyPlan = planObj.weeklyPlan as Record<string, unknown> | undefined;
 
@@ -1302,21 +1465,35 @@ export const translatePlanContent = internalAction({
         throw new Error("Plan has no weeklyPlan structure to translate");
       }
 
+      // Set up Gemini fallback for days that fail with Mercury 2
+      const { createGoogleGenerativeAI } = await import("@ai-sdk/google");
+      const googleApiKey = process.env.GOOGLE_API_KEY;
+      const google = googleApiKey ? createGoogleGenerativeAI({ apiKey: googleApiKey }) : null;
+
       const dayKeys = Object.keys(weeklyPlan);
       const parallelSpan = trace?.span({
         name: "parallel-day-translate",
         metadata: { totalDays: dayKeys.length },
       });
 
-      // Translate all days in parallel
-      const dayResults = await Promise.all(
-        dayKeys.map(async (dayKey) => {
+      // Helper: translate a single day with retry + fallback
+      async function translateDay(
+        dayKey: string,
+      ): Promise<{ dayKey: string; result: Record<string, unknown> }> {
+        const dayJson = JSON.stringify({ [dayKey]: weeklyPlan![dayKey] });
+        const RETRY_DELAYS = [2000, 4000, 8000]; // exponential backoff
+
+        // Try primary model (Mercury 2) with retries
+        let lastError: unknown;
+        for (let attempt = 0; attempt <= RETRY_DELAYS.length; attempt++) {
+          if (attempt > 0) {
+            await new Promise((r) => setTimeout(r, RETRY_DELAYS[attempt - 1]));
+          }
           const dayGen = parallelSpan?.generation({
-            name: `translate-${dayKey}`,
+            name: `translate-${dayKey}-attempt-${attempt}`,
             model: PLAN_MODEL_PRIMARY,
           });
           try {
-            const dayJson = JSON.stringify({ [dayKey]: weeklyPlan[dayKey] });
             const dayRes = await generateText({
               model: openrouter(PLAN_MODEL_PRIMARY),
               maxOutputTokens: 4000,
@@ -1325,30 +1502,82 @@ export const translatePlanContent = internalAction({
                 { role: "system" as const, content: systemPrompt },
                 { role: "user" as const, content: dayJson },
               ],
-              abortSignal: AbortSignal.timeout(30_000),
+              abortSignal: AbortSignal.timeout(45_000),
             });
             dayGen?.end({
               usage: { input: dayRes.usage?.inputTokens, output: dayRes.usage?.outputTokens },
               metadata: { finishReason: dayRes.finishReason },
             });
-            return extractJSON(dayRes.text) as Record<string, unknown>;
-          } catch (dayErr) {
+            return { dayKey, result: extractJSON(dayRes.text) as Record<string, unknown> };
+          } catch (err) {
+            lastError = err;
             dayGen?.end({
               metadata: {
-                errorType: classifyError(dayErr),
-                error: dayErr instanceof Error ? dayErr.message : String(dayErr),
+                errorType: classifyError(err),
+                error: err instanceof Error ? err.message : String(err),
+                attempt,
               },
               level: "ERROR",
             });
-            throw dayErr;
           }
-        }),
-      );
+        }
+
+        // Fallback to Gemini if available
+        if (google) {
+          const fallbackGen = parallelSpan?.generation({
+            name: `translate-${dayKey}-fallback`,
+            model: PLAN_MODEL_FALLBACK,
+          });
+          try {
+            const dayRes = await generateText({
+              model: google(PLAN_MODEL_FALLBACK),
+              maxOutputTokens: 4000,
+              temperature: 0.3,
+              messages: [
+                { role: "system" as const, content: systemPrompt },
+                { role: "user" as const, content: dayJson },
+              ],
+              abortSignal: AbortSignal.timeout(45_000),
+            });
+            fallbackGen?.end({
+              usage: { input: dayRes.usage?.inputTokens, output: dayRes.usage?.outputTokens },
+              metadata: { finishReason: dayRes.finishReason },
+            });
+            return { dayKey, result: extractJSON(dayRes.text) as Record<string, unknown> };
+          } catch (fallbackErr) {
+            fallbackGen?.end({
+              metadata: {
+                errorType: classifyError(fallbackErr),
+                error: fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr),
+              },
+              level: "ERROR",
+            });
+          }
+        }
+
+        // All retries + fallback exhausted
+        throw lastError ?? new Error(`Translation failed for ${dayKey} after all retries`);
+      }
+
+      // Translate all days in parallel with per-day retry
+      const settled = await Promise.allSettled(dayKeys.map((dk) => translateDay(dk)));
+
+      // Check for failures (all-or-nothing: if any day fails, entire translation fails)
+      const failures = settled.filter((s): s is PromiseRejectedResult => s.status === "rejected");
+      if (failures.length > 0) {
+        const failedDays = dayKeys.filter((_, i) => settled[i].status === "rejected");
+        const firstError = failures[0].reason;
+        throw new Error(
+          `Translation failed for days [${failedDays.join(", ")}]: ${firstError instanceof Error ? firstError.message : String(firstError)}`,
+        );
+      }
 
       // Merge all translated days
       const translatedWeeklyPlan: Record<string, unknown> = {};
-      for (const dayResult of dayResults) {
-        Object.assign(translatedWeeklyPlan, dayResult);
+      for (const s of settled) {
+        if (s.status === "fulfilled") {
+          Object.assign(translatedWeeklyPlan, s.value.result);
+        }
       }
 
       parallelSpan?.end();

@@ -89,7 +89,9 @@ export function ExerciseManager() {
   const createExercise = useMutation(api.exerciseDatabase.createExercise);
   const updateExercise = useMutation(api.exerciseDatabase.updateExercise);
   const toggleActive = useMutation(api.exerciseDatabase.toggleActive);
+  const togglePregnancyUnsafe = useMutation(api.exerciseDatabase.togglePregnancyUnsafe);
   const deleteExercise = useMutation(api.exerciseDatabase.deleteExercise);
+  const [togglingPregnancyId, setTogglingPregnancyId] = useState<string | null>(null);
 
   const exercises = searchQuery.trim() ? searchResults : allExercises;
   // imageUrl is dynamically added by listExercises (resolves gifStorageId → CDN URL)
@@ -200,6 +202,21 @@ export function ExerciseManager() {
     }
   }
 
+  async function handleTogglePregnancy(id: Id<"exerciseDatabase">) {
+    setTogglingPregnancyId(id);
+    try {
+      await togglePregnancyUnsafe({ id });
+    } catch (err) {
+      console.error("Toggle pregnancy failed:", err);
+      toast({
+        title: err instanceof Error ? err.message : t("saveFailed"),
+        variant: "destructive",
+      });
+    } finally {
+      setTogglingPregnancyId(null);
+    }
+  }
+
   async function handleDelete(id: Id<"exerciseDatabase">) {
     if (!confirm(t("deleteConfirm"))) return;
     try {
@@ -280,6 +297,9 @@ export function ExerciseManager() {
                   {t("primaryMuscles")}
                 </th>
                 <th className="px-4 py-3 text-start font-medium text-stone-600">{t("isActive")}</th>
+                <th className="hidden px-4 py-3 text-start font-medium text-stone-600 lg:table-cell">
+                  {t("pregnancyUnsafe")}
+                </th>
                 <th className="px-4 py-3 text-end font-medium text-stone-600">{tCommon("edit")}</th>
               </tr>
             </thead>
@@ -299,7 +319,7 @@ export function ExerciseManager() {
                         alt={exercise.name}
                         width={40}
                         height={40}
-                        className="rounded-md border border-stone-200 object-contain"
+                        className="rounded-md border border-stone-200 bg-stone-50 object-cover"
                         loading="lazy"
                       />
                     ) : (
@@ -338,6 +358,31 @@ export function ExerciseManager() {
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
                       ) : (
                         <Power className="h-3.5 w-3.5" />
+                      )}
+                    </button>
+                  </td>
+                  <td className="hidden px-4 py-3 lg:table-cell">
+                    <button
+                      onClick={() => handleTogglePregnancy(exercise._id)}
+                      disabled={togglingPregnancyId === exercise._id}
+                      className={cn(
+                        "flex h-7 w-7 items-center justify-center rounded-md text-xs font-bold transition-colors",
+                        exercise.pregnancyUnsafe
+                          ? "bg-red-100 text-red-600 hover:bg-red-200"
+                          : "bg-stone-100 text-stone-400 hover:bg-stone-200",
+                      )}
+                      title={
+                        exercise.pregnancyUnsafe
+                          ? "Marked as pregnancy-unsafe"
+                          : "Safe for pregnancy"
+                      }
+                    >
+                      {togglingPregnancyId === exercise._id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : exercise.pregnancyUnsafe ? (
+                        "⚠"
+                      ) : (
+                        "✓"
                       )}
                     </button>
                   </td>
@@ -526,7 +571,7 @@ export function ExerciseManager() {
                         alt={editExercise.name}
                         width={128}
                         height={128}
-                        className="rounded-lg border border-stone-200 object-contain"
+                        className="rounded-lg border border-stone-200 bg-stone-50 object-cover"
                       />
                     </div>
                   ) : null;

@@ -440,6 +440,20 @@ export default function MealPlanPage() {
         </div>
       )}
 
+      {/* Pregnancy / breastfeeding disclaimer */}
+      {(planData as any)?.pregnancyDisclaimer && (
+        <div className="flex items-start gap-3 rounded-xl border border-amber-300/40 bg-amber-50/80 p-4">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+          <p className="text-xs text-amber-800">{(planData as any).pregnancyDisclaimer}</p>
+        </div>
+      )}
+      {(planData as any)?.breastfeedingNote && (
+        <div className="flex items-start gap-3 rounded-xl border border-blue-300/40 bg-blue-50/80 p-4">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-blue-500" />
+          <p className="text-xs text-blue-800">{(planData as any).breastfeedingNote}</p>
+        </div>
+      )}
+
       {/* Day Navigator */}
       <DayNavigator
         totalDays={totalDays}

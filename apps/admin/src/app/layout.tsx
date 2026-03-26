@@ -1,7 +1,23 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
+import { Inter, Space_Grotesk, Alexandria } from "next/font/google";
 import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
 import "./globals.css";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+});
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-space-grotesk",
+});
+
+const alexandria = Alexandria({
+  subsets: ["arabic", "latin"],
+  variable: "--font-alexandria",
+});
 
 export const metadata: Metadata = {
   title: {
@@ -28,16 +44,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <ConvexAuthNextjsServerProvider>
-      <html lang={locale} dir={dir}>
-        <head>
-          <link rel="preconnect" href="https://fonts.googleapis.com" />
-          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-          <link
-            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Space+Grotesk:wght@500;600;700&family=Alexandria:wght@500;600;700;900&display=swap"
-            rel="stylesheet"
-          />
-        </head>
-        <body className="bg-background text-foreground min-h-screen antialiased">{children}</body>
+      <html
+        lang={locale}
+        dir={dir}
+        className={`${inter.variable} ${spaceGrotesk.variable} ${alexandria.variable}`}
+      >
+        <body className="bg-background text-foreground min-h-screen font-sans antialiased">
+          {children}
+        </body>
       </html>
     </ConvexAuthNextjsServerProvider>
   );

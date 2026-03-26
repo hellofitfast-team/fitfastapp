@@ -98,7 +98,9 @@ export default function AdminClientsPage() {
                 <div className="flex items-center gap-3">
                   {signup.planTier && (
                     <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700">
-                      {signup.planTier === "quarterly" ? t("quarterly") : t("monthly")}
+                      {signup.planTier === "quarterly"
+                        ? t("tierLabels.quarterly")
+                        : t("tierLabels.monthly")}
                     </span>
                   )}
                   <div className="flex items-center gap-1 text-xs text-amber-600">

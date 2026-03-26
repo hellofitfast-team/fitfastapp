@@ -1,112 +1,17 @@
+/* Font loaded via next/font in layout.tsx (Inter, Space Grotesk, Alexandria) */
+
 @import "tailwindcss";
+@import "../../../../packages/ui/styles.css";
+
 @source "../../../../packages/ui/src";
 
-@theme {
-  --color-accent: #ff4500;
-  --color-accent-dark: #cc3700;
-  --color-background: #ffffff;
-  --color-foreground: #111111;
+/* ── Marketing-Only: Additional Tokens ── */
+@theme inline {
   --color-surface: #f4f4f5;
   --color-surface-light: #e4e4e7;
-
-  /* Kept from old theme for checkout/drawer components */
-  --color-primary: #ff4500;
-  --color-primary-foreground: #ffffff;
-  --color-card: #ffffff;
-  --color-card-foreground: #111111;
-  --color-muted: #f4f4f5;
-  --color-muted-foreground: #737373;
-  --color-border: #e4e4e7;
-  --color-input: #d4d4d4;
-  --color-ring: #ff4500;
-  --color-popover: #ffffff;
-  --color-popover-foreground: #111111;
-
-  /* Fonts */
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
-  --font-arabic: var(--font-alexandria), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
-
-  /* Border Radius */
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
-  --radius-2xl: 1.5rem;
-  --radius-full: 9999px;
-
-  /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.06);
-  --shadow-card: 0 2px 8px 0 rgba(0, 0, 0, 0.06), 0 1px 2px 0 rgba(0, 0, 0, 0.04);
 }
 
-/* Z-index layers — plain :root so they survive Tailwind v4 tree-shaking
-   (referenced via arbitrary values in @fitfast/ui drawer component) */
-:root {
-  --z-overlay: 50;
-  --z-drawer: 50;
-}
-
-body {
-  background-color: var(--color-background);
-  color: var(--color-foreground);
-  overflow-x: hidden;
-}
-
-html {
-  scroll-behavior: smooth;
-  color-scheme: light;
-}
-
-html[dir="rtl"] {
-  --font-sans: var(--font-arabic);
-  --font-display: var(--font-arabic);
-}
-
-/* RTL Support */
-@layer base {
-  [dir="rtl"] {
-    text-align: right;
-    font-family: var(--font-arabic);
-  }
-
-  [dir="rtl"] * {
-    letter-spacing: 0 !important;
-  }
-
-  [dir="rtl"] .text-xs {
-    font-size: 0.875rem;
-    line-height: 1.4;
-  }
-
-  * {
-    border-color: var(--color-border);
-  }
-
-  :focus-visible {
-    outline: 2px solid var(--color-ring);
-    outline-offset: 2px;
-  }
-
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: #d4d4d4;
-    border-radius: 9999px;
-  }
-}
-
-/* Noise Overlay */
+/* ── Marketing-Only: Noise Overlay ── */
 .noise-overlay {
   position: fixed;
   top: 0;
@@ -117,50 +22,4 @@ html[dir="rtl"] {
   z-index: 9999;
   opacity: 0.03;
   mix-blend-mode: multiply;
-}
-
-/* Magnetic Button Base */
-.btn-magnetic {
-  position: relative;
-  overflow: hidden;
-  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  z-index: 1;
-}
-
-.btn-magnetic:hover {
-  transform: scale(1.03);
-}
-
-.btn-magnetic-bg {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  transition: top 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  z-index: -1;
-  border-radius: inherit;
-}
-
-.btn-magnetic:hover .btn-magnetic-bg {
-  top: 0;
-}
-
-/* Link Hover Lift */
-.link-lift {
-  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  display: inline-block;
-}
-
-.link-lift:hover {
-  transform: translateY(-1px);
-}
-
-/* Reduced Motion */
-@media (prefers-reduced-motion: reduce) {
-  .btn-magnetic,
-  .btn-magnetic-bg,
-  .link-lift {
-    transition: none;
-  }
 }

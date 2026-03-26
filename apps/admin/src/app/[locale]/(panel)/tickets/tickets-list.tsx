@@ -32,6 +32,7 @@ export function TicketsList() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [response, setResponse] = useState("");
   const [respondingId, setRespondingId] = useState<string | null>(null);
+  const [closingId, setClosingId] = useState<string | null>(null);
 
   const toggleTicket = (id: string) => {
     setExpandedId((prev) => (prev === id ? null : id));
@@ -61,7 +62,6 @@ export function TicketsList() {
     setRespondingId(null);
   };
 
-  const [closingId, setClosingId] = useState<string | null>(null);
   const handleClose = async (ticketId: Id<"tickets">) => {
     setClosingId(ticketId);
     try {
