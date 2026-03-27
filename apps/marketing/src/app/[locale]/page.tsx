@@ -263,8 +263,8 @@ function Hero() {
       <div className="hero-image-container relative mx-auto mt-20 aspect-[16/9] w-full max-w-6xl overflow-hidden rounded-[2rem] bg-[var(--color-surface)] md:aspect-[21/9] md:rounded-[3rem]">
         <div className="hero-image-inner absolute inset-0 -top-[20%] h-[140%] w-full">
           <Image
-            src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=2940&auto=format&fit=crop"
-            alt="Athlete training"
+            src="/images/hero-athlete.jpg"
+            alt="Male athlete training"
             fill
             className="object-cover"
             priority
@@ -314,22 +314,19 @@ function Features() {
       icon: <Zap className="h-6 w-6 text-[var(--color-accent)]" />,
       title: t("feat1Title"),
       desc: t("feat1Desc"),
-      image:
-        "https://images.unsplash.com/photo-1490645935967-10de6ba17061?q=80&w=2953&auto=format&fit=crop",
+      image: "/images/feat-nutrition.jpg",
     },
     {
       icon: <Dumbbell className="h-6 w-6 text-[var(--color-accent)]" />,
       title: t("feat2Title"),
       desc: t("feat2Desc"),
-      image:
-        "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=2940&auto=format&fit=crop",
+      image: "/images/feat-training.jpg",
     },
     {
       icon: <MessageCircle className="h-6 w-6 text-[var(--color-accent)]" />,
       title: t("feat3Title"),
       desc: t("feat3Desc"),
-      image:
-        "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=2940&auto=format&fit=crop",
+      image: "/images/feat-coach.jpg",
     },
   ];
 
@@ -432,7 +429,7 @@ function BentoGrid() {
           <div className="absolute inset-0 opacity-40 transition-opacity duration-700 group-hover:opacity-60">
             <div className="absolute inset-0 -top-[10%] h-[120%] w-full">
               <Image
-                src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=2940&auto=format&fit=crop"
+                src="/images/ecosystem-gym.jpg"
                 alt="Gym"
                 fill
                 className="bento-large-img object-cover grayscale"
