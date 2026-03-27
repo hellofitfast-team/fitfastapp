@@ -83,9 +83,21 @@ export const cascadeDeleteUser = internalMutation({
     // Delete all auth records (accounts, sessions, tokens, verifiers, user)
     await deleteAuthRecords(ctx, userId);
 
-    // Finally, delete the profile (may already be deleted by test user cleanup)
+    // Delete the profile and clean up any matching pendingSignups
     const profileDoc = await ctx.db.get(profileId);
-    if (profileDoc) await ctx.db.delete(profileId);
+    if (profileDoc) {
+      // Clean up pendingSignups by email so orphaned records don't resurface
+      if (profileDoc.email) {
+        const pendingSignups = await ctx.db
+          .query("pendingSignups")
+          .withIndex("by_email", (q) => q.eq("email", profileDoc.email!))
+          .collect();
+        for (const signup of pendingSignups) {
+          await ctx.db.delete(signup._id);
+        }
+      }
+      await ctx.db.delete(profileId);
+    }
   },
 });
 

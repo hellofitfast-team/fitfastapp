@@ -177,6 +177,8 @@ export const replyToTicket = mutation({
     if (!ticket) throw new Error("Ticket not found");
     if (ticket.userId !== userId) throw new Error("Not authorized");
     if (ticket.status === "closed") throw new Error("Cannot reply to closed ticket");
+    if (ticket.messages.length >= 500)
+      throw new Error("Ticket has reached the maximum message limit");
 
     await ctx.db.patch(ticketId, {
       messages: [...ticket.messages, { sender: "client" as const, message, timestamp: Date.now() }],
@@ -198,6 +200,8 @@ export const respondToTicket = mutation({
 
     const ticket = await ctx.db.get(ticketId);
     if (!ticket) throw new Error("Ticket not found");
+    if (ticket.messages.length >= 500)
+      throw new Error("Ticket has reached the maximum message limit");
 
     await ctx.db.patch(ticketId, {
       messages: [...ticket.messages, { sender: "coach" as const, message, timestamp: Date.now() }],
