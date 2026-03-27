@@ -560,7 +560,10 @@
     "uploadFailed": "Screenshot upload failed",
     "uploadFailedDescription": "Could not upload the screenshot. Please try again.",
     "subjectMinLength": "Subject must be at least 3 characters",
-    "subjectMaxLength": "Subject must be under 100 characters"
+    "subjectMaxLength": "Subject must be under 100 characters",
+    "descriptionMaxLength": "Description must be under 3000 characters",
+    "submitFailed": "Failed to submit ticket. Please try again.",
+    "optional": "optional"
   },
   "faq": {
     "title": "Frequently Asked Questions",

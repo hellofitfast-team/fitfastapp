@@ -560,7 +560,10 @@
     "uploadFailed": "فشل رفع الصورة",
     "uploadFailedDescription": "تعذر رفع لقطة الشاشة. يرجى المحاولة مرة أخرى.",
     "subjectMinLength": "يجب أن يكون الموضوع 3 أحرف على الأقل",
-    "subjectMaxLength": "يجب أن يكون الموضوع أقل من 100 حرف"
+    "subjectMaxLength": "يجب أن يكون الموضوع أقل من 100 حرف",
+    "descriptionMaxLength": "يجب أن يكون الوصف أقل من 3000 حرف",
+    "submitFailed": "فشل إرسال التذكرة. يرجى المحاولة مرة أخرى.",
+    "optional": "اختياري"
   },
   "faq": {
     "title": "الأسئلة الشائعة",

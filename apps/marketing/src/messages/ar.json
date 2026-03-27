@@ -93,7 +93,9 @@
     "transferAmount": "مبلغ التحويل",
     "transferAmountPlaceholder": "مثال: 2500",
     "refRequired": "رقم مرجع التحويل مطلوب",
-    "amountRequired": "مبلغ التحويل مطلوب"
+    "amountRequired": "مبلغ التحويل مطلوب",
+    "nameTooShort": "يجب أن يكون الاسم حرفين على الأقل",
+    "invalidAmount": "يرجى إدخال مبلغ صحيح (أرقام فقط)"
   },
   "error": {
     "title": "حدث خطأ",

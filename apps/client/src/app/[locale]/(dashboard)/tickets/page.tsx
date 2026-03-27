@@ -34,7 +34,7 @@ function createTicketSchema(t: (key: string) => string) {
   return z.object({
     subject: z.string().min(3, t("subjectMinLength")).max(100, t("subjectMaxLength")),
     category: z.enum(["meal_issue", "workout_issue", "technical", "bug_report", "other"]),
-    description: z.string().optional(),
+    description: z.string().max(3000, t("descriptionMaxLength")).optional(),
   });
 }
 type TicketFormData = z.infer<ReturnType<typeof createTicketSchema>>;
@@ -71,7 +71,7 @@ export default function TicketsPage() {
   const t = useTranslations("tickets");
   const tEmpty = useTranslations("emptyStates");
   const locale = useLocale();
-  const { tickets, isLoading, error, createTicket } = useTickets();
+  const { tickets, isLoading, error, createTicket, createError } = useTickets();
   const generateUploadUrl = useMutation(api.storage.generateUploadUrl);
 
   const { toast } = useToast();
@@ -131,6 +131,12 @@ export default function TicketsPage() {
       setScreenshotFile(null);
       setSubmitSuccess(true);
       setTimeout(() => setSubmitSuccess(false), 3000);
+    } else {
+      toast({
+        title: t("submitFailed"),
+        description: createError || undefined,
+        variant: "destructive",
+      });
     }
   };
 
@@ -206,7 +212,12 @@ export default function TicketsPage() {
             </select>
           </FormField>
 
-          <FormField label={t("description")} optional>
+          <FormField
+            label={t("description")}
+            optional
+            optionalLabel={t("optional")}
+            error={errors.description?.message}
+          >
             <Textarea
               {...register("description")}
               placeholder={t("descriptionPlaceholder")}
@@ -214,7 +225,7 @@ export default function TicketsPage() {
             />
           </FormField>
 
-          <FormField label={t("screenshot")} optional>
+          <FormField label={t("screenshot")} optional optionalLabel={t("optional")}>
             <label className="border-border flex h-16 cursor-pointer items-center justify-center rounded-lg border border-dashed bg-neutral-50 transition-colors hover:bg-neutral-100">
               <input
                 type="file"

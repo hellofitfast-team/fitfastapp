@@ -14,10 +14,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
   }
 
   // Fetch profile and assessment in parallel
-  const [profile, assessment] = await Promise.all([
-    fetchQuery(api.profiles.getMyProfile, {}, { token }),
-    fetchQuery(api.assessments.getMyAssessment, {}, { token }),
-  ]);
+  let profile;
+  let assessment;
+  try {
+    [profile, assessment] = await Promise.all([
+      fetchQuery(api.profiles.getMyProfile, {}, { token }),
+      fetchQuery(api.assessments.getMyAssessment, {}, { token }),
+    ]);
+  } catch {
+    redirect(`/${locale}/login`);
+  }
 
   if (!profile) {
     redirect(`/${locale}/login`);

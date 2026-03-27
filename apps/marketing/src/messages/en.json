@@ -93,7 +93,9 @@
     "transferAmount": "Transfer Amount",
     "transferAmountPlaceholder": "e.g. 2500",
     "refRequired": "Transfer reference number is required",
-    "amountRequired": "Transfer amount is required"
+    "amountRequired": "Transfer amount is required",
+    "nameTooShort": "Name must be at least 2 characters",
+    "invalidAmount": "Please enter a valid amount (numbers only)"
   },
   "error": {
     "title": "Something went wrong",

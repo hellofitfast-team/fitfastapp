@@ -5,16 +5,28 @@ export interface FormFieldProps {
   label: string;
   error?: string;
   optional?: boolean;
+  optionalLabel?: string;
   children: React.ReactNode;
   className?: string;
 }
 
-export function FormField({ label, error, optional, children, className }: FormFieldProps) {
+export function FormField({
+  label,
+  error,
+  optional,
+  optionalLabel,
+  children,
+  className,
+}: FormFieldProps) {
   return (
     <div className={cn("space-y-1.5", className)}>
       <label className="block text-sm font-medium">
         {label}
-        {optional && <span className="text-muted-foreground ms-1 font-normal">(optional)</span>}
+        {optional && (
+          <span className="text-muted-foreground ms-1 font-normal">
+            ({optionalLabel || "optional"})
+          </span>
+        )}
       </label>
       {children}
       {error && (

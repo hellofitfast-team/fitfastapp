@@ -38,13 +38,18 @@ function makeCheckoutSchema(
   invalidPhoneMsg: string,
   refRequiredMsg: string,
   amountRequiredMsg: string,
+  nameTooShortMsg: string,
+  invalidAmountMsg: string,
 ) {
   return z.object({
-    fullName: z.string().min(2).max(100),
+    fullName: z.string().min(2, nameTooShortMsg).max(100),
     email: z.string().email(),
     phone: z.string().regex(/^\+?[0-9\s-]{10,15}$/, invalidPhoneMsg),
     transferReferenceNumber: z.string().min(1, refRequiredMsg),
-    transferAmount: z.string().min(1, amountRequiredMsg),
+    transferAmount: z
+      .string()
+      .min(1, amountRequiredMsg)
+      .regex(/^\d+(\.\d{1,2})?$/, invalidAmountMsg),
   });
 }
 
@@ -58,6 +63,8 @@ export function CheckoutForm({ selectedPlan, onSuccess }: CheckoutFormProps) {
     t("invalidPhone"),
     t("refRequired"),
     t("amountRequired"),
+    t("nameTooShort"),
+    t("invalidAmount"),
   );
   const createSignup = useMutation(api.pendingSignups.createSignup);
 
