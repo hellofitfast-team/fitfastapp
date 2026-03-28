@@ -28,10 +28,10 @@
     "react-i18next": "^15.0.0",
     "react-swipeable": "^7.0.2",
     "recharts": "^2.15.0",
-    "zod": "^3.24.0"
+    "zod": "^3.24.0",
+    "@hookform/resolvers": "^5.2.2"
   },
   "devDependencies": {
-    "@hookform/resolvers": "^5.2.2",
     "@tanstack/react-router-devtools": "^1.120.0",
     "@tanstack/router-plugin": "^1.120.0",
     "@types/react": "^19.0.0",

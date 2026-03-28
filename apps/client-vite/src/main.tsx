@@ -9,6 +9,11 @@ import { routeTree } from "./routeTree.gen";
 import "@fitfast/ui/styles";
 import "./i18n";
 
+// Validate required env var at startup
+if (!import.meta.env.VITE_CONVEX_URL) {
+  throw new Error("VITE_CONVEX_URL is not set. Add it to your .env.local file.");
+}
+
 // Create Convex client
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
 

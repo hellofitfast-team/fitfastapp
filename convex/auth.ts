@@ -32,7 +32,13 @@ export const { onCreate, onUpdate, onDelete } = authComponent.triggersApi();
 
 export const createAuth = (ctx: GenericCtx<DataModel>) => {
   return betterAuth({
-    trustedOrigins: [clientAppUrl, adminAppUrl],
+    trustedOrigins: [
+      clientAppUrl,
+      adminAppUrl,
+      // Dev origins for Vite client and admin apps
+      "http://localhost:3010",
+      "http://localhost:3011",
+    ],
     database: authComponent.adapter(ctx),
     emailAndPassword: {
       enabled: true,

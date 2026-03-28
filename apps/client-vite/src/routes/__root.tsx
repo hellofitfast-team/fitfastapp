@@ -4,14 +4,13 @@ import { useTranslation } from "react-i18next";
 const RTL_LOCALES = new Set(["ar"]);
 import type { AuthState } from "@/lib/auth-context";
 
-const TanStackRouterDevtools =
-  process.env.NODE_ENV === "production"
-    ? () => null
-    : lazy(() =>
-        import("@tanstack/react-router-devtools").then((m) => ({
-          default: m.TanStackRouterDevtools,
-        })),
-      );
+const TanStackRouterDevtools = import.meta.env.PROD
+  ? () => null
+  : lazy(() =>
+      import("@tanstack/react-router-devtools").then((m) => ({
+        default: m.TanStackRouterDevtools,
+      })),
+    );
 
 export interface RouterContext {
   auth: AuthState;
