@@ -1,6 +1,6 @@
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate, useLocation } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { User, LogOut, Settings } from "lucide-react";
 import { NotificationDropdown } from "@/components/notification-dropdown";
 import {
@@ -19,7 +19,6 @@ interface DesktopHeaderProps {
 export function DesktopHeader({ userName }: DesktopHeaderProps) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const location = useLocation();
   const currentLocale = i18n.language;
   const menuId = useId();
 

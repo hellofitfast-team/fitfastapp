@@ -86,14 +86,7 @@ export function BottomNav({ onMoreClick }: BottomNavProps) {
                 <span className="bg-error-500 border-card absolute end-0 top-0 h-3 w-3 rounded-full border-2" />
               )}
             </div>
-            <span
-              className={cn(
-                "mt-1 text-[10px] font-semibold",
-                isCheckInActive ? "text-primary" : "text-primary",
-              )}
-            >
-              {t("nav.checkIn")}
-            </span>
+            <span className="text-primary mt-1 text-[10px] font-semibold">{t("nav.checkIn")}</span>
           </Link>
         </div>
 
