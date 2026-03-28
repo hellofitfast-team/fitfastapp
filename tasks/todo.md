@@ -23,28 +23,31 @@ Plan: `.claude/plans/tender-growing-kite.md`
 - [ ] Rewrite seed functions for BetterAuth (use signUp API instead of direct DB inserts)
 - [ ] Frontend auth migration (happens when pages are fully migrated to Vite)
 
-## Phase 2: Client Vite App Scaffold ✅
+## Phase 2: Client Vite App ✅
 
 - [x] Scaffold apps/client-vite/ (package.json, vite.config.ts, index.html, main.tsx)
 - [x] TanStack Router file-based routing with auth guards
 - [x] react-i18next with existing translation files
 - [x] BetterAuth client + ConvexBetterAuthProvider
-- [x] All 18 route stubs matching Next.js structure
-- [x] Dashboard layout with profile/assessment guards matching Next.js
-- [x] Login page with BetterAuth signIn.email
+- [x] ALL pages migrated with full functionality (18 routes, 50+ components)
+- [x] Dashboard (home, meal-plan, workout-plan, tracking, progress, check-in, tickets, FAQ, settings)
+- [x] Onboarding (initial-assessment 6-step wizard, pending, welcome)
+- [x] Auth (login, accept-invite, set-password, magic-link, expired)
+- [x] CodeRabbit review fixes applied (auth guards, startup validation)
 - [x] Vite builds successfully
-- [ ] Migrate remaining pages with full functionality (file-by-file)
 - [ ] Add optimistic updates to all mutations
-- [ ] Set up vite-plugin-pwa (manifest + custom SW copied)
+- [ ] Set up vite-plugin-pwa (injectManifest config in vite.config.ts)
+- [ ] Migrate dashboard shell components (sidebar, bottom-nav, headers)
 
-## Phase 3: Admin Vite App Scaffold ✅
+## Phase 3: Admin Vite App ✅
 
-- [x] Scaffold apps/admin-vite/ with all route stubs
+- [x] Scaffold + ALL 13 routes migrated with full functionality
 - [x] Coach auth guard in \_panel layout
+- [x] 22 component files, 2 hooks (login, setup, dashboard, clients, signups, tickets, exercises, knowledge, FAQs, notifications, settings)
 - [x] Vite builds successfully
-- [ ] Migrate remaining pages with full functionality
 - [ ] Add TanStack Virtual to long lists
 - [ ] Add optimistic updates
+- [ ] Migrate admin shell components (sidebar, header)
 
 ## Phase 4: AI SDK Swap — TanStack AI (DEFERRED)
 
