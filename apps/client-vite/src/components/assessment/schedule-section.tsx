@@ -28,7 +28,7 @@ export function ScheduleSection({
   experienceLevel,
   isLoading,
 }: ScheduleSectionProps) {
-  const { t } = useTranslation("onboarding");
+  const { t } = useTranslation("translation", { keyPrefix: "onboarding" });
   const limits = getDayLimits(primaryGoal, experienceLevel);
 
   useEffect(() => {

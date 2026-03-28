@@ -27,8 +27,8 @@ const ALLERGY_IDS = [
 const RESTRICTION_IDS = ["no_beef", "vegetarian", "vegan"] as const;
 
 export function DietarySection({ assessment }: { assessment: any }) {
-  const { t } = useTranslation("settings");
-  const { t: tDiet } = useTranslation("onboarding");
+  const { t } = useTranslation("translation", { keyPrefix: "settings" });
+  const { t: tDiet } = useTranslation("translation", { keyPrefix: "onboarding" });
   const submitAssessment = useMutation(api.assessments.submitAssessment);
 
   const [foodPrefs, setFoodPrefs] = useState<string[]>(assessment.foodPreferences ?? []);

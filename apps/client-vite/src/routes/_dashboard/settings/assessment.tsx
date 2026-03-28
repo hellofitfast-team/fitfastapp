@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_dashboard/settings/assessment")({
 });
 
 function AssessmentEditPage() {
-  const { t } = useTranslation("settings");
+  const { t } = useTranslation("translation", { keyPrefix: "settings" });
   const assessment = useQuery(api.assessments.getMyAssessment);
   const profile = useQuery(api.profiles.getMyProfile);
 

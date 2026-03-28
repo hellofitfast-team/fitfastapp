@@ -7,7 +7,7 @@ interface PhotoComparisonProps {
 }
 
 export function PhotoComparison({ photos }: PhotoComparisonProps) {
-  const { t } = useTranslation("progress");
+  const { t } = useTranslation("translation", { keyPrefix: "progress" });
   const [sliderValue, setSliderValue] = useState(50);
 
   if (photos.length < 2) {

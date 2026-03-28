@@ -9,7 +9,7 @@ export const Route = createFileRoute("/_onboarding/welcome")({
 });
 
 function WelcomePage() {
-  const { t } = useTranslation("onboarding");
+  const { t } = useTranslation("translation", { keyPrefix: "onboarding" });
 
   const features = [
     {

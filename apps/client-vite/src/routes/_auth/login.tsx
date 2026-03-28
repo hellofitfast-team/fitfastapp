@@ -29,12 +29,12 @@ function LoginPage() {
         password,
       });
       if (result.error) {
-        setError(result.error.message ?? t("login.error"));
+        setError(result.error.message ?? t("auth.loginMessages.error"));
       } else {
         navigate({ to: "/" });
       }
     } catch {
-      setError(t("login.error"));
+      setError(t("auth.loginMessages.error"));
     } finally {
       setLoading(false);
     }
@@ -43,12 +43,12 @@ function LoginPage() {
   return (
     <div className="w-full max-w-md space-y-6">
       <div className="text-center">
-        <h1 className="text-2xl font-bold">{t("login.title")}</h1>
-        <p className="text-muted-foreground mt-2">{t("login.subtitle")}</p>
+        <h1 className="text-2xl font-bold">{t("auth.login")}</h1>
+        <p className="text-muted-foreground mt-2">{t("auth.loginMessages.subtitle")}</p>
       </div>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email">{t("login.email")}</Label>
+          <Label htmlFor="email">{t("auth.email")}</Label>
           <Input
             id="email"
             type="email"
@@ -58,7 +58,7 @@ function LoginPage() {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="password">{t("login.password")}</Label>
+          <Label htmlFor="password">{t("auth.password")}</Label>
           <Input
             id="password"
             type="password"
@@ -69,7 +69,7 @@ function LoginPage() {
         </div>
         {error && <p className="text-sm text-red-500">{error}</p>}
         <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? t("common.loading") : t("login.submit")}
+          {loading ? t("common.loading") : t("auth.signIn")}
         </Button>
       </form>
     </div>

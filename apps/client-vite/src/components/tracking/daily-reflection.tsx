@@ -19,7 +19,7 @@ export const DailyReflection = memo(function DailyReflection({
   defaultReflection,
   onSubmit,
 }: DailyReflectionProps) {
-  const { t } = useTranslation("tracking");
+  const { t } = useTranslation("translation", { keyPrefix: "tracking" });
 
   const { register, handleSubmit, reset, formState, watch } = useForm<ReflectionForm>({
     defaultValues: { reflection: defaultReflection || "" },

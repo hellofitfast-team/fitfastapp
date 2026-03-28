@@ -25,7 +25,7 @@ interface ExerciseHistoryDrawerProps {
 }
 
 export function ExerciseHistoryDrawer({ exerciseName, open, onClose }: ExerciseHistoryDrawerProps) {
-  const { t } = useTranslation("tracking");
+  const { t } = useTranslation("translation", { keyPrefix: "tracking" });
   const { history, isLoading } = useExerciseHistory(exerciseName, open);
 
   /** Find the personal best weight across all sessions */

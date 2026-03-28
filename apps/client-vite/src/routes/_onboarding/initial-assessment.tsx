@@ -27,9 +27,9 @@ export const Route = createFileRoute("/_onboarding/initial-assessment")({
 const TOTAL_STEPS = 6;
 
 function InitialAssessmentPage() {
-  const { t, i18n } = useTranslation("onboarding");
-  const { t: tCommon } = useTranslation("common");
-  const { t: tErrors } = useTranslation("errors");
+  const { t, i18n } = useTranslation("translation", { keyPrefix: "onboarding" });
+  const { t: tCommon } = useTranslation("translation", { keyPrefix: "common" });
+  const { t: tErrors } = useTranslation("translation", { keyPrefix: "errors" });
   const locale = i18n.language;
   const navigate = useNavigate();
   const profile = useQuery(api.profiles.getMyProfile);

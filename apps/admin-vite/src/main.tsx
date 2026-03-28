@@ -8,7 +8,7 @@ import { authClient } from "@/lib/auth-client";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
 import { ErrorFallback } from "@/components/error-fallback";
 import { routeTree } from "./routeTree.gen";
-import "@fitfast/ui/styles";
+import "./globals.css";
 import "./i18n";
 
 // Initialize Sentry

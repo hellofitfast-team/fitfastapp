@@ -39,7 +39,7 @@ export function TrackingHeader({
   mealProgress,
   workoutDone,
 }: TrackingHeaderProps) {
-  const { t, i18n } = useTranslation("tracking");
+  const { t, i18n } = useTranslation("translation", { keyPrefix: "tracking" });
   const locale = i18n.language;
   const { streak } = useStreak();
 

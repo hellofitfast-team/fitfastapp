@@ -23,8 +23,8 @@ export const Route = createFileRoute("/_dashboard/tracking")({
 });
 
 function TrackingPage() {
-  const { t } = useTranslation("tracking");
-  const { t: tEmpty } = useTranslation("emptyStates");
+  const { t } = useTranslation("translation", { keyPrefix: "tracking" });
+  const { t: tEmpty } = useTranslation("translation", { keyPrefix: "emptyStates" });
   const navigate = useNavigate();
 
   // Use local date (not UTC) so "today" matches the user's timezone

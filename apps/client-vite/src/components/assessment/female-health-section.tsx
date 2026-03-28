@@ -36,7 +36,7 @@ const MENSTRUAL_VALUE_MAP: Record<string, FemaleHealthData["menstrualStatus"]> =
 };
 
 export function FemaleHealthSection({ data, onChange, isLoading }: FemaleHealthSectionProps) {
-  const { t } = useTranslation("onboarding");
+  const { t } = useTranslation("translation", { keyPrefix: "onboarding" });
 
   const update = (patch: Partial<FemaleHealthData>) => {
     onChange({ ...data, ...patch });

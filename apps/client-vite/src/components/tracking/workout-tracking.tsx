@@ -63,9 +63,9 @@ export const WorkoutTracking = memo(function WorkoutTracking({
   isWorkoutsExpanded,
   onToggleExpand,
 }: WorkoutTrackingProps) {
-  const { t } = useTranslation("tracking");
-  const { t: tWorkouts } = useTranslation("workouts");
-  const { t: tCommon } = useTranslation("common");
+  const { t } = useTranslation("translation", { keyPrefix: "tracking" });
+  const { t: tWorkouts } = useTranslation("translation", { keyPrefix: "workouts" });
+  const { t: tCommon } = useTranslation("translation", { keyPrefix: "common" });
   const [expandedExercise, setExpandedExercise] = useState<number | null>(null);
   const [isQuickCompleting, setIsQuickCompleting] = useState(false);
 
@@ -257,7 +257,7 @@ const ExerciseCard = memo(function ExerciseCard({
   onLogSet,
   onOpenHistory,
 }: ExerciseCardProps) {
-  const { t } = useTranslation("tracking");
+  const { t } = useTranslation("translation", { keyPrefix: "tracking" });
   const [savingSets, setSavingSets] = useState<Set<number>>(new Set());
 
   const completedSets = log?.sets.filter((s) => s.completed).length ?? 0;
@@ -485,7 +485,7 @@ const SetRow = memo(function SetRow({
   onWeightChange,
   onRepsChange,
 }: SetRowProps) {
-  const { t } = useTranslation("tracking");
+  const { t } = useTranslation("translation", { keyPrefix: "tracking" });
 
   // Local state to avoid firing API calls on every keystroke.
   // Values sync from props when they change externally.

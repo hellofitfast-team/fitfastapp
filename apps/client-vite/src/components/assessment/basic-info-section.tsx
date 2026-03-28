@@ -50,8 +50,8 @@ export function BasicInfoSection({
   setEquipment,
   isLoading,
 }: BasicInfoSectionProps) {
-  const { t } = useTranslation("onboarding");
-  const { t: tUnits } = useTranslation("units");
+  const { t } = useTranslation("translation", { keyPrefix: "onboarding" });
+  const { t: tUnits } = useTranslation("translation", { keyPrefix: "units" });
 
   return (
     <>

@@ -8,309 +8,309 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from "./routes/__root";
-import { Route as SetupRouteImport } from "./routes/setup";
-import { Route as LoginRouteImport } from "./routes/login";
-import { Route as PanelRouteImport } from "./routes/_panel";
-import { Route as PanelIndexRouteImport } from "./routes/_panel/index";
-import { Route as PanelTicketsRouteImport } from "./routes/_panel/tickets";
-import { Route as PanelSettingsRouteImport } from "./routes/_panel/settings";
-import { Route as PanelNotificationsRouteImport } from "./routes/_panel/notifications";
-import { Route as PanelKnowledgeRouteImport } from "./routes/_panel/knowledge";
-import { Route as PanelFaqsRouteImport } from "./routes/_panel/faqs";
-import { Route as PanelExercisesRouteImport } from "./routes/_panel/exercises";
-import { Route as PanelSignupsIndexRouteImport } from "./routes/_panel/signups/index";
-import { Route as PanelClientsIndexRouteImport } from "./routes/_panel/clients/index";
-import { Route as PanelSignupsIdRouteImport } from "./routes/_panel/signups/$id";
-import { Route as PanelClientsIdRouteImport } from "./routes/_panel/clients/$id";
+import { Route as rootRouteImport } from './routes/__root'
+import { Route as SetupRouteImport } from './routes/setup'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as PanelRouteImport } from './routes/_panel'
+import { Route as PanelIndexRouteImport } from './routes/_panel/index'
+import { Route as PanelTicketsRouteImport } from './routes/_panel/tickets'
+import { Route as PanelSettingsRouteImport } from './routes/_panel/settings'
+import { Route as PanelNotificationsRouteImport } from './routes/_panel/notifications'
+import { Route as PanelKnowledgeRouteImport } from './routes/_panel/knowledge'
+import { Route as PanelFaqsRouteImport } from './routes/_panel/faqs'
+import { Route as PanelExercisesRouteImport } from './routes/_panel/exercises'
+import { Route as PanelSignupsIndexRouteImport } from './routes/_panel/signups/index'
+import { Route as PanelClientsIndexRouteImport } from './routes/_panel/clients/index'
+import { Route as PanelSignupsIdRouteImport } from './routes/_panel/signups/$id'
+import { Route as PanelClientsIdRouteImport } from './routes/_panel/clients/$id'
 
 const SetupRoute = SetupRouteImport.update({
-  id: "/setup",
-  path: "/setup",
+  id: '/setup',
+  path: '/setup',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const LoginRoute = LoginRouteImport.update({
-  id: "/login",
-  path: "/login",
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const PanelRoute = PanelRouteImport.update({
-  id: "/_panel",
+  id: '/_panel',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const PanelIndexRoute = PanelIndexRouteImport.update({
-  id: "/",
-  path: "/",
+  id: '/',
+  path: '/',
   getParentRoute: () => PanelRoute,
-} as any);
+} as any)
 const PanelTicketsRoute = PanelTicketsRouteImport.update({
-  id: "/tickets",
-  path: "/tickets",
+  id: '/tickets',
+  path: '/tickets',
   getParentRoute: () => PanelRoute,
-} as any);
+} as any)
 const PanelSettingsRoute = PanelSettingsRouteImport.update({
-  id: "/settings",
-  path: "/settings",
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => PanelRoute,
-} as any);
+} as any)
 const PanelNotificationsRoute = PanelNotificationsRouteImport.update({
-  id: "/notifications",
-  path: "/notifications",
+  id: '/notifications',
+  path: '/notifications',
   getParentRoute: () => PanelRoute,
-} as any);
+} as any)
 const PanelKnowledgeRoute = PanelKnowledgeRouteImport.update({
-  id: "/knowledge",
-  path: "/knowledge",
+  id: '/knowledge',
+  path: '/knowledge',
   getParentRoute: () => PanelRoute,
-} as any);
+} as any)
 const PanelFaqsRoute = PanelFaqsRouteImport.update({
-  id: "/faqs",
-  path: "/faqs",
+  id: '/faqs',
+  path: '/faqs',
   getParentRoute: () => PanelRoute,
-} as any);
+} as any)
 const PanelExercisesRoute = PanelExercisesRouteImport.update({
-  id: "/exercises",
-  path: "/exercises",
+  id: '/exercises',
+  path: '/exercises',
   getParentRoute: () => PanelRoute,
-} as any);
+} as any)
 const PanelSignupsIndexRoute = PanelSignupsIndexRouteImport.update({
-  id: "/signups/",
-  path: "/signups/",
+  id: '/signups/',
+  path: '/signups/',
   getParentRoute: () => PanelRoute,
-} as any);
+} as any)
 const PanelClientsIndexRoute = PanelClientsIndexRouteImport.update({
-  id: "/clients/",
-  path: "/clients/",
+  id: '/clients/',
+  path: '/clients/',
   getParentRoute: () => PanelRoute,
-} as any);
+} as any)
 const PanelSignupsIdRoute = PanelSignupsIdRouteImport.update({
-  id: "/signups/$id",
-  path: "/signups/$id",
+  id: '/signups/$id',
+  path: '/signups/$id',
   getParentRoute: () => PanelRoute,
-} as any);
+} as any)
 const PanelClientsIdRoute = PanelClientsIdRouteImport.update({
-  id: "/clients/$id",
-  path: "/clients/$id",
+  id: '/clients/$id',
+  path: '/clients/$id',
   getParentRoute: () => PanelRoute,
-} as any);
+} as any)
 
 export interface FileRoutesByFullPath {
-  "/": typeof PanelIndexRoute;
-  "/login": typeof LoginRoute;
-  "/setup": typeof SetupRoute;
-  "/exercises": typeof PanelExercisesRoute;
-  "/faqs": typeof PanelFaqsRoute;
-  "/knowledge": typeof PanelKnowledgeRoute;
-  "/notifications": typeof PanelNotificationsRoute;
-  "/settings": typeof PanelSettingsRoute;
-  "/tickets": typeof PanelTicketsRoute;
-  "/clients/$id": typeof PanelClientsIdRoute;
-  "/signups/$id": typeof PanelSignupsIdRoute;
-  "/clients/": typeof PanelClientsIndexRoute;
-  "/signups/": typeof PanelSignupsIndexRoute;
+  '/': typeof PanelIndexRoute
+  '/login': typeof LoginRoute
+  '/setup': typeof SetupRoute
+  '/exercises': typeof PanelExercisesRoute
+  '/faqs': typeof PanelFaqsRoute
+  '/knowledge': typeof PanelKnowledgeRoute
+  '/notifications': typeof PanelNotificationsRoute
+  '/settings': typeof PanelSettingsRoute
+  '/tickets': typeof PanelTicketsRoute
+  '/clients/$id': typeof PanelClientsIdRoute
+  '/signups/$id': typeof PanelSignupsIdRoute
+  '/clients/': typeof PanelClientsIndexRoute
+  '/signups/': typeof PanelSignupsIndexRoute
 }
 export interface FileRoutesByTo {
-  "/login": typeof LoginRoute;
-  "/setup": typeof SetupRoute;
-  "/exercises": typeof PanelExercisesRoute;
-  "/faqs": typeof PanelFaqsRoute;
-  "/knowledge": typeof PanelKnowledgeRoute;
-  "/notifications": typeof PanelNotificationsRoute;
-  "/settings": typeof PanelSettingsRoute;
-  "/tickets": typeof PanelTicketsRoute;
-  "/": typeof PanelIndexRoute;
-  "/clients/$id": typeof PanelClientsIdRoute;
-  "/signups/$id": typeof PanelSignupsIdRoute;
-  "/clients": typeof PanelClientsIndexRoute;
-  "/signups": typeof PanelSignupsIndexRoute;
+  '/login': typeof LoginRoute
+  '/setup': typeof SetupRoute
+  '/exercises': typeof PanelExercisesRoute
+  '/faqs': typeof PanelFaqsRoute
+  '/knowledge': typeof PanelKnowledgeRoute
+  '/notifications': typeof PanelNotificationsRoute
+  '/settings': typeof PanelSettingsRoute
+  '/tickets': typeof PanelTicketsRoute
+  '/': typeof PanelIndexRoute
+  '/clients/$id': typeof PanelClientsIdRoute
+  '/signups/$id': typeof PanelSignupsIdRoute
+  '/clients': typeof PanelClientsIndexRoute
+  '/signups': typeof PanelSignupsIndexRoute
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport;
-  "/_panel": typeof PanelRouteWithChildren;
-  "/login": typeof LoginRoute;
-  "/setup": typeof SetupRoute;
-  "/_panel/exercises": typeof PanelExercisesRoute;
-  "/_panel/faqs": typeof PanelFaqsRoute;
-  "/_panel/knowledge": typeof PanelKnowledgeRoute;
-  "/_panel/notifications": typeof PanelNotificationsRoute;
-  "/_panel/settings": typeof PanelSettingsRoute;
-  "/_panel/tickets": typeof PanelTicketsRoute;
-  "/_panel/": typeof PanelIndexRoute;
-  "/_panel/clients/$id": typeof PanelClientsIdRoute;
-  "/_panel/signups/$id": typeof PanelSignupsIdRoute;
-  "/_panel/clients/": typeof PanelClientsIndexRoute;
-  "/_panel/signups/": typeof PanelSignupsIndexRoute;
+  __root__: typeof rootRouteImport
+  '/_panel': typeof PanelRouteWithChildren
+  '/login': typeof LoginRoute
+  '/setup': typeof SetupRoute
+  '/_panel/exercises': typeof PanelExercisesRoute
+  '/_panel/faqs': typeof PanelFaqsRoute
+  '/_panel/knowledge': typeof PanelKnowledgeRoute
+  '/_panel/notifications': typeof PanelNotificationsRoute
+  '/_panel/settings': typeof PanelSettingsRoute
+  '/_panel/tickets': typeof PanelTicketsRoute
+  '/_panel/': typeof PanelIndexRoute
+  '/_panel/clients/$id': typeof PanelClientsIdRoute
+  '/_panel/signups/$id': typeof PanelSignupsIdRoute
+  '/_panel/clients/': typeof PanelClientsIndexRoute
+  '/_panel/signups/': typeof PanelSignupsIndexRoute
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath;
+  fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | "/"
-    | "/login"
-    | "/setup"
-    | "/exercises"
-    | "/faqs"
-    | "/knowledge"
-    | "/notifications"
-    | "/settings"
-    | "/tickets"
-    | "/clients/$id"
-    | "/signups/$id"
-    | "/clients/"
-    | "/signups/";
-  fileRoutesByTo: FileRoutesByTo;
+    | '/'
+    | '/login'
+    | '/setup'
+    | '/exercises'
+    | '/faqs'
+    | '/knowledge'
+    | '/notifications'
+    | '/settings'
+    | '/tickets'
+    | '/clients/$id'
+    | '/signups/$id'
+    | '/clients/'
+    | '/signups/'
+  fileRoutesByTo: FileRoutesByTo
   to:
-    | "/login"
-    | "/setup"
-    | "/exercises"
-    | "/faqs"
-    | "/knowledge"
-    | "/notifications"
-    | "/settings"
-    | "/tickets"
-    | "/"
-    | "/clients/$id"
-    | "/signups/$id"
-    | "/clients"
-    | "/signups";
+    | '/login'
+    | '/setup'
+    | '/exercises'
+    | '/faqs'
+    | '/knowledge'
+    | '/notifications'
+    | '/settings'
+    | '/tickets'
+    | '/'
+    | '/clients/$id'
+    | '/signups/$id'
+    | '/clients'
+    | '/signups'
   id:
-    | "__root__"
-    | "/_panel"
-    | "/login"
-    | "/setup"
-    | "/_panel/exercises"
-    | "/_panel/faqs"
-    | "/_panel/knowledge"
-    | "/_panel/notifications"
-    | "/_panel/settings"
-    | "/_panel/tickets"
-    | "/_panel/"
-    | "/_panel/clients/$id"
-    | "/_panel/signups/$id"
-    | "/_panel/clients/"
-    | "/_panel/signups/";
-  fileRoutesById: FileRoutesById;
+    | '__root__'
+    | '/_panel'
+    | '/login'
+    | '/setup'
+    | '/_panel/exercises'
+    | '/_panel/faqs'
+    | '/_panel/knowledge'
+    | '/_panel/notifications'
+    | '/_panel/settings'
+    | '/_panel/tickets'
+    | '/_panel/'
+    | '/_panel/clients/$id'
+    | '/_panel/signups/$id'
+    | '/_panel/clients/'
+    | '/_panel/signups/'
+  fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  PanelRoute: typeof PanelRouteWithChildren;
-  LoginRoute: typeof LoginRoute;
-  SetupRoute: typeof SetupRoute;
+  PanelRoute: typeof PanelRouteWithChildren
+  LoginRoute: typeof LoginRoute
+  SetupRoute: typeof SetupRoute
 }
 
-declare module "@tanstack/react-router" {
+declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    "/setup": {
-      id: "/setup";
-      path: "/setup";
-      fullPath: "/setup";
-      preLoaderRoute: typeof SetupRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/login": {
-      id: "/login";
-      path: "/login";
-      fullPath: "/login";
-      preLoaderRoute: typeof LoginRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/_panel": {
-      id: "/_panel";
-      path: "";
-      fullPath: "/";
-      preLoaderRoute: typeof PanelRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/_panel/": {
-      id: "/_panel/";
-      path: "/";
-      fullPath: "/";
-      preLoaderRoute: typeof PanelIndexRouteImport;
-      parentRoute: typeof PanelRoute;
-    };
-    "/_panel/tickets": {
-      id: "/_panel/tickets";
-      path: "/tickets";
-      fullPath: "/tickets";
-      preLoaderRoute: typeof PanelTicketsRouteImport;
-      parentRoute: typeof PanelRoute;
-    };
-    "/_panel/settings": {
-      id: "/_panel/settings";
-      path: "/settings";
-      fullPath: "/settings";
-      preLoaderRoute: typeof PanelSettingsRouteImport;
-      parentRoute: typeof PanelRoute;
-    };
-    "/_panel/notifications": {
-      id: "/_panel/notifications";
-      path: "/notifications";
-      fullPath: "/notifications";
-      preLoaderRoute: typeof PanelNotificationsRouteImport;
-      parentRoute: typeof PanelRoute;
-    };
-    "/_panel/knowledge": {
-      id: "/_panel/knowledge";
-      path: "/knowledge";
-      fullPath: "/knowledge";
-      preLoaderRoute: typeof PanelKnowledgeRouteImport;
-      parentRoute: typeof PanelRoute;
-    };
-    "/_panel/faqs": {
-      id: "/_panel/faqs";
-      path: "/faqs";
-      fullPath: "/faqs";
-      preLoaderRoute: typeof PanelFaqsRouteImport;
-      parentRoute: typeof PanelRoute;
-    };
-    "/_panel/exercises": {
-      id: "/_panel/exercises";
-      path: "/exercises";
-      fullPath: "/exercises";
-      preLoaderRoute: typeof PanelExercisesRouteImport;
-      parentRoute: typeof PanelRoute;
-    };
-    "/_panel/signups/": {
-      id: "/_panel/signups/";
-      path: "/signups";
-      fullPath: "/signups/";
-      preLoaderRoute: typeof PanelSignupsIndexRouteImport;
-      parentRoute: typeof PanelRoute;
-    };
-    "/_panel/clients/": {
-      id: "/_panel/clients/";
-      path: "/clients";
-      fullPath: "/clients/";
-      preLoaderRoute: typeof PanelClientsIndexRouteImport;
-      parentRoute: typeof PanelRoute;
-    };
-    "/_panel/signups/$id": {
-      id: "/_panel/signups/$id";
-      path: "/signups/$id";
-      fullPath: "/signups/$id";
-      preLoaderRoute: typeof PanelSignupsIdRouteImport;
-      parentRoute: typeof PanelRoute;
-    };
-    "/_panel/clients/$id": {
-      id: "/_panel/clients/$id";
-      path: "/clients/$id";
-      fullPath: "/clients/$id";
-      preLoaderRoute: typeof PanelClientsIdRouteImport;
-      parentRoute: typeof PanelRoute;
-    };
+    '/setup': {
+      id: '/setup'
+      path: '/setup'
+      fullPath: '/setup'
+      preLoaderRoute: typeof SetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_panel': {
+      id: '/_panel'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof PanelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_panel/': {
+      id: '/_panel/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof PanelIndexRouteImport
+      parentRoute: typeof PanelRoute
+    }
+    '/_panel/tickets': {
+      id: '/_panel/tickets'
+      path: '/tickets'
+      fullPath: '/tickets'
+      preLoaderRoute: typeof PanelTicketsRouteImport
+      parentRoute: typeof PanelRoute
+    }
+    '/_panel/settings': {
+      id: '/_panel/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof PanelSettingsRouteImport
+      parentRoute: typeof PanelRoute
+    }
+    '/_panel/notifications': {
+      id: '/_panel/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof PanelNotificationsRouteImport
+      parentRoute: typeof PanelRoute
+    }
+    '/_panel/knowledge': {
+      id: '/_panel/knowledge'
+      path: '/knowledge'
+      fullPath: '/knowledge'
+      preLoaderRoute: typeof PanelKnowledgeRouteImport
+      parentRoute: typeof PanelRoute
+    }
+    '/_panel/faqs': {
+      id: '/_panel/faqs'
+      path: '/faqs'
+      fullPath: '/faqs'
+      preLoaderRoute: typeof PanelFaqsRouteImport
+      parentRoute: typeof PanelRoute
+    }
+    '/_panel/exercises': {
+      id: '/_panel/exercises'
+      path: '/exercises'
+      fullPath: '/exercises'
+      preLoaderRoute: typeof PanelExercisesRouteImport
+      parentRoute: typeof PanelRoute
+    }
+    '/_panel/signups/': {
+      id: '/_panel/signups/'
+      path: '/signups'
+      fullPath: '/signups/'
+      preLoaderRoute: typeof PanelSignupsIndexRouteImport
+      parentRoute: typeof PanelRoute
+    }
+    '/_panel/clients/': {
+      id: '/_panel/clients/'
+      path: '/clients'
+      fullPath: '/clients/'
+      preLoaderRoute: typeof PanelClientsIndexRouteImport
+      parentRoute: typeof PanelRoute
+    }
+    '/_panel/signups/$id': {
+      id: '/_panel/signups/$id'
+      path: '/signups/$id'
+      fullPath: '/signups/$id'
+      preLoaderRoute: typeof PanelSignupsIdRouteImport
+      parentRoute: typeof PanelRoute
+    }
+    '/_panel/clients/$id': {
+      id: '/_panel/clients/$id'
+      path: '/clients/$id'
+      fullPath: '/clients/$id'
+      preLoaderRoute: typeof PanelClientsIdRouteImport
+      parentRoute: typeof PanelRoute
+    }
   }
 }
 
 interface PanelRouteChildren {
-  PanelExercisesRoute: typeof PanelExercisesRoute;
-  PanelFaqsRoute: typeof PanelFaqsRoute;
-  PanelKnowledgeRoute: typeof PanelKnowledgeRoute;
-  PanelNotificationsRoute: typeof PanelNotificationsRoute;
-  PanelSettingsRoute: typeof PanelSettingsRoute;
-  PanelTicketsRoute: typeof PanelTicketsRoute;
-  PanelIndexRoute: typeof PanelIndexRoute;
-  PanelClientsIdRoute: typeof PanelClientsIdRoute;
-  PanelSignupsIdRoute: typeof PanelSignupsIdRoute;
-  PanelClientsIndexRoute: typeof PanelClientsIndexRoute;
-  PanelSignupsIndexRoute: typeof PanelSignupsIndexRoute;
+  PanelExercisesRoute: typeof PanelExercisesRoute
+  PanelFaqsRoute: typeof PanelFaqsRoute
+  PanelKnowledgeRoute: typeof PanelKnowledgeRoute
+  PanelNotificationsRoute: typeof PanelNotificationsRoute
+  PanelSettingsRoute: typeof PanelSettingsRoute
+  PanelTicketsRoute: typeof PanelTicketsRoute
+  PanelIndexRoute: typeof PanelIndexRoute
+  PanelClientsIdRoute: typeof PanelClientsIdRoute
+  PanelSignupsIdRoute: typeof PanelSignupsIdRoute
+  PanelClientsIndexRoute: typeof PanelClientsIndexRoute
+  PanelSignupsIndexRoute: typeof PanelSignupsIndexRoute
 }
 
 const PanelRouteChildren: PanelRouteChildren = {
@@ -325,15 +325,15 @@ const PanelRouteChildren: PanelRouteChildren = {
   PanelSignupsIdRoute: PanelSignupsIdRoute,
   PanelClientsIndexRoute: PanelClientsIndexRoute,
   PanelSignupsIndexRoute: PanelSignupsIndexRoute,
-};
+}
 
-const PanelRouteWithChildren = PanelRoute._addFileChildren(PanelRouteChildren);
+const PanelRouteWithChildren = PanelRoute._addFileChildren(PanelRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   PanelRoute: PanelRouteWithChildren,
   LoginRoute: LoginRoute,
   SetupRoute: SetupRoute,
-};
+}
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>();
+  ._addFileTypes<FileRouteTypes>()

@@ -6,8 +6,8 @@ import { api } from "@convex/_generated/api";
 import { toast } from "@fitfast/ui/use-toast";
 
 export function MeasurementsSection({ assessment }: { assessment: any }) {
-  const { t } = useTranslation("settings");
-  const { t: tUnits } = useTranslation("units");
+  const { t } = useTranslation("translation", { keyPrefix: "settings" });
+  const { t: tUnits } = useTranslation("translation", { keyPrefix: "units" });
   const submitAssessment = useMutation(api.assessments.submitAssessment);
 
   const m = assessment.measurements as Record<string, number | undefined> | undefined;

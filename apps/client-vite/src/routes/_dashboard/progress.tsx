@@ -46,7 +46,7 @@ interface MeasurementData {
 }
 
 function ProgressPage() {
-  const { t, i18n } = useTranslation("progress");
+  const { t, i18n } = useTranslation("translation", { keyPrefix: "progress" });
   const locale = i18n.language;
   const [dateRange, setDateRange] = useState<DateRange>("30");
   const [activeTab, setActiveTab] = useState<"charts" | "photos" | "history">("charts");

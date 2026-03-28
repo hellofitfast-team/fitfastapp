@@ -30,10 +30,10 @@ interface HistoryTabProps {
 }
 
 export function HistoryTab({ checkIns }: HistoryTabProps) {
-  const { t, i18n } = useTranslation("progress");
-  const { t: tEmpty } = useTranslation("emptyStates");
-  const { t: tCheckIn } = useTranslation("checkIn");
-  const { t: tUnits } = useTranslation("units");
+  const { t, i18n } = useTranslation("translation", { keyPrefix: "progress" });
+  const { t: tEmpty } = useTranslation("translation", { keyPrefix: "emptyStates" });
+  const { t: tCheckIn } = useTranslation("translation", { keyPrefix: "checkIn" });
+  const { t: tUnits } = useTranslation("translation", { keyPrefix: "units" });
   const locale = i18n.language;
   const navigate = useNavigate();
 

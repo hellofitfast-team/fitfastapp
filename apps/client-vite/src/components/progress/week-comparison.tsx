@@ -41,7 +41,7 @@ interface ComparisonCardProps {
 }
 
 function ComparisonCard({ label, thisWeek, lastWeek, unit, format }: ComparisonCardProps) {
-  const { t } = useTranslation("progress");
+  const { t } = useTranslation("translation", { keyPrefix: "progress" });
   const fmt = format ?? ((v: number) => v.toFixed(1));
 
   if (thisWeek == null && lastWeek == null) return null;
@@ -85,7 +85,7 @@ function ComparisonCard({ label, thisWeek, lastWeek, unit, format }: ComparisonC
 }
 
 export function WeekComparison({ checkIns }: WeekComparisonProps) {
-  const { t } = useTranslation("progress");
+  const { t } = useTranslation("translation", { keyPrefix: "progress" });
 
   const { thisWeek, lastWeek } = useMemo(() => getWeekBucket(checkIns), [checkIns]);
 

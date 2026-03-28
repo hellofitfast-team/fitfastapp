@@ -10,8 +10,8 @@ interface PhotosTabProps {
 }
 
 export function PhotosTab({ photos }: PhotosTabProps) {
-  const { t } = useTranslation("progress");
-  const { t: tEmpty } = useTranslation("emptyStates");
+  const { t } = useTranslation("translation", { keyPrefix: "progress" });
+  const { t: tEmpty } = useTranslation("translation", { keyPrefix: "emptyStates" });
   const navigate = useNavigate();
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);

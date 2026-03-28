@@ -41,7 +41,7 @@ export function MeasurementsSection({
   onInBodyFileChange,
   isLoading,
 }: MeasurementsSectionProps) {
-  const { t } = useTranslation("onboarding");
+  const { t } = useTranslation("translation", { keyPrefix: "onboarding" });
 
   const handleMethodChange = (method: "manual" | "inbody") => {
     setMeasurementMethod(method);

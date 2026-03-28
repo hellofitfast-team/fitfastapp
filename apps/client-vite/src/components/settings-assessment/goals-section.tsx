@@ -22,8 +22,8 @@ const ACTIVITY_LEVELS = [
 const EXPERIENCE_LEVELS = ["beginner", "intermediate", "advanced"] as const;
 
 export function GoalsSection({ assessment }: { assessment: any }) {
-  const { t } = useTranslation("settings");
-  const { t: tAssessment } = useTranslation("onboarding");
+  const { t } = useTranslation("translation", { keyPrefix: "settings" });
+  const { t: tAssessment } = useTranslation("translation", { keyPrefix: "onboarding" });
   const submitAssessment = useMutation(api.assessments.submitAssessment);
 
   const currentGoal = (assessment.goals as string)?.split(",")[0] ?? "";

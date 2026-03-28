@@ -16,8 +16,8 @@ const EQUIPMENT_IDS = [
 const MEALS_OPTIONS = [3, 5] as const;
 
 export function EquipmentSection({ assessment }: { assessment: any }) {
-  const { t } = useTranslation("settings");
-  const { t: tEquip } = useTranslation("onboarding");
+  const { t } = useTranslation("translation", { keyPrefix: "settings" });
+  const { t: tEquip } = useTranslation("translation", { keyPrefix: "onboarding" });
   const submitAssessment = useMutation(api.assessments.submitAssessment);
 
   const currentEquipment = (assessment.lifestyleHabits as any)?.equipment ?? "";

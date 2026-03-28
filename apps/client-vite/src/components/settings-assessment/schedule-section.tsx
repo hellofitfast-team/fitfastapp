@@ -11,8 +11,8 @@ const DURATIONS = [30, 45, 60, 90] as const;
 const TIMES = ["morning", "afternoon", "evening", "varies"] as const;
 
 export function ScheduleSection({ assessment }: { assessment: any }) {
-  const { t } = useTranslation("settings");
-  const { t: tSchedule } = useTranslation("onboarding");
+  const { t } = useTranslation("translation", { keyPrefix: "settings" });
+  const { t: tSchedule } = useTranslation("translation", { keyPrefix: "onboarding" });
   const submitAssessment = useMutation(api.assessments.submitAssessment);
 
   const sched = assessment.scheduleAvailability as any;

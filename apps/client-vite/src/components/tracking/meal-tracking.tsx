@@ -60,8 +60,8 @@ export const MealTracking = memo(function MealTracking({
   isMealsExpanded,
   onToggleExpand,
 }: MealTrackingProps) {
-  const { t } = useTranslation("tracking");
-  const { t: tMeals } = useTranslation("meals");
+  const { t } = useTranslation("translation", { keyPrefix: "tracking" });
+  const { t: tMeals } = useTranslation("translation", { keyPrefix: "meals" });
   const [expandedMeal, setExpandedMeal] = useState<number | null>(null);
 
   const getMealCompletion = (mealIndex: number) => {

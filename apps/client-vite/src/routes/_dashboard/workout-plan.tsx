@@ -302,10 +302,10 @@ const PHASE_COLORS: Record<string, string> = {
 };
 
 function WorkoutPlanPage() {
-  const { t } = useTranslation("workouts");
-  const { t: tCommon } = useTranslation("common");
-  const { t: tEmpty } = useTranslation("emptyStates");
-  const { t: tUnits } = useTranslation("units");
+  const { t } = useTranslation("translation", { keyPrefix: "workouts" });
+  const { t: tCommon } = useTranslation("translation", { keyPrefix: "common" });
+  const { t: tEmpty } = useTranslation("translation", { keyPrefix: "emptyStates" });
+  const { t: tUnits } = useTranslation("translation", { keyPrefix: "units" });
   const { i18n } = useTranslation();
   const locale = i18n.language;
   const { workoutPlan, isLoading, error } = useCurrentWorkoutPlan();

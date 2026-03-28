@@ -110,10 +110,10 @@ function resolveDayPlan(
 }
 
 function MealPlanPage() {
-  const { t } = useTranslation("meals");
-  const { t: tCommon } = useTranslation("common");
-  const { t: tEmpty } = useTranslation("emptyStates");
-  const { t: tUnits } = useTranslation("units");
+  const { t } = useTranslation("translation", { keyPrefix: "meals" });
+  const { t: tCommon } = useTranslation("translation", { keyPrefix: "common" });
+  const { t: tEmpty } = useTranslation("translation", { keyPrefix: "emptyStates" });
+  const { t: tUnits } = useTranslation("translation", { keyPrefix: "units" });
   const { i18n } = useTranslation();
   const locale = i18n.language;
   const { mealPlan, isLoading, error } = useCurrentMealPlan();

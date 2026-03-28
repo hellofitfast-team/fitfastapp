@@ -16,8 +16,8 @@ const MENSTRUAL_OPTIONS = [
 ] as const;
 
 export function MedicalSection({ assessment }: { assessment: any }) {
-  const { t } = useTranslation("settings");
-  const { t: tMedical } = useTranslation("onboarding");
+  const { t } = useTranslation("translation", { keyPrefix: "settings" });
+  const { t: tMedical } = useTranslation("translation", { keyPrefix: "onboarding" });
   const submitAssessment = useMutation(api.assessments.submitAssessment);
 
   const fh = assessment.femaleHealth as any;

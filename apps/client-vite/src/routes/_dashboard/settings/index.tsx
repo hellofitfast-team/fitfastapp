@@ -68,9 +68,9 @@ function createProfileSchema(t: (key: string) => string) {
 type ProfileFormData = z.infer<ReturnType<typeof createProfileSchema>>;
 
 function SettingsPage() {
-  const { t } = useTranslation("settings");
-  const { t: tTracking } = useTranslation("tracking");
-  const { t: tValidation } = useTranslation("validation");
+  const { t } = useTranslation("translation", { keyPrefix: "settings" });
+  const { t: tTracking } = useTranslation("translation", { keyPrefix: "tracking" });
+  const { t: tValidation } = useTranslation("translation", { keyPrefix: "validation" });
   const profileSchema = createProfileSchema((key) => tValidation(key));
   const { i18n } = useTranslation();
   const locale = i18n.language;

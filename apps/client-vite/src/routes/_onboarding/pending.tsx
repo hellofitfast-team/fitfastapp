@@ -13,7 +13,7 @@ export const Route = createFileRoute("/_onboarding/pending")({
 });
 
 function PendingPage() {
-  const { t } = useTranslation("onboarding");
+  const { t } = useTranslation("translation", { keyPrefix: "onboarding" });
   const navigate = useNavigate();
   const profile = useQuery(api.profiles.getMyProfile);
 

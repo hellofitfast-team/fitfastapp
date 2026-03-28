@@ -45,7 +45,7 @@ export function DietarySection({
   setRestrictionsOther,
   isLoading,
 }: DietarySectionProps) {
-  const { t } = useTranslation("onboarding");
+  const { t } = useTranslation("translation", { keyPrefix: "onboarding" });
 
   return (
     <div className="space-y-6">

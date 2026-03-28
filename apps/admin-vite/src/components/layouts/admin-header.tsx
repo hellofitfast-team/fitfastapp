@@ -9,7 +9,7 @@ interface AdminHeaderProps {
 }
 
 export function AdminHeader({ onMenuClick, coachName }: AdminHeaderProps) {
-  const { t, i18n } = useTranslation("admin");
+  const { t, i18n } = useTranslation("translation", { keyPrefix: "admin" });
   const navigate = useNavigate();
 
   const switchLocale = () => {

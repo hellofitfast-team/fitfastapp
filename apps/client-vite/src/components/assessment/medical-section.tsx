@@ -10,7 +10,7 @@ interface MedicalSectionProps {
 }
 
 export function MedicalSection({ medicalNotes, setMedicalNotes, isLoading }: MedicalSectionProps) {
-  const { t } = useTranslation("onboarding");
+  const { t } = useTranslation("translation", { keyPrefix: "onboarding" });
 
   return (
     <SectionCard

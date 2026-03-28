@@ -19,7 +19,7 @@ export function GoalsSection({
   setSecondaryFocuses,
   isLoading,
 }: GoalsSectionProps) {
-  const { t } = useTranslation("onboarding");
+  const { t } = useTranslation("translation", { keyPrefix: "onboarding" });
 
   const handleToggleSecondary = (id: string) => {
     if (secondaryFocuses.includes(id)) {

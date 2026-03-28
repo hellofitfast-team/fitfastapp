@@ -13,7 +13,7 @@ interface DateProgressProps {
 }
 
 export function DateProgress({ selectedDate, onDateChange }: DateProgressProps) {
-  const { t } = useTranslation("tracking");
+  const { t } = useTranslation("translation", { keyPrefix: "tracking" });
 
   return (
     <div className="bg-card/95 border-border shadow-card sticky top-0 z-10 rounded-xl border backdrop-blur-sm">

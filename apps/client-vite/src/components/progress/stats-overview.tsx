@@ -21,7 +21,7 @@ export function StatsOverview({
   totalCheckIns,
   rateOfChange,
 }: StatsOverviewProps) {
-  const { t, i18n } = useTranslation("progress");
+  const { t, i18n } = useTranslation("translation", { keyPrefix: "progress" });
   const locale = i18n.language;
 
   const trendDirection =

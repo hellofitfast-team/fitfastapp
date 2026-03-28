@@ -91,9 +91,9 @@ export default function ProgressCharts({
   bodyCompositionData,
   targetWeight,
 }: ProgressChartsProps) {
-  const { t, i18n } = useTranslation("progress");
-  const { t: tCheckIn } = useTranslation("checkIn");
-  const { t: tUnits } = useTranslation("units");
+  const { t, i18n } = useTranslation("translation", { keyPrefix: "progress" });
+  const { t: tCheckIn } = useTranslation("translation", { keyPrefix: "checkIn" });
+  const { t: tUnits } = useTranslation("translation", { keyPrefix: "units" });
   const locale = i18n.language;
   const id = useId();
   const weightGradientId = `weightGradient-${id}`;
