@@ -201,7 +201,8 @@ export function SignupsTable() {
                       <div className="flex items-center justify-end gap-2">
                         {/* View Details */}
                         <Link
-                          to={`/signups/${signup._id}`}
+                          to="/signups/$id"
+                          params={{ id: signup._id }}
                           className="flex min-h-11 items-center gap-1.5 rounded-lg border border-stone-200 px-2.5 text-xs font-medium text-stone-500 transition-colors hover:border-stone-300 hover:text-stone-700"
                         >
                           <ExternalLink className="h-3.5 w-3.5" />

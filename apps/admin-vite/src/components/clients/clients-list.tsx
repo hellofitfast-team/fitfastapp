@@ -172,7 +172,7 @@ function DeleteTestUserModal({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  // t uses t("admin.xxx") pattern
+  const { t } = useTranslation();
   const deleteTestUser = useAction(api.testUsers.deleteTestUser);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -250,7 +250,7 @@ function BulkDeleteModal({
   onConfirm: () => void;
   isDeleting: boolean;
 }) {
-  // t uses t("admin.xxx") pattern
+  const { t } = useTranslation();
 
   return (
     <Dialog
@@ -293,7 +293,7 @@ function BulkDeleteModal({
 }
 
 export function ClientsList({ clients }: { clients: Client[] }) {
-  // t uses t("admin.xxx") pattern
+  const { t, i18n } = useTranslation();
   const locale = i18n.language;
   const bulkDelete = useMutation(api.profiles.bulkDeleteClients);
 
@@ -513,7 +513,8 @@ export function ClientsList({ clients }: { clients: Client[] }) {
                         {client.status === "pending_approval" && (
                           <>
                             <Link
-                              to={`/clients/${client.userId}`}
+                              to="/clients/$id"
+                              params={{ id: client.userId }}
                               className="border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors"
                             >
                               <Zap className="h-3.5 w-3.5" />
@@ -540,7 +541,8 @@ export function ClientsList({ clients }: { clients: Client[] }) {
                           </button>
                         )}
                         <Link
-                          to={`/clients/${client.userId}`}
+                          to="/clients/$id"
+                          params={{ id: client.userId }}
                           aria-label={t("viewClient")}
                           className="hover:border-primary/30 hover:text-primary flex h-11 w-11 items-center justify-center rounded-lg border border-stone-200 text-stone-400 transition-colors"
                         >

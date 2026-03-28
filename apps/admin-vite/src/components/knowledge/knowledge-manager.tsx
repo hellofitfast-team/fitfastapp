@@ -83,8 +83,7 @@ export function KnowledgeManager() {
 
 /* ─── Knowledge Tab (original) ─── */
 function KnowledgeTab() {
-  // t uses t("knowledge.xxx") pattern
-  // tCommon uses t("common.xxx") pattern
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { isAuthenticated } = useConvexAuth();
   const entries = useQuery(api.knowledgeBase.listKnowledgeEntries, isAuthenticated ? {} : "skip");
@@ -570,7 +569,7 @@ function KnowledgeTab() {
 
 /* ─── Food & Recipes Tab ─── */
 function FoodTab() {
-  // t uses t("knowledge.xxx") pattern
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { isAuthenticated } = useConvexAuth();
 

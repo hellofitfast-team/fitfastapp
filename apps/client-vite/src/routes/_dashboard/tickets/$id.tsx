@@ -62,7 +62,30 @@ function TicketDetailPage() {
   const ticket = useQuery(api.tickets.getTicketById, {
     ticketId: ticketId as Id<"tickets">,
   });
-  const replyToTicket = useMutation(api.tickets.replyToTicket);
+  const replyToTicket = useMutation(api.tickets.replyToTicket).withOptimisticUpdate(
+    (localStore, args) => {
+      const current = localStore.getQuery(api.tickets.getTicketById, {
+        ticketId: args.ticketId,
+      });
+      if (current === undefined || current === null) return;
+
+      localStore.setQuery(
+        api.tickets.getTicketById,
+        { ticketId: args.ticketId },
+        {
+          ...current,
+          messages: [
+            ...(current.messages ?? []),
+            {
+              sender: "client",
+              message: args.message,
+              timestamp: Date.now(),
+            },
+          ],
+        },
+      );
+    },
+  );
 
   const isLoading = ticket === undefined;
 

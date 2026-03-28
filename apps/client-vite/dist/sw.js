@@ -1,93 +1,55 @@
-// FitFast Service Worker
-// Native Web Push + offline fallback + controlled updates
-
-const CACHE_NAME = "fitfast-offline-v1";
-const OFFLINE_URL = "/offline.html";
-
-// Pre-cache the offline page on install
-self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.add(OFFLINE_URL)));
-  // Do NOT call skipWaiting() here — let the client control activation
-  // so the page reloads with fresh assets at the right time
+const s = "fitfast-offline-v1",
+  o = "/offline.html";
+self.addEventListener("install", (t) => {
+  t.waitUntil(caches.open(s).then((e) => e.add(o)));
 });
-
-// Clean up old caches on activate
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches
-      .keys()
-      .then((keys) =>
-        Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))),
+self.addEventListener("activate", (t) => {
+  (t.waitUntil(
+    caches.keys().then((e) => Promise.all(e.filter((n) => n !== s).map((n) => caches.delete(n)))),
+  ),
+    self.clients.claim());
+});
+self.addEventListener("fetch", (t) => {
+  t.request.mode === "navigate" &&
+    t.respondWith(
+      fetch(t.request).catch(() =>
+        caches.match(o).then((e) => e || new Response("Offline", { status: 503 })),
       ),
-  );
-  self.clients.claim();
+    );
 });
-
-// Network-first for navigations -> offline fallback
-self.addEventListener("fetch", (event) => {
-  if (event.request.mode !== "navigate") return;
-
-  event.respondWith(
-    fetch(event.request).catch(() =>
-      caches
-        .match(OFFLINE_URL)
-        .then((cached) => cached || new Response("Offline", { status: 503 })),
-    ),
-  );
+self.addEventListener("message", (t) => {
+  var e;
+  ((e = t.data) == null ? void 0 : e.action) === "SKIP_WAITING" && self.skipWaiting();
 });
-
-// Listen for skip-waiting message from client (update flow)
-self.addEventListener("message", (event) => {
-  if (event.data?.action === "SKIP_WAITING") {
-    self.skipWaiting();
-  }
-});
-
-// Handle incoming push notifications
-self.addEventListener("push", (event) => {
-  const fallbackBody = { en: "You have a new notification", ar: "لديك إشعار جديد" };
-  let data = { title: "FitFast", body: fallbackBody.en, lang: "en" };
-
-  if (event.data) {
+self.addEventListener("push", (t) => {
+  const e = { en: "You have a new notification", ar: "لديك إشعار جديد" };
+  let n = { title: "FitFast", body: e.en, lang: "en" };
+  if (t.data)
     try {
-      data = event.data.json();
-    } catch (parseError) {
-      console.warn("[SW] Push payload parse error:", parseError);
-      data.body = event.data.text();
+      n = t.data.json();
+    } catch (l) {
+      (console.warn("[SW] Push payload parse error:", l), (n.body = t.data.text()));
     }
-  }
-
-  // Use language-appropriate fallback if body is missing
-  const lang = data.lang || "en";
-  const body = data.body || fallbackBody[lang] || fallbackBody.en;
-
-  event.waitUntil(
-    self.registration.showNotification(data.title || "FitFast", {
-      body,
+  const a = n.lang || "en",
+    i = n.body || e[a] || e.en;
+  t.waitUntil(
+    self.registration.showNotification(n.title || "FitFast", {
+      body: i,
       icon: "/icons/icon-192x192.png",
       badge: "/icons/icon-192x192.png",
-      data: { url: data.url || "/" },
+      data: { url: n.url || "/" },
     }),
   );
 });
-
-// Handle notification clicks -> open/focus the app
-self.addEventListener("notificationclick", (event) => {
-  event.notification.close();
-
-  const targetUrl = event.notification.data?.url || "/";
-
-  event.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
-      // Focus existing window and navigate to the notification's target URL
-      for (const client of clients) {
-        if (client.url.includes(self.location.origin) && "focus" in client) {
-          client.navigate(targetUrl);
-          return client.focus();
-        }
-      }
-      // Otherwise open a new window
-      return self.clients.openWindow(targetUrl);
+self.addEventListener("notificationclick", (t) => {
+  var n;
+  t.notification.close();
+  const e = ((n = t.notification.data) == null ? void 0 : n.url) || "/";
+  t.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: !0 }).then((a) => {
+      for (const i of a)
+        if (i.url.includes(self.location.origin) && "focus" in i) return (i.navigate(e), i.focus());
+      return self.clients.openWindow(e);
     }),
   );
 });

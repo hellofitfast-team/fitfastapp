@@ -4,6 +4,7 @@ import { api } from "@convex/_generated/api";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { DashboardShell } from "@/components/layouts";
+import { authClient } from "@/lib/auth-client";
 
 export const Route = createFileRoute("/_dashboard")({
   beforeLoad: ({ context }) => {
@@ -32,6 +33,7 @@ function DashboardLayout() {
     if (profile === undefined || assessment === undefined) return; // Still loading
 
     if (profile === null) {
+      void authClient.signOut();
       navigate({ to: "/login" });
       return;
     }

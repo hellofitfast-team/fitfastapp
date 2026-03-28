@@ -39,8 +39,35 @@ export function NotificationDropdown() {
     api.inAppNotifications.getUnreadCount,
     isAuthenticated ? {} : "skip",
   );
-  const markAsRead = useMutation(api.inAppNotifications.markAsRead);
-  const markAllAsRead = useMutation(api.inAppNotifications.markAllAsRead);
+  const markAsRead = useMutation(api.inAppNotifications.markAsRead).withOptimisticUpdate(
+    (localStore, args) => {
+      const current = localStore.getQuery(api.inAppNotifications.getMyNotifications, {});
+      if (current !== undefined) {
+        localStore.setQuery(
+          api.inAppNotifications.getMyNotifications,
+          {},
+          current.map((n) => (n._id === args.notificationId ? { ...n, isRead: true } : n)),
+        );
+      }
+      const count = localStore.getQuery(api.inAppNotifications.getUnreadCount, {});
+      if (count !== undefined && count > 0) {
+        localStore.setQuery(api.inAppNotifications.getUnreadCount, {}, count - 1);
+      }
+    },
+  );
+  const markAllAsRead = useMutation(api.inAppNotifications.markAllAsRead).withOptimisticUpdate(
+    (localStore) => {
+      const current = localStore.getQuery(api.inAppNotifications.getMyNotifications, {});
+      if (current !== undefined) {
+        localStore.setQuery(
+          api.inAppNotifications.getMyNotifications,
+          {},
+          current.map((n) => ({ ...n, isRead: true })),
+        );
+      }
+      localStore.setQuery(api.inAppNotifications.getUnreadCount, {}, 0);
+    },
+  );
 
   const handleClick = async (id: Id<"inAppNotifications">, url?: string, isRead?: boolean) => {
     if (!isRead) {

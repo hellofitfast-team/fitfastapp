@@ -26,6 +26,10 @@ if (!import.meta.env.VITE_CONVEX_URL) {
   throw new Error("VITE_CONVEX_URL is not set. Add it to your .env.local file.");
 }
 
+if (!import.meta.env.VITE_CONVEX_SITE_URL) {
+  throw new Error("VITE_CONVEX_SITE_URL is not set. Add it to your .env.local file.");
+}
+
 // Create Convex client
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
 
@@ -55,7 +59,10 @@ function App() {
   return (
     <Sentry.ErrorBoundary
       fallback={({ error, resetError }) => (
-        <ErrorFallback error={error} resetErrorBoundary={resetError} />
+        <ErrorFallback
+          error={error instanceof Error ? error : new Error(String(error))}
+          resetErrorBoundary={resetError}
+        />
       )}
     >
       <ConvexBetterAuthProvider client={convex} authClient={authClient}>

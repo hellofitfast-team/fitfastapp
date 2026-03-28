@@ -41,19 +41,19 @@ function StatCard({
   label,
   value,
   icon: Icon,
-  href,
+  to,
   accent = false,
 }: {
   label: string;
   value: number;
   icon: typeof Users;
-  href: string;
+  to: string;
   accent?: boolean;
 }) {
   const { t } = useTranslation();
   return (
     <Link
-      to={href}
+      to={to}
       className={`stat-card group rounded-xl border p-5 transition-all hover:shadow-md ${
         accent
           ? "border-red-200 bg-red-50 hover:border-red-300"

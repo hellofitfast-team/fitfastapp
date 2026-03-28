@@ -43,7 +43,7 @@ export function ProgressCard({
   mealCompletionRate,
   workoutCompletionRate,
 }: ProgressCardProps) {
-  // t uses t("clientInsights.xxx") pattern
+  const { t } = useTranslation();
 
   const weightDelta =
     initialWeight != null && latestWeight != null ? latestWeight - initialWeight : null;

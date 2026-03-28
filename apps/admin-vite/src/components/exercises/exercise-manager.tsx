@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "convex/react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { Button } from "@fitfast/ui/button";
@@ -277,135 +278,17 @@ export function ExerciseManager() {
       ) : !filteredExercises || filteredExercises.length === 0 ? (
         <p className="py-12 text-center text-sm text-stone-400">{t("noExercises")}</p>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-stone-200">
-          <table className="w-full text-sm">
-            <thead className="bg-stone-50">
-              <tr>
-                <th className="w-14 px-4 py-3 text-start font-medium text-stone-600">
-                  {t("image")}
-                </th>
-                <th className="px-4 py-3 text-start font-medium text-stone-600">{t("name")}</th>
-                <th className="hidden px-4 py-3 text-start font-medium text-stone-600 md:table-cell">
-                  {t("nameAr")}
-                </th>
-                <th className="px-4 py-3 text-start font-medium text-stone-600">{t("category")}</th>
-                <th className="hidden px-4 py-3 text-start font-medium text-stone-600 lg:table-cell">
-                  {t("difficulty")}
-                </th>
-                <th className="hidden px-4 py-3 text-start font-medium text-stone-600 lg:table-cell">
-                  {t("primaryMuscles")}
-                </th>
-                <th className="px-4 py-3 text-start font-medium text-stone-600">{t("isActive")}</th>
-                <th className="hidden px-4 py-3 text-start font-medium text-stone-600 lg:table-cell">
-                  {t("pregnancyUnsafe")}
-                </th>
-                <th className="px-4 py-3 text-end font-medium text-stone-600">{tCommon("edit")}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-stone-100">
-              {filteredExercises.map((exercise) => (
-                <tr
-                  key={exercise._id}
-                  className={cn(
-                    "transition-colors hover:bg-stone-50",
-                    !exercise.isActive && "opacity-50",
-                  )}
-                >
-                  <td className="px-4 py-3">
-                    {exercise.imageUrl ? (
-                      <img
-                        src={exercise.imageUrl}
-                        alt={exercise.name}
-                        width={40}
-                        height={40}
-                        className="rounded-md border border-stone-200 bg-stone-50 object-cover"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="flex h-10 w-10 items-center justify-center rounded-md border border-dashed border-stone-200 text-xs text-stone-300">
-                        —
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 font-medium">{exercise.name}</td>
-                  <td className="hidden px-4 py-3 text-stone-500 md:table-cell" dir="rtl">
-                    {exercise.nameAr}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-600">
-                      {t(exercise.category)}
-                    </span>
-                  </td>
-                  <td className="hidden px-4 py-3 text-stone-500 lg:table-cell">
-                    {t(exercise.difficulty)}
-                  </td>
-                  <td className="hidden px-4 py-3 text-stone-500 lg:table-cell">
-                    {exercise.primaryMuscles.slice(0, 3).join(", ")}
-                  </td>
-                  <td className="px-4 py-3">
-                    <button
-                      onClick={() => handleToggle(exercise._id)}
-                      disabled={togglingId === exercise._id}
-                      className={cn(
-                        "flex h-7 w-7 items-center justify-center rounded-md transition-colors",
-                        exercise.isActive
-                          ? "bg-green-100 text-green-600 hover:bg-green-200"
-                          : "bg-stone-100 text-stone-400 hover:bg-stone-200",
-                      )}
-                    >
-                      {togglingId === exercise._id ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Power className="h-3.5 w-3.5" />
-                      )}
-                    </button>
-                  </td>
-                  <td className="hidden px-4 py-3 lg:table-cell">
-                    <button
-                      onClick={() => handleTogglePregnancy(exercise._id)}
-                      disabled={togglingPregnancyId === exercise._id}
-                      className={cn(
-                        "flex h-7 w-7 items-center justify-center rounded-md text-xs font-bold transition-colors",
-                        exercise.pregnancyUnsafe
-                          ? "bg-red-100 text-red-600 hover:bg-red-200"
-                          : "bg-stone-100 text-stone-400 hover:bg-stone-200",
-                      )}
-                      title={
-                        exercise.pregnancyUnsafe
-                          ? "Marked as pregnancy-unsafe"
-                          : "Safe for pregnancy"
-                      }
-                    >
-                      {togglingPregnancyId === exercise._id ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : exercise.pregnancyUnsafe ? (
-                        "⚠"
-                      ) : (
-                        "✓"
-                      )}
-                    </button>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-1">
-                      <button
-                        onClick={() => openEditModal(exercise)}
-                        className="flex h-7 w-7 items-center justify-center rounded-md text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(exercise._id)}
-                        className="flex h-7 w-7 items-center justify-center rounded-md text-stone-400 transition-colors hover:bg-red-50 hover:text-red-500"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ExerciseTable
+          exercises={filteredExercises}
+          togglingId={togglingId}
+          togglingPregnancyId={togglingPregnancyId}
+          onToggle={handleToggle}
+          onTogglePregnancy={handleTogglePregnancy}
+          onEdit={openEditModal}
+          onDelete={handleDelete}
+          t={t}
+          tCommon={tCommon}
+        />
       )}
 
       {/* Add/Edit Modal — uses Dialog for focus trap, Escape key, aria-modal */}
@@ -668,6 +551,177 @@ export function ExerciseManager() {
           </div>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ExerciseTable -- virtualized table for large exercise databases
+// ---------------------------------------------------------------------------
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ExerciseItem = any;
+
+function ExerciseTable({
+  exercises,
+  togglingId,
+  togglingPregnancyId,
+  onToggle,
+  onTogglePregnancy,
+  onEdit,
+  onDelete,
+  t,
+  tCommon,
+}: {
+  exercises: ExerciseItem[];
+  togglingId: string | null;
+  togglingPregnancyId: string | null;
+  onToggle: (id: Id<"exerciseDatabase">) => void;
+  onTogglePregnancy: (id: Id<"exerciseDatabase">) => void;
+  onEdit: (exercise: ExerciseItem) => void;
+  onDelete: (id: Id<"exerciseDatabase">) => void;
+  t: (key: string) => string;
+  tCommon: (key: string) => string;
+}) {
+  const parentRef = useRef<HTMLDivElement>(null);
+
+  const virtualizer = useVirtualizer({
+    count: exercises.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 58,
+    overscan: 10,
+  });
+
+  return (
+    <div className="overflow-hidden rounded-lg border border-stone-200">
+      {/* Sticky header */}
+      <div className="grid grid-cols-[3.5rem_1fr_1fr_6rem_6rem_8rem_3rem_3rem_4.5rem] items-center bg-stone-50 text-xs font-medium text-stone-600 [&>div]:px-4 [&>div]:py-3">
+        <div>{t("image")}</div>
+        <div>{t("name")}</div>
+        <div className="hidden md:block">{t("nameAr")}</div>
+        <div>{t("category")}</div>
+        <div className="hidden lg:block">{t("difficulty")}</div>
+        <div className="hidden lg:block">{t("primaryMuscles")}</div>
+        <div>{t("isActive")}</div>
+        <div className="hidden lg:block">{t("pregnancyUnsafe")}</div>
+        <div className="text-end">{tCommon("edit")}</div>
+      </div>
+
+      {/* Virtualized rows */}
+      <div ref={parentRef} style={{ maxHeight: "70vh", overflow: "auto" }}>
+        <div
+          style={{
+            height: `${virtualizer.getTotalSize()}px`,
+            width: "100%",
+            position: "relative",
+          }}
+        >
+          {virtualizer.getVirtualItems().map((virtualRow) => {
+            const exercise = exercises[virtualRow.index];
+            return (
+              <div
+                key={exercise._id}
+                data-index={virtualRow.index}
+                ref={virtualizer.measureElement}
+                className={cn(
+                  "absolute top-0 left-0 grid w-full grid-cols-[3.5rem_1fr_1fr_6rem_6rem_8rem_3rem_3rem_4.5rem] items-center border-b border-stone-100 text-sm transition-colors hover:bg-stone-50 [&>div]:px-4 [&>div]:py-3",
+                  !exercise.isActive && "opacity-50",
+                )}
+                style={{
+                  transform: `translateY(${virtualRow.start}px)`,
+                }}
+              >
+                <div>
+                  {exercise.imageUrl ? (
+                    <img
+                      src={exercise.imageUrl}
+                      alt={exercise.name}
+                      width={40}
+                      height={40}
+                      className="rounded-md border border-stone-200 bg-stone-50 object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="flex h-10 w-10 items-center justify-center rounded-md border border-dashed border-stone-200 text-xs text-stone-300">
+                      —
+                    </div>
+                  )}
+                </div>
+                <div className="font-medium">{exercise.name}</div>
+                <div className="hidden text-stone-500 md:block" dir="rtl">
+                  {exercise.nameAr}
+                </div>
+                <div>
+                  <span className="rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-600">
+                    {t(exercise.category)}
+                  </span>
+                </div>
+                <div className="hidden text-stone-500 lg:block">{t(exercise.difficulty)}</div>
+                <div className="hidden text-stone-500 lg:block">
+                  {exercise.primaryMuscles.slice(0, 3).join(", ")}
+                </div>
+                <div>
+                  <button
+                    onClick={() => onToggle(exercise._id)}
+                    disabled={togglingId === exercise._id}
+                    className={cn(
+                      "flex h-7 w-7 items-center justify-center rounded-md transition-colors",
+                      exercise.isActive
+                        ? "bg-green-100 text-green-600 hover:bg-green-200"
+                        : "bg-stone-100 text-stone-400 hover:bg-stone-200",
+                    )}
+                  >
+                    {togglingId === exercise._id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Power className="h-3.5 w-3.5" />
+                    )}
+                  </button>
+                </div>
+                <div className="hidden lg:block">
+                  <button
+                    onClick={() => onTogglePregnancy(exercise._id)}
+                    disabled={togglingPregnancyId === exercise._id}
+                    className={cn(
+                      "flex h-7 w-7 items-center justify-center rounded-md text-xs font-bold transition-colors",
+                      exercise.pregnancyUnsafe
+                        ? "bg-red-100 text-red-600 hover:bg-red-200"
+                        : "bg-stone-100 text-stone-400 hover:bg-stone-200",
+                    )}
+                    title={
+                      exercise.pregnancyUnsafe ? "Marked as pregnancy-unsafe" : "Safe for pregnancy"
+                    }
+                  >
+                    {togglingPregnancyId === exercise._id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : exercise.pregnancyUnsafe ? (
+                      "⚠"
+                    ) : (
+                      "✓"
+                    )}
+                  </button>
+                </div>
+                <div>
+                  <div className="flex items-center justify-end gap-1">
+                    <button
+                      onClick={() => onEdit(exercise)}
+                      className="flex h-7 w-7 items-center justify-center rounded-md text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => onDelete(exercise._id)}
+                      className="flex h-7 w-7 items-center justify-center rounded-md text-stone-400 transition-colors hover:bg-red-50 hover:text-red-500"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }

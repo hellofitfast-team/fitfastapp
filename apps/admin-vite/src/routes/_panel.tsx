@@ -1,7 +1,9 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
+import { useEffect } from "react";
 import { AdminShell } from "@/components/layouts/admin-shell";
+import { authClient } from "@/lib/auth-client";
 
 export const Route = createFileRoute("/_panel")({
   beforeLoad: ({ context }) => {
@@ -16,19 +18,20 @@ function PanelLayout() {
   const profile = useQuery(api.profiles.getMyProfile);
   const pendingSignups = useQuery(api.pendingSignups.getPendingSignups);
   const openTickets = useQuery(api.tickets.getOpenTicketCount);
+  const navigate = useNavigate();
 
-  if (profile === undefined) {
+  const shouldRedirect = profile !== undefined && (!profile || !profile.isCoach);
+
+  useEffect(() => {
+    if (shouldRedirect) {
+      void authClient.signOut().then(() => navigate({ to: "/login" }));
+    }
+  }, [shouldRedirect, navigate]);
+
+  if (profile === undefined || shouldRedirect) {
     return (
       <div className="flex min-h-dvh items-center justify-center">
         <div className="border-primary h-8 w-8 animate-spin rounded-full border-4 border-t-transparent" />
-      </div>
-    );
-  }
-
-  if (!profile || !profile.isCoach) {
-    return (
-      <div className="flex min-h-dvh items-center justify-center">
-        <p>Not authorized</p>
       </div>
     );
   }
