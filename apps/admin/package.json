@@ -29,12 +29,14 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@convex-dev/better-auth": "^0.11.3",
     "@fitfast/config": "workspace:*",
     "@next/bundle-analyzer": "^16.1.6",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/node": "^20.19.31",
     "@types/react": "^19.2.13",
     "@types/react-dom": "^19.2.3",
+    "better-auth": "1.5.3",
     "eslint": "^9.39.2",
     "eslint-config-next": "^16.1.6",
     "tailwindcss": "^4.1.18",

@@ -15,7 +15,7 @@ export const authComponent = createClient<DataModel>(components.betterAuth, {
   authFunctions,
   triggers: {
     user: {
-      onCreate: async (ctx, doc) => {
+      onCreate: async (ctx: any, doc: any) => {
         // Delegate profile creation — mirrors old afterUserCreatedOrUpdated callback.
         // Uses scheduler so the trigger itself stays lightweight.
         await ctx.scheduler.runAfter(0, internal.profiles.onNewUserCreated, {
