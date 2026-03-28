@@ -1,8 +1,9 @@
 import { createFileRoute, Outlet, redirect, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { DashboardShell } from "@/components/layouts";
 
 export const Route = createFileRoute("/_dashboard")({
   beforeLoad: ({ context }) => {
@@ -25,9 +26,6 @@ function DashboardLayout() {
   const { i18n } = useTranslation();
   const updateProfile = useMutation(api.profiles.updateProfile);
   const hasSynced = useRef(false);
-  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
-  void moreMenuOpen;
-  void setMoreMenuOpen;
 
   // Profile/assessment guards — mirror Next.js layout logic
   useEffect(() => {
@@ -96,17 +94,11 @@ function DashboardLayout() {
       daysUntilExpiry = diffDays;
     }
   }
-  void daysUntilExpiry;
+  const userName = profile.fullName?.split(" ")[0] || "User";
 
-  // TODO: Import and use DashboardShell components (sidebar, bottom-nav, headers)
-  // from migrated layout components. For now, render a minimal shell.
   return (
-    <div className="bg-background text-foreground flex min-h-dvh lg:h-dvh">
-      <div className="flex flex-1 flex-col">
-        <main className="relative z-0 flex-1 overflow-x-hidden overflow-y-auto p-4 lg:p-8">
-          <Outlet />
-        </main>
-      </div>
-    </div>
+    <DashboardShell userName={userName} daysUntilExpiry={daysUntilExpiry}>
+      <Outlet />
+    </DashboardShell>
   );
 }
