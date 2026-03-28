@@ -35,9 +35,11 @@ Plan: `.claude/plans/tender-growing-kite.md`
 - [x] Auth (login, accept-invite, set-password, magic-link, expired)
 - [x] CodeRabbit review fixes applied (auth guards, startup validation)
 - [x] Vite builds successfully
+- [x] Dashboard shell components migrated (sidebar, bottom-nav, headers)
+- [x] vite-plugin-pwa configured (injectManifest + ServiceWorkerRegistration)
+- [x] Sentry ErrorBoundary wrapping app
+- [x] CodeRabbit reviews passed (2 rounds of fixes)
 - [ ] Add optimistic updates to all mutations
-- [ ] Set up vite-plugin-pwa (injectManifest config in vite.config.ts)
-- [ ] Migrate dashboard shell components (sidebar, bottom-nav, headers)
 
 ## Phase 3: Admin Vite App ✅
 
@@ -45,9 +47,10 @@ Plan: `.claude/plans/tender-growing-kite.md`
 - [x] Coach auth guard in \_panel layout
 - [x] 22 component files, 2 hooks (login, setup, dashboard, clients, signups, tickets, exercises, knowledge, FAQs, notifications, settings)
 - [x] Vite builds successfully
+- [x] Admin shell components migrated (sidebar, header)
+- [x] Sentry ErrorBoundary wrapping app
 - [ ] Add TanStack Virtual to long lists
 - [ ] Add optimistic updates
-- [ ] Migrate admin shell components (sidebar, header)
 
 ## Phase 4: AI SDK Swap — TanStack AI (DEFERRED)
 
