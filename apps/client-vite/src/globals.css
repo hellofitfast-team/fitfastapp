@@ -1,12 +1,13 @@
 @import "tailwindcss";
 @import "../../../packages/ui/styles.css";
 
-/* Scan shared UI package so Tailwind generates classes for @fitfast/ui components */
+/* @source paths are relative to THIS CSS file (src/globals.css) */
+/* Scan shared UI package components */
 @source "../../../packages/ui/src";
-/* Scan local app source */
-@source "./";
+/* Scan this app's source files */
+@source ".";
 
-/* ── Safe Area Insets (PWA standalone on iOS) ── */
+/* ── Safe Area Insets ── */
 :root {
   --sat: env(safe-area-inset-top, 0px);
   --sar: env(safe-area-inset-right, 0px);
@@ -14,16 +15,31 @@
   --sal: env(safe-area-inset-left, 0px);
 }
 
-/* ── Scrollbar Hiding ── */
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    overflow-x: hidden;
+    max-width: 100%;
+    overscroll-behavior-y: none;
+  }
+  input,
+  textarea,
+  select {
+    font-size: max(1rem, 16px);
+  }
 }
 
-/* ── Animations ── */
+@utility scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -48,4 +64,12 @@
 }
 .animate-slide-up {
   animation: slide-up 0.3s ease-out both;
+}
+
+@media all and (display-mode: standalone) {
+  html {
+    touch-action: pan-x pan-y;
+    -webkit-touch-callout: none;
+    overscroll-behavior-y: contain;
+  }
 }

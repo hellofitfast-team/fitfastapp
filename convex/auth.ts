@@ -49,7 +49,17 @@ export const createAuth = (ctx: GenericCtx<DataModel>) => {
       expiresIn: 8 * 60 * 60, // 8 hours — coach re-logs in each morning
       updateAge: 15 * 60, // refresh session expiry every 15 min
     },
-    plugins: [crossDomain({ siteUrl: clientAppUrl }), convex({ authConfig })],
+    plugins: [
+      // crossDomain siteUrl must match the requesting origin for CORS.
+      // In dev, CLIENT_APP_URL is not set so we default to localhost.
+      crossDomain({
+        siteUrl:
+          clientAppUrl === "https://app.fitfast.app"
+            ? "http://localhost:3010" // Dev fallback — production uses CLIENT_APP_URL env var
+            : clientAppUrl,
+      }),
+      convex({ authConfig }),
+    ],
   });
 };
 

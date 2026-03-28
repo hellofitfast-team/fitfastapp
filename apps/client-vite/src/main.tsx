@@ -21,19 +21,16 @@ if (import.meta.env.VITE_SENTRY_DSN) {
   });
 }
 
-// Validate required env var at startup
+// Validate required env vars
 if (!import.meta.env.VITE_CONVEX_URL) {
   throw new Error("VITE_CONVEX_URL is not set. Add it to your .env.local file.");
 }
-
 if (!import.meta.env.VITE_CONVEX_SITE_URL) {
   throw new Error("VITE_CONVEX_SITE_URL is not set. Add it to your .env.local file.");
 }
 
-// Create Convex client
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
 
-// Create router with auth context
 const router = createRouter({
   routeTree,
   context: {
@@ -43,7 +40,6 @@ const router = createRouter({
   defaultPendingMinMs: 100,
 });
 
-// Required for TanStack Router type safety
 declare module "@tanstack/react-router" {
   interface Register {
     router: typeof router;

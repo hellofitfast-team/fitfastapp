@@ -2,13 +2,24 @@
 @import "../../../packages/ui/styles.css";
 
 @source "../../../packages/ui/src";
-@source "./";
+@source ".";
 
 :root {
   --sat: env(safe-area-inset-top, 0px);
   --sar: env(safe-area-inset-right, 0px);
   --sab: env(safe-area-inset-bottom, 0px);
   --sal: env(safe-area-inset-left, 0px);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    overflow-x: hidden;
+    max-width: 100%;
+  }
 }
 
 @keyframes fade-in {
