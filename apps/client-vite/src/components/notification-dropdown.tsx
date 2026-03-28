@@ -1,4 +1,4 @@
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useConvexAuth } from "convex/react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "@tanstack/react-router";
 import { Bell, Utensils, Dumbbell, Megaphone, MessageSquare, CheckCheck } from "lucide-react";
@@ -30,8 +30,15 @@ function getRelativeTime(
 export function NotificationDropdown() {
   const { t } = useTranslation("translation", { keyPrefix: "notificationCenter" });
   const navigate = useNavigate();
-  const notifications = useQuery(api.inAppNotifications.getMyNotifications);
-  const unreadCount = useQuery(api.inAppNotifications.getUnreadCount);
+  const { isAuthenticated } = useConvexAuth();
+  const notifications = useQuery(
+    api.inAppNotifications.getMyNotifications,
+    isAuthenticated ? {} : "skip",
+  );
+  const unreadCount = useQuery(
+    api.inAppNotifications.getUnreadCount,
+    isAuthenticated ? {} : "skip",
+  );
   const markAsRead = useMutation(api.inAppNotifications.markAsRead);
   const markAllAsRead = useMutation(api.inAppNotifications.markAllAsRead);
 

@@ -31,8 +31,11 @@ export function DesktopHeader({ userName }: DesktopHeaderProps) {
   };
 
   const handleLogout = async () => {
-    await authClient.signOut();
-    navigate({ to: "/login" });
+    try {
+      await authClient.signOut();
+    } finally {
+      navigate({ to: "/login" });
+    }
   };
 
   return (

@@ -20,8 +20,11 @@ export function AdminHeader({ onMenuClick, coachName }: AdminHeaderProps) {
   };
 
   const handleSignOut = async () => {
-    await authClient.signOut();
-    navigate({ to: "/login" });
+    try {
+      await authClient.signOut();
+    } finally {
+      navigate({ to: "/login" });
+    }
   };
 
   return (

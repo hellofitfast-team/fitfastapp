@@ -106,8 +106,11 @@ export function DesktopTopNav({ userName }: DesktopTopNavProps) {
   };
 
   const handleLogout = async () => {
-    await authClient.signOut();
-    navigate({ to: "/login" });
+    try {
+      await authClient.signOut();
+    } finally {
+      navigate({ to: "/login" });
+    }
   };
 
   const getBadgeForItem = (href: string): "dot" | number | undefined => {

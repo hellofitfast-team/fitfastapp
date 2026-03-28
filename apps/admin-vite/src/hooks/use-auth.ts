@@ -10,8 +10,11 @@ export function useAuth() {
   const profile = useQuery(api.profiles.getMyProfile, isAuthenticated ? {} : "skip");
 
   const signOut = async () => {
-    await authClient.signOut();
-    navigate({ to: "/login" });
+    try {
+      await authClient.signOut();
+    } finally {
+      navigate({ to: "/login" });
+    }
   };
 
   return {

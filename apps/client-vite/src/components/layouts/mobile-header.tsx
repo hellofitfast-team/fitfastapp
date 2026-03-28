@@ -58,8 +58,11 @@ export function MobileHeader({ userName }: MobileHeaderProps) {
   };
 
   const handleLogout = async () => {
-    await authClient.signOut();
-    navigate({ to: "/login" });
+    try {
+      await authClient.signOut();
+    } finally {
+      navigate({ to: "/login" });
+    }
   };
 
   return (
