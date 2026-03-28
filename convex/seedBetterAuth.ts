@@ -1,146 +1,77 @@
 "use node";
 
 import { v } from "convex/values";
-import { action, internalMutation } from "./_generated/server";
+import { action } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { authComponent, createAuth } from "./auth";
 
 /**
- * Seed initial users via BetterAuth's server-side API.
- * Creates users with proper password hashing in BetterAuth's tables.
- * The user.onCreate trigger creates profiles via onNewUserCreated.
+ * Seed users via BetterAuth. Run in this order:
  *
- * ADMIN SETUP:
- *   Step 1: Create the admin invite first (so onNewUserCreated picks it up):
- *     npx convex run seedBetterAuth:createAdminInvite '{"email":"testadmin@admin.com","fullName":"Coach Mohamed"}'
- *   Step 2: Create the user via BetterAuth:
- *     npx convex run seedBetterAuth:createUser '{"email":"testadmin@admin.com","password":"test12345","fullName":"Coach Mohamed"}'
+ * ADMIN:
+ *   npx convex run seedBetterAuth:seedAdmin '{"email":"testadmin@admin.com","password":"test12345","fullName":"Coach Mohamed"}'
  *
- * CLIENT SETUP:
- *   Step 1: Create an approved pending signup first:
- *     npx convex run seedBetterAuth:createApprovedSignup '{"email":"client@fitfast.app","fullName":"Test Client"}'
- *   Step 2: Create the user via BetterAuth:
- *     npx convex run seedBetterAuth:createUser '{"email":"client@fitfast.app","password":"test12345","fullName":"Test Client"}'
+ * CLIENT:
+ *   npx convex run seedBetterAuth:seedClient '{"email":"client@fitfast.app","password":"test12345","fullName":"Test Client"}'
  */
 
-export const createUser = action({
+export const seedAdmin = action({
   args: {
     email: v.string(),
     password: v.string(),
     fullName: v.string(),
   },
   handler: async (ctx, { email, password, fullName }) => {
-    const { auth } = await authComponent.getAuth(createAuth, ctx);
+    // Step 1: Create admin invite so onNewUserCreated picks it up
+    await ctx.runMutation(internal.seedBetterAuthHelpers.createAdminInvite, {
+      email,
+      fullName,
+    });
 
-    // Create user via BetterAuth API — triggers user.onCreate → onNewUserCreated
+    // Step 2: Create user via BetterAuth API
+    const { auth } = await authComponent.getAuth(createAuth, ctx);
     const result = await auth.api.signUpEmail({
-      body: {
-        email,
-        password,
-        name: fullName,
-      },
+      body: { email, password, name: fullName },
     });
 
     if (!result?.user) {
-      return { success: false, message: "Failed to create user — may already exist" };
+      // May already exist
+      console.log("signUpEmail failed — user may already exist");
     }
 
-    return {
-      success: true,
-      message: `User ${email} created. onNewUserCreated trigger will create the profile.`,
-      userId: result.user.id,
-    };
+    // Step 3: Wait a moment for the trigger to create the profile, then promote
+    // The trigger uses scheduler.runAfter(0, ...) so it's async
+    await new Promise((r) => setTimeout(r, 2000));
+
+    await ctx.runMutation(internal.seedBetterAuthHelpers.promoteToCoach, { email });
+
+    return { success: true, message: `Admin ${email} seeded and promoted to coach/owner` };
   },
 });
 
-/**
- * Create an admin invite so that when the user signs up,
- * onNewUserCreated finds the invite and creates a coach profile.
- */
-export const createAdminInvite = internalMutation({
+export const seedClient = action({
   args: {
     email: v.string(),
+    password: v.string(),
     fullName: v.string(),
   },
-  handler: async (ctx, { email, fullName }) => {
-    // Check if invite already exists
-    const existing = await ctx.db
-      .query("adminInvites")
-      .filter((q) => q.eq(q.field("email"), email.toLowerCase()))
-      .first();
-
-    if (existing) {
-      return { success: true, message: "Invite already exists", inviteId: existing._id };
-    }
-
-    const token = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
-    const inviteId = await ctx.db.insert("adminInvites", {
-      email: email.toLowerCase(),
+  handler: async (ctx, { email, password, fullName }) => {
+    // Step 1: Create approved signup so onNewUserCreated creates active profile
+    await ctx.runMutation(internal.seedBetterAuthHelpers.createApprovedSignup, {
+      email,
       fullName,
-      token,
-      expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
-      createdAt: Date.now(),
     });
 
-    return { success: true, message: `Admin invite created for ${email}`, inviteId };
-  },
-});
+    // Step 2: Create user via BetterAuth API
+    const { auth } = await authComponent.getAuth(createAuth, ctx);
+    const result = await auth.api.signUpEmail({
+      body: { email, password, name: fullName },
+    });
 
-/**
- * Create an approved pending signup so that when the client signs up,
- * onNewUserCreated finds the signup and creates an active client profile.
- */
-export const createApprovedSignup = internalMutation({
-  args: {
-    email: v.string(),
-    fullName: v.string(),
-  },
-  handler: async (ctx, { email, fullName }) => {
-    const existing = await ctx.db
-      .query("pendingSignups")
-      .filter((q) => q.eq(q.field("email"), email.toLowerCase()))
-      .first();
-
-    if (existing) {
-      return { success: true, message: "Signup already exists", signupId: existing._id };
+    if (!result?.user) {
+      console.log("signUpEmail failed — user may already exist");
     }
 
-    const signupId = await ctx.db.insert("pendingSignups", {
-      email: email.toLowerCase(),
-      fullName,
-      phone: "",
-      planTier: "monthly",
-      status: "approved",
-      createdAt: Date.now(),
-    });
-
-    return { success: true, message: `Approved signup created for ${email}`, signupId };
-  },
-});
-
-/**
- * Force-promote a profile to coach status (for fixing profiles after seeding).
- */
-export const promoteToCoach = internalMutation({
-  args: {
-    email: v.string(),
-  },
-  handler: async (ctx, { email }) => {
-    const profile = await ctx.db
-      .query("profiles")
-      .withIndex("by_email", (q) => q.eq("email", email.toLowerCase()))
-      .first();
-
-    if (!profile) {
-      return { success: false, message: `No profile found for ${email}` };
-    }
-
-    await ctx.db.patch(profile._id, {
-      isCoach: true,
-      isOwner: true,
-      status: "active",
-    });
-
-    return { success: true, message: `${email} promoted to coach/owner` };
+    return { success: true, message: `Client ${email} seeded` };
   },
 });

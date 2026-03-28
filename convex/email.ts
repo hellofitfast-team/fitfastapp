@@ -68,8 +68,7 @@ function getWelcomeEmail(fullName: string, language: "en" | "ar") {
   const isAr = language === "ar";
   const safeName = escapeHtml(fullName);
   const clientUrl = process.env.CLIENT_APP_URL ?? "https://client.fitfast.app";
-  const locale = isAr ? "ar" : "en";
-  const loginLink = `${clientUrl}/${locale}/login`;
+  const loginLink = `${clientUrl}/login`;
 
   return {
     subject: isAr
@@ -102,8 +101,7 @@ function getPlanReadyEmail(fullName: string, language: "en" | "ar") {
   const isAr = language === "ar";
   const safeName = escapeHtml(fullName);
   const clientUrl = process.env.CLIENT_APP_URL ?? "https://client.fitfast.app";
-  const locale = isAr ? "ar" : "en";
-  const appLink = `${clientUrl}/${locale}`;
+  const appLink = clientUrl;
   return {
     subject: isAr ? "خططك الجديدة جاهزة! 💪" : "Your new plans are ready! 💪",
     html: emailWrapper(
@@ -135,8 +133,7 @@ function getTicketReplyEmail(
   const safeSubject = escapeHtml(ticketSubject);
   const safeMessage = escapeHtml(coachMessage);
   const clientUrl = process.env.CLIENT_APP_URL ?? "https://client.fitfast.app";
-  const locale = isAr ? "ar" : "en";
-  const ticketsLink = `${clientUrl}/${locale}/tickets`;
+  const ticketsLink = `${clientUrl}/tickets`;
   return {
     subject: isAr
       ? `رد المدرب: ${escapeHtml(ticketSubject)}`
@@ -162,8 +159,7 @@ function getReminderEmail(fullName: string, language: "en" | "ar") {
   const isAr = language === "ar";
   const safeName = escapeHtml(fullName);
   const clientUrl = process.env.CLIENT_APP_URL ?? "https://client.fitfast.app";
-  const locale = isAr ? "ar" : "en";
-  const checkInLink = `${clientUrl}/${locale}/check-in`;
+  const checkInLink = `${clientUrl}/check-in`;
   return {
     subject: isAr ? "حان وقت المتابعة! 📊" : "Time for your check-in! 📊",
     html: emailWrapper(
@@ -222,8 +218,7 @@ function getInvitationEmail(fullName: string, inviteToken: string, language: "en
   const isAr = language === "ar";
   const safeName = escapeHtml(fullName);
   const clientUrl = process.env.CLIENT_APP_URL ?? "https://app.fitfast.app";
-  const locale = isAr ? "ar" : "en";
-  const acceptLink = `${clientUrl}/${locale}/accept-invite?token=${encodeURIComponent(inviteToken)}`;
+  const acceptLink = `${clientUrl}/accept-invite?token=${encodeURIComponent(inviteToken)}`;
 
   return {
     subject: isAr
@@ -448,7 +443,7 @@ function getCoachNotificationEmail(
           <p style="margin:0;color:#44403c">${safeBody}</p>
         </div>
         <div style="text-align:center;margin:32px 0">
-          <a href="${process.env.CLIENT_APP_URL ?? "https://client.fitfast.app"}/${isAr ? "ar" : "en"}" style="background:#10B981;color:#fff;padding:14px 32px;border-radius:12px;text-decoration:none;font-weight:600;display:inline-block">
+          <a href="${process.env.CLIENT_APP_URL ?? "https://client.fitfast.app"}" style="background:#10B981;color:#fff;padding:14px 32px;border-radius:12px;text-decoration:none;font-weight:600;display:inline-block">
             ${isAr ? "افتح التطبيق" : "Open App"}
           </a>
         </div>`,
