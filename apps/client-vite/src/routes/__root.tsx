@@ -1,6 +1,7 @@
 import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { ServiceWorkerRegistration } from "@/components/pwa/ServiceWorkerRegistration";
 const RTL_LOCALES = new Set(["ar"]);
 import type { AuthState } from "@/lib/auth-context";
 
@@ -32,6 +33,7 @@ function RootLayout() {
 
   return (
     <>
+      <ServiceWorkerRegistration />
       <Outlet />
       <Suspense>
         <TanStackRouterDevtools />
