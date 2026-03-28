@@ -1,36 +1,38 @@
-import { useState, useEffect, useRef } from "react";
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
+import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import gsap from "gsap";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { authClient } from "@/lib/auth-client";
 import { useConvexAuth, useQuery, useAction } from "convex/react";
 import { api } from "@convex/_generated/api";
+import { authClient } from "@/lib/auth-client";
 import { Mail, Lock, ArrowRight, Sparkles, Loader2 } from "lucide-react";
 
-function createLoginSchema(t: (key: string) => string) {
-  return z.object({
-    email: z.string().email(t("validation.invalidEmail")),
-    password: z.string().min(6, t("validation.passwordMinLength")),
-  });
-}
-
-type LoginFormData = z.infer<ReturnType<typeof createLoginSchema>>;
+type LoginFormData = {
+  email: string;
+  password: string;
+};
 
 export const Route = createFileRoute("/login")({
-  component: AdminLoginPage,
   validateSearch: (search: Record<string, unknown>) => ({
-    error: (search.error as string) || undefined,
+    error: (search.error as string) ?? "",
   }),
+  component: AdminLoginPage,
 });
 
 function AdminLoginPage() {
-  const { t } = useTranslation();
-  const loginSchema = createLoginSchema((key) => t(key));
+  const { t: tAdmin } = useTranslation("translation", { keyPrefix: "admin" });
+  const { t: tValidation } = useTranslation("translation", { keyPrefix: "validation" });
+
+  const loginSchema = z.object({
+    email: z.string().email(tValidation("invalidEmail")),
+    password: z.string().min(6, tValidation("passwordMinLength")),
+  });
+
   const navigate = useNavigate();
-  const { error: errorParam } = Route.useSearch();
+  const { error: errorParam } = useSearch({ from: "/login" });
   const cardRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,29 +45,26 @@ function AdminLoginPage() {
   const profile = useQuery(api.profiles.getMyProfile, isConvexAuth ? {} : "skip");
   const isSigningOut = useRef(false);
 
-  const notCoachError = errorParam === "not_coach" ? t("admin.notAuthorized") : null;
+  const notCoachError = errorParam === "not_coach" ? tAdmin("notAuthorized") : null;
 
   useEffect(() => {
-    if (errorParam === "not_coach") {
-      if (isConvexAuth && !isSigningOut.current) {
-        isSigningOut.current = true;
-        void authClient.signOut().then(() => {
-          isSigningOut.current = false;
-        });
-      }
+    if (errorParam === "not_coach" && isConvexAuth && !isSigningOut.current) {
+      isSigningOut.current = true;
+      void authClient.signOut().then(() => {
+        isSigningOut.current = false;
+      });
     }
   }, [errorParam, isConvexAuth]);
 
   useEffect(() => {
     if (!isConvexAuth || profile === undefined || isSigningOut.current) return;
-
     if (profile?.isCoach) {
-      navigate({ to: "/" });
+      navigate({ to: "/", replace: true });
     } else if (isConvexAuth && profile && !profile.isCoach) {
       isSigningOut.current = true;
       void authClient.signOut().then(() => {
         isSigningOut.current = false;
-        setError(t("admin.notAuthorized"));
+        setError(tAdmin("notAuthorized"));
         setSignInComplete(false);
         setIsLoading(false);
       });
@@ -73,14 +72,13 @@ function AdminLoginPage() {
       isSigningOut.current = true;
       void authClient.signOut().then(() => {
         isSigningOut.current = false;
-        setError(t("admin.notAuthorized"));
+        setError(tAdmin("notAuthorized"));
         setSignInComplete(false);
         setIsLoading(false);
       });
     }
-  }, [isConvexAuth, profile, signInComplete, navigate, t]);
+  }, [isConvexAuth, profile, signInComplete, navigate, tAdmin]);
 
-  // GSAP entrance animation
   useEffect(() => {
     if (!cardRef.current) return;
     const ctx = gsap.context(() => {
@@ -99,9 +97,7 @@ function AdminLoginPage() {
     getValues,
     watch,
     formState: { errors },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-  });
+  } = useForm<LoginFormData>({ resolver: zodResolver(loginSchema) });
 
   const watchedEmail = watch("email");
   const hasOwner = useQuery(api.adminInvite.hasOwner);
@@ -114,24 +110,22 @@ function AdminLoginPage() {
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     setError(null);
-
     try {
-      await authClient.signIn.email({
-        email: data.email,
-        password: data.password,
-      });
-      setSignInComplete(true);
+      const result = await authClient.signIn.email({ email: data.email, password: data.password });
+      if (result.error) {
+        setError(tAdmin("invalidCredentials"));
+        setIsLoading(false);
+      } else {
+        setSignInComplete(true);
+      }
     } catch {
-      setError(t("admin.invalidCredentials"));
+      setError(tAdmin("invalidCredentials"));
       setIsLoading(false);
     }
   };
 
   return (
-    <div
-      className="flex min-h-screen items-center justify-center bg-stone-50 p-4"
-      style={{ fontFamily: "var(--font-sans)" }}
-    >
+    <div className="flex min-h-screen items-center justify-center bg-stone-50 p-4">
       <div
         className="absolute inset-0 opacity-[0.03]"
         style={{
@@ -139,20 +133,15 @@ function AdminLoginPage() {
           backgroundSize: "32px 32px",
         }}
       />
-
       <div ref={cardRef} className="relative w-full max-w-md">
         <div className="rounded-2xl border border-stone-200 bg-white shadow-xl shadow-stone-200/50">
           <div className="px-8 pt-10 pb-2 text-center">
             <img src="/logo.svg" alt="FitFast" className="mx-auto mb-5 h-14 w-14" />
-            <h1
-              className="text-2xl font-black tracking-tighter text-stone-900 uppercase italic"
-              style={{ fontFamily: "var(--font-display)" }}
-            >
+            <h1 className="text-2xl font-black tracking-tighter text-stone-900 uppercase italic">
               Fit<span className="text-[#FF4500]">Fast</span>
             </h1>
-            <p className="mt-1.5 text-sm text-stone-500">{t("admin.signInDescription")}</p>
+            <p className="mt-1.5 text-sm text-stone-500">{tAdmin("signInDescription")}</p>
           </div>
-
           <div className="px-8 pt-6 pb-8">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               {(error || notCoachError) && (
@@ -160,10 +149,9 @@ function AdminLoginPage() {
                   <p className="text-sm font-medium text-red-600">{error ?? notCoachError}</p>
                 </div>
               )}
-
               <div>
                 <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-stone-700">
-                  {t("admin.email")}
+                  {tAdmin("email")}
                 </label>
                 <div className="relative">
                   <div className="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3.5">
@@ -182,13 +170,12 @@ function AdminLoginPage() {
                   <p className="mt-1.5 text-xs text-red-500">{errors.email.message}</p>
                 )}
               </div>
-
               <div>
                 <label
                   htmlFor="password"
                   className="mb-1.5 block text-sm font-medium text-stone-700"
                 >
-                  {t("admin.password")}
+                  {tAdmin("password")}
                 </label>
                 <div className="relative">
                   <div className="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3.5">
@@ -207,30 +194,27 @@ function AdminLoginPage() {
                   <p className="mt-1.5 text-xs text-red-500">{errors.password.message}</p>
                 )}
               </div>
-
               <button
                 type="submit"
                 disabled={isLoading}
-                className="btn-magnetic flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#FF4500] text-sm font-semibold text-white shadow-lg shadow-[#FF4500]/20 transition-colors hover:bg-[#CC3700] disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#FF4500] text-sm font-semibold text-white shadow-lg shadow-[#FF4500]/20 transition-colors hover:bg-[#CC3700] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isLoading ? (
-                  <span className="animate-pulse">{t("admin.signingIn")}...</span>
+                  <span className="animate-pulse">{tAdmin("signingIn")}...</span>
                 ) : (
                   <>
-                    {t("admin.signIn")}
+                    {tAdmin("signIn")}
                     <ArrowRight className="h-4 w-4 rtl:rotate-180" />
                   </>
                 )}
               </button>
             </form>
-
-            {/* Owner setup */}
             {showOwnerSetup && (
-              <div className="border-t border-stone-100 px-8 pb-6">
+              <div className="mt-4 border-t border-stone-100 pt-4">
                 {magicLinkSent ? (
-                  <div className="mt-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                  <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
                     <Sparkles className="h-4 w-4 shrink-0 text-emerald-600" />
-                    <p className="text-sm text-emerald-700">{t("admin.magicLinkSent")}</p>
+                    <p className="text-sm text-emerald-700">{tAdmin("magicLinkSent")}</p>
                   </div>
                 ) : (
                   <button
@@ -239,7 +223,7 @@ function AdminLoginPage() {
                     onClick={async () => {
                       const emailValue = getValues("email");
                       if (!emailValue) {
-                        setError(t("admin.enterEmailFirst"));
+                        setError(tAdmin("enterEmailFirst"));
                         return;
                       }
                       setMagicLinkLoading(true);
@@ -248,27 +232,26 @@ function AdminLoginPage() {
                         await requestSetupLink({ email: emailValue, fullName: "Owner" });
                         setMagicLinkSent(true);
                       } catch (err) {
-                        setError(err instanceof Error ? err.message : t("admin.magicLinkFailed"));
+                        setError(err instanceof Error ? err.message : tAdmin("magicLinkFailed"));
                       } finally {
                         setMagicLinkLoading(false);
                       }
                     }}
-                    className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-stone-200 bg-stone-50 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-100 disabled:opacity-50"
+                    className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-stone-200 bg-stone-50 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-100 disabled:opacity-50"
                   >
                     {magicLinkLoading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                       <Sparkles className="h-4 w-4 text-[#FF4500]" />
                     )}
-                    {t("admin.setupWithMagicLink")}
+                    {tAdmin("setupWithMagicLink")}
                   </button>
                 )}
               </div>
             )}
           </div>
         </div>
-
-        <p className="mt-6 text-center text-xs text-stone-400">{t("admin.coachPanelFooter")}</p>
+        <p className="mt-6 text-center text-xs text-stone-400">{tAdmin("coachPanelFooter")}</p>
       </div>
     </div>
   );
