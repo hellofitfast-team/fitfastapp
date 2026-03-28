@@ -1,13 +1,23 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
+import { AdminSettingsForm } from "@/components/settings/settings-form";
 
 export const Route = createFileRoute("/_panel/settings")({
-  component: SettingsPage,
+  component: AdminSettingsPage,
 });
 
-function SettingsPage() {
+function AdminSettingsPage() {
+  const { t } = useTranslation();
+
   return (
-    <div>
-      <h1 className="text-2xl font-bold">Settings — TODO</h1>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-stone-900">
+          {t("admin.settingsPage")}
+        </h1>
+        <p className="mt-1 text-sm text-stone-500">{t("admin.systemConfiguration")}</p>
+      </div>
+      <AdminSettingsForm />
     </div>
   );
 }

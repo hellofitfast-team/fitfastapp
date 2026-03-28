@@ -1,13 +1,23 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
+import { TicketsList } from "@/components/tickets/tickets-list";
 
 export const Route = createFileRoute("/_panel/tickets")({
-  component: TicketsPage,
+  component: AdminTicketsPage,
 });
 
-function TicketsPage() {
+function AdminTicketsPage() {
+  const { t } = useTranslation();
+
   return (
-    <div>
-      <h1 className="text-2xl font-bold">Tickets — TODO</h1>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-stone-900">
+          {t("admin.openTickets")}
+        </h1>
+        <p className="mt-1 text-sm text-stone-500">{t("admin.manageTickets")}</p>
+      </div>
+      <TicketsList />
     </div>
   );
 }

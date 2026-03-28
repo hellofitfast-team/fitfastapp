@@ -1,13 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
+import { SignupsTable } from "@/components/signups/signups-table";
 
 export const Route = createFileRoute("/_panel/signups/")({
-  component: SignupsPage,
+  component: AdminSignupsPage,
 });
 
-function SignupsPage() {
+function AdminSignupsPage() {
+  const { t } = useTranslation();
+
   return (
-    <div>
-      <h1 className="text-2xl font-bold">Signups — TODO</h1>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-stone-900">{t("admin.signups")}</h1>
+        <p className="mt-1 text-sm text-stone-500">{t("admin.pendingSignups")}</p>
+      </div>
+      <SignupsTable />
     </div>
   );
 }
