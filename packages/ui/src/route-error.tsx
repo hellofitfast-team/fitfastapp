@@ -1,8 +1,6 @@
 "use client";
 
-import * as Sentry from "@sentry/nextjs";
 import { useEffect } from "react";
-import { useTranslations } from "next-intl";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "./button";
 
@@ -11,17 +9,20 @@ export interface RouteErrorProps {
   reset: () => void;
   feature: string;
   route: string;
-  translationKey: string;
+  /** Pre-translated strings — consumer handles i18n */
+  labels: {
+    title: string;
+    description: string;
+    retry: string;
+  };
+  /** Optional error reporter (e.g., Sentry.captureException) */
+  onError?: (error: Error, context: { feature: string; route: string }) => void;
 }
 
-export function RouteError({ error, reset, feature, route, translationKey }: RouteErrorProps) {
-  const t = useTranslations(translationKey);
-
+export function RouteError({ error, reset, feature, route, labels, onError }: RouteErrorProps) {
   useEffect(() => {
-    Sentry.captureException(error, {
-      tags: { feature, route },
-    });
-  }, [error, feature, route]);
+    onError?.(error, { feature, route });
+  }, [error, feature, route, onError]);
 
   return (
     <div className="flex min-h-[60vh] items-center justify-center p-4">
@@ -30,13 +31,13 @@ export function RouteError({ error, reset, feature, route, translationKey }: Rou
           <div className="bg-error-500/10 mx-auto flex h-16 w-16 items-center justify-center rounded-full">
             <AlertTriangle className="text-error-500 h-8 w-8" />
           </div>
-          <h1 className="text-xl font-bold">{t("title")}</h1>
-          <p className="text-muted-foreground text-sm">{t("description")}</p>
+          <h1 className="text-xl font-bold">{labels.title}</h1>
+          <p className="text-muted-foreground text-sm">{labels.description}</p>
           {error.digest && (
             <p className="text-muted-foreground text-xs">Error ID: {error.digest}</p>
           )}
           <Button onClick={() => reset()} className="w-full">
-            {t("retry")}
+            {labels.retry}
           </Button>
         </div>
       </div>

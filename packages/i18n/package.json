@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "exports": {
+    "./config": "./src/config.ts",
     "./routing": "./src/routing.ts",
     "./navigation": "./src/navigation.ts"
   },
@@ -11,5 +12,13 @@
   },
   "peerDependencies": {
     "next": ">=16"
+  },
+  "peerDependenciesMeta": {
+    "next": {
+      "optional": true
+    },
+    "next-intl": {
+      "optional": true
+    }
   }
 }
