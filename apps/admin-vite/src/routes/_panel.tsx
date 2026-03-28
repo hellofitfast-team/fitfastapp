@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, redirect, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { AdminShell } from "@/components/layouts/admin-shell";
 import { authClient } from "@/lib/auth-client";
 
@@ -21,10 +21,12 @@ function PanelLayout() {
   const navigate = useNavigate();
 
   const shouldRedirect = profile !== undefined && (!profile || !profile.isCoach);
+  const hasRedirected = useRef(false);
 
   useEffect(() => {
-    if (shouldRedirect) {
-      void authClient.signOut().then(() => navigate({ to: "/login" }));
+    if (shouldRedirect && !hasRedirected.current) {
+      hasRedirected.current = true;
+      void authClient.signOut().finally(() => navigate({ to: "/login" }));
     }
   }, [shouldRedirect, navigate]);
 

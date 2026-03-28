@@ -33,8 +33,7 @@ function DashboardLayout() {
     if (profile === undefined || assessment === undefined) return; // Still loading
 
     if (profile === null) {
-      void authClient.signOut();
-      navigate({ to: "/login" });
+      void authClient.signOut().finally(() => navigate({ to: "/login" }));
       return;
     }
 
