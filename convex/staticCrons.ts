@@ -8,10 +8,11 @@ import { internal } from "./_generated/api";
  */
 const crons = cronJobs();
 
+// BetterAuth manages session cleanup internally — this is now a no-op
 crons.daily(
   "auth-session-cleanup",
   { hourUTC: 2, minuteUTC: 0 },
-  internal.authCleanup.cleanupExpiredSessions,
+  internal.authCleanup.runSessionCleanup,
 );
 
 crons.daily(

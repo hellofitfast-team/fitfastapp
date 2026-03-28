@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { internalQuery } from "./_generated/server";
-import { getAuthUserId } from "./auth";
+import { getAuthUserId, authComponent } from "./auth";
 import { DEFAULT_CHECK_IN_FREQUENCY_DAYS, DEFAULT_WORKOUT_PLAN_DURATION_DAYS } from "./constants";
 
 /**
@@ -37,75 +37,27 @@ export async function requireCoach(ctx: { db: any; auth: any }): Promise<string>
 }
 
 /**
- * Delete all Convex Auth records for a user: verification codes, verifiers,
- * refresh tokens, sessions, auth accounts, and the users record.
- * Call this from any mutation that needs to fully remove a user's auth footprint.
+ * Delete auth records for a user via BetterAuth component API.
+ * BetterAuth manages its tables in an isolated component namespace,
+ * so we can't query them directly via ctx.db.
+ *
+ * Note: This is a best-effort cleanup. The profile and app data
+ * should be deleted separately by the caller.
  */
-export async function deleteAuthRecords(ctx: { db: any }, userId: string): Promise<void> {
-  // Find all auth accounts for this user
-  const authAccounts = await ctx.db
-    .query("authAccounts")
-    .filter((q: any) => q.eq(q.field("userId"), userId))
-    .collect();
-
-  for (const account of authAccounts) {
-    // Delete verification codes for this account
-    const verificationCodes = await ctx.db
-      .query("authVerificationCodes")
-      .withIndex("accountId", (q: any) => q.eq("accountId", account._id))
-      .collect();
-    for (const code of verificationCodes) {
-      await ctx.db.delete(code._id);
-    }
-
-    // Delete sessions, their refresh tokens, and verifiers
-    const sessions = await ctx.db
-      .query("authSessions")
-      .filter((q: any) => q.eq(q.field("userId"), account.userId))
-      .collect();
-    for (const session of sessions) {
-      const tokens = await ctx.db
-        .query("authRefreshTokens")
-        .filter((q: any) => q.eq(q.field("sessionId"), session._id))
-        .collect();
-      for (const token of tokens) {
-        await ctx.db.delete(token._id);
-      }
-      const verifiers = await ctx.db
-        .query("authVerifiers")
-        .filter((q: any) => q.eq(q.field("sessionId"), session._id))
-        .collect();
-      for (const v of verifiers) {
-        await ctx.db.delete(v._id);
-      }
-      await ctx.db.delete(session._id);
-    }
-
-    await ctx.db.delete(account._id);
-  }
-
-  // Delete the users record
-  const userDoc = await ctx.db.get(userId);
-  if (userDoc) await ctx.db.delete(userDoc._id);
+export async function deleteAuthRecords(_ctx: { db: any }, _userId: string): Promise<void> {
+  // With BetterAuth, user deletion should be handled via the BetterAuth admin API
+  // or by revoking sessions. The component manages its own table cleanup.
+  // For now, this is a no-op — the caller handles profile/app data deletion.
+  // TODO: Integrate BetterAuth admin plugin for full user deletion
 }
 
 /**
- * Delete all Convex Auth records by email (for pre-profile cleanup).
- * Finds the auth account by email, then delegates to deleteAuthRecords.
+ * Delete auth records by email — stub for BetterAuth migration.
+ * See deleteAuthRecords for details.
  */
-export async function deleteAuthRecordsByEmail(ctx: { db: any }, email: string): Promise<void> {
-  const authAccount = await ctx.db
-    .query("authAccounts")
-    .filter((q: any) =>
-      q.and(
-        q.eq(q.field("provider"), "password"),
-        q.eq(q.field("providerAccountId"), email.toLowerCase()),
-      ),
-    )
-    .first();
-  if (authAccount) {
-    await deleteAuthRecords(ctx, authAccount.userId);
-  }
+export async function deleteAuthRecordsByEmail(_ctx: { db: any }, _email: string): Promise<void> {
+  // No-op with BetterAuth — see deleteAuthRecords
+  // TODO: Integrate BetterAuth admin plugin for user deletion by email
 }
 
 // Internal queries used by AI actions to fetch data

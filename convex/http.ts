@@ -1,7 +1,7 @@
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { auth } from "./auth";
+import { authComponent, createAuth } from "./auth";
 import { rateLimiter } from "./rateLimiter";
 
 /**
@@ -54,8 +54,9 @@ function corsHeaders(request: Request): Record<string, string> {
 
 const http = httpRouter();
 
-// Convex Auth HTTP routes (JWT verification, JWKS, etc.)
-auth.addHttpRoutes(http);
+// BetterAuth HTTP routes (sign-in, sign-up, session, JWKS, etc.)
+// cors: true required for cross-origin SPA clients
+authComponent.registerRoutes(http, createAuth, { cors: true });
 
 // ---------------------------------------------------------------------------
 // Stream plan endpoint — returns real-time AI generation text

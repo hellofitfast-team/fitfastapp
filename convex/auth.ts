@@ -1,35 +1,61 @@
-import { Password } from "@convex-dev/auth/providers/Password";
-import { convexAuth } from "@convex-dev/auth/server";
-import { internal } from "./_generated/api";
+import { createClient, type GenericCtx, type AuthFunctions } from "@convex-dev/better-auth";
+import { convex, crossDomain } from "@convex-dev/better-auth/plugins";
+import { components, internal } from "./_generated/api";
+import type { DataModel } from "./_generated/dataModel";
+import { betterAuth } from "better-auth/minimal";
+import authConfig from "./auth.config";
 
-export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
-  providers: [Password],
-  session: {
-    totalDurationMs: 8 * 60 * 60 * 1000, // 8 hours — coach re-logs in each morning
-    inactiveDurationMs: 30 * 60 * 1000, // 30 min idle — protects unattended screens
-  },
-  callbacks: {
-    async afterUserCreatedOrUpdated(ctx, { userId, existingUserId }) {
-      // Only run for brand-new users (not updates)
-      if (existingUserId) return;
+const clientAppUrl = process.env.CLIENT_APP_URL ?? "https://app.fitfast.app";
+const adminAppUrl = process.env.ADMIN_APP_URL ?? "https://admin.fitfast.app";
 
-      // Look up the user's email from authAccounts
-      const accounts = await ctx.db
-        .query("authAccounts")
-        .filter((q) => q.eq(q.field("userId"), userId))
-        .collect();
-      const email = accounts[0]?.providerAccountId; // Password provider uses email as account ID
-      if (!email) return;
+// authFunctions is required when using triggers — points to the exported trigger handlers
+const authFunctions: AuthFunctions = internal.auth;
 
-      // Delegate profile creation to an internal mutation that has full schema types
-      await ctx.scheduler.runAfter(0, internal.profiles.onNewUserCreated, {
-        userId,
-        email,
-      });
+export const authComponent = createClient<DataModel>(components.betterAuth, {
+  authFunctions,
+  triggers: {
+    user: {
+      onCreate: async (ctx, doc) => {
+        // Delegate profile creation — mirrors old afterUserCreatedOrUpdated callback.
+        // Uses scheduler so the trigger itself stays lightweight.
+        await ctx.scheduler.runAfter(0, internal.profiles.onNewUserCreated, {
+          userId: doc._id,
+          email: doc.email,
+        });
+      },
     },
   },
 });
 
-// Re-export getAuthUserId so existing convex functions keep working
-// with `import { getAuthUserId } from "./auth"`
-export { getAuthUserId } from "@convex-dev/auth/server";
+// Export trigger handlers — required for authFunctions binding
+export const { onCreate, onUpdate, onDelete } = authComponent.triggersApi();
+
+export const createAuth = (ctx: GenericCtx<DataModel>) => {
+  return betterAuth({
+    trustedOrigins: [clientAppUrl, adminAppUrl],
+    database: authComponent.adapter(ctx),
+    emailAndPassword: {
+      enabled: true,
+      requireEmailVerification: false,
+      minPasswordLength: 8,
+    },
+    session: {
+      expiresIn: 8 * 60 * 60, // 8 hours — coach re-logs in each morning
+      updateAge: 15 * 60, // refresh session expiry every 15 min
+    },
+    plugins: [crossDomain({ siteUrl: clientAppUrl }), convex({ authConfig })],
+  });
+};
+
+/**
+ * Compatibility wrapper — drop-in replacement for the old getAuthUserId.
+ * Returns the BetterAuth user ID (string) or null if not authenticated.
+ * All 30+ Convex files import this, so preserving the interface avoids a massive rewrite.
+ */
+export async function getAuthUserId(ctx: any): Promise<string | null> {
+  const user = await authComponent.safeGetAuthUser(ctx);
+  return user?._id ?? null;
+}
+
+// Export client API for use with ClientAuthBoundary / auth-aware queries
+export const { getAuthUser } = authComponent.clientApi();

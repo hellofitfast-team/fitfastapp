@@ -1,4 +1,5 @@
 import { defineApp } from "convex/server";
+import betterAuth from "@convex-dev/better-auth/convex.config";
 import rateLimiter from "@convex-dev/rate-limiter/convex.config";
 import workflow from "@convex-dev/workflow/convex.config";
 import actionRetrier from "@convex-dev/action-retrier/convex.config";
@@ -11,6 +12,7 @@ import persistentTextStreaming from "@convex-dev/persistent-text-streaming/conve
 import workpool from "@convex-dev/workpool/convex.config";
 
 const app = defineApp();
+app.use(betterAuth);
 app.use(rateLimiter);
 app.use(workflow);
 app.use(actionRetrier);

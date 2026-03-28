@@ -401,7 +401,7 @@ export const createProfileForNewUser = internalMutation({
   },
 });
 
-// Called by auth.ts afterUserCreatedOrUpdated callback via scheduler
+// Called by BetterAuth user.onCreate trigger via scheduler
 export const onNewUserCreated = internalMutation({
   args: {
     userId: v.string(),

@@ -261,81 +261,10 @@ export const approveSignup = mutation({
         });
       }
     } else {
-      // No profile found — check if user has an auth account but onNewUserCreated
-      // failed to create their profile (safety net for silent scheduler failures)
-      let authAccount = await ctx.db
-        .query("authAccounts")
-        .filter((q) =>
-          q.and(
-            q.eq(q.field("provider"), "password"),
-            q.eq(q.field("providerAccountId"), signup.email),
-          ),
-        )
-        .first();
-
-      // Case-insensitive fallback
-      if (!authAccount) {
-        authAccount = await ctx.db
-          .query("authAccounts")
-          .filter((q) =>
-            q.and(
-              q.eq(q.field("provider"), "password"),
-              q.eq(q.field("providerAccountId"), signup.email.toLowerCase()),
-            ),
-          )
-          .first();
-      }
-
-      if (authAccount) {
-        // User HAS an account but no profile — onNewUserCreated failed silently.
-        // Double-check no profile was created in the meantime (race condition guard)
-        const raceCheck = await ctx.db
-          .query("profiles")
-          .withIndex("by_userId", (q) => q.eq("userId", authAccount.userId))
-          .unique();
-        if (raceCheck) {
-          // Profile was just created by onNewUserCreated — activate if needed
-          if (raceCheck.status === "pending_approval") {
-            await ctx.scheduler.runAfter(0, internal.pendingSignups.activateClientProfile, {
-              profileId: raceCheck._id,
-              signupId,
-            });
-          }
-          return;
-        }
-
-        // Create the profile and activate it directly.
-        const planMonths = signup.planTier === "quarterly" ? 3 : 1;
-        const endDate = new Date();
-        endDate.setMonth(endDate.getMonth() + planMonths);
-
-        const profileId = await ctx.db.insert("profiles", {
-          userId: authAccount.userId,
-          email: signup.email.toLowerCase(),
-          fullName: signup.fullName,
-          language: "en",
-          status: "active",
-          isCoach: false,
-          planTier: signup.planTier,
-          planStartDate: new Date().toISOString().split("T")[0],
-          planEndDate: endDate.toISOString().split("T")[0],
-          updatedAt: Date.now(),
-        });
-
-        await activeClientsCount.insert(ctx, { key: profileId, id: profileId });
-
-        // Clear invite token — no longer needed
-        if (signup.inviteToken) {
-          await ctx.db.patch(signupId, { inviteToken: undefined });
-        }
-
-        // Send welcome email
-        await ctx.scheduler.runAfter(0, internal.email.sendWelcomeEmail, {
-          email: signup.email,
-          fullName: signup.fullName,
-          language: "en" as const,
-        });
-      } else {
+      // No profile found — with BetterAuth triggers, profile creation is atomic
+      // (same transaction as user creation), so the old "silent scheduler failure"
+      // case is eliminated. If no profile exists, the user hasn't created their account yet.
+      {
         // Prospect hasn't created their account yet — send approval email
         // with invite link so they can create their account (now as active user).
         // Reuse existing token or generate a fresh one.

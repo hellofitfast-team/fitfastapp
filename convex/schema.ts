@@ -1,6 +1,5 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
-import { authTables } from "@convex-dev/auth/server";
 
 /** Reusable language validator */
 const languageValidator = v.union(v.literal("en"), v.literal("ar"));
@@ -56,10 +55,11 @@ const ocrExtractedDataValidator = v.object({
 });
 
 export default defineSchema({
-  ...authTables,
+  // Auth tables are managed by BetterAuth component (isolated namespace)
+  // — no longer spread into the main schema.
 
   profiles: defineTable({
-    userId: v.string(), // Convex Auth user ID (references users._id)
+    userId: v.string(), // BetterAuth user ID (references component user._id)
     fullName: v.optional(v.string()),
     email: v.optional(v.string()),
     phone: v.optional(v.string()),
