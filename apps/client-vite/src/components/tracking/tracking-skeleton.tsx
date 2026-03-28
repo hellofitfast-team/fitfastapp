@@ -1,0 +1,21 @@
+import { Skeleton } from "@fitfast/ui/skeleton";
+
+export function TrackingSkeleton() {
+  return (
+    <div className="mx-auto max-w-5xl space-y-5 px-4 py-6">
+      <div className="space-y-1">
+        <Skeleton className="h-7 w-32" />
+        <Skeleton className="h-4 w-48" />
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Skeleton className="h-32 rounded-xl" />
+        <Skeleton className="h-32 rounded-xl" />
+      </div>
+
+      <Skeleton className="h-64 rounded-xl" />
+      <Skeleton className="h-48 rounded-xl" />
+      <Skeleton className="h-40 rounded-xl" />
+    </div>
+  );
+}
