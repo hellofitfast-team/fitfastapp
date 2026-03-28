@@ -3,11 +3,28 @@ import ReactDOM from "react-dom/client";
 import { RouterProvider, createRouter } from "@tanstack/react-router";
 import { ConvexReactClient } from "convex/react";
 import { ConvexBetterAuthProvider } from "@convex-dev/better-auth/react";
+import * as Sentry from "@sentry/react";
 import { authClient } from "@/lib/auth-client";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
+import { ErrorFallback } from "@/components/error-fallback";
 import { routeTree } from "./routeTree.gen";
 import "@fitfast/ui/styles";
 import "./i18n";
+
+// Initialize Sentry
+if (import.meta.env.VITE_SENTRY_DSN) {
+  Sentry.init({
+    dsn: import.meta.env.VITE_SENTRY_DSN,
+    environment: import.meta.env.PROD ? "production" : "development",
+    integrations: [Sentry.browserTracingIntegration()],
+    tracesSampleRate: import.meta.env.PROD ? 0.1 : 1.0,
+  });
+}
+
+// Validate required env var at startup
+if (!import.meta.env.VITE_CONVEX_URL) {
+  throw new Error("VITE_CONVEX_URL is not set. Add it to your .env.local file.");
+}
 
 // Create Convex client
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
@@ -36,11 +53,17 @@ function InnerApp() {
 
 function App() {
   return (
-    <ConvexBetterAuthProvider client={convex} authClient={authClient}>
-      <AuthProvider>
-        <InnerApp />
-      </AuthProvider>
-    </ConvexBetterAuthProvider>
+    <Sentry.ErrorBoundary
+      fallback={({ error, resetError }) => (
+        <ErrorFallback error={error} resetErrorBoundary={resetError} />
+      )}
+    >
+      <ConvexBetterAuthProvider client={convex} authClient={authClient}>
+        <AuthProvider>
+          <InnerApp />
+        </AuthProvider>
+      </ConvexBetterAuthProvider>
+    </Sentry.ErrorBoundary>
   );
 }
 

@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
+import { AdminShell } from "@/components/layouts/admin-shell";
 
 export const Route = createFileRoute("/_panel")({
   beforeLoad: ({ context }) => {
@@ -13,6 +14,8 @@ export const Route = createFileRoute("/_panel")({
 
 function PanelLayout() {
   const profile = useQuery(api.profiles.getMyProfile);
+  const pendingSignups = useQuery(api.pendingSignups.getPendingSignups);
+  const openTickets = useQuery(api.tickets.getOpenTicketCount);
 
   if (profile === undefined) {
     return (
@@ -31,12 +34,12 @@ function PanelLayout() {
   }
 
   return (
-    <div className="bg-background text-foreground min-h-dvh">
-      <div className="flex flex-1 flex-col">
-        <main className="flex-1 p-4 lg:p-8">
-          <Outlet />
-        </main>
-      </div>
-    </div>
+    <AdminShell
+      coachName={profile.fullName ?? "Coach"}
+      pendingSignups={pendingSignups?.length ?? 0}
+      openTickets={openTickets ?? 0}
+    >
+      <Outlet />
+    </AdminShell>
   );
 }
