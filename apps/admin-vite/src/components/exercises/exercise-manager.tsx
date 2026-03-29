@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "convex/react";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -6,10 +6,18 @@ import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { Button } from "@fitfast/ui/button";
 import { Input } from "@fitfast/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@fitfast/ui/dialog";
+import { Checkbox } from "@fitfast/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@fitfast/ui/dialog";
 import { cn } from "@fitfast/ui/cn";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Search, Pencil, Trash2, Power, Loader2 } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Power, Loader2, X } from "lucide-react";
 
 type Category = "compound" | "accessory" | "isolation" | "warmup" | "cooldown" | "cardio";
 
@@ -76,6 +84,10 @@ export function ExerciseManager() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<Id<"exerciseDatabase">>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [bulkDeactivating, setBulkDeactivating] = useState(false);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
 
   // Queries
   const allExercises = useQuery(api.exerciseDatabase.listExercises);
@@ -229,6 +241,64 @@ export function ExerciseManager() {
     }
   }
 
+  const handleSelect = useCallback((id: Id<"exerciseDatabase">, checked: boolean) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }, []);
+
+  const handleSelectAll = useCallback(
+    (checked: boolean) => {
+      if (checked && filteredExercises) {
+        setSelected(new Set(filteredExercises.map((e) => e._id)));
+      } else {
+        setSelected(new Set());
+      }
+    },
+    [filteredExercises],
+  );
+
+  async function handleBulkDelete() {
+    setShowBulkDeleteConfirm(false);
+    setBulkDeleting(true);
+    try {
+      const ids = Array.from(selected);
+      await Promise.all(ids.map((id) => deleteExercise({ id })));
+      toast({ title: t("bulkDeleteSuccess") });
+      setSelected(new Set());
+    } catch (err) {
+      console.error("Bulk delete failed:", err);
+      toast({
+        title: err instanceof Error ? err.message : t("saveFailed"),
+        variant: "destructive",
+      });
+    } finally {
+      setBulkDeleting(false);
+    }
+  }
+
+  async function handleBulkDeactivate() {
+    setBulkDeactivating(true);
+    try {
+      const activeSelected =
+        filteredExercises?.filter((e) => selected.has(e._id) && e.isActive) ?? [];
+      await Promise.all(activeSelected.map((e) => toggleActive({ id: e._id })));
+      toast({ title: t("bulkDeactivateSuccess") });
+      setSelected(new Set());
+    } catch (err) {
+      console.error("Bulk deactivate failed:", err);
+      toast({
+        title: err instanceof Error ? err.message : t("saveFailed"),
+        variant: "destructive",
+      });
+    } finally {
+      setBulkDeactivating(false);
+    }
+  }
+
   const isLoading = exercises === undefined;
 
   return (
@@ -269,6 +339,40 @@ export function ExerciseManager() {
         </p>
       )}
 
+      {/* Bulk Action Bar */}
+      {selected.size > 0 && (
+        <div className="flex items-center gap-3 rounded-lg border border-stone-200 bg-stone-50 px-4 py-2.5">
+          <span className="text-sm font-medium text-stone-700">
+            {t("selectedCount", { count: selected.size })}
+          </span>
+          <div className="flex-1" />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleBulkDeactivate}
+            disabled={bulkDeactivating || bulkDeleting}
+          >
+            {bulkDeactivating && <Loader2 className="me-2 h-3.5 w-3.5 animate-spin" />}
+            <Power className="me-1.5 h-3.5 w-3.5" />
+            {t("deactivateSelected")}
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => setShowBulkDeleteConfirm(true)}
+            disabled={bulkDeleting || bulkDeactivating}
+          >
+            {bulkDeleting && <Loader2 className="me-2 h-3.5 w-3.5 animate-spin" />}
+            <Trash2 className="me-1.5 h-3.5 w-3.5" />
+            {t("deleteSelected")}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setSelected(new Set())}>
+            <X className="me-1.5 h-3.5 w-3.5" />
+            {t("clearSelection")}
+          </Button>
+        </div>
+      )}
+
       {/* Exercise List */}
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
@@ -285,10 +389,34 @@ export function ExerciseManager() {
           onTogglePregnancy={handleTogglePregnancy}
           onEdit={openEditModal}
           onDelete={handleDelete}
+          selected={selected}
+          onSelect={handleSelect}
+          onSelectAll={handleSelectAll}
           t={t}
           tCommon={tCommon}
         />
       )}
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <Dialog open={showBulkDeleteConfirm} onOpenChange={setShowBulkDeleteConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("bulkDeleteConfirmTitle")}</DialogTitle>
+            <DialogDescription>
+              {t("bulkDeleteConfirmDescription", { count: selected.size })}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowBulkDeleteConfirm(false)}>
+              {tCommon("cancel")}
+            </Button>
+            <Button variant="destructive" onClick={handleBulkDelete}>
+              <Trash2 className="me-1.5 h-3.5 w-3.5" />
+              {t("deleteSelected")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Add/Edit Modal — uses Dialog for focus trap, Escape key, aria-modal */}
       <Dialog open={showModal} onOpenChange={setShowModal}>
@@ -574,6 +702,9 @@ function ExerciseTable({
   onTogglePregnancy,
   onEdit,
   onDelete,
+  selected,
+  onSelect,
+  onSelectAll,
   t,
   tCommon,
 }: {
@@ -584,9 +715,19 @@ function ExerciseTable({
   onTogglePregnancy: (id: Id<"exerciseDatabase">) => void;
   onEdit: (exercise: ExerciseItem) => void;
   onDelete: (id: Id<"exerciseDatabase">) => void;
+  selected: Set<Id<"exerciseDatabase">>;
+  onSelect: (id: Id<"exerciseDatabase">, checked: boolean) => void;
+  onSelectAll: (checked: boolean) => void;
   t: (key: string) => string;
   tCommon: (key: string) => string;
 }) {
+  const allSelected = exercises.length > 0 && exercises.every((e) => selected.has(e._id));
+  const someSelected = exercises.some((e) => selected.has(e._id));
+  const headerChecked: import("@fitfast/ui/checkbox").CheckedState = allSelected
+    ? true
+    : someSelected
+      ? "indeterminate"
+      : false;
   const parentRef = useRef<HTMLDivElement>(null);
 
   const virtualizer = useVirtualizer({
@@ -599,7 +740,14 @@ function ExerciseTable({
   return (
     <div className="overflow-x-auto rounded-lg border border-stone-200">
       {/* Sticky header */}
-      <div className="grid min-w-[70rem] grid-cols-[4rem_minmax(10rem,1fr)_minmax(10rem,1fr)_8rem_8rem_12rem_5rem_5rem_5rem] items-center bg-stone-50 text-xs font-medium whitespace-nowrap text-stone-600 [&>div]:px-4 [&>div]:py-3">
+      <div className="grid min-w-[73rem] grid-cols-[3rem_4rem_minmax(10rem,1fr)_minmax(10rem,1fr)_8rem_8rem_12rem_5rem_5rem_5rem] items-center bg-stone-50 text-xs font-medium whitespace-nowrap text-stone-600 [&>div]:px-4 [&>div]:py-3">
+        <div className="flex items-center justify-center">
+          <Checkbox
+            checked={headerChecked}
+            onCheckedChange={onSelectAll}
+            aria-label={t("selectAll")}
+          />
+        </div>
         <div>{t("image")}</div>
         <div>{t("name")}</div>
         <div className="hidden md:block">{t("nameAr")}</div>
@@ -628,13 +776,21 @@ function ExerciseTable({
                 data-index={virtualRow.index}
                 ref={virtualizer.measureElement}
                 className={cn(
-                  "absolute top-0 left-0 grid w-full min-w-[70rem] grid-cols-[4rem_minmax(10rem,1fr)_minmax(10rem,1fr)_8rem_8rem_12rem_5rem_5rem_5rem] items-center border-b border-stone-100 text-sm whitespace-nowrap transition-colors hover:bg-stone-50 [&>div]:px-4 [&>div]:py-3",
+                  "absolute top-0 left-0 grid w-full min-w-[73rem] grid-cols-[3rem_4rem_minmax(10rem,1fr)_minmax(10rem,1fr)_8rem_8rem_12rem_5rem_5rem_5rem] items-center border-b border-stone-100 text-sm whitespace-nowrap transition-colors hover:bg-stone-50 [&>div]:px-4 [&>div]:py-3",
                   !exercise.isActive && "opacity-50",
+                  selected.has(exercise._id) && "bg-stone-50",
                 )}
                 style={{
                   transform: `translateY(${virtualRow.start}px)`,
                 }}
               >
+                <div className="flex items-center justify-center">
+                  <Checkbox
+                    checked={selected.has(exercise._id)}
+                    onCheckedChange={(checked) => onSelect(exercise._id, checked)}
+                    aria-label={`${t("selectExercise")} ${exercise.name}`}
+                  />
+                </div>
                 <div>
                   {exercise.imageUrl ? (
                     <img

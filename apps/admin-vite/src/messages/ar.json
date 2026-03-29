@@ -816,7 +816,17 @@
     "gifUrl": "رابط صورة مخصص (اختياري)",
     "gifUrlPlaceholder": "https://example.com/exercise.gif",
     "gifPreview": "معاينة",
-    "removeGif": "إزالة"
+    "removeGif": "إزالة",
+    "selectAll": "تحديد جميع التمارين",
+    "selectExercise": "تحديد",
+    "selectedCount": "{{count}} محدد",
+    "deleteSelected": "حذف المحدد",
+    "deactivateSelected": "تعطيل المحدد",
+    "clearSelection": "مسح التحديد",
+    "bulkDeleteConfirmTitle": "حذف التمارين المحددة",
+    "bulkDeleteConfirmDescription": "هل أنت متأكد من حذف {{count}} تمرين؟ لا يمكن التراجع عن هذا الإجراء.",
+    "bulkDeleteSuccess": "تم حذف التمارين المحددة بنجاح",
+    "bulkDeactivateSuccess": "تم تعطيل التمارين المحددة بنجاح"
   },
   "clientInsights": {
     "activity": "النشاط والمشاركة",

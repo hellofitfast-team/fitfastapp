@@ -816,7 +816,17 @@
     "gifUrl": "GIF URL (override)",
     "gifUrlPlaceholder": "https://example.com/exercise.gif",
     "gifPreview": "Preview",
-    "removeGif": "Remove"
+    "removeGif": "Remove",
+    "selectAll": "Select all exercises",
+    "selectExercise": "Select",
+    "selectedCount": "{{count}} selected",
+    "deleteSelected": "Delete Selected",
+    "deactivateSelected": "Deactivate Selected",
+    "clearSelection": "Clear Selection",
+    "bulkDeleteConfirmTitle": "Delete Selected Exercises",
+    "bulkDeleteConfirmDescription": "Are you sure you want to delete {{count}} exercises? This action cannot be undone.",
+    "bulkDeleteSuccess": "Selected exercises deleted successfully",
+    "bulkDeactivateSuccess": "Selected exercises deactivated successfully"
   },
   "clientInsights": {
     "activity": "Activity & Engagement",
