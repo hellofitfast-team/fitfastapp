@@ -176,7 +176,7 @@ function NotificationsPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="mx-auto max-w-4xl space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight text-stone-900">
           {t("notifications.title")}
