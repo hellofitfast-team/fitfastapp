@@ -5,7 +5,7 @@ import type { DataModel } from "./_generated/dataModel";
 import { betterAuth } from "better-auth/minimal";
 import authConfig from "./auth.config";
 
-const clientAppUrl = process.env.CLIENT_APP_URL ?? "https://app.fitfast.app";
+const clientAppUrl = process.env.CLIENT_APP_URL ?? "https://client.fitfast.app";
 const adminAppUrl = process.env.ADMIN_APP_URL ?? "https://admin.fitfast.app";
 
 // authFunctions is required when using triggers — points to the exported trigger handlers
@@ -49,17 +49,7 @@ export const createAuth = (ctx: GenericCtx<DataModel>) => {
       expiresIn: 8 * 60 * 60, // 8 hours — coach re-logs in each morning
       updateAge: 15 * 60, // refresh session expiry every 15 min
     },
-    plugins: [
-      // crossDomain siteUrl must match the requesting origin for CORS.
-      // In dev, CLIENT_APP_URL is not set so we default to localhost.
-      crossDomain({
-        siteUrl:
-          clientAppUrl === "https://app.fitfast.app"
-            ? "http://localhost:3010" // Dev fallback — production uses CLIENT_APP_URL env var
-            : clientAppUrl,
-      }),
-      convex({ authConfig }),
-    ],
+    plugins: [crossDomain({ siteUrl: clientAppUrl }), convex({ authConfig })],
   });
 };
 

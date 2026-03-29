@@ -28,6 +28,68 @@ interface CheckoutFormProps {
 }
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const COMPRESS_MAX_WIDTH = 1200;
+const COMPRESS_QUALITY = 0.8;
+
+/**
+ * Compress an image client-side using Canvas API before upload.
+ * Resizes to max 1200px width and converts to JPEG at 80% quality.
+ * Typically reduces a 3-5MB phone photo to ~100-200KB.
+ */
+function compressImage(file: File): Promise<File> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+
+      let { width, height } = img;
+
+      // Only downscale — never upscale small images
+      if (width > COMPRESS_MAX_WIDTH) {
+        height = Math.round((height * COMPRESS_MAX_WIDTH) / width);
+        width = COMPRESS_MAX_WIDTH;
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        resolve(file);
+        return;
+      }
+
+      ctx.drawImage(img, 0, 0, width, height);
+
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            resolve(file);
+            return;
+          }
+          // If compression made it bigger (rare, e.g. flat-color PNGs), use original
+          if (blob.size >= file.size) {
+            resolve(file);
+            return;
+          }
+          resolve(new File([blob], file.name.replace(/\.\w+$/, ".jpg"), { type: "image/jpeg" }));
+        },
+        "image/jpeg",
+        COMPRESS_QUALITY,
+      );
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Failed to load image for compression"));
+    };
+
+    img.src = url;
+  });
+}
 
 const durationToTier: Record<string, "monthly" | "quarterly"> = {
   "1 month": "monthly",
@@ -167,11 +229,14 @@ export function CheckoutForm({ selectedPlan, onSuccess }: CheckoutFormProps) {
       const { uploadUrl } = (await urlResponse.json()) as { uploadUrl: string };
       if (!uploadUrl || typeof uploadUrl !== "string") throw new Error("Invalid upload response");
 
+      // Compress image before upload (3-5MB → ~100-200KB)
+      const compressedFile = await compressImage(screenshotFile);
+
       const uploadResponse = await fetch(uploadUrl, {
         method: "POST",
-        body: screenshotFile,
+        body: compressedFile,
         headers: {
-          "Content-Type": screenshotFile.type,
+          "Content-Type": compressedFile.type,
         },
       });
 

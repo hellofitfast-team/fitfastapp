@@ -217,7 +217,7 @@ function getRejectionEmail(fullName: string, rejectionReason: string, language: 
 function getInvitationEmail(fullName: string, inviteToken: string, language: "en" | "ar") {
   const isAr = language === "ar";
   const safeName = escapeHtml(fullName);
-  const clientUrl = process.env.CLIENT_APP_URL ?? "https://app.fitfast.app";
+  const clientUrl = process.env.CLIENT_APP_URL ?? "https://client.fitfast.app";
   const acceptLink = `${clientUrl}/accept-invite?token=${encodeURIComponent(inviteToken)}`;
 
   return {
