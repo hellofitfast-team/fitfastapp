@@ -5,7 +5,7 @@ import { api } from "@convex/_generated/api";
 import { Shield, User, Clock, CheckCircle2, Trash2, Loader2 } from "lucide-react";
 
 export function TeamTable() {
-  const { t, i18n } = useTranslation();
+  const { t, i18n } = useTranslation("translation", { keyPrefix: "settings" });
   const locale = i18n.language;
   const { isAuthenticated } = useConvexAuth();
   const data = useQuery(api.profiles.getTeamMembers, isAuthenticated ? {} : "skip");

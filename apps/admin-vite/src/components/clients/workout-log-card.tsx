@@ -19,7 +19,7 @@ export function WorkoutLogCard({
   hasDetailedLogs,
   workoutCompletionRate,
 }: WorkoutLogCardProps) {
-  const { t, i18n } = useTranslation();
+  const { t, i18n } = useTranslation("translation", { keyPrefix: "clientInsights" });
   const locale = i18n.language;
 
   return (

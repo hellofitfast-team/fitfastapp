@@ -5,7 +5,7 @@ import { api } from "@convex/_generated/api";
 import { UserPlus, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 
 export function InviteCoachDialog() {
-  const { t, i18n } = useTranslation();
+  const { t, i18n } = useTranslation("translation", { keyPrefix: "settings" });
   const locale = i18n.language;
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");

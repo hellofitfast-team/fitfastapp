@@ -515,7 +515,7 @@ function ClientDetailPage() {
         >
           <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
         </Link>
-        <p className="text-sm text-stone-500">{t("clientNotFound")}</p>
+        <p className="text-sm text-stone-500">{t("admin.clientNotFound")}</p>
       </div>
     );
   }
@@ -652,7 +652,7 @@ function ClientDetailPage() {
         </Link>
         <div className="flex-1">
           <h1 className="text-2xl font-bold tracking-tight text-stone-900">
-            {profile.fullName ?? t("client")}
+            {profile.fullName ?? t("admin.client")}
           </h1>
           <p className="mt-0.5 text-xs text-stone-400">
             {t("clientDetail.id")}: {userId.slice(0, 8)}...
@@ -1028,7 +1028,7 @@ function ClientDetailPage() {
                     disabled={isActing}
                     className="flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-50 disabled:opacity-50"
                   >
-                    {t("cancel")}
+                    {t("admin.cancel")}
                   </button>
                 </div>
               </div>

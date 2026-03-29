@@ -63,10 +63,9 @@ const INITIAL_FORM: ExerciseFormData = {
 };
 
 export function ExerciseManager() {
-  const { t, i18n } = useTranslation();
-  const tCommon = (key: string) => t(`common.${key}`);
+  const { t, i18n } = useTranslation("translation", { keyPrefix: "exercises" });
+  const tCommon = (key: string) => i18n.t(`common.${key}`);
   const locale = i18n.language;
-  // tCommon uses t("common.xxx") pattern
   const { toast } = useToast();
 
   const [searchQuery, setSearchQuery] = useState("");

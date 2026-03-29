@@ -29,7 +29,7 @@ function ScoreBar({ value, max = 10 }: { value: number; max?: number }) {
 }
 
 export function CheckInHistoryCard({ checkInHistory }: CheckInHistoryCardProps) {
-  const { t, i18n } = useTranslation();
+  const { t, i18n } = useTranslation("translation", { keyPrefix: "clientInsights" });
   const locale = i18n.language;
   const [expanded, setExpanded] = useState(false);
 

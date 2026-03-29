@@ -38,8 +38,7 @@ const CATEGORY_OPTIONS = [
 ] as const;
 
 export function KnowledgeManager() {
-  const { t, i18n } = useTranslation();
-  const tCommon = (key: string) => t(`common.${key}`);
+  const { t, i18n } = useTranslation("translation", { keyPrefix: "knowledge" });
   const locale = i18n.language;
   const { isAuthenticated } = useConvexAuth();
   const [activeTab, setActiveTab] = useState<"knowledge" | "food">("knowledge");
@@ -83,7 +82,8 @@ export function KnowledgeManager() {
 
 /* ─── Knowledge Tab (original) ─── */
 function KnowledgeTab() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation("translation", { keyPrefix: "knowledge" });
+  const tCommon = (key: string) => i18n.t(`common.${key}`);
   const { toast } = useToast();
   const { isAuthenticated } = useConvexAuth();
   const entries = useQuery(api.knowledgeBase.listKnowledgeEntries, isAuthenticated ? {} : "skip");
@@ -569,7 +569,7 @@ function KnowledgeTab() {
 
 /* ─── Food & Recipes Tab ─── */
 function FoodTab() {
-  const { t } = useTranslation();
+  const { t } = useTranslation("translation", { keyPrefix: "knowledge" });
   const { toast } = useToast();
   const { isAuthenticated } = useConvexAuth();
 

@@ -16,7 +16,7 @@ const SOCIAL_PLATFORMS = [
 type SocialLinks = Record<string, string>;
 
 export function SocialLinksManager() {
-  const { t, i18n } = useTranslation();
+  const { t, i18n } = useTranslation("translation", { keyPrefix: "settings" });
   const locale = i18n.language;
   const { isAuthenticated } = useConvexAuth();
   const serverLinks = useQuery(api.systemConfig.getSocialLinks, isAuthenticated ? {} : "skip");

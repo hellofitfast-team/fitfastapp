@@ -67,7 +67,7 @@ function RejectModal({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const { t, i18n } = useTranslation();
+  const { t, i18n } = useTranslation("translation", { keyPrefix: "admin" });
   const locale = i18n.language;
   const rejectClient = useMutation(api.profiles.rejectClient);
   const [reason, setReason] = useState("");
@@ -172,7 +172,7 @@ function DeleteTestUserModal({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const { t } = useTranslation();
+  const { t } = useTranslation("translation", { keyPrefix: "admin" });
   const deleteTestUser = useAction(api.testUsers.deleteTestUser);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -250,7 +250,7 @@ function BulkDeleteModal({
   onConfirm: () => void;
   isDeleting: boolean;
 }) {
-  const { t } = useTranslation();
+  const { t } = useTranslation("translation", { keyPrefix: "admin" });
 
   return (
     <Dialog
@@ -293,7 +293,7 @@ function BulkDeleteModal({
 }
 
 export function ClientsList({ clients }: { clients: Client[] }) {
-  const { t, i18n } = useTranslation();
+  const { t, i18n } = useTranslation("translation", { keyPrefix: "admin" });
   const locale = i18n.language;
   const bulkDelete = useMutation(api.profiles.bulkDeleteClients);
 

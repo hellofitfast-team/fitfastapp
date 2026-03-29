@@ -30,9 +30,8 @@ export const Route = createFileRoute("/_panel/signups/$id")({
 function SignupDetailPage() {
   const { id: signupId } = Route.useParams();
 
-  const { t, i18n } = useTranslation();
+  const { t, i18n } = useTranslation("translation", { keyPrefix: "signupDetail" });
   const locale = i18n.language;
-  // tAdmin uses t("admin.xxx") pattern
 
   const { isAuthenticated } = useConvexAuth();
 

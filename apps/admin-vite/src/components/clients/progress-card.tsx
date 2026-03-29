@@ -9,7 +9,7 @@ interface ProgressCardProps {
 }
 
 function CompletionBar({ label, rate }: { label: string; rate: number | null }) {
-  const { t, i18n } = useTranslation();
+  const { t, i18n } = useTranslation("translation", { keyPrefix: "clientInsights" });
   const locale = i18n.language;
   if (rate === null) {
     return (
@@ -43,7 +43,7 @@ export function ProgressCard({
   mealCompletionRate,
   workoutCompletionRate,
 }: ProgressCardProps) {
-  const { t } = useTranslation();
+  const { t } = useTranslation("translation", { keyPrefix: "clientInsights" });
 
   const weightDelta =
     initialWeight != null && latestWeight != null ? latestWeight - initialWeight : null;

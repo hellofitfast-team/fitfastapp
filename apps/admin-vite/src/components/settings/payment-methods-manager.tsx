@@ -31,7 +31,7 @@ function emptyMethod(): PaymentMethod {
 }
 
 export function PaymentMethodsManager() {
-  const { t, i18n } = useTranslation();
+  const { t, i18n } = useTranslation("translation", { keyPrefix: "settings" });
   const locale = i18n.language;
   const { isAuthenticated } = useConvexAuth();
   const serverMethods = useQuery(api.systemConfig.getPaymentMethods, isAuthenticated ? {} : "skip");

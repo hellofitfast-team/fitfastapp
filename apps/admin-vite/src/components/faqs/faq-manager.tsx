@@ -22,10 +22,9 @@ const log = createLogger("admin-faqs");
 import { HelpCircle, Plus, Trash2, Save, X, Pencil, Loader2 } from "lucide-react";
 
 export function FaqManager() {
-  const { t, i18n } = useTranslation();
-  const tCommon = (key: string) => t(`common.${key}`);
+  const { t, i18n } = useTranslation("translation", { keyPrefix: "admin" });
+  const tCommon = (key: string) => i18n.t(`common.${key}`);
   const locale = i18n.language;
-  // tCommon uses t("common.xxx") pattern
   const { isAuthenticated } = useConvexAuth();
   const faqs = useQuery(api.faqs.getFAQs, isAuthenticated ? { language: "en" } : "skip");
   const createFAQ = useMutation(api.faqs.createFAQ);

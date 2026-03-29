@@ -48,7 +48,7 @@ const SCENARIOS: { value: Scenario; labelKey: string; descKey: string }[] = [
 ];
 
 export function CreateTestUserButton() {
-  const { t, i18n } = useTranslation();
+  const { t, i18n } = useTranslation("translation", { keyPrefix: "admin" });
   const locale = i18n.language;
   const [open, setOpen] = useState(false);
   const [planTier, setPlanTier] = useState<PlanTier>("monthly");

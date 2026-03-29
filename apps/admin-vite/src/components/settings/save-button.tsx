@@ -19,7 +19,7 @@ export function SaveButton({
   savedLabel,
   errorLabel,
 }: SaveButtonProps) {
-  const { t, i18n } = useTranslation();
+  const { t, i18n } = useTranslation("translation", { keyPrefix: "admin" });
   const locale = i18n.language;
   const [state, setState] = useState<SaveState>("idle");
 

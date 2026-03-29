@@ -77,7 +77,7 @@ export function AdminSettingsForm() {
             <div className="bg-primary/10 text-primary flex h-8 w-8 items-center justify-center rounded-lg">
               <Calendar className="h-4 w-4" />
             </div>
-            <h2 className="text-sm font-semibold text-stone-900">{t("checkInFrequency")}</h2>
+            <h2 className="text-sm font-semibold text-stone-900">{t("admin.checkInFrequency")}</h2>
           </div>
           <div className="flex items-center gap-3">
             <input
@@ -88,7 +88,7 @@ export function AdminSettingsForm() {
               onChange={(e) => setCheckInDays(e.target.value)}
               className="text-primary focus:ring-primary/20 focus:border-primary h-11 w-24 rounded-xl border border-stone-200 bg-stone-50 px-3 text-center text-lg font-bold transition-all focus:ring-2 focus:outline-none"
             />
-            <span className="text-sm text-stone-500">{t("daysBetweenCheckIns")}</span>
+            <span className="text-sm text-stone-500">{t("admin.daysBetweenCheckIns")}</span>
           </div>
         </div>
 
@@ -98,7 +98,9 @@ export function AdminSettingsForm() {
             <div className="bg-primary/10 text-primary flex h-8 w-8 items-center justify-center rounded-lg">
               <Dumbbell className="h-4 w-4" />
             </div>
-            <h2 className="text-sm font-semibold text-stone-900">{t("workoutPlanDuration")}</h2>
+            <h2 className="text-sm font-semibold text-stone-900">
+              {t("admin.workoutPlanDuration")}
+            </h2>
           </div>
           <div className="flex items-center gap-3">
             <input
@@ -109,7 +111,7 @@ export function AdminSettingsForm() {
               onChange={(e) => setWorkoutDuration(e.target.value)}
               className="text-primary focus:ring-primary/20 focus:border-primary h-11 w-24 rounded-xl border border-stone-200 bg-stone-50 px-3 text-center text-lg font-bold transition-all focus:ring-2 focus:outline-none"
             />
-            <span className="text-sm text-stone-500">{t("daysWorkoutPlan")}</span>
+            <span className="text-sm text-stone-500">{t("admin.daysWorkoutPlan")}</span>
           </div>
         </div>
 
@@ -118,7 +120,7 @@ export function AdminSettingsForm() {
 
         {/* Save general settings */}
         <div className="flex justify-end">
-          <SaveButton onSave={handleSave} label={t("save")} savingLabel={t("saving")} />
+          <SaveButton onSave={handleSave} label={t("admin.save")} savingLabel={t("admin.saving")} />
         </div>
       </div>
 
@@ -131,7 +133,7 @@ export function AdminSettingsForm() {
           <div>
             <h2 className="text-sm font-semibold text-stone-900">{tSettings("pricingPlans")}</h2>
             <p className="mt-0.5 text-xs text-stone-400">
-              {t("configurePlans", { maxPlans: MAX_PRICING_PLANS })}
+              {t("admin.configurePlans", { maxPlans: MAX_PRICING_PLANS })}
             </p>
           </div>
         </div>
@@ -146,7 +148,7 @@ export function AdminSettingsForm() {
           </div>
           <div>
             <h2 className="text-sm font-semibold text-stone-900">{tSettings("paymentMethods")}</h2>
-            <p className="mt-0.5 text-xs text-stone-400">{t("configurePayments")}</p>
+            <p className="mt-0.5 text-xs text-stone-400">{t("admin.configurePayments")}</p>
           </div>
         </div>
         <PaymentMethodsManager />
