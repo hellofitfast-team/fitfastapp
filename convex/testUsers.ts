@@ -3,10 +3,8 @@
 import { ConvexError, v } from "convex/values";
 import { action } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { Scrypt } from "lucia";
 import { getAuthUserId } from "./auth";
 import { formatDate } from "./testUsersHelpers";
-import type { Id } from "./_generated/dataModel";
 
 const DEFAULT_PASSWORD = "test12345";
 
@@ -96,14 +94,13 @@ export const createTestUser = action({
 
     const email = `test-${Date.now()}@fitfast.test`;
     const fullName = SCENARIO_NAMES[scenario] ?? "Test User";
-    const hashedPassword = await new Scrypt().hash(DEFAULT_PASSWORD);
     const { status, planStartDate, planEndDate } = computeDates(planTier, scenario);
 
     const { userId: newUserId, profileId: newProfileId } = await ctx.runMutation(
       internal.testUsersHelpers.insertTestUser,
       {
         email,
-        hashedPassword,
+        hashedPassword: "unused", // BetterAuth manages passwords
         fullName,
         status,
         planTier,

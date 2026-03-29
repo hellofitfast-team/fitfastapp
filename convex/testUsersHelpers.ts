@@ -1,11 +1,8 @@
-// @ts-nocheck — Test helpers reference old auth tables (authAccounts).
-// TODO: Rewrite for BetterAuth (use BetterAuth API instead of direct DB inserts).
 import { ConvexError, v } from "convex/values";
 import { internalMutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { activeClientsCount } from "./adminStats";
 import type { Id } from "./_generated/dataModel";
-import { deleteAuthRecords } from "./helpers";
 
 // ─── Check if a user is a coach ────────────────────────────────────────────
 
@@ -22,10 +19,14 @@ export const checkIsCoach = internalQuery({
 
 // ─── Insert a test auth user + profile ──────────────────────────────────────
 
+/**
+ * Create a test user profile. Auth user must be created separately via BetterAuth API
+ * (seedBetterAuth:seedClient). This only creates the profile record.
+ */
 export const insertTestUser = internalMutation({
   args: {
     email: v.string(),
-    hashedPassword: v.string(),
+    hashedPassword: v.string(), // ignored — BetterAuth manages passwords
     fullName: v.string(),
     status: v.union(v.literal("active"), v.literal("expired"), v.literal("pending_approval")),
     planTier: v.union(v.literal("monthly"), v.literal("quarterly")),
@@ -33,31 +34,18 @@ export const insertTestUser = internalMutation({
     planEndDate: v.optional(v.string()),
     language: v.optional(v.union(v.literal("en"), v.literal("ar"))),
   },
-  handler: async (ctx, args): Promise<{ profileId: Id<"profiles">; userId: Id<"users"> }> => {
-    // Check for existing user
+  handler: async (ctx, args): Promise<{ profileId: Id<"profiles">; userId: string }> => {
+    // Check for existing profile
     const existing = await ctx.db
-      .query("authAccounts")
-      .filter((q) =>
-        q.and(
-          q.eq(q.field("provider"), "password"),
-          q.eq(q.field("providerAccountId"), args.email),
-        ),
-      )
+      .query("profiles")
+      .withIndex("by_email", (q: any) => q.eq("email", args.email.toLowerCase()))
       .first();
     if (existing) throw new ConvexError(`User ${args.email} already exists`);
 
-    // 1. Create user record
-    const userId = await ctx.db.insert("users", { email: args.email });
+    // Profile-only insert — userId is a placeholder until BetterAuth user is created
+    const userId = `test_${args.email}` as any;
 
-    // 2. Create auth account
-    await ctx.db.insert("authAccounts", {
-      userId,
-      provider: "password",
-      providerAccountId: args.email,
-      secret: args.hashedPassword,
-    });
-
-    // 3. Create profile
+    // Create profile
     const profileId = await ctx.db.insert("profiles", {
       userId,
       email: args.email,
@@ -481,8 +469,7 @@ export const deleteTestUserMutation = internalMutation({
       await activeClientsCount.deleteIfExists(ctx, { key: profileId, id: profileId });
     }
 
-    // Delete all auth records (accounts, sessions, tokens, verifiers, user)
-    await deleteAuthRecords(ctx, profile.userId);
+    // BetterAuth manages its own tables — auth sessions expire naturally.
 
     // Delete profile synchronously before scheduling cascade to avoid race condition
     await ctx.db.delete(profile._id);

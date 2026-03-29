@@ -1,4 +1,5 @@
-// @ts-nocheck — Seed actions reference old auth tables. TODO: Rewrite for BetterAuth.
+// @ts-nocheck — Seed actions still use insertAuthUser which is now a profile-only stub.
+// Full BetterAuth migration: use seedBetterAuth:seedAdmin/seedClient for auth user creation.
 "use node";
 
 /**
@@ -15,7 +16,6 @@
 import { v } from "convex/values";
 import { internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { Scrypt } from "lucia";
 
 /**
  * Guard against accidental execution on production deployments.
@@ -33,11 +33,11 @@ function assertNotProduction() {
 }
 
 /**
- * Hash password using Lucia's Scrypt — same algorithm used by Convex Auth.
- * Format: "hex_salt:hex_hash" with params N=16384, r=16, p=1, dkLen=64.
+ * Stub: BetterAuth manages password hashing internally.
+ * insertAuthUser now ignores hashedPassword — use seedBetterAuth for real auth users.
  */
-async function hashPassword(password: string): Promise<string> {
-  return await new Scrypt().hash(password);
+async function hashPassword(_password: string): Promise<string> {
+  return "unused";
 }
 
 /**

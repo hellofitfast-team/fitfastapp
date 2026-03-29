@@ -1,24 +1,36 @@
-// @ts-nocheck — Seed file references old auth tables (authAccounts, users).
-// TODO: Rewrite seed functions for BetterAuth (use BetterAuth signUp API instead of direct DB inserts).
 import { v } from "convex/values";
 import { internalMutation, internalQuery } from "./_generated/server";
 import { DEFAULT_CHECK_IN_FREQUENCY_DAYS } from "./constants";
-import { deleteAuthRecords } from "./helpers";
+
+// ---------------------------------------------------------------------------
+// Shared helper: resolve email → userId via profile index (BetterAuth compatible)
+// Old code used authAccounts table which is now managed by BetterAuth component.
+// Profile by_email index is the canonical way to look up users.
+// ---------------------------------------------------------------------------
+async function resolveUserByEmail(
+  ctx: { db: any },
+  email: string,
+): Promise<{ userId: string; profileId: string } | null> {
+  const profile = await ctx.db
+    .query("profiles")
+    .withIndex("by_email", (q: any) => q.eq("email", email.toLowerCase()))
+    .first();
+  if (!profile) return null;
+  return { userId: profile.userId, profileId: profile._id };
+}
 
 // ============================================================================
 // Helper queries (previously seedDemo_helpers.ts)
 // ============================================================================
 
-/** Find an auth account by email. Used by seedActions:seedDemoUsers to get userId. */
+/** Find a user by email via profile lookup. Returns { userId } or null. */
 export const findAuthAccountByEmail = internalQuery({
   args: { email: v.string() },
   handler: async (ctx, { email }) => {
-    return ctx.db
-      .query("authAccounts")
-      .filter((q) =>
-        q.and(q.eq(q.field("provider"), "password"), q.eq(q.field("providerAccountId"), email)),
-      )
-      .first();
+    const result = await resolveUserByEmail(ctx, email);
+    if (!result) return null;
+    // Return shape compatible with old callers expecting .userId
+    return { userId: result.userId, providerAccountId: email };
   },
 });
 
@@ -296,41 +308,40 @@ export const run = internalMutation({
   },
 });
 
-/** Insert a pre-hashed auth user into the database. Called by seedActions:seedTestUsers. */
+/**
+ * DEPRECATED: Use seedBetterAuth:seedAdmin or seedBetterAuth:seedClient instead.
+ * This stub remains for backward compatibility with seedActions.ts callers.
+ * It only creates the profile — auth user must be created via BetterAuth API.
+ */
 export const insertAuthUser = internalMutation({
   args: {
     email: v.string(),
-    hashedPassword: v.string(),
+    hashedPassword: v.string(), // ignored — BetterAuth manages passwords
     fullName: v.string(),
     isCoach: v.boolean(),
   },
-  handler: async (ctx, { email, hashedPassword, fullName, isCoach }) => {
-    // Check if user already exists
+  handler: async (ctx, { email, fullName, isCoach }) => {
+    // Check if profile already exists
     const existing = await ctx.db
-      .query("authAccounts")
-      .filter((q) =>
-        q.and(q.eq(q.field("provider"), "password"), q.eq(q.field("providerAccountId"), email)),
-      )
+      .query("profiles")
+      .withIndex("by_email", (q: any) => q.eq("email", email.toLowerCase()))
       .first();
 
     if (existing) {
       return `User ${email} already exists — skipped.`;
     }
 
-    // Create user in auth tables
-    const userId = await ctx.db.insert("users", { email });
+    // Profile-only insert — auth user must be created separately via BetterAuth API
+    // (seedBetterAuth:seedAdmin or seedBetterAuth:seedClient)
+    console.warn(
+      `[seed:insertAuthUser] DEPRECATED — creating profile only for ${email}. ` +
+        `Use seedBetterAuth:seedAdmin/seedClient to create auth users.`,
+    );
 
-    await ctx.db.insert("authAccounts", {
-      userId,
-      provider: "password",
-      providerAccountId: email,
-      secret: hashedPassword,
-    });
-
-    // Create profile
+    // Create profile without a userId — it will be linked when the user signs up via BetterAuth
     await ctx.db.insert("profiles", {
-      userId,
-      email,
+      userId: `pending_${email}`, // placeholder until BetterAuth user is created
+      email: email.toLowerCase(),
       fullName,
       language: "en",
       status: "active",
@@ -386,16 +397,11 @@ const USER_DATA_TABLES = [
 export const resetTranslationStatus = internalMutation({
   args: { email: v.string() },
   handler: async (ctx, { email }) => {
-    const account = await ctx.db
-      .query("authAccounts")
-      .filter((q) =>
-        q.and(q.eq(q.field("provider"), "password"), q.eq(q.field("providerAccountId"), email)),
-      )
-      .first();
-    if (!account) return `No user: ${email}`;
+    const resolved = await resolveUserByEmail(ctx, email);
+    if (!resolved) return `No user: ${email}`;
     const plan = await ctx.db
       .query("mealPlans")
-      .withIndex("by_userId", (q) => q.eq("userId", account.userId))
+      .withIndex("by_userId", (q) => q.eq("userId", resolved.userId))
       .order("desc")
       .first();
     if (!plan) return "No meal plan";
@@ -413,24 +419,19 @@ export const resetTranslationStatus = internalMutation({
 export const getTranslationStatus = internalQuery({
   args: { email: v.string() },
   handler: async (ctx, { email }) => {
-    const account = await ctx.db
-      .query("authAccounts")
-      .filter((q) =>
-        q.and(q.eq(q.field("provider"), "password"), q.eq(q.field("providerAccountId"), email)),
-      )
-      .first();
-    if (!account) return { error: `No user: ${email}` };
+    const resolved = await resolveUserByEmail(ctx, email);
+    if (!resolved) return { error: `No user: ${email}` };
 
     const plan = await ctx.db
       .query("mealPlans")
-      .withIndex("by_userId", (q) => q.eq("userId", account.userId))
+      .withIndex("by_userId", (q) => q.eq("userId", resolved.userId))
       .order("desc")
       .first();
-    if (!plan) return { error: "No meal plan", userId: account.userId };
+    if (!plan) return { error: "No meal plan", userId: resolved.userId };
 
     return {
       planId: plan._id,
-      userId: account.userId,
+      userId: resolved.userId,
       language: plan.language,
       translationStatus: plan.translationStatus ?? null,
       translationError: plan.translationError ?? null,
@@ -440,26 +441,15 @@ export const getTranslationStatus = internalQuery({
   },
 });
 
-/** Full cascade-delete a user by email: auth tables + profile + all data. */
+/** Full cascade-delete a user by email: profile + all data. */
 export const deleteUserByEmail = internalMutation({
   args: { email: v.string() },
   handler: async (ctx, { email }) => {
-    // Find auth account
-    const authAccount = await ctx.db
-      .query("authAccounts")
-      .filter((q) =>
-        q.and(q.eq(q.field("provider"), "password"), q.eq(q.field("providerAccountId"), email)),
-      )
-      .first();
-    if (!authAccount) return `No user found with email ${email}`;
+    const resolved = await resolveUserByEmail(ctx, email);
+    if (!resolved) return `No user found with email ${email}`;
 
-    const userId = authAccount.userId;
-
-    // Find profile
-    const profile = await ctx.db
-      .query("profiles")
-      .withIndex("by_userId", (q: any) => q.eq("userId", userId))
-      .first();
+    const { userId, profileId } = resolved;
+    const profile = await ctx.db.get(profileId);
 
     // Delete all user data (same tables as dataRetention)
     for (const [table, index] of USER_DATA_TABLES) {
@@ -481,56 +471,40 @@ export const deleteUserByEmail = internalMutation({
     // Delete profile
     if (profile) await ctx.db.delete(profile._id);
 
-    // Delete all auth records (accounts, sessions, tokens, verifiers, user)
-    await deleteAuthRecords(ctx, userId);
+    // BetterAuth manages its own tables — profile + app data deletion is sufficient.
+    // Auth sessions will expire naturally.
 
     return `Deleted user ${email} and all associated data`;
   },
 });
 
-/** Light delete: remove user + authAccount + profile without scanning sessions (avoids 32K limit). */
+/** Light delete: remove profile + indexed user data. Auth sessions expire naturally. */
 export const deleteUserLight = internalMutation({
   args: { email: v.string() },
   handler: async (ctx, { email }) => {
-    const authAccount = await ctx.db
-      .query("authAccounts")
-      .filter((q) =>
-        q.and(q.eq(q.field("provider"), "password"), q.eq(q.field("providerAccountId"), email)),
-      )
-      .first();
-    if (!authAccount) return `No user found with email ${email}`;
+    const resolved = await resolveUserByEmail(ctx, email);
+    if (!resolved) return `No user found with email ${email}`;
 
-    const userId = authAccount.userId;
+    const { userId, profileId } = resolved;
 
     // Delete profile
-    const profile = await ctx.db
-      .query("profiles")
-      .withIndex("by_userId", (q: any) => q.eq("userId", userId))
-      .first();
-    if (profile) await ctx.db.delete(profile._id);
+    await ctx.db.delete(profileId);
 
-    // Delete indexed user data only (skip session table scans)
+    // Delete indexed user data only
     for (const [table, index] of USER_DATA_TABLES) {
       await deleteByUserIdIndex(ctx, userId, table, index);
     }
 
-    // Delete auth account + user record
-    await ctx.db.delete(authAccount._id);
-    await ctx.db.delete(userId);
-
-    return `Deleted user ${email} (light mode — sessions will expire)`;
+    return `Deleted user ${email} (light mode — auth sessions will expire naturally)`;
   },
 });
 
-/** List all user emails in the system. Used by seedFreshUsers to wipe everything. */
+/** List all user emails in the system via profiles table. */
 export const listAllUserEmails = internalQuery({
   args: {},
   handler: async (ctx): Promise<string[]> => {
-    const accounts = await ctx.db
-      .query("authAccounts")
-      .filter((q) => q.eq(q.field("provider"), "password"))
-      .collect();
-    return accounts.map((a) => a.providerAccountId);
+    const profiles = await ctx.db.query("profiles").collect();
+    return profiles.map((p: any) => p.email).filter(Boolean);
   },
 });
 
@@ -600,15 +574,10 @@ export const fixConfigTypes = internalMutation({
 export const unlockCheckIn = internalMutation({
   args: { email: v.string() },
   handler: async (ctx, { email }) => {
-    const authAccount = await ctx.db
-      .query("authAccounts")
-      .filter((q) =>
-        q.and(q.eq(q.field("provider"), "password"), q.eq(q.field("providerAccountId"), email)),
-      )
-      .first();
-    if (!authAccount) return `No user found with email ${email}`;
+    const resolved = await resolveUserByEmail(ctx, email);
+    if (!resolved) return `No user found with email ${email}`;
 
-    const userId = authAccount.userId;
+    const { userId } = resolved;
 
     const deleted: string[] = [];
     const checkIns = await deleteByUserIdIndex(ctx, userId, "checkIns", "by_userId");
@@ -656,16 +625,9 @@ export const unlockCheckIn = internalMutation({
 export const resetClientData = internalMutation({
   args: { email: v.string() },
   handler: async (ctx, { email }) => {
-    // Find auth account → userId
-    const authAccount = await ctx.db
-      .query("authAccounts")
-      .filter((q) =>
-        q.and(q.eq(q.field("provider"), "password"), q.eq(q.field("providerAccountId"), email)),
-      )
-      .first();
-    if (!authAccount) return `No user found with email ${email}`;
-
-    const userId = authAccount.userId;
+    const resolved = await resolveUserByEmail(ctx, email);
+    if (!resolved) return `No user found with email ${email}`;
+    const { userId } = resolved;
 
     const counts: Record<string, number> = {};
     for (const [table, index] of USER_DATA_TABLES) {
@@ -750,13 +712,12 @@ export const patchKnowledgeTags = internalMutation({
 export const listAccounts = internalQuery({
   args: {},
   handler: async (ctx) => {
-    const accounts = await ctx.db.query("authAccounts").collect();
     const profiles = await ctx.db.query("profiles").collect();
     return {
-      accounts: accounts.map((a) => ({
-        provider: a.provider,
-        email: a.providerAccountId,
-        userId: a.userId,
+      accounts: profiles.map((p: any) => ({
+        provider: "betterauth",
+        email: p.email,
+        userId: p.userId,
       })),
       profiles: profiles.map((p) => ({
         userId: p.userId,
@@ -1102,15 +1063,10 @@ export const populateExpiredUser = internalMutation({
 export const simulateReadyForCheckIn = internalMutation({
   args: { email: v.string() },
   handler: async (ctx, { email }) => {
-    const authAccount = await ctx.db
-      .query("authAccounts")
-      .filter((q) =>
-        q.and(q.eq(q.field("provider"), "password"), q.eq(q.field("providerAccountId"), email)),
-      )
-      .first();
-    if (!authAccount) return `No user found with email ${email}`;
+    const resolved = await resolveUserByEmail(ctx, email);
+    if (!resolved) return `No user found with email ${email}`;
 
-    const userId = authAccount.userId;
+    const { userId } = resolved;
     const steps: string[] = [];
 
     // 1. Ensure profile is active

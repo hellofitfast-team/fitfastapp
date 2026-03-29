@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, useMatches } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { Loader2, Globe } from "lucide-react";
 
@@ -40,7 +40,12 @@ function LocaleSwitcher() {
 }
 
 function AuthLayout() {
+  const matches = useMatches();
   const { t } = useTranslation();
+
+  // Only render if the current route is under this layout
+  const isAuthRoute = matches.some((m) => m.id.startsWith("/_auth/"));
+  if (!isAuthRoute) return null;
 
   return (
     <div className="bg-background text-foreground selection:bg-primary selection:text-primary-foreground flex min-h-dvh flex-col">

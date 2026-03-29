@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, useNavigate, useMatches } from "@tanstack/react-router";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { useEffect, useRef } from "react";
@@ -21,12 +21,19 @@ export const Route = createFileRoute("/_dashboard")({
 });
 
 function DashboardLayout() {
+  const matches = useMatches();
   const profile = useQuery(api.profiles.getMyProfile);
   const assessment = useQuery(api.assessments.getMyAssessment);
   const navigate = useNavigate();
   const { i18n } = useTranslation();
   const updateProfile = useMutation(api.profiles.updateProfile);
   const hasSynced = useRef(false);
+
+  // Only render if the current route is actually under this layout.
+  // TanStack Router renders all pathless layouts — we must guard against
+  // rendering DashboardShell when a sibling layout (_auth, _onboarding) owns the route.
+  const isDashboardRoute = matches.some((m) => m.id.startsWith("/_dashboard/"));
+  if (!isDashboardRoute) return null;
 
   // Profile/assessment guards — mirror Next.js layout logic
   useEffect(() => {

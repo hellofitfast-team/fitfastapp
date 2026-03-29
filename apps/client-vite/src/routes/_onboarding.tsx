@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, useMatches } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_onboarding")({
@@ -11,7 +11,12 @@ export const Route = createFileRoute("/_onboarding")({
 });
 
 function OnboardingLayout() {
+  const matches = useMatches();
   const { t } = useTranslation();
+
+  // Only render if the current route is under this layout
+  const isOnboardingRoute = matches.some((m) => m.id.startsWith("/_onboarding/"));
+  if (!isOnboardingRoute) return null;
 
   return (
     <div className="bg-background text-foreground min-h-dvh">
