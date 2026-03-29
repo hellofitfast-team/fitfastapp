@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, redirect, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "convex/react";
+import { useQuery, useConvexAuth } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { useEffect, useRef } from "react";
 import { AdminShell } from "@/components/layouts/admin-shell";
@@ -15,9 +15,13 @@ export const Route = createFileRoute("/_panel")({
 });
 
 function PanelLayout() {
-  const profile = useQuery(api.profiles.getMyProfile);
-  const pendingSignups = useQuery(api.pendingSignups.getPendingSignups);
-  const openTickets = useQuery(api.tickets.getOpenTicketCount);
+  const { isAuthenticated } = useConvexAuth();
+  const profile = useQuery(api.profiles.getMyProfile, isAuthenticated ? {} : "skip");
+  const pendingSignups = useQuery(
+    api.pendingSignups.getPendingSignups,
+    isAuthenticated ? {} : "skip",
+  );
+  const openTickets = useQuery(api.tickets.getOpenTicketCount, isAuthenticated ? {} : "skip");
   const navigate = useNavigate();
 
   const shouldRedirect = profile !== undefined && (!profile || !profile.isCoach);
