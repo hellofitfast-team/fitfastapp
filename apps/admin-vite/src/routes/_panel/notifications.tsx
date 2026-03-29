@@ -63,6 +63,22 @@ function NotificationsPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const confirmBtnRef = useRef<HTMLButtonElement>(null);
 
+  // Segmentation & channel options
+  const [segment, setSegment] = useState<"all" | "active" | "expired">("all");
+  const [tierFilter, setTierFilter] = useState<"all" | "monthly" | "quarterly">("all");
+  const [langFilter, setLangFilter] = useState<"all" | "en" | "ar">("all");
+  const [channel, setChannel] = useState<"push" | "email" | "both">("push");
+
+  // Compute audience count based on filters
+  const filteredAudience = (clients ?? []).filter((c) => {
+    if (segment === "active" && c.status !== "active") return false;
+    if (segment === "expired" && c.status !== "expired") return false;
+    if (tierFilter !== "all" && c.planTier !== tierFilter) return false;
+    if (langFilter !== "all" && c.language !== langFilter) return false;
+    return true;
+  });
+  const audienceCount = filteredAudience.length;
+
   const [showTestDialog, setShowTestDialog] = useState(false);
   const [testType, setTestType] = useState<TestNotificationType | "">("");
   const [testUserId, setTestUserId] = useState("");
@@ -248,11 +264,105 @@ function NotificationsPage() {
               />
               <span className="mt-1 block text-end text-xs text-stone-400">{body.length}/150</span>
             </div>
-            <div className="flex justify-end">
+            {/* Segmentation */}
+            <div className="space-y-3 rounded-lg border border-stone-100 bg-stone-50/50 p-4">
+              <p className="text-xs font-semibold tracking-wider text-stone-600 uppercase">
+                Audience Segmentation
+              </p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-stone-500">Status</label>
+                  <Select value={segment} onValueChange={(v) => setSegment(v as typeof segment)}>
+                    <SelectTrigger className="h-9 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Clients</SelectItem>
+                      <SelectItem value="active">Active Only</SelectItem>
+                      <SelectItem value="expired">Expired Only</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-stone-500">Plan Tier</label>
+                  <Select
+                    value={tierFilter}
+                    onValueChange={(v) => setTierFilter(v as typeof tierFilter)}
+                  >
+                    <SelectTrigger className="h-9 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Plans</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                      <SelectItem value="quarterly">Quarterly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-stone-500">Language</label>
+                  <Select
+                    value={langFilter}
+                    onValueChange={(v) => setLangFilter(v as typeof langFilter)}
+                  >
+                    <SelectTrigger className="h-9 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Languages</SelectItem>
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="ar">Arabic</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <p className="text-xs text-stone-400">
+                <span className="font-medium text-stone-600">{audienceCount}</span> client
+                {audienceCount !== 1 ? "s" : ""} match this segment
+              </p>
+            </div>
+
+            {/* Channel Selection */}
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-stone-500">
+                Delivery Channel
+              </label>
+              <div className="flex gap-2">
+                {(["push", "email", "both"] as const).map((ch) => (
+                  <button
+                    key={ch}
+                    type="button"
+                    onClick={() => setChannel(ch)}
+                    className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+                      channel === ch
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
+                    }`}
+                  >
+                    {ch === "push" ? "🔔 Push" : ch === "email" ? "📧 Email" : "🔔📧 Both"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-stone-400">
+                Will send to <span className="font-semibold text-stone-700">{audienceCount}</span>{" "}
+                client{audienceCount !== 1 ? "s" : ""} via{" "}
+                <span className="font-semibold text-stone-700">
+                  {channel === "both" ? "Push + Email" : channel === "push" ? "Push" : "Email"}
+                </span>
+              </p>
               <button
                 type="button"
                 onClick={() => setShowConfirm(true)}
-                disabled={isNotifEnabled === false || isSending || !title.trim() || !body.trim()}
+                disabled={
+                  isNotifEnabled === false ||
+                  isSending ||
+                  !title.trim() ||
+                  !body.trim() ||
+                  audienceCount === 0
+                }
                 className="bg-primary hover:bg-primary/90 flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors disabled:opacity-50"
               >
                 {isSending ? (
@@ -260,7 +370,7 @@ function NotificationsPage() {
                 ) : (
                   <Send className="h-4 w-4" />
                 )}
-                {isSending ? t("notifications.sending") : t("notifications.sendToAll")}
+                {isSending ? t("notifications.sending") : `Send to ${audienceCount}`}
               </button>
             </div>
           </div>
