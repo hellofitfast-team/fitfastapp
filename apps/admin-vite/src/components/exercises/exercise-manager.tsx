@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { BULK_MUTATION_BATCH_SIZE } from "@/lib/constants";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "convex/react";
