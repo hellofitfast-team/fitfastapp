@@ -2,11 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { SignupsTable } from "@/components/signups/signups-table";
 import { RouteErrorComponent } from "@/components/route-error";
-import { RoutePendingComponent } from "@/components/route-pending";
+import { TableSkeleton } from "@/components/skeletons/table-skeleton";
 
 export const Route = createFileRoute("/_panel/signups/")({
   errorComponent: RouteErrorComponent,
-  pendingComponent: RoutePendingComponent,
+  pendingComponent: () => <TableSkeleton rows={5} cols={5} />,
   component: AdminSignupsPage,
 });
 

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { RouteErrorComponent } from "@/components/route-error";
-import { RoutePendingComponent } from "@/components/route-pending";
+import { TableSkeleton } from "@/components/skeletons/table-skeleton";
 import { NOTIFICATIONS_PAGE_SIZE } from "@/lib/constants";
 import { useTranslation } from "react-i18next";
 import { useConvexAuth, useQuery, useAction } from "convex/react";
@@ -37,7 +37,7 @@ type TestNotificationType = "plan_ready" | "reminder" | "individual";
 
 export const Route = createFileRoute("/_panel/notifications")({
   errorComponent: RouteErrorComponent,
-  pendingComponent: RoutePendingComponent,
+  pendingComponent: () => <TableSkeleton rows={6} cols={5} />,
   component: NotificationsPage,
 });
 
@@ -424,11 +424,7 @@ function NotificationsPage() {
             )}
           </div>
 
-          {logs === undefined && (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="text-primary h-6 w-6 animate-spin" />
-            </div>
-          )}
+          {logs === undefined && <TableSkeleton rows={4} cols={5} />}
           {logs && logs.length === 0 && (
             <p className="py-4 text-center text-sm text-stone-400">
               {t("notifications.historyEmpty")}

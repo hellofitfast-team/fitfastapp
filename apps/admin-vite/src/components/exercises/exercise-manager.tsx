@@ -104,7 +104,18 @@ export function ExerciseManager() {
   // Mutations
   const createExercise = useMutation(api.exerciseDatabase.createExercise);
   const updateExercise = useMutation(api.exerciseDatabase.updateExercise);
-  const toggleActive = useMutation(api.exerciseDatabase.toggleActive);
+  const toggleActive = useMutation(api.exerciseDatabase.toggleActive).withOptimisticUpdate(
+    (localStore, args) => {
+      const current = localStore.getQuery(api.exerciseDatabase.listExercises, {});
+      if (current !== undefined) {
+        localStore.setQuery(
+          api.exerciseDatabase.listExercises,
+          {},
+          current.map((e) => (e._id === args.id ? { ...e, isActive: !e.isActive } : e)),
+        );
+      }
+    },
+  );
   const togglePregnancyUnsafe = useMutation(api.exerciseDatabase.togglePregnancyUnsafe);
   const deleteExercise = useMutation(api.exerciseDatabase.deleteExercise);
   const [togglingPregnancyId, setTogglingPregnancyId] = useState<string | null>(null);

@@ -24,7 +24,18 @@ export function TicketsList() {
   const { isAuthenticated } = useConvexAuth();
   const tickets = useQuery(api.tickets.getAllTickets, isAuthenticated ? {} : "skip");
   const respondToTicket = useMutation(api.tickets.respondToTicket);
-  const closeTicket = useMutation(api.tickets.closeTicket);
+  const closeTicket = useMutation(api.tickets.closeTicket).withOptimisticUpdate(
+    (localStore, args) => {
+      const current = localStore.getQuery(api.tickets.getAllTickets, {});
+      if (current !== undefined) {
+        localStore.setQuery(
+          api.tickets.getAllTickets,
+          {},
+          current.map((t) => (t._id === args.ticketId ? { ...t, status: "closed" } : t)),
+        );
+      }
+    },
+  );
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [response, setResponse] = useState("");

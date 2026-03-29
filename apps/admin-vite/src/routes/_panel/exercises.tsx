@@ -2,11 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { ExerciseManager } from "@/components/exercises/exercise-manager";
 import { RouteErrorComponent } from "@/components/route-error";
-import { RoutePendingComponent } from "@/components/route-pending";
+import { TableSkeleton } from "@/components/skeletons/table-skeleton";
 
 export const Route = createFileRoute("/_panel/exercises")({
   errorComponent: RouteErrorComponent,
-  pendingComponent: RoutePendingComponent,
+  pendingComponent: () => <TableSkeleton rows={8} cols={5} />,
   component: ExercisesPage,
 });
 

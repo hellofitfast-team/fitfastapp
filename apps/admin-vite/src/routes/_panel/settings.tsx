@@ -2,11 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { AdminSettingsForm } from "@/components/settings/settings-form";
 import { RouteErrorComponent } from "@/components/route-error";
-import { RoutePendingComponent } from "@/components/route-pending";
+import { TableSkeleton } from "@/components/skeletons/table-skeleton";
 
 export const Route = createFileRoute("/_panel/settings")({
   errorComponent: RouteErrorComponent,
-  pendingComponent: RoutePendingComponent,
+  pendingComponent: () => <TableSkeleton rows={4} cols={2} />,
   component: AdminSettingsPage,
 });
 

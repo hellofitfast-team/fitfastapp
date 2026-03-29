@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { RouteErrorComponent } from "@/components/route-error";
-import { RoutePendingComponent } from "@/components/route-pending";
+import { ClientsSkeleton } from "@/components/skeletons/clients-skeleton";
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { usePaginatedQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
@@ -24,7 +24,7 @@ import { toast } from "@/hooks/use-toast";
 
 export const Route = createFileRoute("/_panel/clients/")({
   errorComponent: RouteErrorComponent,
-  pendingComponent: RoutePendingComponent,
+  pendingComponent: ClientsSkeleton,
   component: AdminClientsPage,
 });
 
@@ -50,11 +50,7 @@ function AdminClientsPage() {
   const isLoading = status === "LoadingFirstPage";
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="text-primary h-8 w-8 animate-spin" />
-      </div>
-    );
+    return <ClientsSkeleton />;
   }
 
   const adaptedClients = (results ?? []).map((c) => ({

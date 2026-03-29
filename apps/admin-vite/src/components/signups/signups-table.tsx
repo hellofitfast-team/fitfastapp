@@ -41,8 +41,34 @@ export function SignupsTable() {
   const locale = i18n.language;
   const { isAuthenticated } = useConvexAuth();
   const signups = useQuery(api.pendingSignups.getAllSignups, isAuthenticated ? {} : "skip");
-  const approveSignup = useMutation(api.pendingSignups.approveSignup);
-  const rejectSignup = useMutation(api.pendingSignups.rejectSignup);
+  const approveSignup = useMutation(api.pendingSignups.approveSignup).withOptimisticUpdate(
+    (localStore, args) => {
+      const current = localStore.getQuery(api.pendingSignups.getAllSignups, {});
+      if (current !== undefined) {
+        localStore.setQuery(
+          api.pendingSignups.getAllSignups,
+          {},
+          current.map((s) => (s._id === args.signupId ? { ...s, status: "approved" as const } : s)),
+        );
+      }
+    },
+  );
+  const rejectSignup = useMutation(api.pendingSignups.rejectSignup).withOptimisticUpdate(
+    (localStore, args) => {
+      const current = localStore.getQuery(api.pendingSignups.getAllSignups, {});
+      if (current !== undefined) {
+        localStore.setQuery(
+          api.pendingSignups.getAllSignups,
+          {},
+          current.map((s) =>
+            s._id === args.signupId
+              ? { ...s, status: "rejected" as const, rejectionReason: args.rejectionReason }
+              : s,
+          ),
+        );
+      }
+    },
+  );
 
   const [actionId, setActionId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);

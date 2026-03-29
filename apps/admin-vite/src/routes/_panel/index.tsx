@@ -1,20 +1,12 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { RouteErrorComponent } from "@/components/route-error";
-import { RoutePendingComponent } from "@/components/route-pending";
+import { DashboardSkeleton } from "@/components/skeletons/dashboard-skeleton";
 import { DASHBOARD_MONTHS_SHOWN, DASHBOARD_WEEKS_SHOWN } from "@/lib/constants";
 import { useConvexAuth, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { useTranslation } from "react-i18next";
-import {
-  Users,
-  UserPlus,
-  MessageSquare,
-  TrendingUp,
-  ArrowRight,
-  Loader2,
-  Activity,
-} from "lucide-react";
+import { Users, UserPlus, MessageSquare, TrendingUp, ArrowRight, Activity } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Card, CardHeader, CardContent } from "@fitfast/ui/card";
 import gsap from "gsap";
@@ -285,7 +277,7 @@ function ActivityChart({
 
 export const Route = createFileRoute("/_panel/")({
   errorComponent: RouteErrorComponent,
-  pendingComponent: RoutePendingComponent,
+  pendingComponent: DashboardSkeleton,
   component: AdminDashboardPage,
 });
 
@@ -336,11 +328,7 @@ function AdminDashboardPage() {
   }, [isLoading]);
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="text-primary h-8 w-8 animate-spin" />
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   const totalClients = clients.length;

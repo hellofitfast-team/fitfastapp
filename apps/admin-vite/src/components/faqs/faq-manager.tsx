@@ -29,7 +29,16 @@ export function FaqManager() {
   const faqs = useQuery(api.faqs.getFAQs, isAuthenticated ? { language: "en" } : "skip");
   const createFAQ = useMutation(api.faqs.createFAQ);
   const updateFAQ = useMutation(api.faqs.updateFAQ);
-  const deleteFAQ = useMutation(api.faqs.deleteFAQ);
+  const deleteFAQ = useMutation(api.faqs.deleteFAQ).withOptimisticUpdate((localStore, args) => {
+    const current = localStore.getQuery(api.faqs.getFAQs, { language: "en" });
+    if (current !== undefined) {
+      localStore.setQuery(
+        api.faqs.getFAQs,
+        { language: "en" },
+        current.filter((f) => f._id !== args.faqId),
+      );
+    }
+  });
   const bulkDeleteFAQs = useMutation(api.faqs.bulkDeleteFAQs);
 
   const { toast } = useToast();

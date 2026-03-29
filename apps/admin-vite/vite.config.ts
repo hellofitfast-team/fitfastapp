@@ -19,6 +19,20 @@ export default defineConfig({
       "@convex": path.resolve(__dirname, "../../convex"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "vendor-react": ["react", "react-dom"],
+          "vendor-router": ["@tanstack/react-router"],
+          "vendor-convex": ["convex", "convex/react"],
+          "vendor-recharts": ["recharts"],
+          "vendor-lucide": ["lucide-react"],
+          "vendor-i18n": ["i18next", "react-i18next"],
+        },
+      },
+    },
+  },
   server: {
     port: 3011,
   },
