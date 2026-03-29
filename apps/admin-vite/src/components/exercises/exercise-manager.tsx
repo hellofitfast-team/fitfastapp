@@ -452,7 +452,9 @@ export function ExerciseManager() {
                         alt={editExercise.name}
                         width={128}
                         height={128}
-                        className="rounded-lg border border-stone-200 bg-stone-50 object-cover"
+                        decoding="async"
+                        loading="lazy"
+                        className="h-32 w-32 rounded-lg border border-stone-200 bg-stone-50 object-cover"
                       />
                     </div>
                   ) : null;
@@ -481,6 +483,9 @@ export function ExerciseManager() {
                   <img
                     src={form.gifUrl}
                     alt="Exercise GIF preview"
+                    width={128}
+                    height={128}
+                    decoding="async"
                     className="h-32 w-32 rounded-lg border border-stone-200 object-contain"
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = "none";
@@ -637,7 +642,8 @@ function ExerciseTable({
                       alt={exercise.name}
                       width={40}
                       height={40}
-                      className="rounded-md border border-stone-200 bg-stone-50 object-cover"
+                      decoding="async"
+                      className="h-10 w-10 rounded-md border border-stone-200 bg-stone-50 object-cover"
                       loading="lazy"
                     />
                   ) : (
