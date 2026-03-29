@@ -739,7 +739,7 @@ function ExerciseTable({
 
   return (
     <div className="overflow-hidden rounded-lg border border-stone-200">
-      {/* Header — uses same flex layout as rows */}
+      {/* Header — uses same flex layout + widths as rows */}
       <div className="flex items-center bg-stone-50 text-xs font-medium text-stone-600">
         <div className="w-10 shrink-0 px-3 py-3 text-center">
           <Checkbox
@@ -751,11 +751,11 @@ function ExerciseTable({
         <div className="w-14 shrink-0 px-3 py-3">{t("image")}</div>
         <div className="min-w-0 flex-1 px-3 py-3">{t("name")}</div>
         <div className="hidden min-w-0 flex-1 px-3 py-3 xl:block">{t("nameAr")}</div>
-        <div className="hidden shrink-0 px-3 py-3 md:block">{t("category")}</div>
-        <div className="hidden shrink-0 px-3 py-3 lg:block">{t("difficulty")}</div>
-        <div className="hidden shrink-0 px-3 py-3 xl:block">{t("primaryMuscles")}</div>
-        <div className="w-14 shrink-0 px-3 py-3 text-center">{t("isActive")}</div>
-        <div className="hidden w-14 shrink-0 px-3 py-3 text-center xl:block">
+        <div className="hidden w-24 shrink-0 px-3 py-3 md:block">{t("category")}</div>
+        <div className="hidden w-28 shrink-0 px-3 py-3 lg:block">{t("difficulty")}</div>
+        <div className="hidden w-40 shrink-0 px-3 py-3 xl:block">{t("primaryMuscles")}</div>
+        <div className="w-16 shrink-0 px-3 py-3 text-center">{t("isActive")}</div>
+        <div className="hidden w-16 shrink-0 px-3 py-3 text-center xl:block">
           {t("pregnancyUnsafe")}
         </div>
         <div className="w-20 shrink-0 px-3 py-3 text-end">{tCommon("edit")}</div>
@@ -817,18 +817,18 @@ function ExerciseTable({
                 >
                   {exercise.nameAr}
                 </div>
-                <div className="hidden shrink-0 px-3 py-3 md:block">
+                <div className="hidden w-24 shrink-0 px-3 py-3 md:block">
                   <span className="rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-600">
                     {t(exercise.category)}
                   </span>
                 </div>
-                <div className="hidden shrink-0 px-3 py-3 text-stone-500 lg:block">
+                <div className="hidden w-28 shrink-0 px-3 py-3 text-stone-500 lg:block">
                   {t(exercise.difficulty)}
                 </div>
-                <div className="hidden shrink-0 px-3 py-3 text-stone-500 xl:block">
+                <div className="hidden w-40 shrink-0 truncate px-3 py-3 text-stone-500 xl:block">
                   {exercise.primaryMuscles.slice(0, 3).join(", ")}
                 </div>
-                <div className="w-14 shrink-0 px-3 py-3 text-center">
+                <div className="w-16 shrink-0 px-3 py-3 text-center">
                   <button
                     onClick={() => onToggle(exercise._id)}
                     disabled={togglingId === exercise._id}
@@ -846,7 +846,7 @@ function ExerciseTable({
                     )}
                   </button>
                 </div>
-                <div className="hidden w-14 shrink-0 px-3 py-3 text-center xl:block">
+                <div className="hidden w-16 shrink-0 px-3 py-3 text-center xl:block">
                   <button
                     onClick={() => onTogglePregnancy(exercise._id)}
                     disabled={togglingPregnancyId === exercise._id}
