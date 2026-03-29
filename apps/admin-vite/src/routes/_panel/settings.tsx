@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { AdminSettingsForm } from "@/components/settings/settings-form";
+import { RouteErrorComponent } from "@/components/route-error";
 
 export const Route = createFileRoute("/_panel/settings")({
+  errorComponent: RouteErrorComponent,
   component: AdminSettingsPage,
 });
 

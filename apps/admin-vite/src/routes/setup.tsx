@@ -8,6 +8,7 @@ import { authClient } from "@/lib/auth-client";
 import { useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { Lock, UserPlus, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { SETUP_REDIRECT_DELAY } from "@/lib/constants";
 
 function createSetupSchema(t: (key: string) => string) {
   return z
@@ -81,7 +82,7 @@ function AdminSetupPage() {
       });
 
       setSuccess(true);
-      setTimeout(() => navigate({ to: "/" }), 2000);
+      setTimeout(() => navigate({ to: "/" }), SETUP_REDIRECT_DELAY);
     } catch {
       setError(t("setup.setupFailed"));
       setIsLoading(false);
@@ -181,12 +182,12 @@ function AdminSetupPage() {
                 {t("setup.password")}
               </label>
               <div className="group relative">
-                <Lock className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400 transition-colors group-focus-within:text-[#FF4500]" />
+                <Lock className="group-focus-within:text-primary absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400 transition-colors" />
                 <input
                   id="password"
                   type="password"
                   {...register("password")}
-                  className="h-12 w-full rounded-xl border border-stone-200 bg-stone-50 ps-10 pe-4 text-sm transition-all focus:border-[#FF4500] focus:bg-white focus:ring-2 focus:ring-[#FF4500]/20 focus:outline-none"
+                  className="focus:border-primary focus:ring-primary/20 h-12 w-full rounded-xl border border-stone-200 bg-stone-50 ps-10 pe-4 text-sm transition-all focus:bg-white focus:ring-2 focus:outline-none"
                   placeholder={t("setup.passwordPlaceholder")}
                   disabled={isLoading}
                 />
@@ -204,12 +205,12 @@ function AdminSetupPage() {
                 {t("setup.confirmPassword")}
               </label>
               <div className="group relative">
-                <Lock className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400 transition-colors group-focus-within:text-[#FF4500]" />
+                <Lock className="group-focus-within:text-primary absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400 transition-colors" />
                 <input
                   id="confirmPassword"
                   type="password"
                   {...register("confirmPassword")}
-                  className="h-12 w-full rounded-xl border border-stone-200 bg-stone-50 ps-10 pe-4 text-sm transition-all focus:border-[#FF4500] focus:bg-white focus:ring-2 focus:ring-[#FF4500]/20 focus:outline-none"
+                  className="focus:border-primary focus:ring-primary/20 h-12 w-full rounded-xl border border-stone-200 bg-stone-50 ps-10 pe-4 text-sm transition-all focus:bg-white focus:ring-2 focus:outline-none"
                   placeholder={t("setup.confirmPasswordPlaceholder")}
                   disabled={isLoading}
                 />
@@ -222,7 +223,7 @@ function AdminSetupPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#FF4500] text-sm font-bold text-white shadow-lg shadow-[#FF4500]/25 transition-all hover:bg-[#E03E00] hover:shadow-xl hover:shadow-[#FF4500]/30 active:scale-[0.98] disabled:opacity-60"
+              className="bg-primary shadow-primary/25 hover:bg-primary/90 hover:shadow-primary/30 flex h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-bold text-white shadow-lg transition-all hover:shadow-xl active:scale-[0.98] disabled:opacity-60"
             >
               {isLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

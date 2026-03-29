@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { RouteErrorComponent } from "@/components/route-error";
 import { useTranslation } from "react-i18next";
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
@@ -24,6 +25,7 @@ const statusStyles: Record<string, string> = {
 };
 
 export const Route = createFileRoute("/_panel/signups/$id")({
+  errorComponent: RouteErrorComponent,
   component: SignupDetailPage,
 });
 

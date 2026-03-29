@@ -4,6 +4,14 @@ import { useConvexAuth, useQuery, useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { Calendar, DollarSign, Share2, Wallet, Dumbbell, UserPlus } from "lucide-react";
 import { MAX_PRICING_PLANS } from "@convex/constants";
+import {
+  CHECK_IN_FREQUENCY_MIN,
+  CHECK_IN_FREQUENCY_MAX,
+  CHECK_IN_FREQUENCY_DEFAULT,
+  WORKOUT_DURATION_MIN,
+  WORKOUT_DURATION_MAX,
+  WORKOUT_DURATION_DEFAULT,
+} from "@/lib/constants";
 import { PlansManager } from "@/components/settings/plans-manager";
 import { PaymentMethodsManager } from "@/components/settings/payment-methods-manager";
 import { SocialLinksManager } from "@/components/settings/social-links-manager";
@@ -36,8 +44,10 @@ export function AdminSettingsForm() {
   const [checkInDays, setCheckInDays] = useState<string | null>(null);
   const [workoutDuration, setWorkoutDuration] = useState<string | null>(null);
 
-  const effectiveCheckInDays = checkInDays ?? String(checkInConfig?.value ?? "10");
-  const effectiveWorkoutDuration = workoutDuration ?? String(workoutDurationConfig?.value ?? "30");
+  const effectiveCheckInDays =
+    checkInDays ?? String(checkInConfig?.value ?? CHECK_IN_FREQUENCY_DEFAULT);
+  const effectiveWorkoutDuration =
+    workoutDuration ?? String(workoutDurationConfig?.value ?? WORKOUT_DURATION_DEFAULT);
 
   if (checkInConfig === undefined || workoutDurationConfig === undefined) {
     return null;
@@ -54,11 +64,21 @@ export function AdminSettingsForm() {
       await Promise.all([
         setConfig({
           key: "check_in_frequency_days",
-          value: clamp(effectiveCheckInDays, 7, 30, 10),
+          value: clamp(
+            effectiveCheckInDays,
+            CHECK_IN_FREQUENCY_MIN,
+            CHECK_IN_FREQUENCY_MAX,
+            CHECK_IN_FREQUENCY_DEFAULT,
+          ),
         }),
         setConfig({
           key: "workout_plan_duration_days",
-          value: clamp(effectiveWorkoutDuration, 1, 90, 30),
+          value: clamp(
+            effectiveWorkoutDuration,
+            WORKOUT_DURATION_MIN,
+            WORKOUT_DURATION_MAX,
+            WORKOUT_DURATION_DEFAULT,
+          ),
         }),
       ]);
     } catch (error) {
@@ -82,8 +102,8 @@ export function AdminSettingsForm() {
           <div className="flex items-center gap-3">
             <input
               type="number"
-              min="7"
-              max="30"
+              min={CHECK_IN_FREQUENCY_MIN}
+              max={CHECK_IN_FREQUENCY_MAX}
               value={effectiveCheckInDays}
               onChange={(e) => setCheckInDays(e.target.value)}
               className="text-primary focus:ring-primary/20 focus:border-primary h-11 w-24 rounded-xl border border-stone-200 bg-stone-50 px-3 text-center text-lg font-bold transition-all focus:ring-2 focus:outline-none"
@@ -105,8 +125,8 @@ export function AdminSettingsForm() {
           <div className="flex items-center gap-3">
             <input
               type="number"
-              min="1"
-              max="90"
+              min={WORKOUT_DURATION_MIN}
+              max={WORKOUT_DURATION_MAX}
               value={effectiveWorkoutDuration}
               onChange={(e) => setWorkoutDuration(e.target.value)}
               className="text-primary focus:ring-primary/20 focus:border-primary h-11 w-24 rounded-xl border border-stone-200 bg-stone-50 px-3 text-center text-lg font-bold transition-all focus:ring-2 focus:outline-none"

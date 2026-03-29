@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { RouteErrorComponent } from "@/components/route-error";
+import { DASHBOARD_MONTHS_SHOWN, DASHBOARD_WEEKS_SHOWN } from "@/lib/constants";
 import { useConvexAuth, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { useTranslation } from "react-i18next";
@@ -28,8 +30,8 @@ import {
 } from "recharts";
 
 const CHART_COLORS = {
-  primary: "#FF4500",
-  secondary: "#FF6633",
+  primary: "#FF4500", // Brand primary — matches --color-primary in design system
+  secondary: "#FF6633", // Brand secondary — matches --color-primary lighter variant
   success: "#22c55e",
   warning: "#f59e0b",
   muted: "#e5e5e5",
@@ -93,7 +95,7 @@ function ClientGrowthChart({
   const [now] = useState(() => Date.now());
   const chartData = useMemo(() => {
     const months: { name: string; clients: number }[] = [];
-    for (let i = 5; i >= 0; i--) {
+    for (let i = DASHBOARD_MONTHS_SHOWN - 1; i >= 0; i--) {
       const d = new Date(now);
       d.setMonth(d.getMonth() - i);
       const monthStart = new Date(d.getFullYear(), d.getMonth(), 1).getTime();
@@ -187,11 +189,11 @@ function ActivityChart({
   const [now] = useState(() => Date.now());
   const chartData = useMemo(() => {
     const weeks: { name: string; signups: number; tickets: number }[] = [];
-    for (let i = 3; i >= 0; i--) {
+    for (let i = DASHBOARD_WEEKS_SHOWN - 1; i >= 0; i--) {
       const weekStart = now - (i + 1) * 7 * 24 * 60 * 60 * 1000;
       const weekEnd = now - i * 7 * 24 * 60 * 60 * 1000;
       weeks.push({
-        name: `W${4 - i}`,
+        name: `W${DASHBOARD_WEEKS_SHOWN - i}`,
         signups: signups.filter((s) => s._creationTime >= weekStart && s._creationTime < weekEnd)
           .length,
         tickets: tickets.filter((t) => t._creationTime >= weekStart && t._creationTime < weekEnd)
@@ -281,6 +283,7 @@ function ActivityChart({
 }
 
 export const Route = createFileRoute("/_panel/")({
+  errorComponent: RouteErrorComponent,
   component: AdminDashboardPage,
 });
 

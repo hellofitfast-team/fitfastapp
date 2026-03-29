@@ -138,7 +138,7 @@ function AdminLoginPage() {
           <div className="px-8 pt-10 pb-2 text-center">
             <img src="/logo.svg" alt="FitFast" className="mx-auto mb-5 h-14 w-14" />
             <h1 className="text-2xl font-black tracking-tighter text-stone-900 uppercase italic">
-              Fit<span className="text-[#FF4500]">Fast</span>
+              Fit<span className="text-primary">Fast</span>
             </h1>
             <p className="mt-1.5 text-sm text-stone-500">{tAdmin("signInDescription")}</p>
           </div>
@@ -197,7 +197,7 @@ function AdminLoginPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#FF4500] text-sm font-semibold text-white shadow-lg shadow-[#FF4500]/20 transition-colors hover:bg-[#CC3700] disabled:cursor-not-allowed disabled:opacity-50"
+                className="bg-primary shadow-primary/20 hover:bg-primary/90 flex h-11 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold text-white shadow-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isLoading ? (
                   <span className="animate-pulse">{tAdmin("signingIn")}...</span>
@@ -242,7 +242,7 @@ function AdminLoginPage() {
                     {magicLinkLoading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      <Sparkles className="h-4 w-4 text-[#FF4500]" />
+                      <Sparkles className="text-primary h-4 w-4" />
                     )}
                     {tAdmin("setupWithMagicLink")}
                   </button>

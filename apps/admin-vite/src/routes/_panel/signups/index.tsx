@@ -1,8 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
+import { Loader2 } from "lucide-react";
 import { SignupsTable } from "@/components/signups/signups-table";
+import { RouteErrorComponent } from "@/components/route-error";
 
 export const Route = createFileRoute("/_panel/signups/")({
+  errorComponent: RouteErrorComponent,
+  pendingComponent: () => (
+    <div className="flex min-h-[50vh] items-center justify-center">
+      <Loader2 className="h-6 w-6 animate-spin text-stone-400" />
+    </div>
+  ),
   component: AdminSignupsPage,
 });
 

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { RouteErrorComponent } from "@/components/route-error";
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { usePaginatedQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
@@ -8,6 +9,7 @@ import { useTranslation } from "react-i18next";
 import { ClientsList } from "@/components/clients/clients-list";
 import { Loader2, Clock, Mail, Trash2 } from "lucide-react";
 import { Button } from "@fitfast/ui/button";
+import { CLIENTS_PAGE_SIZE } from "@/lib/constants";
 import { CreateTestUserButton } from "@/components/clients/create-test-user-dialog";
 import {
   Dialog,
@@ -19,9 +21,8 @@ import {
 } from "@fitfast/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 
-const PAGE_SIZE = 50;
-
 export const Route = createFileRoute("/_panel/clients/")({
+  errorComponent: RouteErrorComponent,
   component: AdminClientsPage,
 });
 
@@ -37,7 +38,7 @@ function AdminClientsPage() {
   const { results, status, loadMore } = usePaginatedQuery(
     api.profiles.listClientsPaginated,
     isAuthenticated ? {} : "skip",
-    { initialNumItems: PAGE_SIZE },
+    { initialNumItems: CLIENTS_PAGE_SIZE },
   );
 
   const awaitingSignups = useQuery(
@@ -179,7 +180,7 @@ function AdminClientsPage() {
 
       {status === "CanLoadMore" && (
         <div className="flex justify-center pt-2 pb-8">
-          <Button variant="outline" onClick={() => loadMore(PAGE_SIZE)}>
+          <Button variant="outline" onClick={() => loadMore(CLIENTS_PAGE_SIZE)}>
             {t("admin.loadMore")}
           </Button>
         </div>

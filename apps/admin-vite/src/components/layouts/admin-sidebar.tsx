@@ -121,7 +121,7 @@ export function AdminSidebar({
                 className="text-[15px] font-black tracking-tighter text-white uppercase italic"
                 style={{ fontFamily: "var(--font-display)" }}
               >
-                Fit<span className="text-[#FF4500]">Fast</span>
+                Fit<span className="text-primary">Fast</span>
               </span>
               <p className="-mt-0.5 text-[10px] font-medium text-stone-500">
                 {t("admin.coachPanel")}

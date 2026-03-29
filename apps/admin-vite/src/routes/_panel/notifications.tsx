@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { RouteErrorComponent } from "@/components/route-error";
+import { NOTIFICATIONS_PAGE_SIZE } from "@/lib/constants";
 import { useTranslation } from "react-i18next";
 import { useConvexAuth, useQuery, useAction } from "convex/react";
 import { api } from "@convex/_generated/api";
@@ -30,10 +32,10 @@ const statusBadgeColors: Record<string, string> = {
   partial: "bg-amber-50 text-amber-700 border-amber-200",
 };
 
-const PAGE_SIZE = 10;
 type TestNotificationType = "plan_ready" | "reminder" | "individual";
 
 export const Route = createFileRoute("/_panel/notifications")({
+  errorComponent: RouteErrorComponent,
   component: NotificationsPage,
 });
 
@@ -96,8 +98,11 @@ function NotificationsPage() {
     if (page !== 1) setPage(1);
   }
 
-  const totalPages = Math.ceil((logs?.length ?? 0) / PAGE_SIZE);
-  const paginatedLogs = logs?.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages = Math.ceil((logs?.length ?? 0) / NOTIFICATIONS_PAGE_SIZE);
+  const paginatedLogs = logs?.slice(
+    (page - 1) * NOTIFICATIONS_PAGE_SIZE,
+    page * NOTIFICATIONS_PAGE_SIZE,
+  );
 
   const handleBroadcast = async () => {
     if (!title.trim() || !body.trim()) return;
@@ -528,8 +533,9 @@ function NotificationsPage() {
           {logs && logs.length > 0 && totalPages > 1 && (
             <div className="mt-4 flex items-center justify-between border-t border-stone-100 pt-4">
               <p className="text-xs text-stone-400">
-                {t("admin.showing")} {(page - 1) * PAGE_SIZE + 1}–
-                {Math.min(page * PAGE_SIZE, logs.length)} {t("admin.of")} {logs.length}
+                {t("admin.showing")} {(page - 1) * NOTIFICATIONS_PAGE_SIZE + 1}–
+                {Math.min(page * NOTIFICATIONS_PAGE_SIZE, logs.length)} {t("admin.of")}{" "}
+                {logs.length}
               </p>
               <div className="flex gap-1">
                 <button
