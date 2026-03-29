@@ -85,6 +85,10 @@ export function ExerciseManager() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<Id<"exerciseDatabase">>>(new Set());
+  // Clear selection when filters change to prevent operating on hidden items
+  useEffect(() => {
+    setSelected(new Set());
+  }, [searchQuery, filterCategory]);
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [bulkDeactivating, setBulkDeactivating] = useState(false);
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
@@ -261,12 +265,20 @@ export function ExerciseManager() {
     [filteredExercises],
   );
 
+  // Process mutations in batches of 10 to avoid rate limits
+  async function processBatch<T>(items: T[], fn: (item: T) => Promise<unknown>) {
+    const BATCH_SIZE = 10;
+    for (let i = 0; i < items.length; i += BATCH_SIZE) {
+      await Promise.all(items.slice(i, i + BATCH_SIZE).map(fn));
+    }
+  }
+
   async function handleBulkDelete() {
     setShowBulkDeleteConfirm(false);
     setBulkDeleting(true);
     try {
       const ids = Array.from(selected);
-      await Promise.all(ids.map((id) => deleteExercise({ id })));
+      await processBatch(ids, (id) => deleteExercise({ id }));
       toast({ title: t("bulkDeleteSuccess") });
       setSelected(new Set());
     } catch (err) {
@@ -285,8 +297,13 @@ export function ExerciseManager() {
     try {
       const activeSelected =
         filteredExercises?.filter((e) => selected.has(e._id) && e.isActive) ?? [];
-      await Promise.all(activeSelected.map((e) => toggleActive({ id: e._id })));
-      toast({ title: t("bulkDeactivateSuccess") });
+      if (activeSelected.length === 0) {
+        toast({ title: t("noActiveToDeactivate"), variant: "default" });
+        setBulkDeactivating(false);
+        return;
+      }
+      await processBatch(activeSelected, (e) => toggleActive({ id: e._id }));
+      toast({ title: `${activeSelected.length} ${t("bulkDeactivateSuccess")}` });
       setSelected(new Set());
     } catch (err) {
       console.error("Bulk deactivate failed:", err);
@@ -857,7 +874,7 @@ function ExerciseTable({
                         : "bg-stone-100 text-stone-400 hover:bg-stone-200",
                     )}
                     title={
-                      exercise.pregnancyUnsafe ? "Marked as pregnancy-unsafe" : "Safe for pregnancy"
+                      exercise.pregnancyUnsafe ? t("markedPregnancyUnsafe") : t("safeForPregnancy")
                     }
                   >
                     {togglingPregnancyId === exercise._id ? (

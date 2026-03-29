@@ -39,13 +39,25 @@ export const seedAdmin = action({
       console.log("signUpEmail failed — user may already exist");
     }
 
-    // Step 3: Wait a moment for the trigger to create the profile, then promote
-    // The trigger uses scheduler.runAfter(0, ...) so it's async
-    await new Promise((r) => setTimeout(r, 2000));
+    // Step 3: Retry promoting to coach — trigger creates profile asynchronously
+    let promoted = false;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+      const result2 = await ctx.runMutation(internal.seedBetterAuthHelpers.promoteToCoach, {
+        email,
+      });
+      if (result2.success) {
+        promoted = true;
+        break;
+      }
+    }
 
-    await ctx.runMutation(internal.seedBetterAuthHelpers.promoteToCoach, { email });
-
-    return { success: true, message: `Admin ${email} seeded and promoted to coach/owner` };
+    return {
+      success: promoted,
+      message: promoted
+        ? `Admin ${email} seeded and promoted to coach/owner`
+        : `Admin ${email} created but profile not found — trigger may have failed. Check Convex logs.`,
+    };
   },
 });
 

@@ -25,7 +25,7 @@
   "admin": {
     "signIn": "Coach Sign In",
     "signInDescription": "FitFast Coach Panel",
-    "coachPanelFooter": "Coach Panel \u00b7 Authorized Access Only",
+    "coachPanelFooter": "Coach Panel · Authorized Access Only",
     "email": "Email",
     "password": "Password",
     "signingIn": "Signing in",
@@ -266,7 +266,6 @@
     "deleteTestUserDesc": "This will permanently delete this test user including their assessment, plans, check-ins, and all activity data. This cannot be undone.",
     "deleteTestUserSuccess": "Test user deleted",
     "deleteTestUserFailed": "Failed to delete test user",
-    "selectAll": "Select all",
     "selectClient": "Select {{name}}",
     "clearSelection": "Clear",
     "bulkDeleteBtn": "Delete ({{count}})",
@@ -826,7 +825,10 @@
     "bulkDeleteConfirmTitle": "Delete Selected Exercises",
     "bulkDeleteConfirmDescription": "Are you sure you want to delete {{count}} exercises? This action cannot be undone.",
     "bulkDeleteSuccess": "Selected exercises deleted successfully",
-    "bulkDeactivateSuccess": "Selected exercises deactivated successfully"
+    "bulkDeactivateSuccess": "Selected exercises deactivated successfully",
+    "markedPregnancyUnsafe": "Marked as pregnancy-unsafe",
+    "safeForPregnancy": "Safe for pregnancy",
+    "noActiveToDeactivate": "No active exercises in selection"
   },
   "clientInsights": {
     "activity": "Activity & Engagement",

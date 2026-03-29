@@ -266,7 +266,6 @@
     "deleteTestUserDesc": "سيتم حذف هذا المستخدم التجريبي نهائياً بما في ذلك التقييم والخطط والمتابعات وجميع بيانات النشاط. لا يمكن التراجع عن هذا.",
     "deleteTestUserSuccess": "تم حذف المستخدم التجريبي",
     "deleteTestUserFailed": "فشل حذف المستخدم التجريبي",
-    "selectAll": "تحديد الكل",
     "selectClient": "تحديد {{name}}",
     "clearSelection": "مسح",
     "bulkDeleteBtn": "حذف ({{count}})",
@@ -826,7 +825,10 @@
     "bulkDeleteConfirmTitle": "حذف التمارين المحددة",
     "bulkDeleteConfirmDescription": "هل أنت متأكد من حذف {{count}} تمرين؟ لا يمكن التراجع عن هذا الإجراء.",
     "bulkDeleteSuccess": "تم حذف التمارين المحددة بنجاح",
-    "bulkDeactivateSuccess": "تم تعطيل التمارين المحددة بنجاح"
+    "bulkDeactivateSuccess": "تم تعطيل التمارين المحددة بنجاح",
+    "markedPregnancyUnsafe": "محدد كغير آمن أثناء الحمل",
+    "safeForPregnancy": "آمن أثناء الحمل",
+    "noActiveToDeactivate": "لا توجد تمارين نشطة في التحديد"
   },
   "clientInsights": {
     "activity": "النشاط والمشاركة",
