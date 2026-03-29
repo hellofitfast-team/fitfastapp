@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { RouteErrorComponent } from "@/components/route-error";
+import { RoutePendingComponent } from "@/components/route-pending";
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { usePaginatedQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
@@ -23,6 +24,7 @@ import { toast } from "@/hooks/use-toast";
 
 export const Route = createFileRoute("/_panel/clients/")({
   errorComponent: RouteErrorComponent,
+  pendingComponent: RoutePendingComponent,
   component: AdminClientsPage,
 });
 

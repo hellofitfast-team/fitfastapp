@@ -4,6 +4,7 @@ import { useConvexAuth, useQuery, useMutation, useAction } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { Plus, Trash2, GripVertical, Check, Loader2 } from "lucide-react";
 import { MAX_PRICING_PLANS } from "@convex/constants";
+import { TRANSLATION_DEBOUNCE_MS } from "@/lib/constants";
 import { SaveButton } from "@/components/settings/save-button";
 
 type Plan = {
@@ -141,7 +142,7 @@ export function PlansManager() {
           next.delete(planId);
           return next;
         });
-      }, 800);
+      }, TRANSLATION_DEBOUNCE_MS);
 
       translateTimers.current.set(planId, timer);
     },

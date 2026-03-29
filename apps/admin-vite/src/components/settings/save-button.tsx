@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Save, Check } from "lucide-react";
+import { SAVE_SUCCESS_TIMEOUT, SAVE_ERROR_TIMEOUT } from "@/lib/constants";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
@@ -34,10 +35,10 @@ export function SaveButton({
     try {
       await onSave();
       setState("saved");
-      setTimeout(() => setState("idle"), 2000);
+      setTimeout(() => setState("idle"), SAVE_SUCCESS_TIMEOUT);
     } catch {
       setState("error");
-      setTimeout(() => setState("idle"), 2500);
+      setTimeout(() => setState("idle"), SAVE_ERROR_TIMEOUT);
     }
   };
 

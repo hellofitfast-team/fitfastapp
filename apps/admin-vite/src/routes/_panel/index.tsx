@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { RouteErrorComponent } from "@/components/route-error";
+import { RoutePendingComponent } from "@/components/route-pending";
 import { DASHBOARD_MONTHS_SHOWN, DASHBOARD_WEEKS_SHOWN } from "@/lib/constants";
 import { useConvexAuth, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
@@ -284,6 +285,7 @@ function ActivityChart({
 
 export const Route = createFileRoute("/_panel/")({
   errorComponent: RouteErrorComponent,
+  pendingComponent: RoutePendingComponent,
   component: AdminDashboardPage,
 });
 

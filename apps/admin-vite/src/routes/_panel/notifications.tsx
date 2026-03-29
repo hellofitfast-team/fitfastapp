@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { RouteErrorComponent } from "@/components/route-error";
+import { RoutePendingComponent } from "@/components/route-pending";
 import { NOTIFICATIONS_PAGE_SIZE } from "@/lib/constants";
 import { useTranslation } from "react-i18next";
 import { useConvexAuth, useQuery, useAction } from "convex/react";
@@ -36,6 +37,7 @@ type TestNotificationType = "plan_ready" | "reminder" | "individual";
 
 export const Route = createFileRoute("/_panel/notifications")({
   errorComponent: RouteErrorComponent,
+  pendingComponent: RoutePendingComponent,
   component: NotificationsPage,
 });
 

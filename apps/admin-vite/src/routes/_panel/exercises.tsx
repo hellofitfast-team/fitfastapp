@@ -1,16 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { Loader2 } from "lucide-react";
 import { ExerciseManager } from "@/components/exercises/exercise-manager";
 import { RouteErrorComponent } from "@/components/route-error";
+import { RoutePendingComponent } from "@/components/route-pending";
 
 export const Route = createFileRoute("/_panel/exercises")({
   errorComponent: RouteErrorComponent,
-  pendingComponent: () => (
-    <div className="flex min-h-[50vh] items-center justify-center">
-      <Loader2 className="h-6 w-6 animate-spin text-stone-400" />
-    </div>
-  ),
+  pendingComponent: RoutePendingComponent,
   component: ExercisesPage,
 });
 

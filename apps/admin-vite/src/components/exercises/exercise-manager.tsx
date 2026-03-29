@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from "react";
+import { BULK_MUTATION_BATCH_SIZE } from "@/lib/constants";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "convex/react";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -265,11 +266,10 @@ export function ExerciseManager() {
     [filteredExercises],
   );
 
-  // Process mutations in batches of 10 to avoid rate limits
+  // Process mutations in batches to avoid rate limits
   async function processBatch<T>(items: T[], fn: (item: T) => Promise<unknown>) {
-    const BATCH_SIZE = 10;
-    for (let i = 0; i < items.length; i += BATCH_SIZE) {
-      await Promise.all(items.slice(i, i + BATCH_SIZE).map(fn));
+    for (let i = 0; i < items.length; i += BULK_MUTATION_BATCH_SIZE) {
+      await Promise.all(items.slice(i, i + BULK_MUTATION_BATCH_SIZE).map(fn));
     }
   }
 

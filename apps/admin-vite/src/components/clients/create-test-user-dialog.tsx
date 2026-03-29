@@ -3,6 +3,7 @@ import { useAction } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { useTranslation } from "react-i18next";
 import { toast } from "@/hooks/use-toast";
+import { COPY_NOTIFICATION_TIMEOUT } from "@/lib/constants";
 import { UserPlus, Loader2, Copy, Check } from "lucide-react";
 import { Button } from "@fitfast/ui/button";
 import {
@@ -82,7 +83,7 @@ export function CreateTestUserButton() {
     try {
       await navigator.clipboard.writeText(text);
       setCopiedField(field);
-      setTimeout(() => setCopiedField(null), 2000);
+      setTimeout(() => setCopiedField(null), COPY_NOTIFICATION_TIMEOUT);
     } catch {
       // Clipboard API may fail if page is not focused
     }

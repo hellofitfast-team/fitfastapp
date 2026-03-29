@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { RouteErrorComponent } from "@/components/route-error";
+import { RoutePendingComponent } from "@/components/route-pending";
 import { useTranslation } from "react-i18next";
 import { useConvexAuth, useQuery, useMutation, useAction } from "convex/react";
 import { api } from "@convex/_generated/api";
@@ -430,6 +431,7 @@ function AssessmentCard({
 
 export const Route = createFileRoute("/_panel/clients/$id")({
   errorComponent: RouteErrorComponent,
+  pendingComponent: RoutePendingComponent,
   component: ClientDetailPage,
 });
 
