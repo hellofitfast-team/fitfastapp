@@ -738,25 +738,27 @@ function ExerciseTable({
   });
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-stone-200">
-      {/* Sticky header */}
-      <div className="grid min-w-[73rem] grid-cols-[3rem_4rem_minmax(10rem,1fr)_minmax(10rem,1fr)_8rem_8rem_12rem_5rem_5rem_5rem] items-center bg-stone-50 text-xs font-medium whitespace-nowrap text-stone-600 [&>div]:px-4 [&>div]:py-3">
-        <div className="flex items-center justify-center">
+    <div className="overflow-hidden rounded-lg border border-stone-200">
+      {/* Header — uses same flex layout as rows */}
+      <div className="flex items-center bg-stone-50 text-xs font-medium text-stone-600">
+        <div className="w-10 shrink-0 px-3 py-3 text-center">
           <Checkbox
             checked={headerChecked}
             onCheckedChange={onSelectAll}
             aria-label={t("selectAll")}
           />
         </div>
-        <div>{t("image")}</div>
-        <div>{t("name")}</div>
-        <div className="hidden md:block">{t("nameAr")}</div>
-        <div>{t("category")}</div>
-        <div className="hidden lg:block">{t("difficulty")}</div>
-        <div className="hidden lg:block">{t("primaryMuscles")}</div>
-        <div>{t("isActive")}</div>
-        <div className="hidden lg:block">{t("pregnancyUnsafe")}</div>
-        <div className="text-end">{tCommon("edit")}</div>
+        <div className="w-14 shrink-0 px-3 py-3">{t("image")}</div>
+        <div className="min-w-0 flex-1 px-3 py-3">{t("name")}</div>
+        <div className="hidden min-w-0 flex-1 px-3 py-3 xl:block">{t("nameAr")}</div>
+        <div className="hidden shrink-0 px-3 py-3 md:block">{t("category")}</div>
+        <div className="hidden shrink-0 px-3 py-3 lg:block">{t("difficulty")}</div>
+        <div className="hidden shrink-0 px-3 py-3 xl:block">{t("primaryMuscles")}</div>
+        <div className="w-14 shrink-0 px-3 py-3 text-center">{t("isActive")}</div>
+        <div className="hidden w-14 shrink-0 px-3 py-3 text-center xl:block">
+          {t("pregnancyUnsafe")}
+        </div>
+        <div className="w-20 shrink-0 px-3 py-3 text-end">{tCommon("edit")}</div>
       </div>
 
       {/* Virtualized rows */}
@@ -776,7 +778,7 @@ function ExerciseTable({
                 data-index={virtualRow.index}
                 ref={virtualizer.measureElement}
                 className={cn(
-                  "absolute top-0 left-0 grid w-full min-w-[73rem] grid-cols-[3rem_4rem_minmax(10rem,1fr)_minmax(10rem,1fr)_8rem_8rem_12rem_5rem_5rem_5rem] items-center border-b border-stone-100 text-sm whitespace-nowrap transition-colors hover:bg-stone-50 [&>div]:px-4 [&>div]:py-3",
+                  "absolute top-0 left-0 flex w-full items-center border-b border-stone-100 text-sm transition-colors hover:bg-stone-50",
                   !exercise.isActive && "opacity-50",
                   selected.has(exercise._id) && "bg-stone-50",
                 )}
@@ -784,14 +786,14 @@ function ExerciseTable({
                   transform: `translateY(${virtualRow.start}px)`,
                 }}
               >
-                <div className="flex items-center justify-center">
+                <div className="flex w-10 shrink-0 items-center justify-center px-3 py-3">
                   <Checkbox
                     checked={selected.has(exercise._id)}
                     onCheckedChange={(checked) => onSelect(exercise._id, checked)}
                     aria-label={`${t("selectExercise")} ${exercise.name}`}
                   />
                 </div>
-                <div>
+                <div className="w-14 shrink-0 px-3 py-3">
                   {exercise.imageUrl ? (
                     <img
                       src={exercise.imageUrl}
@@ -808,25 +810,30 @@ function ExerciseTable({
                     </div>
                   )}
                 </div>
-                <div className="font-medium">{exercise.name}</div>
-                <div className="hidden text-stone-500 md:block" dir="rtl">
+                <div className="min-w-0 flex-1 truncate px-3 py-3 font-medium">{exercise.name}</div>
+                <div
+                  className="hidden min-w-0 flex-1 truncate px-3 py-3 text-stone-500 xl:block"
+                  dir="rtl"
+                >
                   {exercise.nameAr}
                 </div>
-                <div>
+                <div className="hidden shrink-0 px-3 py-3 md:block">
                   <span className="rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-600">
                     {t(exercise.category)}
                   </span>
                 </div>
-                <div className="hidden text-stone-500 lg:block">{t(exercise.difficulty)}</div>
-                <div className="hidden text-stone-500 lg:block">
+                <div className="hidden shrink-0 px-3 py-3 text-stone-500 lg:block">
+                  {t(exercise.difficulty)}
+                </div>
+                <div className="hidden shrink-0 px-3 py-3 text-stone-500 xl:block">
                   {exercise.primaryMuscles.slice(0, 3).join(", ")}
                 </div>
-                <div>
+                <div className="w-14 shrink-0 px-3 py-3 text-center">
                   <button
                     onClick={() => onToggle(exercise._id)}
                     disabled={togglingId === exercise._id}
                     className={cn(
-                      "flex h-7 w-7 items-center justify-center rounded-md transition-colors",
+                      "mx-auto flex h-7 w-7 items-center justify-center rounded-md transition-colors",
                       exercise.isActive
                         ? "bg-green-100 text-green-600 hover:bg-green-200"
                         : "bg-stone-100 text-stone-400 hover:bg-stone-200",
@@ -839,12 +846,12 @@ function ExerciseTable({
                     )}
                   </button>
                 </div>
-                <div className="hidden lg:block">
+                <div className="hidden w-14 shrink-0 px-3 py-3 text-center xl:block">
                   <button
                     onClick={() => onTogglePregnancy(exercise._id)}
                     disabled={togglingPregnancyId === exercise._id}
                     className={cn(
-                      "flex h-7 w-7 items-center justify-center rounded-md text-xs font-bold transition-colors",
+                      "mx-auto flex h-7 w-7 items-center justify-center rounded-md text-xs font-bold transition-colors",
                       exercise.pregnancyUnsafe
                         ? "bg-red-100 text-red-600 hover:bg-red-200"
                         : "bg-stone-100 text-stone-400 hover:bg-stone-200",
@@ -862,7 +869,7 @@ function ExerciseTable({
                     )}
                   </button>
                 </div>
-                <div>
+                <div className="w-20 shrink-0 px-3 py-3">
                   <div className="flex items-center justify-end gap-1">
                     <button
                       onClick={() => onEdit(exercise)}
