@@ -1049,7 +1049,80 @@ Daily meal macros MUST sum to targets (±5% tolerance). Respond ONLY with valid 
       ...(planNotes ? { notes: planNotes } : {}),
     };
 
-    // Log day coverage
+    // --- Gap detection & backfill: ensure every expected day exists ---
+    const missingDays: number[] = [];
+    for (let d = 1; d <= safeDuration; d++) {
+      if (!accumulatedWeeklyPlan[`day${d}`]) missingDays.push(d);
+    }
+
+    if (missingDays.length > 0) {
+      console.warn(`[AI] Missing days detected: ${missingDays.join(", ")} — backfilling`);
+
+      // Generate missing days one at a time for maximum reliability
+      for (const day of missingDays) {
+        const previousMealNames: string[] = [];
+        // Collect surrounding days for variety context
+        for (const key of Object.keys(accumulatedWeeklyPlan).slice(-4)) {
+          const meals = (accumulatedWeeklyPlan[key] as any)?.meals;
+          if (Array.isArray(meals)) {
+            const names = meals
+              .map((m: any) => m.name)
+              .filter(Boolean)
+              .join(", ");
+            if (names) previousMealNames.push(`${key}: ${names}`);
+          }
+        }
+
+        let backfillSuccess = false;
+        for (let attempt = 0; attempt <= MEAL_CHUNK_MAX_RETRIES; attempt++) {
+          try {
+            if (attempt > 0)
+              console.warn(
+                `[AI] Backfill day${day} retry ${attempt + 1}/${MEAL_CHUNK_MAX_RETRIES + 1}`,
+              );
+            const result = await generateChunk([day], previousMealNames, allDays.length + day);
+            const parsed = extractJSON(result.text) as Record<string, unknown>;
+            const dayData = (parsed.weeklyPlan as any)?.[`day${day}`] ?? parsed[`day${day}`];
+            if (dayData && typeof dayData === "object") {
+              accumulatedWeeklyPlan[`day${day}`] = dayData;
+              allRawText += result.text + "\n";
+              console.log(`[AI] Backfilled day${day} successfully`);
+              backfillSuccess = true;
+              break;
+            }
+          } catch (err) {
+            console.error(
+              `[AI] Backfill day${day} attempt ${attempt + 1} failed: ${err instanceof Error ? err.message : String(err)}`,
+            );
+          }
+        }
+        if (!backfillSuccess) {
+          console.error(
+            `[AI] Could not backfill day${day} after ${MEAL_CHUNK_MAX_RETRIES + 1} attempts — plan will have a gap`,
+          );
+        }
+      }
+
+      // Update intermediate plan with backfilled days
+      if (planId) {
+        await ctx.runMutation(internal.mealPlans.updatePlanData, {
+          planId,
+          planData: {
+            dailyTargets: dailyTargets ?? {
+              calories: nutritionTargets.calories,
+              protein: nutritionTargets.protein,
+              carbs: nutritionTargets.carbs,
+              fat: nutritionTargets.fat,
+            },
+            weeklyPlan: { ...accumulatedWeeklyPlan },
+            ...(planNotes ? { notes: planNotes } : {}),
+          },
+          aiGeneratedContent: allRawText,
+        });
+      }
+    }
+
+    // Log final day coverage
     const generatedDays = Object.keys(accumulatedWeeklyPlan).length;
     console.log(
       `[AI] Chunked generation complete: ${generatedDays}/${safeDuration} days generated`,
