@@ -26,6 +26,7 @@ import {
   MEAL_CHUNK_TOKENS_EN,
   MEAL_CHUNK_TOKENS_AR,
   MEAL_CHUNK_TIMEOUT_MS,
+  MEAL_CHUNK_MAX_RETRIES,
 } from "./constants";
 
 // ---------------------------------------------------------------------------
@@ -940,21 +941,39 @@ Daily meal macros MUST sum to targets (±5% tolerance). Respond ONLY with valid 
       allRawText += chunkResult.text + "\n";
       lastFinishReason = chunkResult.finishReason;
 
-      // Parse chunk JSON and merge into accumulated plan
-      let chunkData: Record<string, unknown>;
-      try {
-        chunkData = extractJSON(chunkResult.text) as Record<string, unknown>;
-      } catch (parseErr) {
-        console.error(
-          `[AI] Chunk ${ci + 1} JSON parse failed: ${parseErr instanceof Error ? parseErr.message : String(parseErr)}`,
-        );
+      // Parse chunk JSON — retry on failure (Mercury 2 occasionally produces malformed JSON)
+      let chunkData: Record<string, unknown> | null = null;
+      let lastParseErr: unknown = null;
+      for (let attempt = 0; attempt <= MEAL_CHUNK_MAX_RETRIES; attempt++) {
+        const textToParse = attempt === 0 ? chunkResult.text : null;
+        try {
+          if (attempt > 0) {
+            console.warn(
+              `[AI] Retrying chunk ${ci + 1} (attempt ${attempt + 1}/${MEAL_CHUNK_MAX_RETRIES + 1})`,
+            );
+            const retryResult = await generateChunk(days, previousMealNames, ci);
+            chunkData = extractJSON(retryResult.text) as Record<string, unknown>;
+            allRawText += retryResult.text + "\n";
+            lastFinishReason = retryResult.finishReason;
+          } else {
+            chunkData = extractJSON(textToParse!) as Record<string, unknown>;
+          }
+          break; // Success — exit retry loop
+        } catch (parseErr) {
+          lastParseErr = parseErr;
+          console.error(
+            `[AI] Chunk ${ci + 1} JSON parse failed (attempt ${attempt + 1}): ${parseErr instanceof Error ? parseErr.message : String(parseErr)}`,
+          );
+        }
+      }
+      if (!chunkData) {
         if (Object.keys(accumulatedWeeklyPlan).length > 0) {
           console.warn(
-            `[AI] Saving partial plan with ${Object.keys(accumulatedWeeklyPlan).length} days`,
+            `[AI] Saving partial plan with ${Object.keys(accumulatedWeeklyPlan).length} days after ${MEAL_CHUNK_MAX_RETRIES + 1} attempts`,
           );
           break;
         }
-        throw parseErr;
+        throw lastParseErr;
       }
 
       const chunkWeekly = chunkData.weeklyPlan as Record<string, unknown> | undefined;

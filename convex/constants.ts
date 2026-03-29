@@ -79,9 +79,11 @@ export const PLAN_GENERATION_TIMEOUT_MS = 240_000; // 4 minutes (2 min per model
 export const PLAN_GENERATION_MAX_RETRIES = 2;
 
 // ── Chunked Meal Plan Generation ─────────────────────────────────────────
-// Langfuse data: EN ~2.3-3K tokens/day, AR ~3.9K tokens/day
-// 3-day chunk: EN ~7-9K, AR ~12K → 50% buffer applied
-export const MEAL_CHUNK_SIZE = 3;
-export const MEAL_CHUNK_TOKENS_EN = 14000;
-export const MEAL_CHUNK_TOKENS_AR = 18000;
-export const MEAL_CHUNK_TIMEOUT_MS = 90_000; // 90s per chunk (60s primary + 30s buffer)
+// Smaller chunks (2 days) = less JSON per request = fewer truncation failures.
+// Token budgets doubled from original to give Mercury 2 ample headroom.
+// Per-chunk retry (MEAL_CHUNK_MAX_RETRIES) handles transient JSON parse failures.
+export const MEAL_CHUNK_SIZE = 2;
+export const MEAL_CHUNK_TOKENS_EN = 24000;
+export const MEAL_CHUNK_TOKENS_AR = 32000;
+export const MEAL_CHUNK_TIMEOUT_MS = 120_000; // 120s per chunk
+export const MEAL_CHUNK_MAX_RETRIES = 2; // retry up to 2 times on JSON parse failure

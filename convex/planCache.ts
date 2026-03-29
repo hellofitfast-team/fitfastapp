@@ -49,6 +49,22 @@ export const cleanupExpired = internalMutation({
   },
 });
 
+/** Delete a cache entry by key (used to force regeneration). */
+export const deleteByCacheKey = internalMutation({
+  args: { cacheKey: v.string() },
+  handler: async (ctx, { cacheKey }) => {
+    const entry = await ctx.db
+      .query("planCache")
+      .withIndex("by_cacheKey", (q) => q.eq("cacheKey", cacheKey))
+      .first();
+    if (entry) {
+      await ctx.db.delete(entry._id);
+      return "deleted";
+    }
+    return "not found";
+  },
+});
+
 export const savePlanCache = internalMutation({
   args: {
     cacheKey: v.string(),
