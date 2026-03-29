@@ -592,9 +592,9 @@ function ExerciseTable({
   });
 
   return (
-    <div className="overflow-hidden rounded-lg border border-stone-200">
+    <div className="overflow-x-auto rounded-lg border border-stone-200">
       {/* Sticky header */}
-      <div className="grid grid-cols-[4rem_1fr_1fr_7rem_7rem_10rem_4.5rem_4.5rem_5rem] items-center bg-stone-50 text-xs font-medium text-stone-600 [&>div]:px-4 [&>div]:py-3">
+      <div className="grid min-w-[70rem] grid-cols-[4rem_minmax(10rem,1fr)_minmax(10rem,1fr)_8rem_8rem_12rem_5rem_5rem_5rem] items-center bg-stone-50 text-xs font-medium whitespace-nowrap text-stone-600 [&>div]:px-4 [&>div]:py-3">
         <div>{t("image")}</div>
         <div>{t("name")}</div>
         <div className="hidden md:block">{t("nameAr")}</div>
@@ -623,7 +623,7 @@ function ExerciseTable({
                 data-index={virtualRow.index}
                 ref={virtualizer.measureElement}
                 className={cn(
-                  "absolute top-0 left-0 grid w-full grid-cols-[4rem_1fr_1fr_7rem_7rem_10rem_4.5rem_4.5rem_5rem] items-center border-b border-stone-100 text-sm transition-colors hover:bg-stone-50 [&>div]:px-4 [&>div]:py-3",
+                  "absolute top-0 left-0 grid w-full min-w-[70rem] grid-cols-[4rem_minmax(10rem,1fr)_minmax(10rem,1fr)_8rem_8rem_12rem_5rem_5rem_5rem] items-center border-b border-stone-100 text-sm whitespace-nowrap transition-colors hover:bg-stone-50 [&>div]:px-4 [&>div]:py-3",
                   !exercise.isActive && "opacity-50",
                 )}
                 style={{
