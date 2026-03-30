@@ -1049,19 +1049,19 @@ Daily meal macros MUST sum to targets (±5% tolerance). Respond ONLY with valid 
       ...(planNotes ? { notes: planNotes } : {}),
     };
 
-    // --- Gap detection & backfill: ensure every expected day exists ---
-    const missingDays: number[] = [];
-    for (let d = 1; d <= safeDuration; d++) {
-      if (!accumulatedWeeklyPlan[`day${d}`]) missingDays.push(d);
-    }
+    // --- Gap detection & backfill: keep retrying until ALL days are present ---
+    // Outer loop runs up to 3 passes to catch any stragglers from previous backfill rounds
+    for (let pass = 0; pass < 3; pass++) {
+      const missingDays: number[] = [];
+      for (let d = 1; d <= safeDuration; d++) {
+        if (!accumulatedWeeklyPlan[`day${d}`]) missingDays.push(d);
+      }
+      if (missingDays.length === 0) break; // All days present — done
 
-    if (missingDays.length > 0) {
-      console.warn(`[AI] Missing days detected: ${missingDays.join(", ")} — backfilling`);
+      console.warn(`[AI] Backfill pass ${pass + 1}: missing days ${missingDays.join(", ")}`);
 
-      // Generate missing days one at a time for maximum reliability
       for (const day of missingDays) {
         const previousMealNames: string[] = [];
-        // Collect surrounding days for variety context
         for (const key of Object.keys(accumulatedWeeklyPlan).slice(-4)) {
           const meals = (accumulatedWeeklyPlan[key] as any)?.meals;
           if (Array.isArray(meals)) {
@@ -1098,7 +1098,7 @@ Daily meal macros MUST sum to targets (±5% tolerance). Respond ONLY with valid 
         }
         if (!backfillSuccess) {
           console.error(
-            `[AI] Could not backfill day${day} after ${MEAL_CHUNK_MAX_RETRIES + 1} attempts — plan will have a gap`,
+            `[AI] Could not backfill day${day} after ${MEAL_CHUNK_MAX_RETRIES + 1} attempts`,
           );
         }
       }

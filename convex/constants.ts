@@ -86,4 +86,4 @@ export const MEAL_CHUNK_SIZE = 2;
 export const MEAL_CHUNK_TOKENS_EN = 24000;
 export const MEAL_CHUNK_TOKENS_AR = 32000;
 export const MEAL_CHUNK_TIMEOUT_MS = 120_000; // 120s per chunk
-export const MEAL_CHUNK_MAX_RETRIES = 2; // retry up to 2 times on JSON parse failure
+export const MEAL_CHUNK_MAX_RETRIES = 5; // retry up to 5 times on JSON parse failure
