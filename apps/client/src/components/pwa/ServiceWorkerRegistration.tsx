@@ -1,11 +1,6 @@
-"use client";
-
 import { useEffect } from "react";
-import { useVersionCheck } from "@/hooks/use-version-check";
 
 export function ServiceWorkerRegistration() {
-  useVersionCheck();
-
   useEffect(() => {
     if (!("serviceWorker" in navigator) || !navigator.serviceWorker) return;
 
@@ -21,25 +16,22 @@ export function ServiceWorkerRegistration() {
     navigator.serviceWorker
       .register("/sw.js", { scope: "/" })
       .then((registration) => {
-        // Detect when a new SW version is found
         registration.addEventListener("updatefound", () => {
           const newWorker = registration.installing;
           if (!newWorker) return;
 
           newWorker.addEventListener("statechange", () => {
-            // New SW installed + existing controller = app update available
             if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-              // Tell the new SW to activate — controllerchange will reload the page
               newWorker.postMessage({ action: "SKIP_WAITING" });
             }
           });
         });
 
-        // Check for SW updates every 30 minutes while the app is open
+        // Check for SW updates every 30 minutes
         const UPDATE_INTERVAL_MS = 30 * 60 * 1000;
         setInterval(() => registration.update(), UPDATE_INTERVAL_MS);
 
-        // Also check for updates when the app regains focus (user switches back to the PWA)
+        // Also check when app regains focus
         document.addEventListener("visibilitychange", () => {
           if (document.visibilityState === "visible") {
             registration.update();

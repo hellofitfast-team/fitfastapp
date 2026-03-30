@@ -15,6 +15,7 @@
     "close": "إغلاق",
     "search": "بحث",
     "noResults": "لا توجد نتائج",
+    "day": "يوم",
     "today": "اليوم",
     "backToToday": "العودة لليوم",
     "yesterday": "أمس",
@@ -167,17 +168,17 @@
     "startWorkout": "بدء التمرين",
     "logMeal": "تسجيل الوجبة",
     "motivational": {
-      "0": "يالله يا {name}، كمّل!",
-      "1": "ماشي صح يا {name}!",
-      "2": "الاستمرارية هي المفتاح يا {name}!",
-      "3": "كل تمرين بيفرق يا {name}!",
-      "4": "قدها وقدود يا {name}!",
-      "5": "مجهود رائع يا {name}!",
-      "6": "يوم بيوم يا {name}!"
+      "0": "يالله يا {{name}}، كمّل!",
+      "1": "ماشي صح يا {{name}}!",
+      "2": "الاستمرارية هي المفتاح يا {{name}}!",
+      "3": "كل تمرين بيفرق يا {{name}}!",
+      "4": "قدها وقدود يا {{name}}!",
+      "5": "مجهود رائع يا {{name}}!",
+      "6": "يوم بيوم يا {{name}}!"
     },
     "coachMessageBanner": "ردّ المدرب على تذكرتك",
     "viewTicket": "عرض",
-    "planDay": "اليوم {current} من {total}",
+    "planDay": "اليوم {{current}} من {{total}}",
     "planProgress": "تقدم الخطة",
     "todaysStats": "إحصائيات اليوم",
     "todaysMeals": "وجبات اليوم",
@@ -185,9 +186,9 @@
     "noMealsToday": "لا توجد وجبات اليوم",
     "restDayOrNoWorkout": "يوم راحة أو لا يوجد تمرين اليوم",
     "totalCalories": "إجمالي السعرات",
-    "mealCount": "{count} وجبات",
-    "exerciseCount": "{count} تمارين",
-    "estDuration": "المدة المقدرة {duration}"
+    "mealCount": "{{count}} وجبات",
+    "exerciseCount": "{{count}} تمارين",
+    "estDuration": "المدة المقدرة {{duration}}"
   },
   "meals": {
     "title": "خطة الوجبات",
@@ -221,10 +222,10 @@
     "coachNotes": "ملاحظات المدرب",
     "kcal": "سعرة",
     "aiGenerating": "الذكاء الاصطناعي يُعد خطة وجباتك...",
-    "generatingDay": "جاري إعداد يوم {day}...",
+    "generatingDay": "جاري إعداد يوم {{day}}...",
     "generatingDayDescription": "وجباتك لهذا اليوم قيد التحضير. الأيام الأخرى جاهزة للتصفح.",
-    "calorieExplanation": "الذكاء الاصطناعي بيستهدف حوالي {calories} سعرة/يوم ({protein} جرام بروتين) بناءً على بياناتك و{trainingDays} أيام تمرين/أسبوع. الوجبات الفعلية ممكن تختلف بسيط.",
-    "dayLabel": "يوم {n}",
+    "calorieExplanation": "الذكاء الاصطناعي بيستهدف حوالي {{calories}} سعرة/يوم ({{protein}} جرام بروتين) بناءً على بياناتك و{{trainingDays}} أيام تمرين/أسبوع. الوجبات الفعلية ممكن تختلف بسيط.",
+    "dayLabel": "يوم {{n}}",
     "translating": "جاري ترجمة خطة الوجبات...",
     "translatingDescription": "ستُحدَّث الخطة تلقائيًا خلال ثوانٍ.",
     "translationFailed": "فشلت الترجمة",
@@ -272,14 +273,14 @@
     "swapExercise": "استبدال التمرين",
     "swapping": "جاري الاستبدال...",
     "restDayTitle": "راحة واستشفاء",
-    "restDayRecovery": "عضلاتك تتعافى بعد {workout}",
+    "restDayRecovery": "عضلاتك تتعافى بعد {{workout}}",
     "nextWorkout": "التمرين القادم",
     "exerciseGuide": "دليل التمرين",
-    "suggestedWeight": "مقترح: {weight}",
+    "suggestedWeight": "مقترح: {{weight}}",
     "cardioFinisher": "كارديو ختامي",
-    "cardioFinisherDuration": "{duration} د · {intensity}",
+    "cardioFinisherDuration": "{{duration}} د · {{intensity}}",
     "activeRecovery": "استشفاء نشط",
-    "supersetWith": "سوبرسيت مع {exercise}",
+    "supersetWith": "سوبرسيت مع {{exercise}}",
 
     "phaseFoundation": "التأسيس",
     "phaseBuild": "البناء",
@@ -290,7 +291,7 @@
   "checkIn": {
     "title": "المتابعة",
     "subtitle": "أخبرنا كيف حالك",
-    "stepOf": "الخطوة {current} من {total}",
+    "stepOf": "الخطوة {{current}} من {{total}}",
     "weight": "الوزن الحالي",
     "measurements": "قياسات الجسم",
     "chest": "الصدر",
@@ -318,11 +319,11 @@
     "addMorePhotos": "إضافة المزيد من الصور",
     "submitting": "جاري الإرسال...",
     "allIn": "الكل بـ",
-    "maxPhotos": "اختياري، حد أقصى {maxPhotos} صور، {maxFileMB} ميجا لكل صورة",
-    "fileTypes": "PNG، JPG حتى {maxFileMB} ميجا",
+    "maxPhotos": "اختياري، حد أقصى {{maxPhotos}} صور، {{maxFileMB}} ميجا لكل صورة",
+    "fileTypes": "PNG، JPG حتى {{maxFileMB}} ميجا",
     "uploaded": "تم رفعها",
     "invalidFile": "ملف غير صالح",
-    "invalidFileDescription": "يرجى رفع صور أقل من {maxFileMB} ميجا",
+    "invalidFileDescription": "يرجى رفع صور أقل من {{maxFileMB}} ميجا",
     "authRequired": "مطلوب تسجيل الدخول",
     "authRequiredDescription": "يرجى تسجيل الدخول لإرسال المتابعة",
     "submissionFailed": "فشل الإرسال",
@@ -330,7 +331,7 @@
     "checkInLocked": "المتابعة مغلقة",
     "nextCheckInAvailable": "المتابعة القادمة متاحة",
     "days": "أيام",
-    "lockReason": "يتم جدولة المتابعات كل {days} يومًا لضمان تتبع التقدم الأمثل وإنشاء خطط الذكاء الاصطناعي. استخدم هذا الوقت لاتباع خطط الوجبات والتمارين الحالية.",
+    "lockReason": "يتم جدولة المتابعات كل {{days}} يومًا لضمان تتبع التقدم الأمثل وإنشاء خطط الذكاء الاصطناعي. استخدم هذا الوقت لاتباع خطط الوجبات والتمارين الحالية.",
     "steps": {
       "weight": "الوزن والقياسات",
       "fitness": "مقاييس اللياقة",
@@ -343,7 +344,7 @@
     "reviewDiet": "النظام الغذائي",
     "dietNotes": "ملاحظات النظام الغذائي",
     "none": "لا يوجد",
-    "photosUploaded": "{count} صور تم رفعها",
+    "photosUploaded": "{{count}} صور تم رفعها",
     "noPhotos": "لا توجد صور",
     "manualMeasurements": "قياسات الجسم",
     "recommended": "موصى به",
@@ -577,7 +578,7 @@
     "questions": {
       "checkInFrequency": {
         "q": "كم مرة يجب أن أقوم بالمتابعة؟",
-        "a": "يجب عليك تقديم متابعة كل {days} يومًا. هذا يسمح لمدربك بتتبع تقدمك وتعديل خطط الوجبات والتمارين وفقًا لذلك."
+        "a": "يجب عليك تقديم متابعة كل {{days}} يومًا. هذا يسمح لمدربك بتتبع تقدمك وتعديل خطط الوجبات والتمارين وفقًا لذلك."
       },
       "changeMeals": {
         "q": "هل يمكنني تغيير الوجبات في خطة وجباتي؟",
@@ -763,8 +764,8 @@
       "schedule": "جدولك الأسبوعي المتاح",
       "scheduleTitle": "أيام التمرين",
       "scheduleDesc": "اختار الأيام اللي تقدر تتمرن فيها",
-      "scheduleHint": "بناءً على هدفك ومستواك، ننصح بـ {recommended} أيام في الأسبوع (الحد الأدنى {min}، الحد الأقصى {max}). أيام الراحة ضرورية للتقدم.",
-      "daysSelected": "{count} أيام مختارة (الحد الأدنى {min}، الحد الأقصى {max})",
+      "scheduleHint": "بناءً على هدفك ومستواك، ننصح بـ {{recommended}} أيام في الأسبوع (الحد الأدنى {{min}}، الحد الأقصى {{max}}). أيام الراحة ضرورية للتقدم.",
+      "daysSelected": "{{count}} أيام مختارة (الحد الأدنى {{min}}، الحد الأقصى {{max}})",
       "sessionDurationTitle": "مدة الجلسة",
       "sessionDurationDesc": "قد إيه تقدر تتمرن في الجلسة الواحدة؟",
       "sessionDurations": {
@@ -911,7 +912,7 @@
       "uploadInBodyDescription": "ارفع صورة تقرير InBody الخاص بك",
       "inBodyResult": "نتيجة InBody",
       "removeFile": "إزالة الملف",
-      "fileTypes": "صور فقط، الحد الأقصى {maxFileMB} ميجابايت",
+      "fileTypes": "صور فقط، الحد الأقصى {{maxFileMB}} ميجابايت",
       "inBodyFileRequired": "يرجى رفع ورقة InBody",
       "completeAssessment": "إكمال التقييم",
       "submitting": "جاري إنشاء خطتك...",
@@ -1024,7 +1025,7 @@
     "activityLevelRequired": "يرجى اختيار مستوى النشاط",
     "experienceLevelRequired": "يرجى اختيار مستوى الخبرة",
     "workoutDaysRequired": "يرجى اختيار يوم تمرين واحد على الأقل",
-    "workoutDaysMin": "يرجى اختيار {min} أيام تمرين على الأقل لنتائج فعلية",
+    "workoutDaysMin": "يرجى اختيار {{min}} أيام تمرين على الأقل لنتائج فعلية",
     "sessionDurationRequired": "يرجى اختيار مدة الجلسة",
     "equipmentRequired": "يرجى اختيار المعدات المتاحة",
     "equipmentSpecify": "يرجى تحديد المعدات الخاصة بك",
@@ -1042,14 +1043,14 @@
   },
   "subscription": {
     "banner": {
-      "expiresIn": "ينتهي اشتراكك خلال {days} أيام.",
+      "expiresIn": "ينتهي اشتراكك خلال {{days}} أيام.",
       "expiresInOne": "ينتهي اشتراكك غداً!",
       "renewNow": "جدّد الآن"
     },
     "expired": {
       "title": "انتهى الاشتراك",
       "subtitle": "انتهت صلاحية اشتراكك",
-      "dataWarning": "سيتم الاحتفاظ ببياناتك لمدة {days} يوماً. بعد ذلك، سيتم حذفها نهائياً.",
+      "dataWarning": "سيتم الاحتفاظ ببياناتك لمدة {{days}} يوماً. بعد ذلك، سيتم حذفها نهائياً.",
       "renewButton": "تجديد الاشتراك",
       "logoutButton": "تسجيل الخروج",
       "contactCoach": "تواصل مع مدربك للمساعدة"
@@ -1157,9 +1158,9 @@
     "markAllRead": "تحديد الكل كمقروء",
     "empty": "لا توجد إشعارات بعد",
     "justNow": "الآن",
-    "minutesAgo": "منذ {count} دقيقة",
-    "hoursAgo": "منذ {count} ساعة",
-    "daysAgo": "منذ {count} يوم"
+    "minutesAgo": "منذ {{count}} دقيقة",
+    "hoursAgo": "منذ {{count}} ساعة",
+    "daysAgo": "منذ {{count}} يوم"
   },
   "notificationErrors": {
     "not_supported": "إشعارات الدفع غير مدعومة على هذا الجهاز",

@@ -1,6 +1,6 @@
-import type { Doc, Id } from "@/convex/_generated/dataModel";
+import type { Doc, Id } from "@convex/_generated/dataModel";
 
-// Type aliases for convenience — maps Convex document types to friendly names
+// Type aliases for convenience -- maps Convex document types to friendly names
 export type Profile = Doc<"profiles">;
 export type InitialAssessment = Doc<"initialAssessments">;
 export type CheckIn = Doc<"checkIns">;

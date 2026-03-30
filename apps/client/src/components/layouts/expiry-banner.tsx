@@ -1,7 +1,5 @@
-"use client";
-
-import { useTranslations } from "next-intl";
-import { Link } from "@fitfast/i18n/navigation";
+import { useTranslation } from "react-i18next";
+import { Link } from "@tanstack/react-router";
 import { AlertTriangle } from "lucide-react";
 
 interface ExpiryBannerProps {
@@ -9,7 +7,7 @@ interface ExpiryBannerProps {
 }
 
 export function ExpiryBanner({ daysUntilExpiry }: ExpiryBannerProps) {
-  const t = useTranslations("subscription.banner");
+  const { t } = useTranslation("translation", { keyPrefix: "subscription.banner" });
 
   const message =
     daysUntilExpiry <= 1 ? t("expiresInOne") : t("expiresIn", { days: daysUntilExpiry });
@@ -19,7 +17,7 @@ export function ExpiryBanner({ daysUntilExpiry }: ExpiryBannerProps) {
       <AlertTriangle className="h-4 w-4 shrink-0" />
       <span>{message}</span>
       <Link
-        href="/expired"
+        to="/expired"
         className="font-bold underline underline-offset-2 transition-colors hover:text-white/90"
       >
         {t("renewNow")}

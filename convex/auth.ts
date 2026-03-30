@@ -36,6 +36,8 @@ export const createAuth = (ctx: GenericCtx<DataModel>) => {
       clientAppUrl,
       adminAppUrl,
       // Dev origins for Vite client and admin apps
+      "http://localhost:3000",
+      "http://localhost:3001",
       "http://localhost:3010",
       "http://localhost:3011",
     ],

@@ -1,9 +1,6 @@
-"use client";
-
 import { useId } from "react";
-import { useTranslations } from "next-intl";
-import { Link, useRouter, usePathname } from "@fitfast/i18n/navigation";
-import { useParams } from "next/navigation";
+import { useTranslation } from "react-i18next";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { User, LogOut, Settings } from "lucide-react";
 import { NotificationDropdown } from "@/components/notification-dropdown";
 import {
@@ -13,29 +10,24 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@fitfast/ui/dropdown-menu";
-import { useAuthActions } from "@convex-dev/auth/react";
+import { authClient } from "@/lib/auth-client";
+import { LocaleSwitcher } from "@/components/layouts/locale-switcher";
 
 interface DesktopHeaderProps {
   userName?: string;
 }
 
 export function DesktopHeader({ userName }: DesktopHeaderProps) {
-  const t = useTranslations();
-  const router = useRouter();
-  const pathname = usePathname();
-  const params = useParams();
-  const currentLocale = params.locale as string;
-  const { signOut } = useAuthActions();
+  const { t } = useTranslation();
+  const navigate = useNavigate();
   const menuId = useId();
 
-  const switchLocale = () => {
-    const newLocale = currentLocale === "en" ? "ar" : "en";
-    router.replace(pathname, { locale: newLocale });
-  };
-
   const handleLogout = async () => {
-    await signOut();
-    router.replace("/login");
+    try {
+      await authClient.signOut();
+    } finally {
+      navigate({ to: "/login", search: { error: "", message: "" } });
+    }
   };
 
   return (
@@ -47,13 +39,7 @@ export function DesktopHeader({ userName }: DesktopHeaderProps) {
         {/* Right: Lang switch, notifications, user menu */}
         <div className="flex items-center gap-1.5">
           {/* Language Switcher */}
-          <button
-            className="text-muted-foreground hover:text-foreground flex h-11 w-11 items-center justify-center rounded-lg text-xs font-semibold transition-colors hover:bg-neutral-100"
-            onClick={switchLocale}
-            aria-label="Switch language"
-          >
-            {currentLocale === "en" ? "AR" : "EN"}
-          </button>
+          <LocaleSwitcher />
 
           {/* Notifications */}
           <NotificationDropdown />
@@ -72,7 +58,7 @@ export function DesktopHeader({ userName }: DesktopHeaderProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem asChild>
-                <Link href="/settings" className="flex cursor-pointer items-center gap-2">
+                <Link to="/settings" className="flex cursor-pointer items-center gap-2">
                   <Settings className="h-4 w-4" />
                   {t("nav.settings")}
                 </Link>

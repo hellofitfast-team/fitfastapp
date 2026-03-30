@@ -1,8 +1,6 @@
-"use client";
-
-import { useTranslations } from "next-intl";
-import { usePathname } from "next/navigation";
-import { Link } from "@fitfast/i18n/navigation";
+import { useTranslation } from "react-i18next";
+import { useLocation } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { CalendarCheck, TrendingUp, MessageSquare, HelpCircle, LucideIcon } from "lucide-react";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@fitfast/ui/drawer";
 import { cn } from "@fitfast/ui/cn";
@@ -26,9 +24,9 @@ interface MoreMenuProps {
 }
 
 export function MoreMenu({ open, onOpenChange }: MoreMenuProps) {
-  const t = useTranslations();
-  const pathname = usePathname();
-  const pathWithoutLocale = pathname.replace(/^\/(en|ar)/, "") || "/";
+  const { t } = useTranslation();
+  const location = useLocation();
+  const pathname = location.pathname;
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
@@ -40,13 +38,12 @@ export function MoreMenu({ open, onOpenChange }: MoreMenuProps) {
           <div className="grid grid-cols-2 gap-3">
             {MORE_ITEMS.map((item) => {
               const Icon = item.icon;
-              const isActive =
-                pathWithoutLocale === item.href || pathWithoutLocale.startsWith(item.href);
+              const isActive = pathname === item.href || pathname.startsWith(item.href);
 
               return (
                 <Link
                   key={item.href}
-                  href={item.href}
+                  to={item.href}
                   onClick={() => onOpenChange(false)}
                   className={cn(
                     "flex min-h-[60px] items-center gap-3 rounded-xl border p-4 transition-all active:scale-[0.97]",

@@ -1,8 +1,6 @@
-"use client";
-
 import { useConvexAuth, useQuery, useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import type { Id } from "@/convex/_generated/dataModel";
+import { api } from "@convex/_generated/api";
+import type { Id } from "@convex/_generated/dataModel";
 
 /** Single set entry for logging */
 interface SetEntry {
@@ -23,7 +21,56 @@ export function useExerciseLogs(date: string) {
   const { isAuthenticated } = useConvexAuth();
   const logs = useQuery(api.exerciseLogs.getWorkoutLog, isAuthenticated ? { date } : "skip");
 
-  const logSetMutation = useMutation(api.exerciseLogs.logExerciseSet);
+  const logSetMutation = useMutation(api.exerciseLogs.logExerciseSet).withOptimisticUpdate(
+    (localStore, args) => {
+      if (!isAuthenticated) return;
+      const current = localStore.getQuery(api.exerciseLogs.getWorkoutLog, { date });
+      if (current === undefined) return;
+
+      const existingLogIdx = current.findIndex((l) => l.exerciseIndex === args.exerciseIndex);
+
+      if (existingLogIdx >= 0) {
+        const updatedLogs = current.map((log, i) => {
+          if (i !== existingLogIdx) return log;
+          const existingSetIdx = log.sets.findIndex((s) => s.setIndex === args.set.setIndex);
+          let updatedSets;
+          if (existingSetIdx >= 0) {
+            updatedSets = log.sets.map((s, j) =>
+              j === existingSetIdx ? { ...s, ...args.set } : s,
+            );
+          } else {
+            updatedSets = [...log.sets, args.set];
+          }
+          // Mark exercise as completed if all sets are done
+          const allDone = updatedSets.filter((s) => s.completed).length >= args.totalSetsInExercise;
+          return {
+            ...log,
+            sets: updatedSets,
+            completedAt: allDone ? (log.completedAt ?? Date.now()) : undefined,
+          };
+        });
+        localStore.setQuery(api.exerciseLogs.getWorkoutLog, { date }, updatedLogs);
+      } else {
+        // New exercise log entry
+        const allDone = args.set.completed && args.totalSetsInExercise === 1;
+        localStore.setQuery(api.exerciseLogs.getWorkoutLog, { date }, [
+          ...current,
+          {
+            _id: `optimistic_log_${Date.now()}` as any,
+            _creationTime: Date.now(),
+            userId: "" as any,
+            workoutPlanId: args.workoutPlanId,
+            date,
+            exerciseIndex: args.exerciseIndex,
+            exerciseName: args.exerciseName,
+            sets: [args.set],
+            completedAt: allDone ? Date.now() : undefined,
+          },
+        ]);
+      }
+    },
+  );
+
   const logBulkMutation = useMutation(api.exerciseLogs.logExerciseBulk);
   const quickCompleteMutation = useMutation(api.exerciseLogs.quickCompleteWorkout);
 

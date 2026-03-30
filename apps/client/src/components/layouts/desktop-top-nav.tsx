@@ -1,10 +1,6 @@
-"use client";
-
 import { useId } from "react";
-import { useTranslations } from "next-intl";
-import { Link, useRouter, usePathname as useI18nPathname } from "@fitfast/i18n/navigation";
-import { usePathname } from "next/navigation";
-import { useParams } from "next/navigation";
+import { useTranslation } from "react-i18next";
+import { Link, useNavigate, useLocation } from "@tanstack/react-router";
 import {
   Home,
   UtensilsCrossed,
@@ -28,9 +24,9 @@ import {
   DropdownMenuTrigger,
 } from "@fitfast/ui/dropdown-menu";
 import { cn } from "@fitfast/ui/cn";
-import { useAuthActions } from "@convex-dev/auth/react";
-import Image from "next/image";
-import { useNavBadges } from "@/hooks/useNavBadges";
+import { authClient } from "@/lib/auth-client";
+import { LocaleSwitcher } from "@/components/layouts/locale-switcher";
+import { useNavBadges } from "@/hooks/use-nav-badges";
 
 interface NavItemConfig {
   href: string;
@@ -65,7 +61,7 @@ function NavLink({
 }) {
   return (
     <Link
-      href={href}
+      to={href}
       className={cn(
         "flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
         isActive
@@ -94,26 +90,20 @@ interface DesktopTopNavProps {
 }
 
 export function DesktopTopNav({ userName }: DesktopTopNavProps) {
-  const t = useTranslations();
-  const router = useRouter();
-  const pathname = usePathname(); // next/navigation — includes locale prefix (for active-state matching)
-  const i18nPathname = useI18nPathname(); // next-intl — locale-free (for locale switching)
-  const params = useParams();
-  const currentLocale = params.locale as string;
-  const { signOut } = useAuthActions();
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const location = useLocation();
   const { checkInDue, unreadTicketCount } = useNavBadges();
   const menuId = useId();
 
-  const pathWithoutLocale = pathname.replace(/^\/(en|ar)/, "") || "/";
-
-  const switchLocale = () => {
-    const newLocale = currentLocale === "en" ? "ar" : "en";
-    router.replace(i18nPathname, { locale: newLocale });
-  };
+  const pathname = location.pathname;
 
   const handleLogout = async () => {
-    await signOut();
-    router.replace("/login");
+    try {
+      await authClient.signOut();
+    } finally {
+      navigate({ to: "/login", search: { error: "", message: "" } });
+    }
   };
 
   const getBadgeForItem = (href: string): "dot" | number | undefined => {
@@ -126,15 +116,14 @@ export function DesktopTopNav({ userName }: DesktopTopNavProps) {
     <nav className="border-border bg-card hidden h-[var(--height-desktop-nav)] items-center justify-between border-b px-4 lg:flex">
       {/* Left: Logo + Nav Links */}
       <div className="flex items-center gap-1">
-        <Link href="/" className="me-4 flex items-center gap-2">
-          <Image src="/logo.svg" alt="FitFast" width={32} height={32} className="h-8 w-8" />
+        <Link to="/" className="me-4 flex items-center gap-2">
+          <img src="/logo.svg" alt="FitFast" width={32} height={32} className="h-8 w-8" />
           <span className="text-lg font-bold tracking-tight">FitFast</span>
         </Link>
 
         {NAV_ITEMS.map((item) => {
           const isActive =
-            pathWithoutLocale === item.href ||
-            (item.href !== "/" && pathWithoutLocale.startsWith(item.href));
+            pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
 
           return (
             <NavLink
@@ -152,13 +141,7 @@ export function DesktopTopNav({ userName }: DesktopTopNavProps) {
       {/* Right: Lang switch, notifications, user menu */}
       <div className="flex items-center gap-1.5">
         {/* Language Switcher */}
-        <button
-          className="text-muted-foreground hover:text-foreground flex h-11 w-11 items-center justify-center rounded-lg text-xs font-semibold transition-colors hover:bg-neutral-100"
-          onClick={switchLocale}
-          aria-label="Switch language"
-        >
-          {currentLocale === "en" ? "AR" : "EN"}
-        </button>
+        <LocaleSwitcher />
 
         {/* Notifications */}
         <button
@@ -182,7 +165,7 @@ export function DesktopTopNav({ userName }: DesktopTopNavProps) {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuItem asChild>
-              <Link href="/settings" className="flex cursor-pointer items-center gap-2">
+              <Link to="/settings" className="flex cursor-pointer items-center gap-2">
                 <Settings className="h-4 w-4" />
                 {t("nav.settings")}
               </Link>

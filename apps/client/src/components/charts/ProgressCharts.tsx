@@ -1,5 +1,3 @@
-"use client";
-
 import {
   LineChart,
   Line,
@@ -14,7 +12,7 @@ import {
 } from "recharts";
 import { useId } from "react";
 import { Weight, Ruler, Heart, Apple, Activity } from "lucide-react";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslation } from "react-i18next";
 import { SectionCard } from "@fitfast/ui/section-card";
 
 const CHART_COLORS = {
@@ -93,10 +91,10 @@ export default function ProgressCharts({
   bodyCompositionData,
   targetWeight,
 }: ProgressChartsProps) {
-  const t = useTranslations("progress");
-  const tCheckIn = useTranslations("checkIn");
-  const tUnits = useTranslations("units");
-  const locale = useLocale();
+  const { t, i18n } = useTranslation("translation", { keyPrefix: "progress" });
+  const { t: tCheckIn } = useTranslation("translation", { keyPrefix: "checkIn" });
+  const { t: tUnits } = useTranslation("translation", { keyPrefix: "units" });
+  const locale = i18n.language;
   const id = useId();
   const weightGradientId = `weightGradient-${id}`;
 
@@ -439,11 +437,11 @@ export default function ProgressCharts({
         </SectionCard>
       )}
 
-      {/* Adherence Stats — only show when real data exists */}
+      {/* Adherence Stats -- only show when real data exists */}
       {adherenceStats &&
         (adherenceStats.mealAdherence > 0 || adherenceStats.workoutAdherence > 0) && (
           <div className="grid gap-3 md:grid-cols-2">
-            {/* Meal adherence — nutrition green */}
+            {/* Meal adherence -- nutrition green */}
             <div className="border-border bg-card shadow-card hover:shadow-lifted overflow-hidden rounded-xl border transition-all hover:-translate-y-0.5">
               <div className="border-border bg-nutrition/8 border-b p-4">
                 <h3 className="text-nutrition text-sm font-semibold">{t("mealAdherence")}</h3>
@@ -466,7 +464,7 @@ export default function ProgressCharts({
               </div>
             </div>
 
-            {/* Workout adherence — fitness orange */}
+            {/* Workout adherence -- fitness orange */}
             <div className="border-border bg-card shadow-card hover:shadow-lifted overflow-hidden rounded-xl border transition-all hover:-translate-y-0.5">
               <div className="border-border bg-fitness/8 border-b p-4">
                 <h3 className="text-fitness text-sm font-semibold">{t("workoutAdherence")}</h3>

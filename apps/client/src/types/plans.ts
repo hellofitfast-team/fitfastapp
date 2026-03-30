@@ -68,7 +68,7 @@ export interface WorkoutDay {
   };
 }
 
-/** A rest day — no workout fields required */
+/** A rest day -- no workout fields required */
 export interface RestDay {
   restDay: true;
   workoutName?: string;

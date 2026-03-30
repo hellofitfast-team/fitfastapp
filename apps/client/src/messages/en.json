@@ -15,6 +15,7 @@
     "close": "Close",
     "search": "Search",
     "noResults": "No results found",
+    "day": "Day",
     "today": "Today",
     "backToToday": "Back to Today",
     "yesterday": "Yesterday",
@@ -167,17 +168,17 @@
     "startWorkout": "Start Workout",
     "logMeal": "Log Meal",
     "motivational": {
-      "0": "Keep pushing, {name}!",
-      "1": "You're on a roll, {name}!",
-      "2": "Stay consistent, {name}!",
-      "3": "Every rep counts, {name}!",
-      "4": "You've got this, {name}!",
-      "5": "Strong effort, {name}!",
-      "6": "One day at a time, {name}!"
+      "0": "Keep pushing, {{name}}!",
+      "1": "You're on a roll, {{name}}!",
+      "2": "Stay consistent, {{name}}!",
+      "3": "Every rep counts, {{name}}!",
+      "4": "You've got this, {{name}}!",
+      "5": "Strong effort, {{name}}!",
+      "6": "One day at a time, {{name}}!"
     },
     "coachMessageBanner": "Your coach responded to your ticket",
     "viewTicket": "View",
-    "planDay": "Day {current} of {total}",
+    "planDay": "Day {{current}} of {{total}}",
     "planProgress": "Plan Progress",
     "todaysStats": "Today's Stats",
     "todaysMeals": "Today's Meals",
@@ -185,9 +186,9 @@
     "noMealsToday": "No meals for today",
     "restDayOrNoWorkout": "Rest day or no workout today",
     "totalCalories": "Total Calories",
-    "mealCount": "{count} meals",
-    "exerciseCount": "{count} exercises",
-    "estDuration": "Est. {duration}"
+    "mealCount": "{{count}} meals",
+    "exerciseCount": "{{count}} exercises",
+    "estDuration": "Est. {{duration}}"
   },
   "meals": {
     "title": "Meal Plan",
@@ -221,10 +222,10 @@
     "coachNotes": "Coach Notes",
     "kcal": "KCAL",
     "aiGenerating": "AI is crafting your meal plan...",
-    "generatingDay": "Generating day {day}...",
+    "generatingDay": "Generating day {{day}}...",
     "generatingDayDescription": "Your meals for this day are being prepared. Other days are ready to browse.",
-    "calorieExplanation": "AI aims for around {calories} kcal/day ({protein}g protein) based on your profile and {trainingDays} training days/week. Actual meals may vary slightly.",
-    "dayLabel": "Day {n}",
+    "calorieExplanation": "AI aims for around {{calories}} kcal/day ({{protein}}g protein) based on your profile and {{trainingDays}} training days/week. Actual meals may vary slightly.",
+    "dayLabel": "Day {{n}}",
     "translating": "Translating your meal plan...",
     "translatingDescription": "Your plan will update automatically in a few seconds.",
     "translationFailed": "Translation failed",
@@ -272,14 +273,14 @@
     "swapExercise": "Swap Exercise",
     "swapping": "Swapping...",
     "restDayTitle": "Rest & Recovery",
-    "restDayRecovery": "Your muscles are recovering after {workout}",
+    "restDayRecovery": "Your muscles are recovering after {{workout}}",
     "nextWorkout": "Next workout",
     "exerciseGuide": "Exercise Guide",
-    "suggestedWeight": "Suggested: {weight}",
+    "suggestedWeight": "Suggested: {{weight}}",
     "cardioFinisher": "Cardio Finisher",
-    "cardioFinisherDuration": "{duration} min · {intensity}",
+    "cardioFinisherDuration": "{{duration}} min · {{intensity}}",
     "activeRecovery": "Active Recovery",
-    "supersetWith": "Superset with {exercise}",
+    "supersetWith": "Superset with {{exercise}}",
 
     "phaseFoundation": "Foundation",
     "phaseBuild": "Build",
@@ -290,7 +291,7 @@
   "checkIn": {
     "title": "Check-in",
     "subtitle": "Let us know how you're doing",
-    "stepOf": "Step {current} of {total}",
+    "stepOf": "Step {{current}} of {{total}}",
     "weight": "Current Weight",
     "measurements": "Body Measurements",
     "chest": "Chest",
@@ -318,11 +319,11 @@
     "addMorePhotos": "Add More Photos",
     "submitting": "Submitting...",
     "allIn": "All in",
-    "maxPhotos": "Optional, max {maxPhotos} photos, {maxFileMB}MB each",
-    "fileTypes": "PNG, JPG up to {maxFileMB}MB",
+    "maxPhotos": "Optional, max {{maxPhotos}} photos, {{maxFileMB}}MB each",
+    "fileTypes": "PNG, JPG up to {{maxFileMB}}MB",
     "uploaded": "uploaded",
     "invalidFile": "Invalid file",
-    "invalidFileDescription": "Please upload images under {maxFileMB}MB",
+    "invalidFileDescription": "Please upload images under {{maxFileMB}}MB",
     "authRequired": "Authentication required",
     "authRequiredDescription": "Please sign in to submit check-in",
     "submissionFailed": "Submission failed",
@@ -330,7 +331,7 @@
     "checkInLocked": "Check-in Locked",
     "nextCheckInAvailable": "Next Check-in Available",
     "days": "Days",
-    "lockReason": "Check-ins are scheduled every {days} days to ensure optimal progress tracking and AI plan generation. Use this time to follow your current meal and workout plans.",
+    "lockReason": "Check-ins are scheduled every {{days}} days to ensure optimal progress tracking and AI plan generation. Use this time to follow your current meal and workout plans.",
     "steps": {
       "weight": "Weight & Measurements",
       "fitness": "Fitness Metrics",
@@ -343,7 +344,7 @@
     "reviewDiet": "Diet",
     "dietNotes": "Diet Notes",
     "none": "None",
-    "photosUploaded": "{count} photos uploaded",
+    "photosUploaded": "{{count}} photos uploaded",
     "noPhotos": "No photos",
     "manualMeasurements": "Body Measurements",
     "recommended": "Recommended",
@@ -577,7 +578,7 @@
     "questions": {
       "checkInFrequency": {
         "q": "How often should I check in?",
-        "a": "You should submit a check-in every {days} days. This allows your coach to track your progress and adjust your meal and workout plans accordingly."
+        "a": "You should submit a check-in every {{days}} days. This allows your coach to track your progress and adjust your meal and workout plans accordingly."
       },
       "changeMeals": {
         "q": "Can I change meals in my meal plan?",
@@ -763,8 +764,8 @@
       "schedule": "Weekly Schedule Availability",
       "scheduleTitle": "Workout Days",
       "scheduleDesc": "Select the days you can train",
-      "scheduleHint": "Based on your goal and experience, we recommend {recommended} days per week (min {min}, max {max}). Recovery days are essential for progress.",
-      "daysSelected": "{count} days selected (min {min}, max {max})",
+      "scheduleHint": "Based on your goal and experience, we recommend {{recommended}} days per week (min {{min}}, max {{max}}). Recovery days are essential for progress.",
+      "daysSelected": "{{count}} days selected (min {{min}}, max {{max}})",
       "sessionDurationTitle": "Session Duration",
       "sessionDurationDesc": "How long can you train per session?",
       "sessionDurations": {
@@ -911,7 +912,7 @@
       "uploadInBodyDescription": "Upload a photo of your InBody assessment result sheet",
       "inBodyResult": "InBody result",
       "removeFile": "Remove file",
-      "fileTypes": "Image files only, max {maxFileMB}MB",
+      "fileTypes": "Image files only, max {{maxFileMB}}MB",
       "inBodyFileRequired": "Please upload your InBody result sheet",
       "completeAssessment": "Complete Assessment",
       "submitting": "Creating your plan...",
@@ -1024,7 +1025,7 @@
     "activityLevelRequired": "Please select your activity level",
     "experienceLevelRequired": "Please select your experience level",
     "workoutDaysRequired": "Please select at least one workout day",
-    "workoutDaysMin": "Please select at least {min} workout days for meaningful results",
+    "workoutDaysMin": "Please select at least {{min}} workout days for meaningful results",
     "sessionDurationRequired": "Please select your session duration",
     "equipmentRequired": "Please select your available equipment",
     "equipmentSpecify": "Please specify your equipment",
@@ -1042,14 +1043,14 @@
   },
   "subscription": {
     "banner": {
-      "expiresIn": "Your subscription expires in {days} days.",
+      "expiresIn": "Your subscription expires in {{days}} days.",
       "expiresInOne": "Your subscription expires tomorrow!",
       "renewNow": "Renew now"
     },
     "expired": {
       "title": "Subscription Expired",
       "subtitle": "Your subscription has ended",
-      "dataWarning": "Your data will be retained for {days} days. After that, it will be permanently deleted.",
+      "dataWarning": "Your data will be retained for {{days}} days. After that, it will be permanently deleted.",
       "renewButton": "Renew Subscription",
       "logoutButton": "Log Out",
       "contactCoach": "Contact your coach for help"
@@ -1157,9 +1158,9 @@
     "markAllRead": "Mark all as read",
     "empty": "No notifications yet",
     "justNow": "Just now",
-    "minutesAgo": "{count}m ago",
-    "hoursAgo": "{count}h ago",
-    "daysAgo": "{count}d ago"
+    "minutesAgo": "{{count}}m ago",
+    "hoursAgo": "{{count}}h ago",
+    "daysAgo": "{{count}}d ago"
   },
   "notificationErrors": {
     "not_supported": "Push notifications are not supported on this device",

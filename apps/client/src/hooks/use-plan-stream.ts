@@ -1,6 +1,6 @@
 import { useQuery } from "convex/react";
 import { useRef, useMemo } from "react";
-import { api } from "@/convex/_generated/api";
+import { api } from "@convex/_generated/api";
 import { createParseState, parseIncrementalDays, type ParseState } from "@/lib/streaming-parser";
 
 /**

@@ -1,12 +1,10 @@
-"use client";
-
-import { useQuery, useMutation } from "convex/react";
-import { useTranslations } from "next-intl";
-import { useRouter } from "@fitfast/i18n/navigation";
+import { useQuery, useMutation, useConvexAuth } from "convex/react";
+import { useTranslation } from "react-i18next";
+import { useNavigate } from "@tanstack/react-router";
 import { Bell, Utensils, Dumbbell, Megaphone, MessageSquare, CheckCheck } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@fitfast/ui/dropdown-menu";
-import { api } from "@/convex/_generated/api";
-import type { Id } from "@/convex/_generated/dataModel";
+import { api } from "@convex/_generated/api";
+import type { Id } from "@convex/_generated/dataModel";
 
 const TYPE_ICONS = {
   plan_ready: Dumbbell,
@@ -30,19 +28,53 @@ function getRelativeTime(
 }
 
 export function NotificationDropdown() {
-  const t = useTranslations("notificationCenter");
-  const router = useRouter();
-  const notifications = useQuery(api.inAppNotifications.getMyNotifications);
-  const unreadCount = useQuery(api.inAppNotifications.getUnreadCount);
-  const markAsRead = useMutation(api.inAppNotifications.markAsRead);
-  const markAllAsRead = useMutation(api.inAppNotifications.markAllAsRead);
+  const { t } = useTranslation("translation", { keyPrefix: "notificationCenter" });
+  const navigate = useNavigate();
+  const { isAuthenticated } = useConvexAuth();
+  const notifications = useQuery(
+    api.inAppNotifications.getMyNotifications,
+    isAuthenticated ? {} : "skip",
+  );
+  const unreadCount = useQuery(
+    api.inAppNotifications.getUnreadCount,
+    isAuthenticated ? {} : "skip",
+  );
+  const markAsRead = useMutation(api.inAppNotifications.markAsRead).withOptimisticUpdate(
+    (localStore, args) => {
+      const current = localStore.getQuery(api.inAppNotifications.getMyNotifications, {});
+      if (current !== undefined) {
+        localStore.setQuery(
+          api.inAppNotifications.getMyNotifications,
+          {},
+          current.map((n) => (n._id === args.notificationId ? { ...n, isRead: true } : n)),
+        );
+      }
+      const count = localStore.getQuery(api.inAppNotifications.getUnreadCount, {});
+      if (count !== undefined && count > 0) {
+        localStore.setQuery(api.inAppNotifications.getUnreadCount, {}, count - 1);
+      }
+    },
+  );
+  const markAllAsRead = useMutation(api.inAppNotifications.markAllAsRead).withOptimisticUpdate(
+    (localStore) => {
+      const current = localStore.getQuery(api.inAppNotifications.getMyNotifications, {});
+      if (current !== undefined) {
+        localStore.setQuery(
+          api.inAppNotifications.getMyNotifications,
+          {},
+          current.map((n) => ({ ...n, isRead: true })),
+        );
+      }
+      localStore.setQuery(api.inAppNotifications.getUnreadCount, {}, 0);
+    },
+  );
 
   const handleClick = async (id: Id<"inAppNotifications">, url?: string, isRead?: boolean) => {
     if (!isRead) {
       await markAsRead({ notificationId: id });
     }
     if (url) {
-      router.push(url as "/" | "/check-in");
+      navigate({ to: url });
     }
   };
 
@@ -89,7 +121,7 @@ export function NotificationDropdown() {
             </div>
           ) : (
             notifications.map((notif) => {
-              const Icon = TYPE_ICONS[notif.type] ?? Bell;
+              const Icon = TYPE_ICONS[notif.type as keyof typeof TYPE_ICONS] ?? Bell;
               return (
                 <button
                   key={notif._id}

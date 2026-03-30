@@ -1,7 +1,7 @@
 /**
  * Incremental JSON day-block parser for streaming meal plans.
  * Extracts complete "dayN": {...} blocks from partial JSON using brace-depth tracking.
- * O(new_chars) — only scans text since lastParsedOffset.
+ * O(new_chars) -- only scans text since lastParsedOffset.
  */
 
 export interface ParseState {
@@ -59,7 +59,7 @@ export function parseIncrementalDays(text: string, state: ParseState): void {
         state.parsedDays.set(dayKey, parsed);
         state.lastParsedOffset = Math.max(state.lastParsedOffset, i);
       } catch {
-        // Incomplete or malformed — skip, will retry on next chunk
+        // Incomplete or malformed -- skip, will retry on next chunk
       }
     }
   }

@@ -1,7 +1,5 @@
-"use client";
-
 import { useId } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslation } from "react-i18next";
 import { User, LogOut, Settings } from "lucide-react";
 import { NotificationDropdown } from "@/components/notification-dropdown";
 import {
@@ -11,10 +9,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@fitfast/ui/dropdown-menu";
-import { Link, useRouter, usePathname } from "@fitfast/i18n/navigation";
-import { useParams } from "next/navigation";
-import { useAuthActions } from "@convex-dev/auth/react";
-import { toDateLocale } from "@/lib/utils";
+import { Link, useNavigate, useLocation } from "@tanstack/react-router";
+import { authClient } from "@/lib/auth-client";
+import { toDateLocale } from "@fitfast/ui/format";
+import { LocaleSwitcher } from "@/components/layouts/locale-switcher";
 
 const PAGE_TITLES: Record<string, string> = {
   "/": "nav.dashboard",
@@ -42,33 +40,29 @@ function getInitials(name: string): string {
 }
 
 export function MobileHeader({ userName }: MobileHeaderProps) {
-  const t = useTranslations();
-  const router = useRouter();
-  const pathname = usePathname();
-  const params = useParams();
-  const currentLocale = params.locale as string;
+  const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const currentLocale = i18n.language;
 
-  const pathWithoutLocale = pathname.replace(/^\/(en|ar)/, "") || "/";
-  const isDashboard = pathWithoutLocale === "/";
-  const titleKey = PAGE_TITLES[pathWithoutLocale] || "nav.dashboard";
+  const pathname = location.pathname;
+  const isDashboard = pathname === "/";
+  const titleKey = PAGE_TITLES[pathname] || "nav.dashboard";
 
-  const { signOut } = useAuthActions();
   const menuId = useId();
 
-  const switchLocale = () => {
-    const newLocale = currentLocale === "en" ? "ar" : "en";
-    router.replace(pathname, { locale: newLocale });
-  };
-
   const handleLogout = async () => {
-    await signOut();
-    router.replace("/login");
+    try {
+      await authClient.signOut();
+    } finally {
+      navigate({ to: "/login", search: { error: "", message: "" } });
+    }
   };
 
   return (
     <header className="border-border bg-card sticky top-0 z-[var(--z-header)] border-b pt-[env(safe-area-inset-top)] lg:hidden">
       <div className="flex h-[var(--height-header)] items-center justify-between px-4">
-        {/* Left side — Greeting or Title */}
+        {/* Left side -- Greeting or Title */}
         {isDashboard && userName ? (
           <div className="flex items-center gap-3">
             <div className="bg-primary flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold text-white">
@@ -76,7 +70,7 @@ export function MobileHeader({ userName }: MobileHeaderProps) {
             </div>
             <div>
               <p className="text-sm font-bold">{userName.split(" ")[0]}</p>
-              <p className="text-muted-foreground text-xs" suppressHydrationWarning>
+              <p className="text-muted-foreground text-xs">
                 {new Date().toLocaleDateString(toDateLocale(currentLocale), {
                   weekday: "short",
                   month: "short",
@@ -92,16 +86,10 @@ export function MobileHeader({ userName }: MobileHeaderProps) {
           </div>
         )}
 
-        {/* Right side — Actions */}
+        {/* Right side -- Actions */}
         <div className="flex items-center gap-1.5">
           {/* Language Switcher */}
-          <button
-            className="text-muted-foreground hover:text-foreground flex h-11 w-11 items-center justify-center rounded-lg text-xs font-semibold transition-colors hover:bg-neutral-100"
-            onClick={switchLocale}
-            aria-label="Switch language"
-          >
-            {currentLocale === "en" ? "AR" : "EN"}
-          </button>
+          <LocaleSwitcher />
 
           {/* Notifications */}
           <NotificationDropdown />
@@ -124,7 +112,7 @@ export function MobileHeader({ userName }: MobileHeaderProps) {
                 </div>
               )}
               <DropdownMenuItem asChild>
-                <Link href="/settings" className="flex cursor-pointer items-center gap-2">
+                <Link to="/settings" className="flex cursor-pointer items-center gap-2">
                   <Settings className="h-4 w-4" />
                   {t("nav.settings")}
                 </Link>

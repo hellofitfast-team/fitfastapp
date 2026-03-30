@@ -1,8 +1,6 @@
-"use client";
-
-import { useTranslations } from "next-intl";
-import { usePathname } from "next/navigation";
-import { Link } from "@fitfast/i18n/navigation";
+import { useTranslation } from "react-i18next";
+import { useLocation } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import {
   Home,
   UtensilsCrossed,
@@ -12,8 +10,8 @@ import {
   LucideIcon,
 } from "lucide-react";
 import { cn } from "@fitfast/ui/cn";
-import { useKeyboardVisible } from "@/hooks/useKeyboardVisible";
-import { useNavBadges } from "@/hooks/useNavBadges";
+import { useKeyboardVisible } from "@/hooks/use-keyboard-visible";
+import { useNavBadges } from "@/hooks/use-nav-badges";
 
 interface NavItemConfig {
   href: string;
@@ -33,14 +31,13 @@ interface BottomNavProps {
 }
 
 export function BottomNav({ onMoreClick }: BottomNavProps) {
-  const t = useTranslations();
-  const pathname = usePathname();
+  const { t } = useTranslation();
+  const location = useLocation();
   const keyboardVisible = useKeyboardVisible();
   const { checkInDue, unreadTicketCount } = useNavBadges();
 
-  const pathWithoutLocale = pathname.replace(/^\/(en|ar)/, "") || "/";
-  const isCheckInActive =
-    pathWithoutLocale === "/check-in" || pathWithoutLocale.startsWith("/check-in/");
+  const pathname = location.pathname;
+  const isCheckInActive = pathname === "/check-in" || pathname.startsWith("/check-in/");
 
   if (keyboardVisible) return null;
 
@@ -50,13 +47,12 @@ export function BottomNav({ onMoreClick }: BottomNavProps) {
         {/* Left two items */}
         {NAV_ITEMS.slice(0, 2).map((item) => {
           const isActive =
-            pathWithoutLocale === item.href ||
-            (item.href !== "/" && pathWithoutLocale.startsWith(item.href));
+            pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
 
           return (
             <Link
               key={item.href}
-              href={item.href}
+              to={item.href}
               className="flex min-h-[44px] flex-1 flex-col items-center justify-center pt-2 pb-2"
             >
               <item.icon
@@ -78,7 +74,7 @@ export function BottomNav({ onMoreClick }: BottomNavProps) {
 
         {/* Center FAB -- Check-In */}
         <div className="flex flex-1 items-center justify-center">
-          <Link href="/check-in" className="relative -mt-7 flex flex-col items-center">
+          <Link to="/check-in" className="relative -mt-7 flex flex-col items-center">
             <div
               className={cn(
                 "relative flex h-14 w-14 items-center justify-center rounded-full text-white shadow-[0_4px_20px_rgba(255,69,0,0.4)] transition-transform active:scale-[0.97]",
@@ -90,27 +86,19 @@ export function BottomNav({ onMoreClick }: BottomNavProps) {
                 <span className="bg-error-500 border-card absolute end-0 top-0 h-3 w-3 rounded-full border-2" />
               )}
             </div>
-            <span
-              className={cn(
-                "mt-1 text-[10px] font-semibold",
-                isCheckInActive ? "text-primary" : "text-primary",
-              )}
-            >
-              {t("nav.checkIn")}
-            </span>
+            <span className="text-primary mt-1 text-[10px] font-semibold">{t("nav.checkIn")}</span>
           </Link>
         </div>
 
         {/* Right item */}
         {NAV_ITEMS.slice(2).map((item) => {
           const isActive =
-            pathWithoutLocale === item.href ||
-            (item.href !== "/" && pathWithoutLocale.startsWith(item.href));
+            pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
 
           return (
             <Link
               key={item.href}
-              href={item.href}
+              to={item.href}
               className="flex min-h-[44px] flex-1 flex-col items-center justify-center pt-2 pb-2"
             >
               <item.icon

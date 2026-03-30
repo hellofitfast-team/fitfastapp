@@ -1,10 +1,4 @@
-"use client";
-
-import { useState, useEffect, useRef } from "react";
-import { useLocale } from "next-intl";
-import { useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { useProfile } from "@/hooks/use-profile";
+import { useState } from "react";
 import { MobileHeader } from "./mobile-header";
 import { ClientSidebar } from "./client-sidebar";
 import { DesktopHeader } from "./desktop-header";
@@ -22,19 +16,6 @@ export function DashboardShell({ children, userName, daysUntilExpiry }: Dashboar
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const hasBanner = daysUntilExpiry !== null && daysUntilExpiry !== undefined;
 
-  // Sync profile.language with the detected/chosen UI locale
-  const locale = useLocale();
-  const { profile } = useProfile();
-  const updateProfile = useMutation(api.profiles.updateProfile);
-  const hasSynced = useRef(false);
-
-  useEffect(() => {
-    if (profile && profile.language !== locale && !hasSynced.current) {
-      hasSynced.current = true;
-      updateProfile({ language: locale as "en" | "ar" });
-    }
-  }, [locale, profile, updateProfile]);
-
   return (
     <div className="bg-background text-foreground selection:bg-primary selection:text-primary-foreground flex min-h-dvh lg:h-dvh">
       {/* Noise texture overlay */}
@@ -45,7 +26,7 @@ export function DashboardShell({ children, userName, daysUntilExpiry }: Dashboar
         }}
       />
 
-      {/* Sidebar — fixed & off-screen on mobile, in-flow on desktop (lg+) */}
+      {/* Sidebar -- fixed & off-screen on mobile, in-flow on desktop (lg+) */}
       <ClientSidebar />
 
       {/* Content column */}
@@ -59,7 +40,7 @@ export function DashboardShell({ children, userName, daysUntilExpiry }: Dashboar
         {/* Mobile header (below lg) */}
         <MobileHeader userName={userName} />
 
-        {/* Single main content — scrolls on desktop, mobile bottom-nav padding */}
+        {/* Single main content -- scrolls on desktop, mobile bottom-nav padding */}
         <main
           aria-label="Main content"
           className="relative z-0 flex-1 overflow-x-hidden overflow-y-auto px-3 pt-3 pb-[calc(var(--height-bottom-nav)+max(0.5rem,env(safe-area-inset-bottom))+0.5rem)] sm:p-4 sm:pb-[calc(var(--height-bottom-nav)+max(0.5rem,env(safe-area-inset-bottom))+0.75rem)] lg:p-8 lg:pb-8"

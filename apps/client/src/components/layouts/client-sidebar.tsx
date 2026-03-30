@@ -1,8 +1,6 @@
-"use client";
-
-import { useTranslations } from "next-intl";
-import { usePathname } from "next/navigation";
-import { Link } from "@fitfast/i18n/navigation";
+import { useTranslation } from "react-i18next";
+import { useLocation } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import {
   Home,
   UtensilsCrossed,
@@ -17,7 +15,7 @@ import {
   LucideIcon,
 } from "lucide-react";
 import { cn } from "@fitfast/ui/cn";
-import { useNavBadges } from "@/hooks/useNavBadges";
+import { useNavBadges } from "@/hooks/use-nav-badges";
 
 function NavItem({
   href,
@@ -37,7 +35,7 @@ function NavItem({
   return (
     <li>
       <Link
-        href={href}
+        to={href}
         onClick={onClick}
         className={cn(
           "mx-3 flex min-h-11 items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors",
@@ -77,9 +75,9 @@ interface ClientSidebarProps {
 }
 
 export function ClientSidebar({ isOpen = false, onClose }: ClientSidebarProps) {
-  const t = useTranslations();
-  const pathname = usePathname();
-  const pathWithoutLocale = pathname.replace(/^\/(en|ar)/, "") || "/";
+  const { t } = useTranslation();
+  const location = useLocation();
+  const pathname = location.pathname;
   const { checkInDue, unreadTicketCount } = useNavBadges();
 
   const getBadge = (href: string): "dot" | number | undefined => {
@@ -113,8 +111,7 @@ export function ClientSidebar({ isOpen = false, onClose }: ClientSidebarProps) {
       >
         {/* Logo area */}
         <div className="flex h-16 items-center justify-between px-5">
-          <Link href="/" className="group flex items-center gap-3">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
+          <Link to="/" className="group flex items-center gap-3">
             <img
               src="/logo.svg"
               alt="FitFast"
@@ -142,9 +139,7 @@ export function ClientSidebar({ isOpen = false, onClose }: ClientSidebarProps) {
           <ul className="space-y-1">
             {NAV_ITEMS.map((item) => {
               const isActive =
-                item.href === "/"
-                  ? pathWithoutLocale === "/"
-                  : pathWithoutLocale.startsWith(item.href);
+                item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
 
               return (
                 <NavItem
