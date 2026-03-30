@@ -1,7 +1,0 @@
-/* Font loaded via next/font in layout.tsx (Inter, Space Grotesk, Alexandria) */
-
-@import "tailwindcss";
-@import "../../../../packages/ui/styles.css";
-
-/* Scan shared UI package so Tailwind generates CSS for classes used in @fitfast/ui components */
-@source "../../../../packages/ui/src";

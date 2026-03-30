@@ -1,2 +1,3 @@
-.vercel
-convex/_generated/
+node_modules
+dist
+.env.local

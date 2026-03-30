@@ -7,4 +7,4 @@ import { components } from "./_generated/api";
  * checkIns.ts (starts workflows) can import it without creating a circular
  * type-inference chain through _generated/api.d.ts.
  */
-export const workflow = new WorkflowManager(components.workflow);
+export const workflow = new WorkflowManager(components.workflow as any);

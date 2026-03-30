@@ -10,7 +10,7 @@ import { DEFAULT_CHECK_IN_FREQUENCY_DAYS } from "./constants";
 async function resolveUserByEmail(
   ctx: { db: any },
   email: string,
-): Promise<{ userId: string; profileId: string } | null> {
+): Promise<{ userId: string; profileId: any } | null> {
   const profile = await ctx.db
     .query("profiles")
     .withIndex("by_email", (q: any) => q.eq("email", email.toLowerCase()))
@@ -358,7 +358,7 @@ export const insertAuthUser = internalMutation({
       updatedAt: Date.now(),
     });
 
-    return `Created ${isCoach ? "coach" : "client"}: ${email} (userId: ${userId})`;
+    return `Created profile for ${email} — use seedBetterAuth to create auth user`;
   },
 });
 

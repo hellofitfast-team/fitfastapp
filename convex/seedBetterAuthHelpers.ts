@@ -50,7 +50,6 @@ export const createApprovedSignup = internalMutation({
       phone: "",
       planTier: "monthly",
       status: "approved",
-      createdAt: Date.now(),
     });
 
     return { success: true, message: `Approved signup created for ${email}`, signupId };
