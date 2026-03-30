@@ -33,7 +33,7 @@ export function DesktopHeader({ userName }: DesktopHeaderProps) {
     try {
       await authClient.signOut();
     } finally {
-      navigate({ to: "/login" });
+      navigate({ to: "/login", search: { error: "", message: "" } });
     }
   };
 

@@ -7,6 +7,7 @@ import { z } from "zod";
 import { authClient } from "@/lib/auth-client";
 import { Lock, CheckCircle2, ArrowRight, Loader2 } from "lucide-react";
 import { cn } from "@fitfast/ui/cn";
+import { RouteErrorComponent } from "@/components/route-error";
 
 type SetPasswordFormData = {
   code: string;
@@ -19,6 +20,7 @@ export const Route = createFileRoute("/_auth/set-password")({
     email: (search.email as string) ?? "",
   }),
   component: SetPasswordPage,
+  errorComponent: ({ error, reset }) => <RouteErrorComponent error={error} reset={reset} />,
 });
 
 function SetPasswordPage() {

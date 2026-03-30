@@ -17,9 +17,11 @@ import { WorkoutTracking } from "@/components/tracking/workout-tracking";
 import { DailyReflection } from "@/components/tracking/daily-reflection";
 import { ExerciseHistoryDrawer } from "@/components/tracking/exercise-history-drawer";
 import { TrackingSkeleton } from "@/components/tracking/tracking-skeleton";
+import { RouteErrorComponent } from "@/components/route-error";
 
 export const Route = createFileRoute("/_dashboard/tracking")({
   component: TrackingPage,
+  errorComponent: ({ error, reset }) => <RouteErrorComponent error={error} reset={reset} />,
 });
 
 function TrackingPage() {

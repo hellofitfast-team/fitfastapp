@@ -18,6 +18,7 @@ import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { Skeleton } from "@fitfast/ui/skeleton";
 import { useForm } from "react-hook-form";
+import { RouteErrorComponent } from "@/components/route-error";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { cn } from "@fitfast/ui/cn";
@@ -27,6 +28,7 @@ import { authClient } from "@/lib/auth-client";
 
 export const Route = createFileRoute("/_dashboard/settings/")({
   component: SettingsPage,
+  errorComponent: ({ error, reset }) => <RouteErrorComponent error={error} reset={reset} />,
 });
 
 function SettingsCard({
@@ -175,7 +177,7 @@ function SettingsPage() {
 
   const handleSignOut = async () => {
     await authClient.signOut();
-    navigate({ to: "/login" });
+    navigate({ to: "/login", search: { error: "", message: "" } });
   };
 
   const handleChangePassword = async () => {

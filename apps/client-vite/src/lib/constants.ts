@@ -33,3 +33,10 @@ export const DATA_RETENTION_DAYS = 90; // also in convex/constants.ts
 
 // -- Check-in Defaults --
 export const DEFAULT_CHECK_IN_FREQUENCY_DAYS = 10;
+
+// -- PWA --
+export const SW_UPDATE_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
+
+// -- Router --
+export const ROUTER_PENDING_MS = 200;
+export const ROUTER_PENDING_MIN_MS = 100;

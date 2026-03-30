@@ -1,13 +1,15 @@
 import { createFileRoute, Outlet, redirect, useMatches } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
+import { RouteErrorComponent } from "@/components/route-error";
 
 export const Route = createFileRoute("/_onboarding")({
   beforeLoad: ({ context }) => {
     if (!context.auth.isAuthenticated && !context.auth.isLoading) {
-      throw redirect({ to: "/login" });
+      throw redirect({ to: "/login", search: { error: "", message: "" } });
     }
   },
   component: OnboardingLayout,
+  errorComponent: ({ error, reset }) => <RouteErrorComponent error={error} reset={reset} />,
 });
 
 function OnboardingLayout() {

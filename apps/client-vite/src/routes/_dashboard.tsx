@@ -5,11 +5,12 @@ import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { DashboardShell } from "@/components/layouts";
 import { authClient } from "@/lib/auth-client";
+import { RouteErrorComponent } from "@/components/route-error";
 
 export const Route = createFileRoute("/_dashboard")({
   beforeLoad: ({ context }) => {
     if (!context.auth.isAuthenticated && !context.auth.isLoading) {
-      throw redirect({ to: "/login" });
+      throw redirect({ to: "/login", search: { error: "", message: "" } });
     }
   },
   pendingComponent: () => (
@@ -18,6 +19,7 @@ export const Route = createFileRoute("/_dashboard")({
     </div>
   ),
   component: DashboardLayout,
+  errorComponent: ({ error, reset }) => <RouteErrorComponent error={error} reset={reset} />,
 });
 
 function DashboardLayout() {
@@ -40,12 +42,14 @@ function DashboardLayout() {
     if (profile === undefined || assessment === undefined) return; // Still loading
 
     if (profile === null) {
-      void authClient.signOut().finally(() => navigate({ to: "/login" }));
+      void authClient
+        .signOut()
+        .finally(() => navigate({ to: "/login", search: { error: "", message: "" } }));
       return;
     }
 
     if (profile.isCoach) {
-      navigate({ to: "/login" });
+      navigate({ to: "/login", search: { error: "", message: "" } });
       return;
     }
 
@@ -57,7 +61,7 @@ function DashboardLayout() {
         navigate({ to: "/expired" });
         return;
       case "inactive":
-        navigate({ to: "/login" });
+        navigate({ to: "/login", search: { error: "", message: "" } });
         return;
       case "active":
         if (!assessment) {
@@ -65,7 +69,7 @@ function DashboardLayout() {
         }
         break;
       default:
-        navigate({ to: "/login" });
+        navigate({ to: "/login", search: { error: "", message: "" } });
     }
   }, [profile, assessment, navigate]);
 

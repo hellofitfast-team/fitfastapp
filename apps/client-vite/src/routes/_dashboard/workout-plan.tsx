@@ -26,9 +26,11 @@ import { DayNavigator } from "@/components/plans/day-navigator";
 import { ExerciseGif } from "@/components/plans/exercise-gif";
 import { useExerciseMedia } from "@/hooks/use-exercise-media";
 import type { GeneratedWorkoutPlan } from "@/types/plans";
+import { RouteErrorComponent } from "@/components/route-error";
 
 export const Route = createFileRoute("/_dashboard/workout-plan")({
   component: WorkoutPlanPage,
+  errorComponent: ({ error, reset }) => <RouteErrorComponent error={error} reset={reset} />,
 });
 
 /** Normalized exercise used in the main workout section */

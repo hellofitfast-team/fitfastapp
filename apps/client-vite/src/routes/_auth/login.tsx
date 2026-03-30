@@ -8,6 +8,7 @@ import { useConvexAuth, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { authClient } from "@/lib/auth-client";
 import { Mail, Lock, ArrowRight, Zap, Loader2 } from "lucide-react";
+import { RouteErrorComponent } from "@/components/route-error";
 
 type LoginFormData = {
   email: string;
@@ -27,6 +28,7 @@ export const Route = createFileRoute("/_auth/login")({
     message: (search.message as string) ?? "",
   }),
   component: LoginPage,
+  errorComponent: ({ error, reset }) => <RouteErrorComponent error={error} reset={reset} />,
 });
 
 function LoginPage() {

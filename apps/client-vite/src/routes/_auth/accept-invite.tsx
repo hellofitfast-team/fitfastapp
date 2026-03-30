@@ -5,12 +5,14 @@ import { useConvexAuth, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { authClient } from "@/lib/auth-client";
 import { Lock, ArrowRight, Loader2, AlertCircle } from "lucide-react";
+import { RouteErrorComponent } from "@/components/route-error";
 
 export const Route = createFileRoute("/_auth/accept-invite")({
   validateSearch: (search: Record<string, unknown>) => ({
     token: (search.token as string) ?? "",
   }),
   component: AcceptInvitePage,
+  errorComponent: ({ error, reset }) => <RouteErrorComponent error={error} reset={reset} />,
 });
 
 function AcceptInvitePage() {
@@ -95,7 +97,11 @@ function AcceptInvitePage() {
             <AlertCircle className="text-error-500 h-5 w-5 shrink-0" />
             <p className="text-error-500 text-sm">{t("invalidInviteLink")}</p>
           </div>
-          <Link to="/login" className="text-primary text-sm hover:underline">
+          <Link
+            to="/login"
+            search={{ error: "", message: "" }}
+            className="text-primary text-sm hover:underline"
+          >
             {t("signIn")}
           </Link>
         </div>
@@ -129,7 +135,11 @@ function AcceptInvitePage() {
             <AlertCircle className="text-error-500 h-5 w-5 shrink-0" />
             <p className="text-error-500 text-sm">{t("inviteExpired")}</p>
           </div>
-          <Link to="/login" className="text-primary text-sm hover:underline">
+          <Link
+            to="/login"
+            search={{ error: "", message: "" }}
+            className="text-primary text-sm hover:underline"
+          >
             {t("signIn")}
           </Link>
         </div>
@@ -221,7 +231,11 @@ function AcceptInvitePage() {
         <div className="mt-6 text-center">
           <p className="text-muted-foreground text-xs">
             {t("signIn")}&nbsp;
-            <Link to="/login" className="text-primary hover:underline">
+            <Link
+              to="/login"
+              search={{ error: "", message: "" }}
+              className="text-primary hover:underline"
+            >
               {t("login")}
             </Link>
           </p>

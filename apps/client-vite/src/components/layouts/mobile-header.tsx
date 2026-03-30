@@ -61,7 +61,7 @@ export function MobileHeader({ userName }: MobileHeaderProps) {
     try {
       await authClient.signOut();
     } finally {
-      navigate({ to: "/login" });
+      navigate({ to: "/login", search: { error: "", message: "" } });
     }
   };
 

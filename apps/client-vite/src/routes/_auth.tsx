@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet, redirect, useMatches } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { Loader2, Globe } from "lucide-react";
+import { RouteErrorComponent } from "@/components/route-error";
 
 export const Route = createFileRoute("/_auth")({
   beforeLoad: ({ context }) => {
@@ -17,6 +18,7 @@ export const Route = createFileRoute("/_auth")({
     </div>
   ),
   component: AuthLayout,
+  errorComponent: ({ error, reset }) => <RouteErrorComponent error={error} reset={reset} />,
 });
 
 function LocaleSwitcher() {

@@ -9,9 +9,11 @@ import { Skeleton } from "@fitfast/ui/skeleton";
 import { cn } from "@fitfast/ui/cn";
 import { formatTime, toDateLocale } from "@fitfast/ui/format";
 import { toast } from "@fitfast/ui/use-toast";
+import { RouteErrorComponent } from "@/components/route-error";
 
 export const Route = createFileRoute("/_dashboard/tickets/$id")({
   component: TicketDetailPage,
+  errorComponent: ({ error, reset }) => <RouteErrorComponent error={error} reset={reset} />,
 });
 
 interface TicketMessage {

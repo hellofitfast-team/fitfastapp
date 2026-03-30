@@ -10,9 +10,11 @@ import { ScheduleSection } from "@/components/settings-assessment/schedule-secti
 import { DietarySection } from "@/components/settings-assessment/dietary-section";
 import { MeasurementsSection } from "@/components/settings-assessment/measurements-section";
 import { MedicalSection } from "@/components/settings-assessment/medical-section";
+import { RouteErrorComponent } from "@/components/route-error";
 
 export const Route = createFileRoute("/_dashboard/settings/assessment")({
   component: AssessmentEditPage,
+  errorComponent: ({ error, reset }) => <RouteErrorComponent error={error} reset={reset} />,
 });
 
 function AssessmentEditPage() {

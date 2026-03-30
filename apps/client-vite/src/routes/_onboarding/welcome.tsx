@@ -3,9 +3,11 @@ import { useTranslation } from "react-i18next";
 import { Dumbbell, UtensilsCrossed, TrendingUp, MessageSquare, ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@fitfast/ui/card";
 import { Button } from "@fitfast/ui/button";
+import { RouteErrorComponent } from "@/components/route-error";
 
 export const Route = createFileRoute("/_onboarding/welcome")({
   component: WelcomePage,
+  errorComponent: ({ error, reset }) => <RouteErrorComponent error={error} reset={reset} />,
 });
 
 function WelcomePage() {

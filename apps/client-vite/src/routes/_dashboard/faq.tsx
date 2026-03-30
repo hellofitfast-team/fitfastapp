@@ -8,9 +8,11 @@ import { toLocalDigits } from "@fitfast/ui/format";
 import { Skeleton } from "@fitfast/ui/skeleton";
 import { cn } from "@fitfast/ui/cn";
 import { DEFAULT_CHECK_IN_FREQUENCY_DAYS } from "@/lib/constants";
+import { RouteErrorComponent } from "@/components/route-error";
 
 export const Route = createFileRoute("/_dashboard/faq")({
   component: FAQPage,
+  errorComponent: ({ error, reset }) => <RouteErrorComponent error={error} reset={reset} />,
 });
 
 const faqKeys = [

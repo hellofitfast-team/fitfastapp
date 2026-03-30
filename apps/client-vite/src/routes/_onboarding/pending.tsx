@@ -7,9 +7,11 @@ import { useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { Card, CardContent } from "@fitfast/ui/card";
 import { cn } from "@fitfast/ui/cn";
+import { RouteErrorComponent } from "@/components/route-error";
 
 export const Route = createFileRoute("/_onboarding/pending")({
   component: PendingPage,
+  errorComponent: ({ error, reset }) => <RouteErrorComponent error={error} reset={reset} />,
 });
 
 function PendingPage() {
@@ -24,7 +26,7 @@ function PendingPage() {
     if (profile.status === "active") {
       navigate({ to: "/initial-assessment" });
     } else if (profile.status === "inactive" || profile.status === "expired") {
-      navigate({ to: "/login", search: { error: "rejected" } });
+      navigate({ to: "/login", search: { error: "rejected", message: "" } });
     }
   }, [profile, navigate]);
 

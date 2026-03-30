@@ -13,6 +13,7 @@ import { WeekComparison } from "@/components/progress/week-comparison";
 import { ProgressSkeleton } from "@/components/progress/progress-skeleton";
 import { formatDateShort, formatDate } from "@fitfast/ui/format";
 import { cn } from "@fitfast/ui/cn";
+import { RouteErrorComponent } from "@/components/route-error";
 
 const ProgressCharts = lazy(() => import("@/components/charts/ProgressCharts"));
 
@@ -33,6 +34,7 @@ const ProgressChartsLoading = () => (
 
 export const Route = createFileRoute("/_dashboard/progress")({
   component: ProgressPage,
+  errorComponent: ({ error, reset }) => <RouteErrorComponent error={error} reset={reset} />,
 });
 
 type DateRange = "30" | "90" | "all";

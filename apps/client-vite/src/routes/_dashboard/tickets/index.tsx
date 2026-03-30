@@ -18,6 +18,7 @@ import type { Id } from "@convex/_generated/dataModel";
 import { toast } from "@fitfast/ui/use-toast";
 import { EmptyState } from "@fitfast/ui/empty-state";
 import { SkeletonTicketItem } from "@fitfast/ui/skeleton";
+import { RouteErrorComponent } from "@/components/route-error";
 import { Input } from "@fitfast/ui/input";
 import { Textarea } from "@fitfast/ui/textarea";
 import { FormField } from "@fitfast/ui/form-field";
@@ -30,6 +31,7 @@ import { toLocalDigits, toDateLocale } from "@fitfast/ui/format";
 
 export const Route = createFileRoute("/_dashboard/tickets/")({
   component: TicketsPage,
+  errorComponent: ({ error, reset }) => <RouteErrorComponent error={error} reset={reset} />,
 });
 
 function createTicketSchema(t: (key: string) => string) {

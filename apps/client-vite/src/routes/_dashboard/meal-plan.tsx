@@ -13,9 +13,11 @@ import { useAction, useQuery, useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { Button } from "@fitfast/ui/button";
 import { ArrowLeftRight } from "lucide-react";
+import { RouteErrorComponent } from "@/components/route-error";
 
 export const Route = createFileRoute("/_dashboard/meal-plan")({
   component: MealPlanPage,
+  errorComponent: ({ error, reset }) => <RouteErrorComponent error={error} reset={reset} />,
 });
 
 /** Normalized meal with flat macros (handles both old nested and new flat formats) */

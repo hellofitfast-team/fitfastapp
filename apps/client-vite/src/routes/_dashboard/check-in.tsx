@@ -13,6 +13,7 @@ import { toast } from "@fitfast/ui/use-toast";
 import { Weight, Dumbbell, UtensilsCrossed, Camera, ClipboardCheck, Loader2 } from "lucide-react";
 import * as Sentry from "@sentry/react";
 import { MAX_UPLOAD_SIZE_BYTES, MAX_UPLOAD_SIZE_MB } from "@/lib/constants";
+import { RouteErrorComponent } from "@/components/route-error";
 import {
   createCheckInSchema,
   type CheckInFormData,
@@ -30,6 +31,7 @@ import { StepNavigation } from "@/components/check-in/step-navigation";
 
 export const Route = createFileRoute("/_dashboard/check-in")({
   component: CheckInPage,
+  errorComponent: ({ error, reset }) => <RouteErrorComponent error={error} reset={reset} />,
 });
 
 const STEP_ICONS = [Weight, Dumbbell, UtensilsCrossed, Camera, ClipboardCheck];

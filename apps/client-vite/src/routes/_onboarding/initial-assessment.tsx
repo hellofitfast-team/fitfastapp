@@ -15,6 +15,7 @@ import { getDayLimits } from "@/components/assessment/constants";
 import { DietarySection } from "@/components/assessment/dietary-section";
 import { MedicalSection } from "@/components/assessment/medical-section";
 import { MeasurementsSection } from "@/components/assessment/measurements-section";
+import { RouteErrorComponent } from "@/components/route-error";
 import {
   FemaleHealthSection,
   type FemaleHealthData,
@@ -22,6 +23,7 @@ import {
 
 export const Route = createFileRoute("/_onboarding/initial-assessment")({
   component: InitialAssessmentPage,
+  errorComponent: ({ error, reset }) => <RouteErrorComponent error={error} reset={reset} />,
 });
 
 const TOTAL_STEPS = 6;

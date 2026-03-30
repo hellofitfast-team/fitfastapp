@@ -109,7 +109,7 @@ export function DesktopTopNav({ userName }: DesktopTopNavProps) {
     try {
       await authClient.signOut();
     } finally {
-      navigate({ to: "/login" });
+      navigate({ to: "/login", search: { error: "", message: "" } });
     }
   };
 

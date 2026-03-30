@@ -18,12 +18,14 @@ import { useDashboardData } from "@/hooks/use-dashboard";
 import { WidgetCard } from "@fitfast/ui/widget-card";
 import { EmptyState } from "@fitfast/ui/empty-state";
 import { cn } from "@fitfast/ui/cn";
+import { RouteErrorComponent } from "@/components/route-error";
 import { formatDateWithWeekday } from "@/lib/utils";
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { GeneratedMealPlan, GeneratedWorkoutPlan } from "@/types/plans";
 
 export const Route = createFileRoute("/_dashboard/")({
   component: DashboardPage,
+  errorComponent: ({ error, reset }) => <RouteErrorComponent error={error} reset={reset} />,
 });
 
 /** Simplified meal used in the dashboard summary cards */
