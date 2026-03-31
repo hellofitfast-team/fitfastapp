@@ -53,12 +53,12 @@ export default function (data) {
   sleep(0.5);
 
   // 2. Meal plan
-  convexQuery("mealPlans:getCurrentMealPlan", {}, token);
+  convexQuery("mealPlans:getCurrentPlan", {}, token);
 
   sleep(0.5);
 
   // 3. Workout plan
-  convexQuery("workoutPlans:getCurrentWorkoutPlan", {}, token);
+  convexQuery("workoutPlans:getCurrentPlan", {}, token);
 
   // Think time between iterations (simulates user browsing)
   sleep(Math.random() * 2 + 1);

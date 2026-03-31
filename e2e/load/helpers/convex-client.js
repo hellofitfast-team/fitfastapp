@@ -26,7 +26,12 @@ function getBaseUrl() {
 
 /**
  * Build common headers for Convex HTTP requests.
- * @param {string} [token] - Optional auth token for authenticated requests.
+ *
+ * BetterAuth + crossDomain plugin: the session token from sign-in must be
+ * sent as a cookie. Convex's auth component reads it from the cookie header,
+ * NOT from Authorization: Bearer.
+ *
+ * @param {string} [token] - Optional BetterAuth session token.
  */
 function buildHeaders(token) {
   const headers = {

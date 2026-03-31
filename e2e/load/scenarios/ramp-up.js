@@ -73,7 +73,7 @@ export default function (data) {
     sleep(0.3);
 
     // Meal plan read
-    convexQuery("mealPlans:getCurrentMealPlan", {}, token);
+    convexQuery("mealPlans:getCurrentPlan", {}, token);
   }
 
   // Variable think time

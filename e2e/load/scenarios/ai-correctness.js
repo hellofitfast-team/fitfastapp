@@ -66,14 +66,14 @@ export default function (data) {
     sleep(pollInterval);
 
     if (!mealPlanFound) {
-      const mealPlan = convexQuery("mealPlans:getCurrentMealPlan", {}, token);
+      const mealPlan = convexQuery("mealPlans:getCurrentPlan", {}, token);
       if (mealPlan && mealPlan.value) {
         mealPlanFound = true;
       }
     }
 
     if (!workoutPlanFound) {
-      const workoutPlan = convexQuery("workoutPlans:getCurrentWorkoutPlan", {}, token);
+      const workoutPlan = convexQuery("workoutPlans:getCurrentPlan", {}, token);
       if (workoutPlan && workoutPlan.value) {
         workoutPlanFound = true;
       }
