@@ -558,4 +558,17 @@ export default defineSchema({
   })
     .index("by_token", ["token"])
     .index("by_email", ["email"]),
+
+  auditLog: defineTable({
+    actorUserId: v.string(),
+    actorEmail: v.optional(v.string()),
+    action: v.string(),
+    resourceType: v.string(),
+    resourceId: v.optional(v.string()),
+    details: v.optional(v.any()),
+    timestamp: v.number(),
+  })
+    .index("by_timestamp", ["timestamp"])
+    .index("by_actorUserId", ["actorUserId"])
+    .index("by_action", ["action"]),
 });

@@ -5,6 +5,7 @@ import { internal } from "./_generated/api";
 import { getAuthUserId } from "./auth";
 import { activeClientsCount } from "./adminStats";
 import { deleteAuthRecords } from "./helpers";
+import { logAuditEvent } from "./auditLog";
 
 export const getMyProfile = query({
   args: {},
@@ -143,6 +144,13 @@ export const removeTeamMember = mutation({
     for (const inv of allInvites.values()) {
       await ctx.db.delete(inv._id);
     }
+
+    await logAuditEvent(ctx, {
+      actorUserId: userId,
+      action: "remove_team_member",
+      resourceType: "profile",
+      details: { email, hadProfile: !!target },
+    });
 
     return `Removed ${email} from the team`;
   },

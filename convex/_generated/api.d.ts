@@ -63,6 +63,8 @@ import type * as seedBetterAuth from "../seedBetterAuth.js";
 import type * as seedBetterAuthHelpers from "../seedBetterAuthHelpers.js";
 import type * as seedCardioAndAdvanced from "../seedCardioAndAdvanced.js";
 import type * as seedExercises from "../seedExercises.js";
+import type * as seedLoadTest from "../seedLoadTest.js";
+import type * as seedLoadTestHelpers from "../seedLoadTestHelpers.js";
 import type * as seedPregnancySafety from "../seedPregnancySafety.js";
 import type * as seedResistanceBand from "../seedResistanceBand.js";
 import type * as staticCrons from "../staticCrons.js";
@@ -142,6 +144,8 @@ declare const fullApi: ApiFromModules<{
   seedBetterAuthHelpers: typeof seedBetterAuthHelpers;
   seedCardioAndAdvanced: typeof seedCardioAndAdvanced;
   seedExercises: typeof seedExercises;
+  seedLoadTest: typeof seedLoadTest;
+  seedLoadTestHelpers: typeof seedLoadTestHelpers;
   seedPregnancySafety: typeof seedPregnancySafety;
   seedResistanceBand: typeof seedResistanceBand;
   staticCrons: typeof staticCrons;

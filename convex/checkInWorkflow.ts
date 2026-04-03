@@ -6,6 +6,44 @@ import { workflow } from "./workflowManager";
 import { DEFAULT_CHECK_IN_FREQUENCY_DAYS } from "./constants";
 import { inBodyDataValidator } from "./checkIns";
 
+/**
+ * Notify all coaches when a client's plan generation fails.
+ * Creates an in-app notification for each coach so they can investigate.
+ */
+export const notifyCoachesOfFailure = internalMutation({
+  args: {
+    userId: v.string(),
+    checkInId: v.id("checkIns"),
+    error: v.string(),
+  },
+  handler: async (ctx, { userId, checkInId, error }) => {
+    // Look up the client's name for a meaningful notification
+    const clientProfile = await ctx.db
+      .query("profiles")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .unique();
+    const clientName = clientProfile?.fullName ?? clientProfile?.email ?? userId;
+
+    // Find all coaches
+    const coaches = await ctx.db
+      .query("profiles")
+      .withIndex("by_isCoach", (q) => q.eq("isCoach", true))
+      .collect();
+
+    const now = Date.now();
+    for (const coach of coaches) {
+      await ctx.db.insert("inAppNotifications", {
+        userId: coach.userId,
+        type: "individual" as const,
+        title: "Plan Generation Failed",
+        body: `Plan generation failed for ${clientName} (check-in: ${checkInId}): ${error.slice(0, 150)}`,
+        isRead: false,
+        createdAt: now,
+      });
+    }
+  },
+});
+
 /** Internal mutation: patches InBody OCR data onto a check-in record. */
 export const patchInBodyData = internalMutation({
   args: {
@@ -106,65 +144,77 @@ export const checkInAndGeneratePlans = workflow.define({
     // Use specific meal duration if provided, otherwise fall back to legacy planDuration
     const effectiveMealDuration = mealPlanDuration ?? planDuration;
 
-    // Step 1: Enqueue meal plan generation via Workpool
-    const mealWorkId = await step.runMutation(internal.workpoolManager.enqueueMealPlan, {
-      userId,
-      checkInId,
-      language,
-      planDuration: effectiveMealDuration,
-    });
-
-    // Step 2: Poll workpool until meal plan finishes
-    // 180 polls × 1.5s delay = ~4.5 min — covers AI timeout (4 min) + buffer
-    const MAX_POLL_ATTEMPTS = 180;
-    let mealDone = false;
-    let pollCount = 0;
-
-    while (!mealDone) {
-      pollCount++;
-      if (pollCount > MAX_POLL_ATTEMPTS) {
-        console.error(
-          `[Workflow] Meal plan generation timed out (checkInId: ${checkInId}, userId: ${userId}, workId: ${mealWorkId})`,
-        );
-        throw new Error(`Meal plan generation timed out after ${MAX_POLL_ATTEMPTS} poll attempts`);
-      }
-
-      const mealStatus = await step.runQuery(
-        internal.workpoolManager.getWorkStatus,
-        { workId: mealWorkId },
-        pollCount === 1 ? undefined : { runAfter: 1500 },
-      );
-      if (mealStatus === null) {
-        throw new Error(`Meal plan workpool entry lost (workId: ${mealWorkId})`);
-      }
-      if (mealStatus.state === "finished") {
-        mealDone = true;
-      }
-    }
-
-    // Step 3: Look up generated meal plan by checkInId
-    const mealPlanId = await step.runQuery(internal.mealPlans.getIdByCheckIn, {
-      userId,
-      checkInId,
-    });
-
-    if (!mealPlanId) {
-      throw new Error(`Meal plan not found after generation (checkInId: ${checkInId})`);
-    }
-
-    // Step 4: Notify user via push with email fallback (best-effort)
     try {
-      await step.runAction(internal.notifications.sendPlanReadyNotification, {
+      // Step 1: Enqueue meal plan generation via Workpool
+      const mealWorkId = await step.runMutation(internal.workpoolManager.enqueueMealPlan, {
         userId,
-        mealPlanId,
+        checkInId,
+        language,
+        planDuration: effectiveMealDuration,
       });
-    } catch (err) {
-      console.error(
-        `[Workflow] Notification failed for user ${userId}. Plan is saved — user will see it in-app.`,
-        err,
-      );
-    }
 
-    return { checkInId, mealPlanId };
+      // Step 2: Poll workpool until meal plan finishes
+      // 180 polls × 1.5s delay = ~4.5 min — covers AI timeout (4 min) + buffer
+      const MAX_POLL_ATTEMPTS = 180;
+      let mealDone = false;
+      let pollCount = 0;
+
+      while (!mealDone) {
+        pollCount++;
+        if (pollCount > MAX_POLL_ATTEMPTS) {
+          console.error(
+            `[Workflow] Meal plan generation timed out (checkInId: ${checkInId}, userId: ${userId}, workId: ${mealWorkId})`,
+          );
+          throw new Error(
+            `Meal plan generation timed out after ${MAX_POLL_ATTEMPTS} poll attempts`,
+          );
+        }
+
+        const mealStatus = await step.runQuery(
+          internal.workpoolManager.getWorkStatus,
+          { workId: mealWorkId },
+          pollCount === 1 ? undefined : { runAfter: 1500 },
+        );
+        if (mealStatus === null) {
+          throw new Error(`Meal plan workpool entry lost (workId: ${mealWorkId})`);
+        }
+        if (mealStatus.state === "finished") {
+          mealDone = true;
+        }
+      }
+
+      // Step 3: Look up generated meal plan by checkInId
+      const mealPlanId = await step.runQuery(internal.mealPlans.getIdByCheckIn, {
+        userId,
+        checkInId,
+      });
+
+      if (!mealPlanId) {
+        throw new Error(`Meal plan not found after generation (checkInId: ${checkInId})`);
+      }
+
+      // Step 4: Notify user via push with email fallback (best-effort)
+      try {
+        await step.runAction(internal.notifications.sendPlanReadyNotification, {
+          userId,
+          mealPlanId,
+        });
+      } catch (err) {
+        console.error(
+          `[Workflow] Notification failed for user ${userId}. Plan is saved — user will see it in-app.`,
+          err,
+        );
+      }
+
+      return { checkInId, mealPlanId };
+    } catch (err) {
+      // Notify coaches of the failure so they can investigate
+      await step.runMutation(internal.checkInWorkflow.notifyCoachesOfFailure, {
+        userId,
+        checkInId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      throw err; // Re-throw so the workflow is marked as failed
+    }
   },
 });

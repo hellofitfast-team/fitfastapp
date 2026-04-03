@@ -7,6 +7,7 @@ import {
   MIN_PLAN_DURATION_DAYS,
   MAX_PLAN_DURATION_DAYS,
 } from "./constants";
+import { logAuditEvent } from "./auditLog";
 
 const PUBLIC_CONFIG_KEYS = new Set([
   "pricing",
@@ -149,6 +150,13 @@ export const updatePlans = mutation({
         updatedAt: Date.now(),
       });
     }
+
+    await logAuditEvent(ctx, {
+      actorUserId: userId,
+      action: "update_plans",
+      resourceType: "systemConfig",
+      details: { planCount: plans.length },
+    });
   },
 });
 
@@ -210,6 +218,13 @@ export const updatePaymentMethods = mutation({
         updatedAt: Date.now(),
       });
     }
+
+    await logAuditEvent(ctx, {
+      actorUserId: userId,
+      action: "update_payment_methods",
+      resourceType: "systemConfig",
+      details: { methodCount: paymentMethods.length },
+    });
   },
 });
 
@@ -256,6 +271,8 @@ export const setConfig = mutation({
       .withIndex("by_key", (q) => q.eq("key", key))
       .unique();
 
+    const oldValue = existing?.value;
+
     if (existing) {
       await ctx.db.patch(existing._id, { value: storedValue, updatedAt: Date.now() });
     } else {
@@ -265,6 +282,13 @@ export const setConfig = mutation({
         updatedAt: Date.now(),
       });
     }
+
+    await logAuditEvent(ctx, {
+      actorUserId: userId,
+      action: "set_config",
+      resourceType: "systemConfig",
+      details: { key, oldValue, newValue: storedValue },
+    });
   },
 });
 

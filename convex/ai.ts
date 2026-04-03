@@ -5,6 +5,7 @@ import { action, internalAction, type ActionCtx } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 import { getAuthUserId } from "./auth";
+import { validateEnv } from "./envValidation";
 import { type ClientContext, formatContextForPrompt } from "./clientContext";
 import { calculateNutritionTargets, type NutritionTargets } from "./nutritionEngine";
 import { selectWorkoutSplit, type WorkoutSplit } from "./workoutSplitEngine";
@@ -391,6 +392,8 @@ async function generateMealPlanHandler(
     planDuration: number;
   },
 ): Promise<Id<"mealPlans">> {
+  validateEnv();
+
   // Defense in depth: ensure planDuration is always at least 1
   const safeDuration = Math.max(planDuration, 1);
 

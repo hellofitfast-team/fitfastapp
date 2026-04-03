@@ -18,6 +18,9 @@ function escapeHtml(str: string): string {
 // Email sending helper
 // ---------------------------------------------------------------------------
 
+const EMAIL_MAX_RETRIES = 3;
+const EMAIL_INITIAL_BACKOFF_MS = 2000;
+
 async function sendEmail(to: string, subject: string, html: string): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.RESEND_FROM_EMAIL ?? "FitFast <noreply@fitfast.app>";
@@ -30,8 +33,27 @@ async function sendEmail(to: string, subject: string, html: string): Promise<voi
 
   const { Resend } = await import("resend");
   const resend = new Resend(apiKey);
-  const { error } = await resend.emails.send({ from, to, subject, html });
-  if (error) throw new Error(`Resend error: ${error.message}`);
+
+  for (let attempt = 0; attempt < EMAIL_MAX_RETRIES; attempt++) {
+    const { error } = await resend.emails.send({ from, to, subject, html });
+    if (!error) return;
+
+    // Don't retry on permanent failures (invalid email, auth error)
+    const msg = error.message?.toLowerCase() ?? "";
+    if (msg.includes("invalid") || msg.includes("not found") || msg.includes("unauthorized")) {
+      throw new Error(`Resend error (permanent): ${error.message}`);
+    }
+
+    if (attempt < EMAIL_MAX_RETRIES - 1) {
+      const backoff = EMAIL_INITIAL_BACKOFF_MS * Math.pow(2, attempt);
+      console.warn(
+        `[Email] Attempt ${attempt + 1} failed, retrying in ${backoff}ms: ${error.message}`,
+      );
+      await new Promise((r) => setTimeout(r, backoff));
+    } else {
+      throw new Error(`Resend error after ${EMAIL_MAX_RETRIES} attempts: ${error.message}`);
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------

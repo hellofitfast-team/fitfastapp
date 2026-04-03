@@ -5,6 +5,7 @@ import { getAuthUserId } from "./auth";
 import { activeClientsCount, pendingSignupsCount } from "./adminStats";
 import { rateLimiter } from "./rateLimiter";
 import { deleteAuthRecordsByEmail } from "./helpers";
+import { logAuditEvent } from "./auditLog";
 
 export const getPendingSignups = query({
   args: {},
@@ -229,6 +230,14 @@ export const approveSignup = mutation({
     // Decrement pending count — signup is no longer "pending"
     await pendingSignupsCount.deleteIfExists(ctx, { key: signupId, id: signupId });
 
+    await logAuditEvent(ctx, {
+      actorUserId: userId,
+      action: "approve_signup",
+      resourceType: "pendingSignup",
+      resourceId: signupId,
+      details: { email: signup.email, fullName: signup.fullName },
+    });
+
     // Check if the prospect already created their account (has a pending_approval profile)
     // Try exact match first, then case-insensitive fallback (auth may normalize email case)
     let clientProfile = await ctx.db
@@ -316,6 +325,14 @@ export const rejectSignup = mutation({
     });
     // Decrement pending count — signup is no longer "pending"
     await pendingSignupsCount.deleteIfExists(ctx, { key: signupId, id: signupId });
+
+    await logAuditEvent(ctx, {
+      actorUserId: userId,
+      action: "reject_signup",
+      resourceType: "pendingSignup",
+      resourceId: signupId,
+      details: { email: signup.email, fullName: signup.fullName, rejectionReason },
+    });
 
     // Schedule rejection email with reason
     await ctx.scheduler.runAfter(0, internal.email.sendRejectionEmail, {

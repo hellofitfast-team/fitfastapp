@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { query, mutation, internalMutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { requireCoach } from "./helpers";
+import { logAuditEvent } from "./auditLog";
 
 // ---------------------------------------------------------------------------
 // Queries & Mutations (run in Convex runtime — no "use node")
@@ -22,7 +23,7 @@ export const addTextEntry = mutation({
     tags: v.optional(v.array(v.string())),
   },
   handler: async (ctx, { title, content, tags }) => {
-    await requireCoach(ctx);
+    const userId = await requireCoach(ctx);
 
     // String length guards — prevent database bloat
     if (title.length > 500) throw new Error("Title too long (max 500 characters)");
@@ -42,6 +43,14 @@ export const addTextEntry = mutation({
       entryId: id,
     });
 
+    await logAuditEvent(ctx, {
+      actorUserId: userId,
+      action: "add_knowledge_entry",
+      resourceType: "coachKnowledge",
+      resourceId: id,
+      details: { title },
+    });
+
     return id;
   },
 });
@@ -54,7 +63,7 @@ export const updateKnowledgeEntry = mutation({
     tags: v.optional(v.array(v.string())),
   },
   handler: async (ctx, { entryId, title, content, tags }) => {
-    await requireCoach(ctx);
+    const userId = await requireCoach(ctx);
 
     // String length guards — prevent database bloat
     if (title.length > 500) throw new Error("Title too long (max 500 characters)");
@@ -74,13 +83,21 @@ export const updateKnowledgeEntry = mutation({
     await ctx.scheduler.runAfter(0, internal.knowledgeBaseActions.embedEntry, {
       entryId,
     });
+
+    await logAuditEvent(ctx, {
+      actorUserId: userId,
+      action: "update_knowledge_entry",
+      resourceType: "coachKnowledge",
+      resourceId: entryId,
+      details: { title },
+    });
   },
 });
 
 export const deleteKnowledgeEntry = mutation({
   args: { entryId: v.id("coachKnowledge") },
   handler: async (ctx, { entryId }) => {
-    await requireCoach(ctx);
+    const userId = await requireCoach(ctx);
 
     const entry = await ctx.db.get(entryId);
     if (!entry) throw new Error("Entry not found");
@@ -97,6 +114,14 @@ export const deleteKnowledgeEntry = mutation({
     if (entry.storageId) {
       await ctx.storage.delete(entry.storageId);
     }
+
+    await logAuditEvent(ctx, {
+      actorUserId: userId,
+      action: "delete_knowledge_entry",
+      resourceType: "coachKnowledge",
+      resourceId: entryId,
+      details: { title: entry.title },
+    });
   },
 });
 

@@ -66,7 +66,7 @@ export const cascadeDeleteUser = internalMutation({
     await deleteByIndex("pushSubscriptions", "by_userId");
     await deleteByIndex("inAppNotifications", "by_userId_createdAt");
 
-    // Delete file metadata + storage objects
+    // Delete file metadata + storage objects (metadata only after successful storage deletion)
     const fileMeta = await ctx.db
       .query("fileMetadata")
       .withIndex("by_uploadedBy", (q) => q.eq("uploadedBy", userId))
@@ -74,10 +74,11 @@ export const cascadeDeleteUser = internalMutation({
     for (const fm of fileMeta) {
       try {
         await ctx.storage.delete(fm.storageId);
-      } catch {
-        // Storage object may already be deleted
+        await ctx.db.delete(fm._id);
+      } catch (e) {
+        // Log but continue — storage-orphan-cleanup cron will catch it
+        console.warn(`[DataRetention] Failed to delete storage ${fm.storageId}: ${e}`);
       }
-      await ctx.db.delete(fm._id);
     }
 
     // Delete all auth records (accounts, sessions, tokens, verifiers, user)

@@ -1,6 +1,7 @@
 import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { Toaster } from "@fitfast/ui/toaster";
 const RTL_LOCALES = new Set(["ar"]);
 import type { AuthState } from "@/lib/auth-context";
 
@@ -34,6 +35,7 @@ function RootLayout() {
   return (
     <>
       <Outlet />
+      <Toaster />
       <Suspense>
         <TanStackRouterDevtools />
       </Suspense>

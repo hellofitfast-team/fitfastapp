@@ -1,5 +1,6 @@
 import { v } from "convex/values";
-import { internalQuery } from "./_generated/server";
+import { internalQuery, internalMutation } from "./_generated/server";
+import { components } from "./_generated/api";
 import { getAuthUserId } from "./auth";
 import { DEFAULT_CHECK_IN_FREQUENCY_DAYS, DEFAULT_WORKOUT_PLAN_DURATION_DAYS } from "./constants";
 
@@ -37,27 +38,66 @@ export async function requireCoach(ctx: { db: any; auth: any }): Promise<string>
 }
 
 /**
- * Delete auth records for a user via BetterAuth component API.
- * BetterAuth manages its tables in an isolated component namespace,
- * so we can't query them directly via ctx.db.
+ * Delete auth records for a user via BetterAuth component adapter.
+ * Deletes sessions, accounts, and the user record from BetterAuth's
+ * isolated component namespace.
  *
- * Note: This is a best-effort cleanup. The profile and app data
- * should be deleted separately by the caller.
+ * Must be called from a mutation context (needs ctx.runMutation).
+ * The profile and app data should be deleted separately by the caller.
  */
-export async function deleteAuthRecords(_ctx: { db: any }, _userId: string): Promise<void> {
-  // With BetterAuth, user deletion should be handled via the BetterAuth admin API
-  // or by revoking sessions. The component manages its own table cleanup.
-  // For now, this is a no-op — the caller handles profile/app data deletion.
-  // TODO: Integrate BetterAuth admin plugin for full user deletion
+export async function deleteAuthRecords(ctx: { runMutation: any }, userId: string): Promise<void> {
+  const paginationOpts = { numItems: 100, cursor: null };
+
+  // Best-effort cleanup: delete each record type independently so a failure
+  // in one step doesn't prevent the others from being cleaned up.
+  const errors: string[] = [];
+
+  try {
+    await ctx.runMutation(components.betterAuth.adapter.deleteMany, {
+      input: { model: "session", where: [{ field: "userId", value: userId }] },
+      paginationOpts,
+    });
+  } catch (e) {
+    errors.push(`sessions: ${e}`);
+  }
+
+  try {
+    await ctx.runMutation(components.betterAuth.adapter.deleteMany, {
+      input: { model: "account", where: [{ field: "userId", value: userId }] },
+      paginationOpts,
+    });
+  } catch (e) {
+    errors.push(`accounts: ${e}`);
+  }
+
+  try {
+    await ctx.runMutation(components.betterAuth.adapter.deleteOne, {
+      input: { model: "user", where: [{ field: "_id", value: userId }] },
+    });
+  } catch (e) {
+    errors.push(`user: ${e}`);
+  }
+
+  if (errors.length > 0) {
+    console.warn(`[deleteAuthRecords] Partial cleanup for ${userId}: ${errors.join("; ")}`);
+  }
 }
 
 /**
- * Delete auth records by email — stub for BetterAuth migration.
- * See deleteAuthRecords for details.
+ * Delete auth records by email — finds the BetterAuth user by email,
+ * then delegates to deleteAuthRecords.
  */
-export async function deleteAuthRecordsByEmail(_ctx: { db: any }, _email: string): Promise<void> {
-  // No-op with BetterAuth — see deleteAuthRecords
-  // TODO: Integrate BetterAuth admin plugin for user deletion by email
+export async function deleteAuthRecordsByEmail(
+  ctx: { runMutation: any; runQuery: any },
+  email: string,
+): Promise<void> {
+  // Find the BetterAuth user by email
+  const user = await ctx.runQuery(components.betterAuth.adapter.findOne, {
+    model: "user",
+    where: [{ field: "email", value: email.toLowerCase() }],
+  });
+  if (!user) return; // No auth record for this email
+  await deleteAuthRecords(ctx, user._id);
 }
 
 // Internal queries used by AI actions to fetch data
