@@ -13,7 +13,7 @@ jobs:
     steps:
       - name: Check Client
         run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ vars.CLIENT_URL }}/api/version")
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ vars.CLIENT_URL }}")
           if [ "$STATUS" != "200" ]; then
             echo "::error::Client health check failed with status $STATUS"
             exit 1
@@ -22,7 +22,7 @@ jobs:
 
       - name: Check Admin
         run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ vars.ADMIN_URL }}/api/health")
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ vars.ADMIN_URL }}")
           if [ "$STATUS" != "200" ]; then
             echo "::error::Admin health check failed with status $STATUS"
             exit 1
@@ -31,7 +31,7 @@ jobs:
 
       - name: Check Marketing
         run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ vars.MARKETING_URL }}/api/health")
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ vars.MARKETING_URL }}")
           if [ "$STATUS" != "200" ]; then
             echo "::error::Marketing health check failed with status $STATUS"
             exit 1
