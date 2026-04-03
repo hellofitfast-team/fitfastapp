@@ -15,7 +15,7 @@ export const Route = createFileRoute("/_panel")({
 });
 
 function PanelLayout() {
-  const { isAuthenticated } = useConvexAuth();
+  const { isAuthenticated, isLoading: isAuthLoading } = useConvexAuth();
   const profile = useQuery(api.profiles.getMyProfile, isAuthenticated ? {} : "skip");
   const pendingSignups = useQuery(
     api.pendingSignups.getPendingSignups,
@@ -24,17 +24,27 @@ function PanelLayout() {
   const openTickets = useQuery(api.tickets.getOpenTicketCount, isAuthenticated ? {} : "skip");
   const navigate = useNavigate();
 
-  const shouldRedirect = profile !== undefined && (!profile || !profile.isCoach);
+  const shouldSignOut = profile !== undefined && (!profile || !profile.isCoach);
   const hasRedirected = useRef(false);
 
+  // Redirect unauthenticated users to login (handles race where beforeLoad
+  // ran while auth was still loading and couldn't redirect)
   useEffect(() => {
-    if (shouldRedirect && !hasRedirected.current) {
+    if (!isAuthLoading && !isAuthenticated && !hasRedirected.current) {
+      hasRedirected.current = true;
+      navigate({ to: "/login", search: { error: "" } });
+    }
+  }, [isAuthLoading, isAuthenticated, navigate]);
+
+  // Sign out non-coach users
+  useEffect(() => {
+    if (shouldSignOut && !hasRedirected.current) {
       hasRedirected.current = true;
       void authClient.signOut().finally(() => navigate({ to: "/login", search: { error: "" } }));
     }
-  }, [shouldRedirect, navigate]);
+  }, [shouldSignOut, navigate]);
 
-  if (profile === undefined || shouldRedirect) {
+  if (isAuthLoading || !isAuthenticated || profile === undefined || shouldSignOut) {
     return (
       <div className="flex min-h-dvh items-center justify-center">
         <div className="border-primary h-8 w-8 animate-spin rounded-full border-4 border-t-transparent" />
