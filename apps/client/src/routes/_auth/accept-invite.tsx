@@ -74,7 +74,10 @@ function AcceptInvitePage() {
         password,
         name: inviteData.email.split("@")[0],
       });
-      // isAuthenticated effect will redirect to /pending
+      // Hard navigate to /pending — bypasses _auth layout's beforeLoad
+      // which would redirect to "/" before the useEffect can fire,
+      // causing the dashboard to sign out (profile not yet created)
+      window.location.replace("/pending");
     } catch {
       setError(t("accountCreationFailed"));
     } finally {
@@ -99,7 +102,7 @@ function AcceptInvitePage() {
           </div>
           <Link
             to="/login"
-            search={{ error: "", message: "" }}
+            search={{ error: undefined, message: undefined }}
             className="text-primary text-sm hover:underline"
           >
             {t("signIn")}
@@ -137,7 +140,7 @@ function AcceptInvitePage() {
           </div>
           <Link
             to="/login"
-            search={{ error: "", message: "" }}
+            search={{ error: undefined, message: undefined }}
             className="text-primary text-sm hover:underline"
           >
             {t("signIn")}
@@ -233,7 +236,7 @@ function AcceptInvitePage() {
             {t("signIn")}&nbsp;
             <Link
               to="/login"
-              search={{ error: "", message: "" }}
+              search={{ error: undefined, message: undefined }}
               className="text-primary hover:underline"
             >
               {t("login")}
