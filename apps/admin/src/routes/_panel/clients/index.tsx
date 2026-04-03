@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { RouteErrorComponent } from "@/components/route-error";
 import { ClientsSkeleton } from "@/components/skeletons/clients-skeleton";
@@ -42,6 +42,13 @@ function AdminClientsPage() {
     isAuthenticated ? {} : "skip",
     { initialNumItems: CLIENTS_PAGE_SIZE },
   );
+
+  // Auto-load next page when reactive deletions empty the current results
+  useEffect(() => {
+    if (results.length === 0 && status === "CanLoadMore") {
+      loadMore(CLIENTS_PAGE_SIZE);
+    }
+  }, [results.length, status, loadMore]);
 
   const awaitingSignups = useQuery(
     api.pendingSignups.getApprovedAwaitingAccount,
