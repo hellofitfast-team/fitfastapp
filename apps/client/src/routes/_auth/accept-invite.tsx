@@ -69,11 +69,17 @@ function AcceptInvitePage() {
     setIsLoading(true);
 
     try {
-      await authClient.signUp.email({
+      const result = await authClient.signUp.email({
         email: inviteData.email,
         password,
         name: inviteData.email.split("@")[0],
       });
+
+      if (result.error) {
+        setError(t("accountCreationFailed"));
+        return;
+      }
+
       // Hard navigate to /pending — bypasses _auth layout's beforeLoad
       // which would redirect to "/" before the useEffect can fire,
       // causing the dashboard to sign out (profile not yet created)
