@@ -24,8 +24,8 @@ const ALLOWED_MESSAGES = new Set([
 
 export const Route = createFileRoute("/_auth/login")({
   validateSearch: (search: Record<string, unknown>) => ({
-    error: (search.error as string) ?? "",
-    message: (search.message as string) ?? "",
+    error: (search.error as string) || undefined,
+    message: (search.message as string) || undefined,
   }),
   component: LoginPage,
   errorComponent: ({ error, reset }) => <RouteErrorComponent error={error} reset={reset} />,

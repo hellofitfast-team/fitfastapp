@@ -26,7 +26,7 @@ function PendingPage() {
     if (profile.status === "active") {
       navigate({ to: "/initial-assessment" });
     } else if (profile.status === "inactive" || profile.status === "expired") {
-      navigate({ to: "/login", search: { error: "rejected", message: "" } });
+      navigate({ to: "/login", search: { error: "rejected", message: undefined } });
     }
   }, [profile, navigate]);
 

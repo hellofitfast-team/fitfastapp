@@ -177,7 +177,7 @@ function SettingsPage() {
 
   const handleSignOut = async () => {
     await authClient.signOut();
-    navigate({ to: "/login", search: { error: "", message: "" } });
+    navigate({ to: "/login", search: { error: undefined, message: undefined } });
   };
 
   const handleChangePassword = async () => {

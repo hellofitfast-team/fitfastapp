@@ -5,7 +5,7 @@ import { RouteErrorComponent } from "@/components/route-error";
 export const Route = createFileRoute("/_onboarding")({
   beforeLoad: ({ context }) => {
     if (!context.auth.isAuthenticated && !context.auth.isLoading) {
-      throw redirect({ to: "/login", search: { error: "", message: "" } });
+      throw redirect({ to: "/login", search: { error: undefined, message: undefined } });
     }
   },
   component: OnboardingLayout,

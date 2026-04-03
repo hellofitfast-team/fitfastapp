@@ -26,7 +26,7 @@ export function DesktopHeader({ userName }: DesktopHeaderProps) {
     try {
       await authClient.signOut();
     } finally {
-      navigate({ to: "/login", search: { error: "", message: "" } });
+      navigate({ to: "/login", search: { error: undefined, message: undefined } });
     }
   };
 

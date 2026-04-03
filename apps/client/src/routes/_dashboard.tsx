@@ -10,7 +10,7 @@ import { RouteErrorComponent } from "@/components/route-error";
 export const Route = createFileRoute("/_dashboard")({
   beforeLoad: ({ context }) => {
     if (!context.auth.isAuthenticated && !context.auth.isLoading) {
-      throw redirect({ to: "/login", search: { error: "", message: "" } });
+      throw redirect({ to: "/login", search: { error: undefined, message: undefined } });
     }
   },
   pendingComponent: () => (
@@ -44,12 +44,14 @@ function DashboardLayout() {
     if (profile === null) {
       void authClient
         .signOut()
-        .finally(() => navigate({ to: "/login", search: { error: "", message: "" } }));
+        .finally(() =>
+          navigate({ to: "/login", search: { error: undefined, message: undefined } }),
+        );
       return;
     }
 
     if (profile.isCoach) {
-      navigate({ to: "/login", search: { error: "", message: "" } });
+      navigate({ to: "/login", search: { error: undefined, message: undefined } });
       return;
     }
 
@@ -61,7 +63,7 @@ function DashboardLayout() {
         navigate({ to: "/expired" });
         return;
       case "inactive":
-        navigate({ to: "/login", search: { error: "", message: "" } });
+        navigate({ to: "/login", search: { error: undefined, message: undefined } });
         return;
       case "active":
         if (!assessment) {
@@ -69,7 +71,7 @@ function DashboardLayout() {
         }
         break;
       default:
-        navigate({ to: "/login", search: { error: "", message: "" } });
+        navigate({ to: "/login", search: { error: undefined, message: undefined } });
     }
   }, [profile, assessment, navigate]);
 
