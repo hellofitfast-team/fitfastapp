@@ -16,8 +16,8 @@ type LoginFormData = {
 };
 
 export const Route = createFileRoute("/login")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    error: (search.error as string) ?? "",
+  validateSearch: (search: Record<string, unknown>): { error?: string } => ({
+    error: (search.error as string) || undefined,
   }),
   component: AdminLoginPage,
 });

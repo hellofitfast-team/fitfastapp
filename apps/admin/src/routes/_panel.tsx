@@ -8,7 +8,7 @@ import { authClient } from "@/lib/auth-client";
 export const Route = createFileRoute("/_panel")({
   beforeLoad: ({ context }) => {
     if (!context.auth.isAuthenticated && !context.auth.isLoading) {
-      throw redirect({ to: "/login", search: { error: "" } });
+      throw redirect({ to: "/login" });
     }
   },
   component: PanelLayout,
@@ -32,7 +32,7 @@ function PanelLayout() {
   useEffect(() => {
     if (!isAuthLoading && !isAuthenticated && !hasRedirected.current) {
       hasRedirected.current = true;
-      navigate({ to: "/login", search: { error: "" } });
+      navigate({ to: "/login" });
     }
   }, [isAuthLoading, isAuthenticated, navigate]);
 
@@ -40,7 +40,9 @@ function PanelLayout() {
   useEffect(() => {
     if (shouldSignOut && !hasRedirected.current) {
       hasRedirected.current = true;
-      void authClient.signOut().finally(() => navigate({ to: "/login", search: { error: "" } }));
+      void authClient
+        .signOut()
+        .finally(() => navigate({ to: "/login", search: { error: "not_coach" } }));
     }
   }, [shouldSignOut, navigate]);
 
