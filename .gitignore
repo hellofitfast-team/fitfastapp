@@ -80,8 +80,8 @@ testing-instapay-screenshot.png
 
 # Planning & specs (local-only)
 .planning/
-plans/
-specs/
+/plans/
+/specs/
 
 
 # Brand assets (large binaries)

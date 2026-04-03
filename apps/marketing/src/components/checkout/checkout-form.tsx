@@ -143,7 +143,8 @@ export function CheckoutForm({ selectedPlan, onSuccess }: CheckoutFormProps) {
     handleSubmit,
     formState: { errors },
   } = useForm<CheckoutFormValues>({
-    resolver: zodResolver(checkoutSchema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- zod 4.3 minor version mismatch with @hookform/resolvers types
+    resolver: zodResolver(checkoutSchema as any),
   });
 
   const handleFile = useCallback(
