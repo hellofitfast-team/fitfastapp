@@ -16,10 +16,14 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return outputArray;
 }
 
-/** Detect iOS device. */
+/** Detect iOS device (includes iPadOS 13+ which reports macOS user agent). */
 function getIsIOS(): boolean {
   if (typeof navigator === "undefined") return false;
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !("MSStream" in window);
+  return (
+    (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)) &&
+    !("MSStream" in window)
+  );
 }
 
 /** Detect standalone (installed PWA) mode. */
@@ -44,16 +48,20 @@ export function usePushNotifications() {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isIOSBannerDismissed, setIsIOSBannerDismissed] = useState(() => {
-    if (typeof localStorage === "undefined") return false;
-    return localStorage.getItem(IOS_BANNER_DISMISSED_KEY) === "true";
+    try {
+      return localStorage.getItem(IOS_BANNER_DISMISSED_KEY) === "true";
+    } catch {
+      return false;
+    }
   });
 
   const isSupported = getIsSupported();
   const isIOS = getIsIOS();
   const isStandalone = getIsStandalone();
 
-  const vapidKey = useQuery(api.pushSubscriptions.getVapidPublicKey);
-  const backendSub = useQuery(api.pushSubscriptions.getMySubscription);
+  // Conditional queries — skip when push is not supported to avoid unnecessary network traffic
+  const vapidKey = useQuery(api.pushSubscriptions.getVapidPublicKey, isSupported ? {} : "skip");
+  const backendSub = useQuery(api.pushSubscriptions.getMySubscription, isSupported ? {} : "skip");
   const saveSubscription = useMutation(api.pushSubscriptions.saveSubscription);
   const deactivateSubscription = useMutation(api.pushSubscriptions.deactivateSubscription);
 
@@ -94,14 +102,12 @@ export function usePushNotifications() {
       setPermission(result);
 
       if (result !== "granted") {
-        setIsLoading(false);
         return;
       }
 
       // 2. Get VAPID key
       if (!vapidKey) {
         console.error("[Push] VAPID public key not available");
-        setIsLoading(false);
         return;
       }
 
@@ -121,14 +127,17 @@ export function usePushNotifications() {
 
       if (!endpoint || !p256dh || !auth) {
         console.error("[Push] Subscription missing required fields");
-        setIsLoading(false);
         return;
       }
 
       await saveSubscription({ endpoint, p256dh, auth });
       setIsSubscribed(true);
+      return true; // success signal for toast
     } catch (err) {
+      // AbortError = user dismissed permission prompt (Firefox) — not an error
+      if (err instanceof DOMException && err.name === "AbortError") return;
       console.error("[Push] Subscribe failed:", err);
+      throw err; // re-throw so caller can show toast
     } finally {
       setIsLoading(false);
     }
@@ -144,20 +153,27 @@ export function usePushNotifications() {
 
       if (pushSub) {
         const endpoint = pushSub.endpoint;
-        await pushSub.unsubscribe();
+        // Deactivate backend FIRST, then browser — ensures consistency on failure
         await deactivateSubscription({ endpoint });
+        await pushSub.unsubscribe();
       }
 
       setIsSubscribed(false);
+      return true; // success signal for toast
     } catch (err) {
       console.error("[Push] Unsubscribe failed:", err);
+      throw err; // re-throw so caller can show toast
     } finally {
       setIsLoading(false);
     }
   }, [isSupported, isLoading, deactivateSubscription]);
 
   const dismissIOSBanner = useCallback(() => {
-    localStorage.setItem(IOS_BANNER_DISMISSED_KEY, "true");
+    try {
+      localStorage.setItem(IOS_BANNER_DISMISSED_KEY, "true");
+    } catch {
+      // Private browsing or quota exceeded — still update UI state
+    }
     setIsIOSBannerDismissed(true);
   }, []);
 
@@ -167,12 +183,14 @@ export function usePushNotifications() {
    */
   const syncSubscription = useCallback(async () => {
     if (!isSupported || typeof navigator === "undefined") return;
+    // Guard: wait until backendSub query has loaded (undefined = loading)
+    if (backendSub === undefined) return;
 
     try {
       const reg = await navigator.serviceWorker.ready;
       const browserSub = await reg.pushManager.getSubscription();
 
-      if (browserSub && (!backendSub || !backendSub.isActive)) {
+      if (browserSub && (backendSub === null || !backendSub.isActive)) {
         // Browser has subscription but backend doesn't — re-save
         const subJson = browserSub.toJSON();
         const endpoint = browserSub.endpoint;

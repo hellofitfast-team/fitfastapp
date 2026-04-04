@@ -339,7 +339,20 @@ function SettingsPage() {
                       role="switch"
                       aria-checked={push.isSubscribed}
                       disabled={push.isLoading}
-                      onClick={() => (push.isSubscribed ? push.unsubscribe() : push.subscribe())}
+                      aria-label={t("pushNotifications")}
+                      onClick={async () => {
+                        try {
+                          if (push.isSubscribed) {
+                            await push.unsubscribe();
+                            toast({ title: t("pushDisabled") });
+                          } else {
+                            const ok = await push.subscribe();
+                            if (ok) toast({ title: t("pushEnabled") });
+                          }
+                        } catch {
+                          toast({ title: t("pushUnsupported"), variant: "destructive" });
+                        }
+                      }}
                       className={cn(
                         "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200",
                         push.isSubscribed ? "bg-primary" : "bg-neutral-200",

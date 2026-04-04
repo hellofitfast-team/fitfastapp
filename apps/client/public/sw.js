@@ -36,12 +36,9 @@ self.addEventListener("fetch", (event) => {
   );
 });
 
-// Listen for skip-waiting message from client (update flow)
-self.addEventListener("message", (event) => {
-  if (event.data?.action === "SKIP_WAITING") {
-    self.skipWaiting();
-  }
-});
+// Note: skipWaiting() is called in the install handler above, so the
+// message-based SKIP_WAITING pattern is no longer needed. The SW
+// activates immediately on install.
 
 // Handle incoming push notifications
 self.addEventListener("push", (event) => {

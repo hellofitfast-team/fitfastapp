@@ -16,16 +16,8 @@ export function ServiceWorkerRegistration() {
     navigator.serviceWorker
       .register("/sw.js", { scope: "/" })
       .then((registration) => {
-        registration.addEventListener("updatefound", () => {
-          const newWorker = registration.installing;
-          if (!newWorker) return;
-
-          newWorker.addEventListener("statechange", () => {
-            if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-              newWorker.postMessage({ action: "SKIP_WAITING" });
-            }
-          });
-        });
+        // SW uses self.skipWaiting() on install, so no need to send SKIP_WAITING message.
+        // The controllerchange listener above handles the reload.
 
         // Check for SW updates every 30 minutes
         const UPDATE_INTERVAL_MS = 30 * 60 * 1000;
