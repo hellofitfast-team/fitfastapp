@@ -955,6 +955,8 @@
       "infoLabel": "معلومات",
       "statuses": {
         "pending_approval": "قيد الموافقة",
+        "signup_pending": "قيد الموافقة",
+        "approved": "تمت الموافقة",
         "active": "نشط",
         "inactive": "غير نشط",
         "expired": "منتهي"

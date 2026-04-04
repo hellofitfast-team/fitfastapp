@@ -277,23 +277,25 @@ export const approveSignup = mutation({
       .withIndex("by_email", (q) => q.eq("email", normalizedEmail))
       .first();
 
-    if (newClientProfile) {
-      if (newClientProfile.userId) {
-        // User already set password — activate directly
-        const planMonths = newClientProfile.planTier === "quarterly" ? 3 : 1;
-        const endDate = new Date();
-        endDate.setMonth(endDate.getMonth() + planMonths);
+    // ── Compute plan dates once (shared across both tables) ──
+    const userAlreadyHasAccount = !!newClientProfile?.userId;
+    const planTier = newClientProfile?.planTier ?? signup.planTier;
+    const planMonths = planTier === "quarterly" ? 3 : 1;
+    const planEndDate = new Date();
+    planEndDate.setMonth(planEndDate.getMonth() + planMonths);
+    const planStartStr = new Date().toISOString().split("T")[0];
+    const planEndStr = planEndDate.toISOString().split("T")[0];
 
+    // ── Update clientProfiles (new table) ──
+    if (newClientProfile) {
+      if (userAlreadyHasAccount) {
+        // User already set password — activate directly
         await ctx.db.patch(newClientProfile._id, {
           status: "active",
-          planStartDate: new Date().toISOString().split("T")[0],
-          planEndDate: endDate.toISOString().split("T")[0],
+          planStartDate: planStartStr,
+          planEndDate: planEndStr,
           inviteToken: undefined,
           updatedAt: now,
-        });
-        await activeClientsCount.insert(ctx, {
-          key: newClientProfile._id,
-          id: newClientProfile._id,
         });
       } else {
         // User hasn't set password yet — mark as approved, keep invite token
@@ -304,47 +306,81 @@ export const approveSignup = mutation({
       }
     }
 
-    // ── Legacy profiles table handling ──
+    // ── Email + legacy profiles dual-write ──
     const legacyProfile = await ctx.db
       .query("profiles")
       .withIndex("by_email", (q) => q.eq("email", normalizedEmail))
       .first();
 
-    if (legacyProfile) {
-      if (legacyProfile.status === "pending_approval") {
+    if (userAlreadyHasAccount) {
+      // User already set password — activate legacy profile + send welcome email
+      if (legacyProfile) {
+        if (legacyProfile.status !== "active") {
+          await ctx.db.patch(legacyProfile._id, {
+            status: "active",
+            fullName: signup.fullName,
+            planTier,
+            planStartDate: planStartStr,
+            planEndDate: planEndStr,
+            updatedAt: now,
+          });
+        }
+      } else {
+        // Legacy profile missing (onNewUserCreated failed) — create it
+        await ctx.db.insert("profiles", {
+          userId: newClientProfile!.userId!,
+          email: normalizedEmail,
+          fullName: signup.fullName,
+          language: newClientProfile!.language ?? "en",
+          status: "active",
+          isCoach: false,
+          planTier,
+          planStartDate: planStartStr,
+          planEndDate: planEndStr,
+          updatedAt: now,
+        });
+      }
+
+      // Track active client (use clientProfiles ID as canonical key)
+      await activeClientsCount.insert(ctx, {
+        key: newClientProfile!._id,
+        id: newClientProfile!._id,
+      });
+
+      // Send welcome email (green CTA — "Access Your Account")
+      await ctx.scheduler.runAfter(0, internal.email.sendWelcomeEmail, {
+        email: normalizedEmail,
+        fullName: signup.fullName,
+        language: (newClientProfile!.language as "en" | "ar") ?? "en",
+      });
+    } else {
+      // User hasn't created account yet
+      if (legacyProfile && legacyProfile.status === "pending_approval") {
+        // Legacy profile exists — activate via scheduled mutation (sends welcome email)
         await ctx.scheduler.runAfter(0, internal.pendingSignups.activateClientProfile, {
           profileId: legacyProfile._id,
           signupId,
         });
       } else {
-        await ctx.scheduler.runAfter(0, internal.email.sendWelcomeEmail, {
-          email: legacyProfile.email ?? signup.email,
-          fullName: legacyProfile.fullName ?? signup.fullName,
-          language: (legacyProfile.language as "en" | "ar") ?? "en",
+        // No account yet — send invite email (orange CTA — "Create Your Account")
+        const inviteToken =
+          signup.inviteToken ??
+          crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
+        if (!signup.inviteToken) {
+          await ctx.db.patch(signupId, { inviteToken });
+        }
+        // Sync invite token to clientProfiles
+        if (newClientProfile && !newClientProfile.inviteToken) {
+          await ctx.db.patch(newClientProfile._id, { inviteToken, updatedAt: now });
+        }
+
+        await ctx.scheduler.runAfter(0, internal.email.sendInvitationEmail, {
+          email: signup.email,
+          fullName: signup.fullName,
+          inviteToken,
+          language: "en" as const,
         });
       }
-    } else if (newClientProfile?.userId && newClientProfile.status === "active") {
-      // Profile activated via new table — send welcome email
-      await ctx.scheduler.runAfter(0, internal.email.sendWelcomeEmail, {
-        email: normalizedEmail,
-        fullName: signup.fullName,
-        language: "en" as const,
-      });
-    } else {
-      // No account yet — send invite email
-      const inviteToken =
-        signup.inviteToken ??
-        crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
-      if (!signup.inviteToken) {
-        await ctx.db.patch(signupId, { inviteToken });
-      }
-
-      await ctx.scheduler.runAfter(0, internal.email.sendInvitationEmail, {
-        email: signup.email,
-        fullName: signup.fullName,
-        inviteToken,
-        language: "en" as const,
-      });
     }
   },
 });
@@ -619,14 +655,34 @@ export const activateClientProfile = internalMutation({
     const endDate = new Date();
     endDate.setMonth(endDate.getMonth() + planMonths);
 
+    const planStartDate = new Date().toISOString().split("T")[0];
+    const planEndDate = endDate.toISOString().split("T")[0];
+    const activationTime = Date.now();
+
     await ctx.db.patch(profileId, {
       fullName: signup.fullName,
       status: "active",
       planTier: signup.planTier,
-      planStartDate: new Date().toISOString().split("T")[0],
-      planEndDate: endDate.toISOString().split("T")[0],
-      updatedAt: Date.now(),
+      planStartDate,
+      planEndDate,
+      updatedAt: activationTime,
     });
+
+    // Also activate clientProfiles (dual-write)
+    const normalizedEmail = normalizeEmail(profile.email ?? signup.email);
+    const clientProfile = await ctx.db
+      .query("clientProfiles")
+      .withIndex("by_email", (q) => q.eq("email", normalizedEmail))
+      .first();
+    if (clientProfile && clientProfile.status !== "active") {
+      await ctx.db.patch(clientProfile._id, {
+        status: "active",
+        planStartDate,
+        planEndDate,
+        inviteToken: undefined,
+        updatedAt: activationTime,
+      });
+    }
 
     // Maintain active clients aggregate counter
     await activeClientsCount.insert(ctx, { key: profileId, id: profileId });

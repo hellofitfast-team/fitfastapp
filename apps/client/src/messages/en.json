@@ -955,6 +955,8 @@
       "infoLabel": "Info",
       "statuses": {
         "pending_approval": "Pending Approval",
+        "signup_pending": "Pending Approval",
+        "approved": "Approved",
         "active": "Active",
         "inactive": "Inactive",
         "expired": "Expired"
