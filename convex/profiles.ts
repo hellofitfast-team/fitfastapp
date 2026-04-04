@@ -634,12 +634,18 @@ export const onNewUserCreated = internalMutation({
         }
 
         // Also create legacy profile for backward compat during migration
+        // Map clientProfiles statuses to legacy profiles statuses
+        const clientStatus = basePatch.status ?? existingClientByEmail.status;
+        const legacyStatus: "pending_approval" | "active" | "inactive" | "expired" =
+          clientStatus === "signup_pending" || clientStatus === "approved"
+            ? "pending_approval"
+            : clientStatus;
         await ctx.db.insert("profiles", {
           userId,
           email: normalizedEmail,
           fullName: existingClientByEmail.fullName,
           language: existingClientByEmail.language,
-          status: basePatch.status ?? existingClientByEmail.status,
+          status: legacyStatus,
           isCoach: false,
           planTier: existingClientByEmail.planTier,
           planStartDate: basePatch.planStartDate ?? existingClientByEmail.planStartDate,
