@@ -23,6 +23,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { cn } from "@fitfast/ui/cn";
 import { toast } from "@fitfast/ui/use-toast";
+import { usePushNotifications } from "@/hooks/use-push-notifications";
 import { localTimeToUtc, utcTimeToLocal, formatDate } from "@fitfast/ui/format";
 import { authClient } from "@/lib/auth-client";
 
@@ -79,6 +80,7 @@ function SettingsPage() {
   const navigate = useNavigate();
   const profile = useQuery(api.profiles.getMyProfile);
   const updateProfile = useMutation(api.profiles.updateProfile);
+  const push = usePushNotifications();
 
   const {
     register,
@@ -305,6 +307,62 @@ function SettingsPage() {
               className="border-input bg-card focus:ring-ring h-11 rounded-lg border px-3.5 text-sm transition-colors focus:ring-2 focus:outline-none"
             />
           </div>
+
+          {/* Push Notifications */}
+          {push.isSupported && (
+            <div className="border-border border-t pt-5">
+              {push.isIOS && !push.isStandalone && !push.isIOSBannerDismissed ? (
+                /* iOS in-browser: show Add to Home Screen guidance */
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3.5">
+                  <p className="text-sm font-medium text-amber-900">{t("iosInstallTitle")}</p>
+                  <p className="mt-1 text-xs text-amber-700">{t("iosInstallMessage")}</p>
+                  <button
+                    type="button"
+                    onClick={push.dismissIOSBanner}
+                    className="mt-2 text-xs font-medium text-amber-600 hover:text-amber-800"
+                  >
+                    {t("iosInstallDismiss")}
+                  </button>
+                </div>
+              ) : push.isIOS && !push.isStandalone ? null : (
+                /* Standard push toggle (Android, desktop, iOS standalone) */
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">{t("pushNotifications")}</p>
+                    <p className="text-muted-foreground mt-0.5 text-xs">
+                      {push.permission === "denied" ? t("pushDenied") : t("pushDescription")}
+                    </p>
+                  </div>
+                  {push.permission !== "denied" && (
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={push.isSubscribed}
+                      disabled={push.isLoading}
+                      onClick={() => (push.isSubscribed ? push.unsubscribe() : push.subscribe())}
+                      className={cn(
+                        "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200",
+                        push.isSubscribed ? "bg-primary" : "bg-neutral-200",
+                        push.isLoading && "cursor-wait opacity-50",
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-sm ring-0 transition-transform duration-200",
+                          push.isSubscribed
+                            ? "ltr:translate-x-5 rtl:-translate-x-5"
+                            : "translate-x-0",
+                        )}
+                      />
+                      {push.isLoading && (
+                        <Loader2 className="absolute inset-0 m-auto h-3 w-3 animate-spin text-white" />
+                      )}
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </SettingsCard>
 

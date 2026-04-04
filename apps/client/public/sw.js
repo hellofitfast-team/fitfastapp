@@ -7,8 +7,8 @@ const OFFLINE_URL = "/offline.html";
 // Pre-cache the offline page on install
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.add(OFFLINE_URL)));
-  // Do NOT call skipWaiting() here — let the client control activation
-  // so the page reloads with fresh assets at the right time
+  // Activate immediately so new deploys take effect without waiting for all tabs to close
+  self.skipWaiting();
 });
 
 // Clean up old caches on activate

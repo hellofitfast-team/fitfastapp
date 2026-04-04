@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { DashboardShell } from "@/components/layouts";
 import { authClient } from "@/lib/auth-client";
+import { usePushNotifications } from "@/hooks/use-push-notifications";
 import { RouteErrorComponent } from "@/components/route-error";
 
 export const Route = createFileRoute("/_dashboard")({
@@ -117,6 +118,15 @@ function DashboardLayout() {
       updateProfile({ language: i18n.language as "en" | "ar" });
     }
   }, [i18n.language, profile, updateProfile]);
+
+  // Auto-sync push subscription between browser and backend on login
+  const { syncSubscription } = usePushNotifications();
+  const didSyncPush = useRef(false);
+  useEffect(() => {
+    if (!isDashboardRoute || !profile || profile.status !== "active" || didSyncPush.current) return;
+    didSyncPush.current = true;
+    syncSubscription();
+  }, [isDashboardRoute, profile, syncSubscription]);
 
   // Only render if the current route is actually under this layout.
   // TanStack Router renders all pathless layouts — we must guard against
