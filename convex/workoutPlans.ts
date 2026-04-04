@@ -278,7 +278,7 @@ export const swapExercise = mutation({
     const plan = await ctx.db.get(planId);
     if (!plan || plan.userId !== userId) throw new Error("Plan not found");
 
-    const planData = plan.planData as Record<string, any>;
+    const planData = plan.planData as any;
     const weeklyPlan = planData?.weeklyPlan;
     if (!weeklyPlan?.[dayKey]) throw new Error("Day not found");
 
@@ -360,7 +360,7 @@ export const swapExercise = mutation({
     // Also swap in translatedPlanData if it exists
     if (plan.translatedPlanData) {
       try {
-        const translated = plan.translatedPlanData as Record<string, any>;
+        const translated = plan.translatedPlanData as any;
         const translatedDay = translated?.weeklyPlan?.[dayKey];
         if (translatedDay?.exercises?.[exerciseIndex]) {
           const altLang = plan.language === "en" ? "ar" : "en";
@@ -378,7 +378,7 @@ export const swapExercise = mutation({
               )
               .slice(0, 2),
           };
-          await ctx.db.patch(planId, { translatedPlanData: translated });
+          await ctx.db.patch(planId, { translatedPlanData: translated as any });
         }
       } catch {
         // Ignore translation swap errors — primary swap succeeded

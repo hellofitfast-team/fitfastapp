@@ -38,7 +38,7 @@ export const cleanupExpired = internalMutation({
     const cutoff = Date.now() - CACHE_TTL_MS;
     const expired = await ctx.db
       .query("planCache")
-      .filter((q) => q.lt(q.field("createdAt"), cutoff))
+      .withIndex("by_createdAt", (q) => q.lt("createdAt", cutoff))
       .take(100);
     for (const entry of expired) {
       await ctx.db.delete(entry._id);

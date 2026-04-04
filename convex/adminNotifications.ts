@@ -3,7 +3,7 @@
 import { v } from "convex/values";
 import { action } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { getAuthUserId } from "./auth";
+import { requireCoachAction } from "./authHelpers";
 import { sendWebPushNotification, SubscriptionExpiredError } from "./notifications";
 
 /** Coach action: send push notification to a single client (with email fallback) */
@@ -19,13 +19,7 @@ export const sendToIndividual = action({
     if (!trimmedTitle || trimmedTitle.length > 50) throw new Error("Title must be 1-50 characters");
     if (!trimmedBody || trimmedBody.length > 150) throw new Error("Body must be 1-150 characters");
 
-    const coachId = await getAuthUserId(ctx);
-    if (!coachId) throw new Error("Not authenticated");
-
-    const profile = await ctx.runQuery(internal.helpers.getProfileInternal, {
-      userId: coachId,
-    });
-    if (!profile?.isCoach) throw new Error("Not authorized");
+    const coachId = await requireCoachAction(ctx, internal.helpers.getCoachProfileInternal);
 
     // Rate limit: 50 individual notifications per day per coach
     const { ok, retryAfter } = await ctx.runMutation(internal.rateLimiter.checkRateLimit, {
@@ -162,13 +156,7 @@ export const broadcastToAllActive = action({
     if (!trimmedTitle || trimmedTitle.length > 50) throw new Error("Title must be 1-50 characters");
     if (!trimmedBody || trimmedBody.length > 150) throw new Error("Body must be 1-150 characters");
 
-    const coachId = await getAuthUserId(ctx);
-    if (!coachId) throw new Error("Not authenticated");
-
-    const profile = await ctx.runQuery(internal.helpers.getProfileInternal, {
-      userId: coachId,
-    });
-    if (!profile?.isCoach) throw new Error("Not authorized");
+    const coachId = await requireCoachAction(ctx, internal.helpers.getCoachProfileInternal);
 
     // Rate limit: 5 broadcasts per day per coach
     const broadcastLimit = await ctx.runMutation(internal.rateLimiter.checkRateLimit, {

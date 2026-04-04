@@ -30,7 +30,7 @@ export default defineConfig({
       name: "admin",
       use: {
         ...devices["Desktop Chrome"],
-        baseURL: "http://localhost:3001",
+        baseURL: "http://localhost:3011",
       },
       testMatch: "e2e/admin/**/*.spec.ts",
     },
@@ -67,7 +67,7 @@ export default defineConfig({
     },
     {
       command: "pnpm dev:admin",
-      url: "http://localhost:3001",
+      url: "http://localhost:3011",
       reuseExistingServer: !process.env.CI,
       timeout: 120000,
     },

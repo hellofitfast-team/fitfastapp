@@ -2,8 +2,20 @@ import { convexTest } from "convex-test";
 import { describe, it, expect } from "vitest";
 import { api } from "../_generated/api";
 import schema from "../schema";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore — importing the compiled component schema directly
+import betterAuthSchema from "../../node_modules/@convex-dev/better-auth/dist/component/schema.js";
 
 const modules = import.meta.glob("../**/*.*s");
+const betterAuthModules = import.meta.glob(
+  "../../node_modules/@convex-dev/better-auth/dist/component/**/*.js",
+);
+
+function createTest() {
+  const t = convexTest(schema, modules);
+  t.registerComponent("betterAuth", betterAuthSchema, betterAuthModules);
+  return t;
+}
 
 /**
  * Helper to seed a coach profile so coach-only mutations pass auth checks.
@@ -25,7 +37,7 @@ async function seedCoach(t: ReturnType<typeof convexTest>) {
 describe("systemConfig", () => {
   describe("getConfig", () => {
     it("returns null when config key does not exist (public key)", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       const result = await t.query(api.systemConfig.getConfig, {
         key: "pricing",
       });
@@ -33,7 +45,7 @@ describe("systemConfig", () => {
     });
 
     it("returns config value for a public key without auth", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       // Seed a config entry
       await t.run(async (ctx) => {
         await ctx.db.insert("systemConfig", {
@@ -51,14 +63,14 @@ describe("systemConfig", () => {
     });
 
     it("throws for non-public key when unauthenticated", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       await expect(
         t.query(api.systemConfig.getConfig, { key: "some_private_key" }),
       ).rejects.toThrow("Not authenticated");
     });
 
     it("throws for non-public key when caller is not coach", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       await t.run(async (ctx) => {
         await ctx.db.insert("profiles", {
           userId: "client1",
@@ -78,7 +90,7 @@ describe("systemConfig", () => {
     });
 
     it("allows coach to read non-public config key", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       await seedCoach(t);
 
       await t.run(async (ctx) => {
@@ -97,7 +109,7 @@ describe("systemConfig", () => {
     });
 
     it("allows unauthenticated access to all public config keys", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       const publicKeys = [
         "pricing",
         "plans",
@@ -116,7 +128,7 @@ describe("systemConfig", () => {
 
   describe("setConfig", () => {
     it("throws when caller is not authenticated", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       await expect(
         t.mutation(api.systemConfig.setConfig, {
           key: "test_key",
@@ -126,7 +138,7 @@ describe("systemConfig", () => {
     });
 
     it("throws when caller is not a coach", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       await t.run(async (ctx) => {
         await ctx.db.insert("profiles", {
           userId: "client1",
@@ -147,7 +159,7 @@ describe("systemConfig", () => {
     });
 
     it("inserts a new config entry", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       await seedCoach(t);
 
       const asCoach = t.withIdentity({ subject: "coach1" });
@@ -163,7 +175,7 @@ describe("systemConfig", () => {
     });
 
     it("updates an existing config entry", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       await seedCoach(t);
 
       const asCoach = t.withIdentity({ subject: "coach1" });
@@ -187,7 +199,7 @@ describe("systemConfig", () => {
     });
 
     it("coerces string to number for check_in_frequency_days", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       await seedCoach(t);
 
       const asCoach = t.withIdentity({ subject: "coach1" });
@@ -204,7 +216,7 @@ describe("systemConfig", () => {
     });
 
     it("defaults to fallback for invalid string on check_in_frequency_days", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       await seedCoach(t);
 
       const asCoach = t.withIdentity({ subject: "coach1" });
@@ -220,7 +232,7 @@ describe("systemConfig", () => {
     });
 
     it("defaults to fallback for empty string on check_in_frequency_days", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       await seedCoach(t);
 
       const asCoach = t.withIdentity({ subject: "coach1" });
@@ -236,7 +248,7 @@ describe("systemConfig", () => {
     });
 
     it("clamps 0 to 1 for check_in_frequency_days", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       await seedCoach(t);
 
       const asCoach = t.withIdentity({ subject: "coach1" });
@@ -252,7 +264,7 @@ describe("systemConfig", () => {
     });
 
     it("clamps negative to 1 for check_in_frequency_days", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       await seedCoach(t);
 
       const asCoach = t.withIdentity({ subject: "coach1" });
@@ -268,7 +280,7 @@ describe("systemConfig", () => {
     });
 
     it("clamps string '0' to 1 for check_in_frequency_days", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       await seedCoach(t);
 
       const asCoach = t.withIdentity({ subject: "coach1" });
@@ -284,7 +296,7 @@ describe("systemConfig", () => {
     });
 
     it("stores number directly for check_in_frequency_days", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       await seedCoach(t);
 
       const asCoach = t.withIdentity({ subject: "coach1" });
@@ -302,13 +314,13 @@ describe("systemConfig", () => {
 
   describe("getPricing", () => {
     it("returns null when no pricing config exists", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       const result = await t.query(api.systemConfig.getPricing);
       expect(result).toBeNull();
     });
 
     it("returns pricing config when it exists", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       await t.run(async (ctx) => {
         await ctx.db.insert("systemConfig", {
           key: "pricing",
@@ -326,13 +338,13 @@ describe("systemConfig", () => {
 
   describe("getPlans", () => {
     it("returns empty array when no plans config exists", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       const result = await t.query(api.systemConfig.getPlans);
       expect(result).toEqual([]);
     });
 
     it("returns plans when configured", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       const plans = [
         {
           id: "monthly",
@@ -364,13 +376,13 @@ describe("systemConfig", () => {
 
   describe("getPaymentMethods", () => {
     it("returns empty array when no payment methods configured", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       const result = await t.query(api.systemConfig.getPaymentMethods);
       expect(result).toEqual([]);
     });
 
     it("returns payment methods when configured", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       const methods = [
         {
           type: "instapay",
@@ -397,13 +409,13 @@ describe("systemConfig", () => {
 
   describe("getSocialLinks", () => {
     it("returns empty object when no social links configured", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       const result = await t.query(api.systemConfig.getSocialLinks);
       expect(result).toEqual({});
     });
 
     it("returns social links when configured", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       await t.run(async (ctx) => {
         await ctx.db.insert("systemConfig", {
           key: "social_links",
@@ -425,7 +437,7 @@ describe("systemConfig", () => {
 
   describe("updateSocialLinks", () => {
     it("creates social links entry when none exists", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       await seedCoach(t);
 
       const asCoach = t.withIdentity({ subject: "coach1" });
@@ -444,7 +456,7 @@ describe("systemConfig", () => {
     });
 
     it("strips empty string values", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       await seedCoach(t);
 
       const asCoach = t.withIdentity({ subject: "coach1" });

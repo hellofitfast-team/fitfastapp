@@ -1,5 +1,6 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { mealPlanDataValidator, workoutPlanDataValidator } from "./planValidators";
 
 /** Reusable language validator */
 const languageValidator = v.union(v.literal("en"), v.literal("ar"));
@@ -54,9 +55,66 @@ const ocrExtractedDataValidator = v.object({
   bank: v.optional(v.string()),
 });
 
+/** Client profile status lifecycle */
+const clientStatusValidator = v.union(
+  v.literal("pending_approval"),
+  v.literal("signup_pending"),
+  v.literal("approved"),
+  v.literal("active"),
+  v.literal("inactive"),
+  v.literal("expired"),
+);
+
 export default defineSchema({
   // Auth tables are managed by BetterAuth component (isolated namespace)
   // — no longer spread into the main schema.
+
+  // ── New split tables (Phase 3 of schema overhaul) ─────────────────────
+
+  coachProfiles: defineTable({
+    userId: v.string(), // BetterAuth user ID
+    email: v.string(),
+    fullName: v.string(),
+    phone: v.optional(v.string()),
+    isOwner: v.optional(v.boolean()),
+    language: languageValidator,
+    updatedAt: v.number(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_email", ["email"]),
+
+  clientProfiles: defineTable({
+    userId: v.optional(v.string()), // Set when user creates password; null at signup time
+    email: v.string(),
+    fullName: v.string(),
+    phone: v.optional(v.string()),
+    language: languageValidator,
+    status: clientStatusValidator,
+    planTier: planTierValidator,
+    planStartDate: v.optional(v.string()),
+    planEndDate: v.optional(v.string()),
+    notificationReminderTime: v.optional(v.string()),
+    inviteToken: v.optional(v.string()),
+    inactiveSince: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_email", ["email"])
+    .index("by_status", ["status"])
+    .index("by_inviteToken", ["inviteToken"]),
+
+  signupPayments: defineTable({
+    clientProfileId: v.id("clientProfiles"),
+    transferReferenceNumber: v.optional(v.string()),
+    transferAmount: v.optional(v.string()),
+    paymentScreenshotId: v.optional(v.id("_storage")),
+    ocrExtractedData: v.optional(ocrExtractedDataValidator),
+    rejectionReason: v.optional(v.string()),
+    reviewedAt: v.optional(v.number()),
+  }).index("by_clientProfileId", ["clientProfileId"]),
+
+  // ── Legacy table (kept during migration, removed in Phase 7) ──────────
 
   profiles: defineTable({
     userId: v.string(), // BetterAuth user ID (references component user._id)
@@ -222,14 +280,14 @@ export default defineSchema({
   mealPlans: defineTable({
     userId: v.string(),
     checkInId: v.optional(v.id("checkIns")),
-    planData: v.any(),
+    planData: mealPlanDataValidator,
     aiGeneratedContent: v.optional(v.string()),
     streamId: v.optional(v.string()),
     language: languageValidator,
     startDate: v.string(),
     endDate: v.string(),
     assessmentVersion: v.optional(v.number()),
-    translatedPlanData: v.optional(v.any()),
+    translatedPlanData: v.optional(mealPlanDataValidator),
     translatedLanguage: v.optional(languageValidator),
     translationStatus: v.optional(
       v.union(v.literal("pending"), v.literal("completed"), v.literal("failed")),
@@ -242,14 +300,14 @@ export default defineSchema({
   workoutPlans: defineTable({
     userId: v.string(),
     checkInId: v.optional(v.id("checkIns")),
-    planData: v.any(),
+    planData: workoutPlanDataValidator,
     aiGeneratedContent: v.optional(v.string()),
     streamId: v.optional(v.string()),
     language: languageValidator,
     startDate: v.string(),
     endDate: v.string(),
     assessmentVersion: v.optional(v.number()),
-    translatedPlanData: v.optional(v.any()),
+    translatedPlanData: v.optional(workoutPlanDataValidator),
     translatedLanguage: v.optional(languageValidator),
     translationStatus: v.optional(
       v.union(v.literal("pending"), v.literal("completed"), v.literal("failed")),
@@ -380,6 +438,7 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index("by_userId", ["userId"])
+    .index("by_userId_isActive", ["userId", "isActive"])
     .index("by_endpoint", ["endpoint"])
     .index("by_isActive", ["isActive"]),
 
@@ -501,7 +560,9 @@ export default defineSchema({
     cacheKey: v.string(),
     planData: v.any(),
     createdAt: v.number(),
-  }).index("by_cacheKey", ["cacheKey"]),
+  })
+    .index("by_cacheKey", ["cacheKey"])
+    .index("by_createdAt", ["createdAt"]),
 
   exerciseDatabase: defineTable({
     name: v.string(),

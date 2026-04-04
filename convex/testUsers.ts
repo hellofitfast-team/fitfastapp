@@ -3,7 +3,7 @@
 import { ConvexError, v } from "convex/values";
 import { action } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { getAuthUserId } from "./auth";
+import { requireCoachAction } from "./authHelpers";
 import { formatDate } from "./testUsersHelpers";
 
 const DEFAULT_PASSWORD = "test12345";
@@ -85,12 +85,7 @@ export const createTestUser = action({
     ctx,
     { planTier, scenario, language },
   ): Promise<{ email: string; password: string; fullName: string; status: string }> => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new ConvexError("Not authenticated");
-
-    // Verify coach
-    const isCoach = await ctx.runQuery(internal.testUsersHelpers.checkIsCoach, { userId });
-    if (!isCoach) throw new ConvexError("Not authorized");
+    const userId = await requireCoachAction(ctx, internal.helpers.getCoachProfileInternal);
 
     const email = `test-${Date.now()}@fitfast.test`;
     const fullName = SCENARIO_NAMES[scenario] ?? "Test User";
@@ -149,12 +144,7 @@ export const createTestUser = action({
 export const deleteTestUser = action({
   args: { profileId: v.id("profiles") },
   handler: async (ctx, { profileId }): Promise<void> => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new ConvexError("Not authenticated");
-
-    // Verify coach before delegating to internal mutation
-    const isCoach = await ctx.runQuery(internal.testUsersHelpers.checkIsCoach, { userId });
-    if (!isCoach) throw new ConvexError("Not authorized");
+    const userId = await requireCoachAction(ctx, internal.helpers.getCoachProfileInternal);
 
     await ctx.runMutation(internal.testUsersHelpers.deleteTestUserMutation, {
       profileId,

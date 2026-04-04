@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { query, mutation, internalQuery, internalMutation } from "./_generated/server";
 import { getAuthUserId } from "./auth";
-import { requireCoach } from "./helpers";
+import { requireCoach } from "./authHelpers";
 
 // ---------------------------------------------------------------------------
 // Reusable validators

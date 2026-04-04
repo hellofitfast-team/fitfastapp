@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { query, internalMutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { normalizeEmail } from "./helpers";
 
 const INVITE_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
@@ -36,7 +37,7 @@ export const hasPendingInvite = query({
     if (!email || !email.includes("@")) return false;
     const invite = await ctx.db
       .query("adminInvites")
-      .withIndex("by_email", (q) => q.eq("email", email.toLowerCase()))
+      .withIndex("by_email", (q) => q.eq("email", normalizeEmail(email)))
       .order("desc")
       .first();
     return !!invite && !invite.usedAt && Date.now() <= invite.expiresAt;
@@ -110,7 +111,7 @@ export const createInviteRecord = internalMutation({
   },
   handler: async (ctx, { email: rawEmail, fullName, token, invitedBy, requireNoOwner }) => {
     // Normalize email to lowercase to prevent case-sensitivity bugs
-    const email = rawEmail.toLowerCase();
+    const email = normalizeEmail(rawEmail);
 
     // Atomic owner check — prevents TOCTOU race where two initial invites slip through
     if (requireNoOwner) {

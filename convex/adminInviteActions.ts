@@ -3,7 +3,7 @@
 import { v } from "convex/values";
 import { action, internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { getAuthUserId } from "./auth";
+import { requireCoachAction } from "./authHelpers";
 import crypto from "crypto";
 
 /**
@@ -17,13 +17,7 @@ export const inviteAdmin = action({
   },
   handler: async (ctx, { email, fullName }): Promise<string> => {
     // Verify caller is an authenticated coach
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
-
-    const profile = await ctx.runQuery(internal.helpers.getProfileInternal, {
-      userId,
-    });
-    if (!profile?.isCoach) throw new Error("Not authorized — coach only");
+    const userId = await requireCoachAction(ctx, internal.helpers.getCoachProfileInternal);
 
     const token = crypto.randomBytes(32).toString("hex");
 

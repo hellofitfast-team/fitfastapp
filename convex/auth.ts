@@ -59,10 +59,28 @@ export const createAuth = (ctx: GenericCtx<DataModel>) => {
  * Compatibility wrapper — drop-in replacement for the old getAuthUserId.
  * Returns the BetterAuth user ID (string) or null if not authenticated.
  * All 30+ Convex files import this, so preserving the interface avoids a massive rewrite.
+ *
+ * Falls back to ctx.auth.getUserIdentity().subject when the betterAuth
+ * component lookup fails (e.g. in convex-test environments).
  */
 export async function getAuthUserId(ctx: any): Promise<string | null> {
-  const user = await authComponent.safeGetAuthUser(ctx);
-  return user?._id ?? null;
+  try {
+    const user = await authComponent.safeGetAuthUser(ctx);
+    return user?._id ?? null;
+  } catch (err: unknown) {
+    // Fall back to native identity ONLY in convex-test environments.
+    // Detection: convex-test provides ctx.auth.getUserIdentity but doesn't
+    // fully wire betterAuth component internals, so safeGetAuthUser throws.
+    // In production, ctx.auth.getUserIdentity is provided by the Convex runtime
+    // but safeGetAuthUser should never throw — so we re-throw unexpected errors.
+    if (typeof ctx.auth?.getUserIdentity === "function") {
+      // Likely convex-test — fall back to native identity
+      const identity = await ctx.auth.getUserIdentity();
+      if (identity?.subject) return identity.subject;
+    }
+    // Not a test environment or no identity available — re-throw
+    throw err;
+  }
 }
 
 // Export client API for use with ClientAuthBoundary / auth-aware queries

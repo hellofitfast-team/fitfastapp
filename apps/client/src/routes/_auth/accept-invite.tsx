@@ -76,8 +76,16 @@ function AcceptInvitePage() {
       });
 
       if (result.error) {
-        setError(t("accountCreationFailed"));
-        return;
+        // User may already exist (e.g. previous attempt where profile creation failed).
+        // Try signing in instead — if credentials match, the user gets in.
+        const signInResult = await authClient.signIn.email({
+          email: inviteData.email,
+          password,
+        });
+        if (signInResult.error) {
+          setError(t("accountCreationFailed"));
+          return;
+        }
       }
 
       // Hard navigate to /pending — bypasses _auth layout's beforeLoad

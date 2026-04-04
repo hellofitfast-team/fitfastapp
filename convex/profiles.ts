@@ -2,10 +2,11 @@ import { v } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
 import { query, mutation, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { getAuthUserId } from "./auth";
+import { getAuthUserId, authComponent } from "./auth";
 import { activeClientsCount } from "./adminStats";
-import { deleteAuthRecords } from "./helpers";
+import { deleteAuthRecords, normalizeEmail } from "./helpers";
 import { logAuditEvent } from "./auditLog";
+import { rateLimiter } from "./rateLimiter";
 
 export const getMyProfile = query({
   args: {},
@@ -17,6 +18,112 @@ export const getMyProfile = query({
       .query("profiles")
       .withIndex("by_userId", (q) => q.eq("userId", userId))
       .unique();
+  },
+});
+
+/**
+ * Recovery mutation: if an authenticated user has no profile (e.g. onNewUserCreated
+ * scheduler job failed), re-trigger profile creation. Safe to call multiple times —
+ * onNewUserCreated has an idempotency guard that skips if profile already exists.
+ */
+export const ensureProfile = mutation({
+  args: {},
+  handler: async (ctx): Promise<{ status: "exists" | "scheduled" | "not_authenticated" }> => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return { status: "not_authenticated" };
+
+    await rateLimiter.limit(ctx, "ensureProfile", { key: userId });
+
+    // Check ALL profile tables (legacy + new) for idempotency
+    const existingLegacy = await ctx.db
+      .query("profiles")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .unique();
+    const existingCoach = await ctx.db
+      .query("coachProfiles")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .unique();
+    const existingClient = await ctx.db
+      .query("clientProfiles")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .unique();
+
+    if (existingLegacy || existingCoach || existingClient) return { status: "exists" };
+
+    // Need email for onNewUserCreated — look it up from the auth user
+    // Use authComponent directly here since we already confirmed auth via getAuthUserId
+    let email = "";
+    try {
+      const authUser = await authComponent.safeGetAuthUser(ctx);
+      email = authUser?.email ?? "";
+    } catch {
+      // In test environments, fall back to identity tokenIdentifier
+      const identity = await ctx.auth?.getUserIdentity?.();
+      email = identity?.email ?? "";
+    }
+
+    if (!email) {
+      console.warn("[ensureProfile] No email found for userId:", userId);
+      return { status: "not_authenticated" };
+    }
+
+    // Profile missing — schedule creation (same path as the auth trigger)
+    await ctx.scheduler.runAfter(0, internal.profiles.onNewUserCreated, {
+      userId,
+      email,
+    });
+
+    return { status: "scheduled" };
+  },
+});
+
+/** Client-specific profile query — reads from clientProfiles (new) with legacy fallback */
+export const getMyClientProfile = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+
+    // Try new table first
+    const clientProfile = await ctx.db
+      .query("clientProfiles")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .unique();
+    if (clientProfile) return clientProfile;
+
+    // Fallback to legacy profiles table during migration
+    const legacy = await ctx.db
+      .query("profiles")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .unique();
+    if (legacy && !legacy.isCoach) return legacy;
+
+    return null;
+  },
+});
+
+/** Coach-specific profile query — reads from coachProfiles (new) with legacy fallback */
+export const getMyCoachProfile = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+
+    // Try new table first
+    const coachProfile = await ctx.db
+      .query("coachProfiles")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .unique();
+    if (coachProfile) return coachProfile;
+
+    // Fallback to legacy profiles table during migration
+    const legacy = await ctx.db
+      .query("profiles")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .unique();
+    if (legacy?.isCoach) return legacy;
+
+    return null;
   },
 });
 
@@ -65,7 +172,7 @@ export const getTeamMembers = query({
     const pendingInvites = allInvites.filter((inv) => !inv.usedAt && now <= inv.expiresAt);
 
     // Merge: active coaches + pending invites (exclude invites for existing coaches)
-    const coachEmails = new Set(coaches.map((c) => c.email?.toLowerCase()));
+    const coachEmails = new Set(coaches.map((c) => (c.email ? normalizeEmail(c.email) : "")));
 
     const members: {
       email: string;
@@ -84,7 +191,7 @@ export const getTeamMembers = query({
     }
 
     for (const invite of pendingInvites) {
-      if (!coachEmails.has(invite.email.toLowerCase())) {
+      if (!coachEmails.has(normalizeEmail(invite.email))) {
         members.push({
           email: invite.email,
           fullName: invite.fullName,
@@ -116,11 +223,14 @@ export const removeTeamMember = mutation({
       .query("profiles")
       .withIndex("by_isCoach", (q) => q.eq("isCoach", true))
       .collect();
-    const target = allCoaches.find((p) => p.email?.toLowerCase() === email.toLowerCase());
+    const normalizedEmail = normalizeEmail(email);
+    const target = allCoaches.find((p) =>
+      p.email ? normalizeEmail(p.email) === normalizedEmail : false,
+    );
 
     if (target?.isOwner) throw new Error("Cannot remove the owner account");
 
-    const emailLower = email.toLowerCase();
+    const emailLower = normalizedEmail;
 
     if (target) {
       // Delete all auth records (sessions, tokens, verifiers, accounts, user)
@@ -399,7 +509,7 @@ export const createProfileForNewUser = internalMutation({
   handler: async (ctx, { userId, email, fullName }) => {
     await ctx.db.insert("profiles", {
       userId,
-      email: email?.toLowerCase(),
+      email: email ? normalizeEmail(email) : undefined,
       fullName,
       language: "en",
       status: "pending_approval",
@@ -417,86 +527,144 @@ export const onNewUserCreated = internalMutation({
   },
   handler: async (ctx, { userId, email }) => {
     try {
-      // Check if a profile already exists
-      const existing = await ctx.db
+      // Idempotency: check if a profile already exists in any table
+      const existingLegacy = await ctx.db
         .query("profiles")
         .withIndex("by_userId", (q) => q.eq("userId", userId))
         .unique();
-      if (existing) {
+      const existingCoach = await ctx.db
+        .query("coachProfiles")
+        .withIndex("by_userId", (q) => q.eq("userId", userId))
+        .unique();
+      const existingClient = await ctx.db
+        .query("clientProfiles")
+        .withIndex("by_userId", (q) => q.eq("userId", userId))
+        .unique();
+
+      if (existingLegacy || existingCoach || existingClient) {
         console.log(`[onNewUserCreated] Profile already exists for userId=${userId}, skipping`);
         return;
       }
 
-      // Check if this user came from an admin invite (coach setup flow)
-      // Try exact match first, then case-insensitive fallback
-      let adminInvite = await ctx.db
+      const normalizedEmail = normalizeEmail(email);
+      const now = Date.now();
+
+      // ── Coach flow: check admin invites ──
+      const adminInvite = await ctx.db
         .query("adminInvites")
-        .withIndex("by_email", (q) => q.eq("email", email))
+        .withIndex("by_email", (q) => q.eq("email", normalizedEmail))
         .order("desc")
         .first();
-
-      // Case-insensitive fallback (email field may differ in case)
-      if (!adminInvite) {
-        adminInvite = await ctx.db
-          .query("adminInvites")
-          .withIndex("by_email", (q) => q.eq("email", email.toLowerCase()))
-          .order("desc")
-          .first();
-      }
 
       console.log(
         `[onNewUserCreated] email=${email}, adminInvite=${adminInvite ? `found(usedAt=${adminInvite.usedAt}, expires=${adminInvite.expiresAt})` : "not found"}`,
       );
 
-      if (adminInvite && !adminInvite.usedAt && Date.now() <= adminInvite.expiresAt) {
-        // Create coach profile from admin invite
-        // If no invitedBy, this is the initial owner setup
+      if (adminInvite && !adminInvite.usedAt && now <= adminInvite.expiresAt) {
         const isOwner = !adminInvite.invitedBy;
+
+        // Write to BOTH tables (dual-write during migration)
+        await ctx.db.insert("coachProfiles", {
+          userId,
+          email: normalizedEmail,
+          fullName: adminInvite.fullName,
+          language: "en",
+          isOwner: isOwner || undefined,
+          updatedAt: now,
+        });
         await ctx.db.insert("profiles", {
           userId,
-          email: adminInvite.email,
+          email: normalizedEmail,
           fullName: adminInvite.fullName,
           language: "en",
           status: "active",
           isCoach: true,
           isOwner: isOwner || undefined,
-          updatedAt: Date.now(),
+          updatedAt: now,
         });
-        // Mark invite as used
-        await ctx.db.patch(adminInvite._id, { usedAt: Date.now() });
+
+        await ctx.db.patch(adminInvite._id, { usedAt: now });
         return;
       }
 
-      // Check if this user came from an approved pending signup (client invite flow)
-      // Use desc order to get the most recent signup (handles multiple signups for same email)
-      // Try exact match first, then case-insensitive fallback
+      // ── Client flow: LINK to existing clientProfiles or check pendingSignups ──
+
+      // First check if a clientProfiles record already exists by email (created at signup time)
+      const existingClientByEmail = await ctx.db
+        .query("clientProfiles")
+        .withIndex("by_email", (q) => q.eq("email", normalizedEmail))
+        .first();
+
+      if (existingClientByEmail) {
+        // LINK the userId to the existing record (the core fix for the lockout bug)
+        const basePatch: {
+          userId: string;
+          updatedAt: number;
+          status?: "active";
+          planStartDate?: string;
+          planEndDate?: string;
+          inviteToken?: undefined;
+        } = { userId, updatedAt: now };
+
+        // If status is "approved", activate the profile
+        if (existingClientByEmail.status === "approved") {
+          const planMonths = existingClientByEmail.planTier === "quarterly" ? 3 : 1;
+          const endDate = new Date();
+          endDate.setMonth(endDate.getMonth() + planMonths);
+          basePatch.status = "active";
+          basePatch.planStartDate = new Date().toISOString().split("T")[0];
+          basePatch.planEndDate = endDate.toISOString().split("T")[0];
+        }
+
+        // Clear invite token
+        if (existingClientByEmail.inviteToken) {
+          basePatch.inviteToken = undefined;
+        }
+
+        await ctx.db.patch(existingClientByEmail._id, basePatch);
+        console.log(
+          `[onNewUserCreated] Linked userId to existing clientProfile for ${normalizedEmail}, status=${basePatch.status ?? existingClientByEmail.status}`,
+        );
+
+        if (basePatch.status === "active") {
+          await activeClientsCount.insert(ctx, {
+            key: existingClientByEmail._id,
+            id: existingClientByEmail._id,
+          });
+        }
+
+        // Also create legacy profile for backward compat during migration
+        await ctx.db.insert("profiles", {
+          userId,
+          email: normalizedEmail,
+          fullName: existingClientByEmail.fullName,
+          language: existingClientByEmail.language,
+          status: basePatch.status ?? existingClientByEmail.status,
+          isCoach: false,
+          planTier: existingClientByEmail.planTier,
+          planStartDate: basePatch.planStartDate ?? existingClientByEmail.planStartDate,
+          planEndDate: basePatch.planEndDate ?? existingClientByEmail.planEndDate,
+          updatedAt: now,
+        });
+
+        return;
+      }
+
+      // Check pendingSignups (legacy table, still active until Phase 4 merges it)
       let signup = await ctx.db
         .query("pendingSignups")
-        .withIndex("by_email", (q) => q.eq("email", email))
+        .withIndex("by_email_status", (q) =>
+          q.eq("email", normalizedEmail).eq("status", "approved"),
+        )
         .order("desc")
         .first();
 
-      // If found but not approved, check if there's an approved one
-      if (signup && signup.status !== "approved") {
-        const approvedSignup = await ctx.db
+      if (!signup) {
+        signup = await ctx.db
           .query("pendingSignups")
-          .withIndex("by_email_status", (q) => q.eq("email", email).eq("status", "approved"))
+          .withIndex("by_email", (q) => q.eq("email", normalizedEmail))
           .order("desc")
           .first();
-        if (approvedSignup) signup = approvedSignup;
-      }
-
-      // Case-insensitive fallback
-      if (!signup || signup.status !== "approved") {
-        const lowerEmail = email.toLowerCase();
-        if (lowerEmail !== email) {
-          const fallback = await ctx.db
-            .query("pendingSignups")
-            .withIndex("by_email_status", (q) => q.eq("email", lowerEmail).eq("status", "approved"))
-            .order("desc")
-            .first();
-          if (fallback) signup = fallback;
-        }
       }
 
       console.log(
@@ -504,14 +672,26 @@ export const onNewUserCreated = internalMutation({
       );
 
       if (signup && signup.status === "approved") {
-        // Create profile from the approved signup data
         const planMonths = signup.planTier === "quarterly" ? 3 : 1;
         const endDate = new Date();
         endDate.setMonth(endDate.getMonth() + planMonths);
 
+        // Dual-write: new table + legacy table
+        const clientProfileId = await ctx.db.insert("clientProfiles", {
+          userId,
+          email: normalizedEmail,
+          fullName: signup.fullName,
+          language: "en",
+          status: "active",
+          planTier: signup.planTier ?? "monthly",
+          planStartDate: new Date().toISOString().split("T")[0],
+          planEndDate: endDate.toISOString().split("T")[0],
+          createdAt: now,
+          updatedAt: now,
+        });
         const profileId = await ctx.db.insert("profiles", {
           userId,
-          email: signup.email.toLowerCase(),
+          email: normalizedEmail,
           fullName: signup.fullName,
           language: "en",
           status: "active",
@@ -519,29 +699,34 @@ export const onNewUserCreated = internalMutation({
           planTier: signup.planTier,
           planStartDate: new Date().toISOString().split("T")[0],
           planEndDate: endDate.toISOString().split("T")[0],
-          updatedAt: Date.now(),
+          updatedAt: now,
         });
 
-        // Maintain active clients aggregate counter
         await activeClientsCount.insert(ctx, { key: profileId, id: profileId });
 
-        // Mark invite token as used
         if (signup.inviteToken) {
-          await ctx.db.patch(signup._id, {
-            inviteToken: undefined,
-          });
+          await ctx.db.patch(signup._id, { inviteToken: undefined });
         }
       } else {
-        // Fallback: create a basic pending profile
-        // Normalize email to lowercase so index lookups in approveSignup match
-        console.log(`[onNewUserCreated] Creating pending_approval profile for ${email}`);
+        // Fallback: create a basic pending profile in both tables
+        console.log(`[onNewUserCreated] Creating pending_approval profile for ${normalizedEmail}`);
+        await ctx.db.insert("clientProfiles", {
+          userId,
+          email: normalizedEmail,
+          fullName: "",
+          language: "en",
+          status: "pending_approval",
+          planTier: "monthly",
+          createdAt: now,
+          updatedAt: now,
+        });
         await ctx.db.insert("profiles", {
           userId,
-          email: email.toLowerCase(),
+          email: normalizedEmail,
           language: "en",
           status: "pending_approval",
           isCoach: false,
-          updatedAt: Date.now(),
+          updatedAt: now,
         });
       }
     } catch (error) {
@@ -549,7 +734,7 @@ export const onNewUserCreated = internalMutation({
         `[onNewUserCreated] FAILED for userId=${userId}, email=${email}:`,
         error instanceof Error ? error.message : String(error),
       );
-      throw error; // Re-throw so Convex logs the failure
+      throw error;
     }
   },
 });

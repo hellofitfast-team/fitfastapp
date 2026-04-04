@@ -8,6 +8,7 @@ export interface AuthState {
   isLoading: boolean;
   userId: string | null;
   isCoach: boolean;
+  isOwner: boolean;
 }
 
 const AuthContext = createContext<AuthState>({
@@ -15,17 +16,20 @@ const AuthContext = createContext<AuthState>({
   isLoading: true,
   userId: null,
   isCoach: false,
+  isOwner: false,
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated, isLoading } = useConvexAuth();
-  const profile = useQuery(api.profiles.getMyProfile, isAuthenticated ? {} : "skip");
+  // getMyCoachProfile already falls back to legacy profiles table server-side
+  const profile = useQuery(api.profiles.getMyCoachProfile, isAuthenticated ? {} : "skip");
 
   const auth: AuthState = {
     isAuthenticated,
     isLoading: isLoading || (isAuthenticated && profile === undefined),
     userId: profile?.userId ?? null,
-    isCoach: profile?.isCoach ?? false,
+    isCoach: !!profile,
+    isOwner: !!(profile && "isOwner" in profile && profile.isOwner),
   };
 
   return <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>;

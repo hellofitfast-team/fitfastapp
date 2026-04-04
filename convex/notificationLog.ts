@@ -1,19 +1,12 @@
 import { v } from "convex/values";
 import { query, internalMutation } from "./_generated/server";
-import { getAuthUserId } from "./auth";
+import { requireCoach } from "./authHelpers";
 
 /** Coach-only: returns last 50 notification logs ordered by sentAt desc */
 export const getNotificationLogs = query({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
-
-    const profile = await ctx.db
-      .query("profiles")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .unique();
-    if (!profile?.isCoach) throw new Error("Not authorized");
+    await requireCoach(ctx);
 
     return ctx.db.query("notificationLog").withIndex("by_sentAt").order("desc").take(200);
   },

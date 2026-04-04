@@ -84,10 +84,10 @@ export const cascadeDeleteUser = internalMutation({
     // Delete all auth records (accounts, sessions, tokens, verifiers, user)
     await deleteAuthRecords(ctx, userId);
 
-    // Delete the profile and clean up any matching pendingSignups
+    // Delete the profile and clean up matching records in legacy + new tables
     const profileDoc = await ctx.db.get(profileId);
     if (profileDoc) {
-      // Clean up pendingSignups by email so orphaned records don't resurface
+      // Clean up pendingSignups by email
       if (profileDoc.email) {
         const pendingSignups = await ctx.db
           .query("pendingSignups")
@@ -98,6 +98,31 @@ export const cascadeDeleteUser = internalMutation({
         }
       }
       await ctx.db.delete(profileId);
+    }
+
+    // Also delete from new tables (Phase 3/4 dual-write)
+    const clientProfile = await ctx.db
+      .query("clientProfiles")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .first();
+    if (clientProfile) {
+      // Delete signupPayments linked to this client profile
+      const payments = await ctx.db
+        .query("signupPayments")
+        .withIndex("by_clientProfileId", (q) => q.eq("clientProfileId", clientProfile._id))
+        .collect();
+      for (const payment of payments) {
+        await ctx.db.delete(payment._id);
+      }
+      await ctx.db.delete(clientProfile._id);
+    }
+
+    const coachProfile = await ctx.db
+      .query("coachProfiles")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .first();
+    if (coachProfile) {
+      await ctx.db.delete(coachProfile._id);
     }
   },
 });

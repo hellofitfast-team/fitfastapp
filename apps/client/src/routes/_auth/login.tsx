@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useConvexAuth, useQuery } from "convex/react";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { authClient } from "@/lib/auth-client";
 import { Mail, Lock, ArrowRight, Zap, Loader2 } from "lucide-react";
@@ -46,6 +46,17 @@ function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isSigningOut = useRef(false);
+  const isRecovering = useRef(false);
+  const recoveryTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const ensureProfile = useMutation(api.profiles.ensureProfile);
+
+  // Cleanup recovery state on unmount (also handles React Strict Mode double-mount)
+  useEffect(() => {
+    return () => {
+      if (recoveryTimeout.current) clearTimeout(recoveryTimeout.current);
+      isRecovering.current = false;
+    };
+  }, []);
 
   // If user is already signed in, check role then redirect
   useEffect(() => {
@@ -61,18 +72,46 @@ function LoginPage() {
     }
 
     if (profile === null) {
-      isSigningOut.current = true;
-      void authClient.signOut().then(() => {
-        isSigningOut.current = false;
-        setError(t("accountNotFound"));
-      });
+      // Profile missing — attempt recovery before giving up
+      if (!isRecovering.current) {
+        isRecovering.current = true;
+        ensureProfile()
+          .then(() => {
+            // Profile creation scheduled — reactive query will update when ready.
+            // Set a timeout: if profile is still null after 8s, give up.
+            recoveryTimeout.current = setTimeout(() => {
+              if (isRecovering.current) {
+                isRecovering.current = false;
+                isSigningOut.current = true;
+                void authClient.signOut().then(() => {
+                  isSigningOut.current = false;
+                  setError(t("accountNotFound"));
+                });
+              }
+            }, 8000);
+          })
+          .catch(() => {
+            isRecovering.current = false;
+            isSigningOut.current = true;
+            void authClient.signOut().then(() => {
+              isSigningOut.current = false;
+              setError(t("accountNotFound"));
+            });
+          });
+      }
       return;
+    }
+
+    // Profile exists — clear any recovery state and navigate
+    if (isRecovering.current) {
+      isRecovering.current = false;
+      if (recoveryTimeout.current) clearTimeout(recoveryTimeout.current);
     }
 
     if (isAuthenticated) {
       navigate({ to: "/", replace: true });
     }
-  }, [isAuthenticated, profile, navigate, t]);
+  }, [isAuthenticated, profile, navigate, t, ensureProfile]);
 
   // Handle URL search params (error/message from redirects)
   useEffect(() => {

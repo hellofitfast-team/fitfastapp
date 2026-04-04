@@ -3,6 +3,7 @@ import { internalMutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { activeClientsCount } from "./adminStats";
 import type { Id } from "./_generated/dataModel";
+import { normalizeEmail } from "./helpers";
 
 // ─── Check if a user is a coach ────────────────────────────────────────────
 
@@ -38,7 +39,7 @@ export const insertTestUser = internalMutation({
     // Check for existing profile
     const existing = await ctx.db
       .query("profiles")
-      .withIndex("by_email", (q: any) => q.eq("email", args.email.toLowerCase()))
+      .withIndex("by_email", (q: any) => q.eq("email", normalizeEmail(args.email)))
       .first();
     if (existing) throw new ConvexError(`User ${args.email} already exists`);
 

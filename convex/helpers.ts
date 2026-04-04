@@ -5,6 +5,14 @@ import { getAuthUserId } from "./auth";
 import { DEFAULT_CHECK_IN_FREQUENCY_DAYS, DEFAULT_WORKOUT_PLAN_DURATION_DAYS } from "./constants";
 
 /**
+ * Normalize an email address — trim whitespace and lowercase.
+ * Used by ALL mutations that write email fields to ensure consistent storage.
+ */
+export function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+/**
  * Fetch the coach-configured check-in frequency from systemConfig.
  * Falls back to DEFAULT_CHECK_IN_FREQUENCY_DAYS if not configured.
  * Works in any context with direct DB access (queries, mutations).
@@ -108,6 +116,24 @@ export const getProfileInternal = internalQuery({
       .query("profiles")
       .withIndex("by_userId", (q) => q.eq("userId", userId))
       .unique();
+  },
+});
+
+/** Coach profile lookup for actions — checks coachProfiles first, falls back to legacy */
+export const getCoachProfileInternal = internalQuery({
+  args: { userId: v.string() },
+  handler: async (ctx, { userId }) => {
+    const coachProfile = await ctx.db
+      .query("coachProfiles")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .unique();
+    if (coachProfile) return { ...coachProfile, isCoach: true as const };
+
+    const legacy = await ctx.db
+      .query("profiles")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .unique();
+    return legacy;
   },
 });
 

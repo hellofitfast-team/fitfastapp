@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery } from "./_generated/server";
 import { DEFAULT_CHECK_IN_FREQUENCY_DAYS } from "./constants";
+import { normalizeEmail } from "./helpers";
 
 // ---------------------------------------------------------------------------
 // Shared helper: resolve email → userId via profile index (BetterAuth compatible)
@@ -13,7 +14,7 @@ async function resolveUserByEmail(
 ): Promise<{ userId: string; profileId: any } | null> {
   const profile = await ctx.db
     .query("profiles")
-    .withIndex("by_email", (q: any) => q.eq("email", email.toLowerCase()))
+    .withIndex("by_email", (q: any) => q.eq("email", normalizeEmail(email)))
     .first();
   if (!profile) return null;
   return { userId: profile.userId, profileId: profile._id };
@@ -324,7 +325,7 @@ export const insertAuthUser = internalMutation({
     // Check if profile already exists
     const existing = await ctx.db
       .query("profiles")
-      .withIndex("by_email", (q: any) => q.eq("email", email.toLowerCase()))
+      .withIndex("by_email", (q: any) => q.eq("email", normalizeEmail(email)))
       .first();
 
     if (existing) {
@@ -341,7 +342,7 @@ export const insertAuthUser = internalMutation({
     // Create profile without a userId — it will be linked when the user signs up via BetterAuth
     await ctx.db.insert("profiles", {
       userId: `pending_${email}`, // placeholder until BetterAuth user is created
-      email: email.toLowerCase(),
+      email: normalizeEmail(email),
       fullName,
       language: "en",
       status: "active",
@@ -834,55 +835,64 @@ export const populateNearExpiryUser = internalMutation({
       userId,
       checkInId: checkIn2,
       planData: {
-        dailyCalories: 2200,
-        macros: { protein: 180, carbs: 220, fat: 70 },
-        meals: [
-          {
-            name: "Breakfast",
-            time: "7:00 AM",
-            foods: ["3 eggs + toast + fruit"],
-            calories: 450,
-            protein: 25,
-            carbs: 45,
-            fat: 18,
+        dailyTargets: { calories: 2200, protein: 180, carbs: 220, fat: 70 },
+        weeklyPlan: {
+          day1: {
+            meals: [
+              {
+                name: "Breakfast",
+                type: "breakfast",
+                time: "7:00 AM",
+                calories: 450,
+                protein: 25,
+                carbs: 45,
+                fat: 18,
+                ingredients: ["3 eggs", "toast", "fruit"],
+              },
+              {
+                name: "Lunch",
+                type: "lunch",
+                time: "12:00 PM",
+                calories: 650,
+                protein: 45,
+                carbs: 60,
+                fat: 18,
+                ingredients: ["Grilled chicken", "rice", "salad"],
+              },
+              {
+                name: "Snack",
+                type: "snack",
+                time: "3:30 PM",
+                calories: 300,
+                protein: 20,
+                carbs: 25,
+                fat: 14,
+                ingredients: ["Greek yogurt", "nuts", "honey"],
+              },
+              {
+                name: "Dinner",
+                type: "dinner",
+                time: "7:00 PM",
+                calories: 550,
+                protein: 40,
+                carbs: 50,
+                fat: 15,
+                ingredients: ["Fish", "sweet potato", "vegetables"],
+              },
+              {
+                name: "Post-workout",
+                type: "snack",
+                time: "9:00 PM",
+                calories: 250,
+                protein: 30,
+                carbs: 35,
+                fat: 3,
+                ingredients: ["Protein shake", "banana"],
+              },
+            ],
+            dailyTotals: { calories: 2200, protein: 180, carbs: 220, fat: 70 },
           },
-          {
-            name: "Lunch",
-            time: "12:00 PM",
-            foods: ["Grilled chicken + rice + salad"],
-            calories: 650,
-            protein: 45,
-            carbs: 60,
-            fat: 18,
-          },
-          {
-            name: "Snack",
-            time: "3:30 PM",
-            foods: ["Greek yogurt + nuts + honey"],
-            calories: 300,
-            protein: 20,
-            carbs: 25,
-            fat: 14,
-          },
-          {
-            name: "Dinner",
-            time: "7:00 PM",
-            foods: ["Fish + sweet potato + vegetables"],
-            calories: 550,
-            protein: 40,
-            carbs: 50,
-            fat: 15,
-          },
-          {
-            name: "Post-workout",
-            time: "9:00 PM",
-            foods: ["Protein shake + banana"],
-            calories: 250,
-            protein: 30,
-            carbs: 35,
-            fat: 3,
-          },
-        ],
+        },
       },
       language: "en",
       startDate: todayStr,
@@ -894,11 +904,11 @@ export const populateNearExpiryUser = internalMutation({
       userId,
       checkInId: checkIn2,
       planData: {
-        split: "upper_lower",
-        daysPerWeek: 4,
-        workouts: [
-          {
-            day: "Day 1 - Upper",
+        splitType: "upper_lower",
+        splitName: "Upper/Lower Split",
+        weeklyPlan: {
+          day1: {
+            workoutName: "Day 1 - Upper",
             exercises: [
               { name: "Bench Press", sets: 4, reps: "8-10", rest: "90s" },
               { name: "Barbell Row", sets: 4, reps: "8-10", rest: "90s" },
@@ -907,8 +917,8 @@ export const populateNearExpiryUser = internalMutation({
               { name: "Bicep Curls", sets: 3, reps: "12-15", rest: "45s" },
             ],
           },
-          {
-            day: "Day 2 - Lower",
+          day2: {
+            workoutName: "Day 2 - Lower",
             exercises: [
               { name: "Squats", sets: 4, reps: "8-10", rest: "120s" },
               { name: "Romanian Deadlift", sets: 4, reps: "8-10", rest: "90s" },
@@ -917,7 +927,8 @@ export const populateNearExpiryUser = internalMutation({
               { name: "Calf Raises", sets: 4, reps: "15-20", rest: "45s" },
             ],
           },
-        ],
+        },
+        progressionNotes: "Increase weight by 2.5kg when you can complete all sets with good form.",
       },
       language: "en",
       startDate: todayStr,

@@ -4,7 +4,7 @@ import { internal } from "./_generated/api";
 import { getAuthUserId } from "./auth";
 import { activeClientsCount, pendingSignupsCount } from "./adminStats";
 import { rateLimiter } from "./rateLimiter";
-import { deleteAuthRecordsByEmail } from "./helpers";
+import { deleteAuthRecordsByEmail, normalizeEmail } from "./helpers";
 import { logAuditEvent } from "./auditLog";
 
 export const getPendingSignups = query({
@@ -45,11 +45,12 @@ export const getApprovedAwaitingAccount = query({
       .collect();
 
     // Filter out signups where the prospect already has a profile
+    // All emails are normalized to lowercase — direct lookup is sufficient
     const awaiting = [];
     for (const signup of approved) {
       const existing = await ctx.db
         .query("profiles")
-        .withIndex("by_email", (q) => q.eq("email", signup.email))
+        .withIndex("by_email", (q) => q.eq("email", normalizeEmail(signup.email)))
         .first();
       if (!existing) {
         awaiting.push(signup);
@@ -146,7 +147,7 @@ export const createSignup = mutation({
   },
   handler: async (ctx, args) => {
     // Server-side input validation
-    const email = args.email.trim().toLowerCase();
+    const email = normalizeEmail(args.email);
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       throw new Error("Invalid email address");
     }
@@ -164,26 +165,58 @@ export const createSignup = mutation({
     }
 
     await rateLimiter.limit(ctx, "createSignup", { key: email });
-    // Duplicate email guard (case-insensitive)
+    // Duplicate guard — check both tables
     const existingPending = await ctx.db
       .query("pendingSignups")
       .withIndex("by_email_status", (q) => q.eq("email", email).eq("status", "pending"))
       .first();
     if (existingPending) throw new Error("A signup with this email is already pending");
 
+    const existingClient = await ctx.db
+      .query("clientProfiles")
+      .withIndex("by_email", (q) => q.eq("email", email))
+      .first();
+    if (
+      existingClient &&
+      (existingClient.status === "signup_pending" || existingClient.status === "approved")
+    ) {
+      throw new Error("A signup with this email is already pending");
+    }
+
     // Generate invite token so the user can create their account immediately
-    // and land on the pending-approval screen while the coach reviews.
     const inviteToken =
       crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
 
+    // ── Dual-write: legacy pendingSignups + new clientProfiles ──
     const id = await ctx.db.insert("pendingSignups", {
       ...args,
       email,
       status: "pending",
       inviteToken,
     });
-    // Increment the denormalized pending count for the admin dashboard
     await pendingSignupsCount.insert(ctx, { key: id, id });
+
+    // Create clientProfile at signup time — profile exists BEFORE password is set
+    const now = Date.now();
+    const clientProfileId = await ctx.db.insert("clientProfiles", {
+      email,
+      fullName: args.fullName,
+      phone: args.phone,
+      language: "en",
+      status: "signup_pending" as const,
+      planTier: args.planTier ?? "monthly",
+      inviteToken,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    // Store payment data in signupPayments
+    await ctx.db.insert("signupPayments", {
+      clientProfileId,
+      transferReferenceNumber: args.transferReferenceNumber,
+      transferAmount: args.transferAmount,
+      paymentScreenshotId: args.paymentScreenshotId,
+    });
 
     // Schedule OCR extraction if a payment screenshot was uploaded
     if (args.paymentScreenshotId) {
@@ -193,9 +226,7 @@ export const createSignup = mutation({
       });
     }
 
-    // Send "Create Your Account" email with invite link.
-    // The user creates their account now but stays on a pending-approval screen
-    // until the coach approves their signup.
+    // Send "Create Your Account" email with invite link
     await ctx.scheduler.runAfter(0, internal.email.sendInvitationEmail, {
       email,
       fullName: args.fullName,
@@ -223,11 +254,13 @@ export const approveSignup = mutation({
     if (!signup) throw new Error("Signup not found");
     if (signup.status !== "pending") throw new Error("Signup has already been reviewed");
 
+    const now = Date.now();
+    const normalizedEmail = normalizeEmail(signup.email);
+
     await ctx.db.patch(signupId, {
       status: "approved",
-      reviewedAt: Date.now(),
+      reviewedAt: now,
     });
-    // Decrement pending count — signup is no longer "pending"
     await pendingSignupsCount.deleteIfExists(ctx, { key: signupId, id: signupId });
 
     await logAuditEvent(ctx, {
@@ -238,60 +271,80 @@ export const approveSignup = mutation({
       details: { email: signup.email, fullName: signup.fullName },
     });
 
-    // Check if the prospect already created their account (has a pending_approval profile)
-    // Try exact match first, then case-insensitive fallback (auth may normalize email case)
-    let clientProfile = await ctx.db
-      .query("profiles")
-      .withIndex("by_email", (q) => q.eq("email", signup.email))
+    // ── Also update clientProfiles (new table) ──
+    const newClientProfile = await ctx.db
+      .query("clientProfiles")
+      .withIndex("by_email", (q) => q.eq("email", normalizedEmail))
       .first();
 
-    if (!clientProfile) {
-      clientProfile = await ctx.db
-        .query("profiles")
-        .withIndex("by_email", (q) => q.eq("email", signup.email.toLowerCase()))
-        .first();
+    if (newClientProfile) {
+      if (newClientProfile.userId) {
+        // User already set password — activate directly
+        const planMonths = newClientProfile.planTier === "quarterly" ? 3 : 1;
+        const endDate = new Date();
+        endDate.setMonth(endDate.getMonth() + planMonths);
+
+        await ctx.db.patch(newClientProfile._id, {
+          status: "active",
+          planStartDate: new Date().toISOString().split("T")[0],
+          planEndDate: endDate.toISOString().split("T")[0],
+          inviteToken: undefined,
+          updatedAt: now,
+        });
+        await activeClientsCount.insert(ctx, {
+          key: newClientProfile._id,
+          id: newClientProfile._id,
+        });
+      } else {
+        // User hasn't set password yet — mark as approved, keep invite token
+        await ctx.db.patch(newClientProfile._id, {
+          status: "approved",
+          updatedAt: now,
+        });
+      }
     }
 
-    if (clientProfile) {
-      if (clientProfile.status === "pending_approval") {
-        // Activate the existing profile — prospect already set their password
+    // ── Legacy profiles table handling ──
+    const legacyProfile = await ctx.db
+      .query("profiles")
+      .withIndex("by_email", (q) => q.eq("email", normalizedEmail))
+      .first();
+
+    if (legacyProfile) {
+      if (legacyProfile.status === "pending_approval") {
         await ctx.scheduler.runAfter(0, internal.pendingSignups.activateClientProfile, {
-          profileId: clientProfile._id,
+          profileId: legacyProfile._id,
           signupId,
         });
-        // activateClientProfile sends the welcome email ("Access Your Account" CTA)
       } else {
-        // Profile already exists and is active/inactive/expired — no action needed,
-        // just send the welcome email so the user knows they're approved
         await ctx.scheduler.runAfter(0, internal.email.sendWelcomeEmail, {
-          email: clientProfile.email ?? signup.email,
-          fullName: clientProfile.fullName ?? signup.fullName,
-          language: (clientProfile.language as "en" | "ar") ?? "en",
+          email: legacyProfile.email ?? signup.email,
+          fullName: legacyProfile.fullName ?? signup.fullName,
+          language: (legacyProfile.language as "en" | "ar") ?? "en",
         });
       }
+    } else if (newClientProfile?.userId && newClientProfile.status === "active") {
+      // Profile activated via new table — send welcome email
+      await ctx.scheduler.runAfter(0, internal.email.sendWelcomeEmail, {
+        email: normalizedEmail,
+        fullName: signup.fullName,
+        language: "en" as const,
+      });
     } else {
-      // No profile found — with BetterAuth triggers, profile creation is atomic
-      // (same transaction as user creation), so the old "silent scheduler failure"
-      // case is eliminated. If no profile exists, the user hasn't created their account yet.
-      {
-        // Prospect hasn't created their account yet — send approval email
-        // with invite link so they can create their account (now as active user).
-        // Reuse existing token or generate a fresh one.
-        const inviteToken =
-          signup.inviteToken ??
-          crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
-        if (!signup.inviteToken) {
-          await ctx.db.patch(signupId, { inviteToken });
-        }
-
-        // Send welcome email with invite link for account creation
-        await ctx.scheduler.runAfter(0, internal.email.sendInvitationEmail, {
-          email: signup.email,
-          fullName: signup.fullName,
-          inviteToken,
-          language: "en" as const,
-        });
+      // No account yet — send invite email
+      const inviteToken =
+        signup.inviteToken ??
+        crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
+      if (!signup.inviteToken) {
+        await ctx.db.patch(signupId, { inviteToken });
       }
+
+      await ctx.scheduler.runAfter(0, internal.email.sendInvitationEmail, {
+        email: signup.email,
+        fullName: signup.fullName,
+        inviteToken,
+        language: "en" as const,
+      });
     }
   },
 });
@@ -498,10 +551,10 @@ export const deleteApprovedSignup = mutation({
       throw new Error("Only approved signups can be deleted from this action");
     }
 
-    // Ensure the signup hasn't already created a profile (email is lowercased on insert)
+    // Ensure the signup hasn't already created a profile
     const existingProfile = await ctx.db
       .query("profiles")
-      .withIndex("by_email", (q) => q.eq("email", signup.email.toLowerCase()))
+      .withIndex("by_email", (q) => q.eq("email", normalizeEmail(signup.email)))
       .first();
     if (existingProfile) {
       throw new Error("This signup already has an account — delete the client instead");

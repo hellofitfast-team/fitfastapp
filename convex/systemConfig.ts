@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { query, mutation, internalQuery, internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { getAuthUserId } from "./auth";
+import { requireCoach } from "./authHelpers";
 import {
   DEFAULT_CHECK_IN_FREQUENCY_DAYS,
   MIN_PLAN_DURATION_DAYS,
@@ -22,13 +22,7 @@ export const getConfig = query({
   args: { key: v.string() },
   handler: async (ctx, { key }) => {
     if (!PUBLIC_CONFIG_KEYS.has(key)) {
-      const userId = await getAuthUserId(ctx);
-      if (!userId) throw new Error("Not authenticated");
-      const profile = await ctx.db
-        .query("profiles")
-        .withIndex("by_userId", (q) => q.eq("userId", userId))
-        .unique();
-      if (!profile?.isCoach) throw new Error("Not authorized");
+      await requireCoach(ctx);
     }
     return ctx.db
       .query("systemConfig")
@@ -127,14 +121,8 @@ export const updatePlans = mutation({
     ),
   },
   handler: async (ctx, { plans }) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
-
-    const profile = await ctx.db
-      .query("profiles")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .unique();
-    if (!profile?.isCoach) throw new Error("Not authorized");
+    const coachProfile = await requireCoach(ctx);
+    const userId = coachProfile.userId;
 
     const existing = await ctx.db
       .query("systemConfig")
@@ -195,14 +183,8 @@ export const updatePaymentMethods = mutation({
     ),
   },
   handler: async (ctx, { paymentMethods }) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
-
-    const profile = await ctx.db
-      .query("profiles")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .unique();
-    if (!profile?.isCoach) throw new Error("Not authorized");
+    const coachProfile = await requireCoach(ctx);
+    const userId = coachProfile.userId;
 
     const existing = await ctx.db
       .query("systemConfig")
@@ -237,14 +219,8 @@ export const setConfig = mutation({
     value: v.any(),
   },
   handler: async (ctx, { key, value }) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
-
-    const profile = await ctx.db
-      .query("profiles")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .unique();
-    if (!profile?.isCoach) throw new Error("Not authorized");
+    const coachProfile = await requireCoach(ctx);
+    const userId = coachProfile.userId;
 
     // Coerce string-typed numbers for keys that must be numeric
     let storedValue = value;
@@ -317,14 +293,7 @@ export const updateSocialLinks = mutation({
     }),
   },
   handler: async (ctx, { links }) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
-
-    const profile = await ctx.db
-      .query("profiles")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .unique();
-    if (!profile?.isCoach) throw new Error("Not authorized");
+    await requireCoach(ctx);
 
     // Strip empty strings
     const cleaned: Record<string, string> = {};

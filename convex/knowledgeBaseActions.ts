@@ -3,7 +3,7 @@
 import { v } from "convex/values";
 import { action, internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { getAuthUserId } from "./auth";
+import { requireCoachAction } from "./authHelpers";
 import { getRagClient } from "./ragManager";
 import {
   RAG_CHUNK_SIZE_WORDS as CHUNK_SIZE,
@@ -280,12 +280,7 @@ export const processPdfUploadPublic = action({
     tags: v.optional(v.array(v.string())),
   },
   handler: async (ctx, { title, storageId, tags }): Promise<void> => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
-
-    // Coach-only guard
-    const profile = await ctx.runQuery(internal.helpers.getProfileInternal, { userId });
-    if (!profile?.isCoach) throw new Error("Not authorized — coach only");
+    await requireCoachAction(ctx, internal.helpers.getCoachProfileInternal);
 
     // Insert knowledge entry
     const entryId = await ctx.runMutation(internal.knowledgeBase.insertPdfEntry, {

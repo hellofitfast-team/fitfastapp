@@ -2,26 +2,38 @@ import { convexTest } from "convex-test";
 import { describe, it, expect } from "vitest";
 import { api, internal } from "../_generated/api";
 import schema from "../schema";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore — importing the compiled component schema directly
+import betterAuthSchema from "../../node_modules/@convex-dev/better-auth/dist/component/schema.js";
 
 const modules = import.meta.glob("../**/*.*s");
+const betterAuthModules = import.meta.glob(
+  "../../node_modules/@convex-dev/better-auth/dist/component/**/*.js",
+);
+
+function createTest() {
+  const t = convexTest(schema, modules);
+  t.registerComponent("betterAuth", betterAuthSchema, betterAuthModules);
+  return t;
+}
 
 describe("profiles", () => {
   describe("getMyProfile", () => {
     it("returns null when user is not authenticated", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       const result = await t.query(api.profiles.getMyProfile);
       expect(result).toBeNull();
     });
 
     it("returns null when authenticated user has no profile", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       const asUser = t.withIdentity({ subject: "user1" });
       const result = await asUser.query(api.profiles.getMyProfile);
       expect(result).toBeNull();
     });
 
     it("returns profile for authenticated user", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       // Seed a profile directly
       await t.run(async (ctx) => {
         await ctx.db.insert("profiles", {
@@ -49,14 +61,14 @@ describe("profiles", () => {
 
   describe("updateProfile", () => {
     it("throws when user is not authenticated", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       await expect(
         t.mutation(api.profiles.updateProfile, { fullName: "New Name" }),
       ).rejects.toThrow("Not authenticated");
     });
 
     it("throws when profile does not exist", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       const asUser = t.withIdentity({ subject: "user1" });
       await expect(
         asUser.mutation(api.profiles.updateProfile, { fullName: "New Name" }),
@@ -64,7 +76,7 @@ describe("profiles", () => {
     });
 
     it("updates fullName on existing profile", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       await t.run(async (ctx) => {
         await ctx.db.insert("profiles", {
           userId: "user1",
@@ -86,7 +98,7 @@ describe("profiles", () => {
     });
 
     it("updates language to Arabic", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       await t.run(async (ctx) => {
         await ctx.db.insert("profiles", {
           userId: "user1",
@@ -106,7 +118,7 @@ describe("profiles", () => {
     });
 
     it("updates multiple fields at once", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       await t.run(async (ctx) => {
         await ctx.db.insert("profiles", {
           userId: "user1",
@@ -134,14 +146,14 @@ describe("profiles", () => {
 
   describe("getProfileByUserId (coach-only)", () => {
     it("throws when caller is not authenticated", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       await expect(t.query(api.profiles.getProfileByUserId, { userId: "someone" })).rejects.toThrow(
         "Not authenticated",
       );
     });
 
     it("throws when caller is not a coach", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       await t.run(async (ctx) => {
         await ctx.db.insert("profiles", {
           userId: "client1",
@@ -159,7 +171,7 @@ describe("profiles", () => {
     });
 
     it("returns target profile when caller is coach", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       await t.run(async (ctx) => {
         await ctx.db.insert("profiles", {
           userId: "coach1",
@@ -192,7 +204,7 @@ describe("profiles", () => {
 
   describe("getAllClients (coach-only)", () => {
     it("throws when caller is not a coach", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       await t.run(async (ctx) => {
         await ctx.db.insert("profiles", {
           userId: "client1",
@@ -208,7 +220,7 @@ describe("profiles", () => {
     });
 
     it("returns only non-coach profiles", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       await t.run(async (ctx) => {
         await ctx.db.insert("profiles", {
           userId: "coach1",
@@ -250,7 +262,7 @@ describe("profiles", () => {
 
   describe("createProfileForNewUser (internal)", () => {
     it("creates a pending profile for a new user", async () => {
-      const t = convexTest(schema, modules);
+      const t = createTest();
       await t.mutation(internal.profiles.createProfileForNewUser, {
         userId: "newuser1",
         email: "new@example.com",
