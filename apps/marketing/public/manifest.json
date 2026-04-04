@@ -1,0 +1,8 @@
+{
+  "name": "FitFast",
+  "short_name": "FitFast",
+  "start_url": "/",
+  "display": "browser",
+  "background_color": "#ffffff",
+  "theme_color": "#FF4500"
+}

@@ -18,6 +18,12 @@ const alexandria = Alexandria({
 });
 
 export const metadata: Metadata = {
+  // Prevent iOS from treating this as a standalone web app when added to home screen.
+  // Only the client app (client.fitfast.app) should be installable as a PWA.
+  appleWebApp: {
+    capable: false,
+  },
+  manifest: "/manifest.json",
   title: {
     default: "FitFast - AI-Powered Fitness Coaching",
     template: "%s | FitFast",
