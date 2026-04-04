@@ -1181,5 +1181,12 @@
     "permission_dismissed": "Permission request was dismissed. Please try again to enable notifications.",
     "subscribe_failed": "Failed to enable notifications. Please try again.",
     "unsubscribe_failed": "Failed to disable notifications. Please try again."
+  },
+  "pwaInstall": {
+    "title": "Install FitFast",
+    "message": "Install the app for a better experience with push notifications and quick access.",
+    "iosMessage": "Tap the Share button below, then tap \"Add to Home Screen\" to install FitFast.",
+    "installButton": "Install App",
+    "dismiss": "Not now"
   }
 }

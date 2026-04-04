@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { DashboardShell } from "@/components/layouts";
 import { authClient } from "@/lib/auth-client";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
+import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { RouteErrorComponent } from "@/components/route-error";
 
 export const Route = createFileRoute("/_dashboard")({
@@ -167,6 +168,7 @@ function DashboardLayout() {
   return (
     <DashboardShell userName={userName} daysUntilExpiry={daysUntilExpiry}>
       <Outlet />
+      <InstallPrompt />
     </DashboardShell>
   );
 }
